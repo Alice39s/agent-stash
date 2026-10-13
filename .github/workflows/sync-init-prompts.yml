@@ -1,0 +1,48 @@
+name: Sync init prompts
+
+on:
+  schedule:
+    - cron: "23 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-init-prompts
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Fetch upstream prompts
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Upstream \`/init\` prompts at their default branch heads:"
+            echo
+            echo '```'
+            pnpm --silent sync:init-prompts
+            echo '```'
+          } > "$RUNNER_TEMP/pr-body.md"
+          cat "$RUNNER_TEMP/pr-body.md"
+      # 用 GITHUB_TOKEN 创建的 PR 不会触发其他 workflow，在这里检查。
+      - run: pnpm check
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          branch: chore/sync-init-prompts
+          delete-branch: true
+          add-paths: vendor/init-prompts
+          commit-message: "chore(init): sync upstream init prompts"
+          title: "chore(init): sync upstream init prompts"
+          body-path: ${{ runner.temp }}/pr-body.md
