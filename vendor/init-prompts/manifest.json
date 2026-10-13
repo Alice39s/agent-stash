@@ -1,0 +1,41 @@
+{
+  "presets": [
+    {
+      "name": "codex",
+      "title": "Codex",
+      "repository": "openai/codex",
+      "commit": "308ddf5e7c2aa7b8102eda043dc7656e691a96c8",
+      "path": "codex-rs/tui/assets/prompt_for_init_command.md",
+      "license": "Apache-2.0",
+      "prompt": "codex/prompt.md",
+      "notices": [
+        "codex/LICENSE",
+        "codex/NOTICE"
+      ]
+    },
+    {
+      "name": "kimi",
+      "title": "Kimi Code",
+      "repository": "MoonshotAI/kimi-code",
+      "commit": "afd95f64a5444b649a4cc33504513bf88e4c54ba",
+      "path": "packages/agent-core-v2/src/features/sessionInit/profile/init.md",
+      "license": "MIT",
+      "prompt": "kimi/prompt.md",
+      "notices": [
+        "kimi/LICENSE"
+      ]
+    },
+    {
+      "name": "opencode",
+      "title": "OpenCode",
+      "repository": "anomalyco/opencode",
+      "commit": "5b22e915d85c9ef59eddea43066c5cb74b940870",
+      "path": "packages/core/src/plugin/command/initialize.txt",
+      "license": "MIT",
+      "prompt": "opencode/prompt.md",
+      "notices": [
+        "opencode/LICENSE"
+      ]
+    }
+  ]
+}
