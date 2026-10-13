@@ -1,0 +1,49 @@
+{
+  "name": "agent-stash",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Personal Agent Skills, Pi extensions, and DeepSeek Harness plugins",
+  "keywords": [
+    "pi-package"
+  ],
+  "license": "Apache-2.0",
+  "files": [
+    "pi",
+    "vendor",
+    "LICENSE"
+  ],
+  "type": "module",
+  "scripts": {
+    "sync:init-prompts": "node scripts/sync-init-prompts.ts",
+    "test": "vitest run",
+    "lint": "oxlint --type-aware --type-check --deny-warnings",
+    "format": "oxfmt",
+    "check": "oxfmt --check && oxlint --type-aware --type-check --deny-warnings && vitest run"
+  },
+  "dependencies": {
+    "pathe": "^2.0.3",
+    "valibot": "^1.5.0"
+  },
+  "devDependencies": {
+    "@earendil-works/pi-coding-agent": "^1.2.0",
+    "@octokit/rest": "^22.0.1",
+    "@types/node": "^26.6.5",
+    "oxfmt": "^0.72.0",
+    "oxlint": "^1.87.0",
+    "oxlint-tsgolint": "^7.0.2004",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.4"
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.22.0",
+  "pi": {
+    "extensions": [
+      "./pi/extensions/init/index.ts"
+    ]
+  }
+}

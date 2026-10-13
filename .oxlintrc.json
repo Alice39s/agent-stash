@@ -1,0 +1,20 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript", "unicorn", "oxc", "import", "node", "vitest"],
+  "categories": {
+    "correctness": "error",
+    "suspicious": "warn",
+    "perf": "warn"
+  },
+  "options": {
+    "typeAware": true,
+    "typeCheck": true,
+    "denyWarnings": true
+  },
+  "rules": {
+    "typescript/no-explicit-any": "error",
+    "typescript/no-floating-promises": "error",
+    "import/no-default-export": "off"
+  },
+  "ignorePatterns": ["vendor/**", "node_modules/**"]
+}
