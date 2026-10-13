@@ -1,0 +1,9 @@
+{
+  "defaultPreset": "kimi",
+  "presets": {
+    "team": {
+      "file": "./team.md",
+      "description": "Team AGENTS.md preset"
+    }
+  }
+}

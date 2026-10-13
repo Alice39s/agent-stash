@@ -1,0 +1,8 @@
+{
+  "defaultPreset": "team",
+  "presets": {
+    "codex": {
+      "file": "./codex-local.md"
+    }
+  }
+}

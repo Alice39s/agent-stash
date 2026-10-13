@@ -1,0 +1,55 @@
+import { describe, expect, test } from "vitest";
+import { parseInitArgs, renderInitPrompt } from "./prompt.ts";
+import type { InitPreset, InitRegistry } from "./registry.ts";
+
+function preset(name: string): InitPreset {
+  return { name, description: `${name} preset`, file: `/presets/${name}.md` };
+}
+
+const registry: InitRegistry = {
+  defaultPreset: "codex",
+  presets: new Map(["codex", "kimi", "opencode"].map((name) => [name, preset(name)])),
+};
+
+describe("parseInitArgs", () => {
+  test("uses the default preset without arguments", () => {
+    expect(parseInitArgs("  ", registry)).toEqual({ preset: preset("codex"), extra: "" });
+  });
+
+  test("selects a named preset", () => {
+    expect(parseInitArgs("kimi", registry)).toEqual({ preset: preset("kimi"), extra: "" });
+  });
+
+  test("keeps the text after a preset name as the extra prompt", () => {
+    expect(parseInitArgs("opencode  focus on\n  tests ", registry)).toEqual({
+      preset: preset("opencode"),
+      extra: "focus on\n  tests",
+    });
+  });
+
+  test("treats a leading word that names no preset as the extra prompt", () => {
+    expect(parseInitArgs("write it in Chinese", registry)).toEqual({
+      preset: preset("codex"),
+      extra: "write it in Chinese",
+    });
+  });
+});
+
+describe("renderInitPrompt", () => {
+  test("fills ${path} and $ARGUMENTS", () => {
+    const template = "Focus:\n$ARGUMENTS\n\nIf `AGENTS.md` already exists at `${path}`, update it.";
+    expect(renderInitPrompt(template, "monorepo layout", "/repo")).toBe(
+      "Focus:\nmonorepo layout\n\nIf `AGENTS.md` already exists at `/repo`, update it.",
+    );
+  });
+
+  test("appends the extra prompt when the template has no $ARGUMENTS", () => {
+    expect(renderInitPrompt("Generate AGENTS.md.\n", "mention pnpm", "/repo")).toBe(
+      "Generate AGENTS.md.\n\n## Additional instructions from the user\n\nmention pnpm\n",
+    );
+  });
+
+  test("returns the template unchanged without an extra prompt", () => {
+    expect(renderInitPrompt("Generate AGENTS.md.\n", "", "/repo")).toBe("Generate AGENTS.md.\n");
+  });
+});
