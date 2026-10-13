@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "/init",
+    "description": "添加 /init [预设] [额外指令]，用 Codex、Kimi Code 或 OpenCode 的 /init prompt 让 agent 写出 AGENTS.md。"
+  }
+}

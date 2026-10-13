@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "/init",
+    "description": "Adds /init [preset] [extra prompt], which asks the agent to write AGENTS.md with an /init prompt from Codex, Kimi Code, or OpenCode."
+  }
+}
