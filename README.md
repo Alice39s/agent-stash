@@ -39,13 +39,15 @@ pi -e git:github.com/Alice39s/agent-stash
 
 ### DSH
 
-把仓库作为 bundle 装进某个 profile，例如 Web 界面使用的 `web`：
+DeepSeek Harness 桌面版：在「插件」页点「添加插件」，填入 `github:Alice39s/agent-stash` 后安装。
+
+命令行：把仓库作为 bundle 装进某个 profile，例如 Web 界面使用的 `web`：
 
 ```bash
 dsh plugin --profile web add github:Alice39s/agent-stash
 ```
 
-`dist/` 已随仓库提交，安装时不需要构建。DSH 的斜杠命令目前只在 Web 界面里可用。
+`dist/` 已随仓库提交，安装时不需要构建。DSH 的斜杠命令目前只在 Web 界面与桌面版里可用。
 
 ## `/init`
 
@@ -58,7 +60,16 @@ dsh plugin --profile web add github:Alice39s/agent-stash
 /init 用中文写                 第一个词不是预设名时，整段文字作为默认预设的额外指令
 ```
 
-在 pi 里输入 `/init ` 后按 Tab 可以补全预设名，默认预设会标出 `default`。在 DSH 里，命令结果会列出本次使用的预设和其余可选预设。
+pi：
+
+- 输入 `/init ` 后，补全菜单列出每个预设及其上游来源，默认预设标出 `(default)`。
+- 选中预设后，菜单提示可以继续输入 `[extra prompt]`。
+
+DSH：
+
+- 命令菜单列出全部预设，默认预设标出 `(default)`。
+- 输入框提示可用的预设名，例如 `[codex|kimi-code|opencode] [extra prompt]`。
+- 预设列表在 DSH 加载插件时生成，修改配置后要重启 DSH 才会更新。
 
 ### 内置预设
 
@@ -105,7 +116,7 @@ DSH：
 ```
 
 - `defaultPreset`：不写预设名时使用的预设，默认为 `codex`。
-- `presets`：自定义预设。`file` 是相对配置文件所在目录的路径，同名预设覆盖内置预设。
+- `presets`：自定义预设。`file` 是相对配置文件所在目录的路径，同名预设覆盖内置预设。`description` 显示在补全菜单里，不写时显示文件路径。
 
 配置格式错误或默认预设不存在时，`/init` 直接报错。
 

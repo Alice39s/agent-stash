@@ -107,20 +107,33 @@ test("/init uses the trusted project default preset and fills its placeholders",
   expect(prompt).toBe(`Write the team AGENTS.md for ${PROJECT_DIR}.\n\nFocus: release flow\n`);
 });
 
-test("/init completes preset names and marks the default", async () => {
+test("/init completes preset names with an extra prompt hint", async () => {
   const { session } = await startSession(false);
   const command = session.extensionRunner.getCommand("init");
   expect(await command?.getArgumentCompletions?.("")).toEqual([
-    expect.objectContaining({ value: "codex" }),
+    {
+      value: "codex ",
+      label: "codex [extra prompt]",
+      description: expect.stringMatching(/^Use the `Codex CLI` prompt preset \(openai\/codex@/),
+    },
     expect.objectContaining({
-      value: "kimi-code",
-      description: expect.stringMatching(/^default · /),
+      value: "kimi-code ",
+      description: expect.stringMatching(/^\(default\) Use the `Kimi Code CLI` prompt preset/),
     }),
-    expect.objectContaining({ value: "opencode" }),
-    { value: "team", label: "team", description: "Team AGENTS.md preset" },
+    expect.objectContaining({ value: "opencode " }),
+    { value: "team ", label: "team [extra prompt]", description: "Team AGENTS.md preset" },
   ]);
   expect(await command?.getArgumentCompletions?.("o")).toEqual([
-    expect.objectContaining({ value: "opencode" }),
+    expect.objectContaining({ value: "opencode " }),
   ]);
-  expect(await command?.getArgumentCompletions?.("kimi-code ")).toBeNull();
+  expect(await command?.getArgumentCompletions?.("kimi-code ")).toEqual([
+    {
+      value: "kimi-code ",
+      label: "[extra prompt]",
+      description:
+        "Optional. Type extra instructions for the `kimi-code` preset, or press Enter to run it as is.",
+    },
+  ]);
+  expect(await command?.getArgumentCompletions?.("kimi-code focus")).toBeNull();
+  expect(await command?.getArgumentCompletions?.("write ")).toBeNull();
 });

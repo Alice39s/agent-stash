@@ -3,7 +3,12 @@ import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "pathe";
 import { parseInitArgs, renderInitPrompt } from "../../src/init/prompt.ts";
-import { CONFIG_PATH, loadInitRegistry } from "../../src/init/registry.ts";
+import {
+  CONFIG_PATH,
+  listPresetNames,
+  loadInitRegistry,
+  type InitRegistry,
+} from "../../src/init/registry.ts";
 
 /** DSH 会话里本插件用到的部分。 */
 export interface DshSession {
@@ -38,7 +43,7 @@ export interface DshCommandDefinition {
 
 export interface DshContext {
   readonly commands: { register(definition: DshCommandDefinition): () => void };
-  effect(execute: () => () => void, label?: string): void;
+  effect(execute: () => Promise<() => void>, label?: string): void;
   get(name: "workingDirectory"): { get(session: DshSession): string } | undefined;
 }
 
@@ -48,6 +53,11 @@ export const inject = ["commands"];
 /** `$DSH_HOME`（默认 `~/.dsh`）下的 `agent-stash/init.json`。 */
 export function dshConfigFile(env: NodeJS.ProcessEnv = process.env): string {
   return join(env["DSH_HOME"] ?? join(homedir(), ".dsh"), CONFIG_PATH);
+}
+
+/** 输入提示，如 `[codex|kimi-code|opencode] [extra prompt]`。 */
+export function inputHint(registry: InitRegistry): string {
+  return `[${[...registry.presets.keys()].join("|")}] [extra prompt]`;
 }
 
 /** 会话当前目录：优先 working-directory 服务，旧版 DSH 退回会话创建时的 cwd。 */
@@ -69,25 +79,24 @@ function userMessage(text: string): DshUserMessage {
 }
 
 export function apply(ctx: DshContext): void {
-  ctx.effect(
-    () =>
-      ctx.commands.register({
-        name: "init",
-        description: "Write AGENTS.md with an upstream /init prompt",
-        input: { hint: "[preset] [extra prompt]" },
-        handler: async ({ agent, rawInput }) => {
-          const registry = await loadInitRegistry([dshConfigFile()]);
-          const { preset, extra } = parseInitArgs(rawInput, registry);
-          const template = await readFile(preset.file, "utf8");
-          const prompt = renderInitPrompt(template, extra, sessionDirectory(ctx, agent.session));
-          agent.followup(userMessage(prompt));
-          const others = [...registry.presets.keys()].filter((other) => other !== preset.name);
-          return {
-            kind: "success",
-            text: `/init ${preset.name} · ${preset.description}\nOther presets: ${others.join(", ")}`,
-          };
-        },
-      }),
-    "agent-stash /init command",
-  );
+  ctx.effect(async () => {
+    // 提示里的预设列表在插件加载时生成，执行命令时重新读取配置。
+    const registry = await loadInitRegistry([dshConfigFile()]);
+    return ctx.commands.register({
+      name: "init",
+      description: `Write AGENTS.md with an /init prompt preset. Presets: ${listPresetNames(registry)}`,
+      input: { hint: inputHint(registry) },
+      handler: async ({ agent, rawInput }) => {
+        const current = await loadInitRegistry([dshConfigFile()]);
+        const { preset, extra } = parseInitArgs(rawInput, current);
+        const template = await readFile(preset.file, "utf8");
+        const prompt = renderInitPrompt(template, extra, sessionDirectory(ctx, agent.session));
+        agent.followup(userMessage(prompt));
+        return {
+          kind: "success",
+          text: `/init ${preset.name}: ${preset.description}\nPresets: ${listPresetNames(current)}`,
+        };
+      },
+    });
+  }, "agent-stash /init command");
 }

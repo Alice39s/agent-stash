@@ -25,14 +25,14 @@ interface VendoredFile {
 const SOURCES: UpstreamSource[] = [
   {
     name: "codex",
-    title: "Codex",
+    title: "Codex CLI",
     owner: "openai",
     repo: "codex",
     path: "codex-rs/tui/assets/prompt_for_init_command.md",
   },
   {
     name: "kimi-code",
-    title: "Kimi Code",
+    title: "Kimi Code CLI",
     owner: "MoonshotAI",
     repo: "kimi-code",
     path: "packages/agent-core-v2/src/features/sessionInit/profile/init.md",

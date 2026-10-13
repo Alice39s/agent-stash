@@ -12,7 +12,7 @@ import {
   type DshUserMessage,
 } from "./index.ts";
 
-/** `DSH_HOME`，其中的 `agent-stash/init.json` 把默认预设设为 kimi-code。 */
+/** `DSH_HOME`，其中的 `agent-stash/init.json` 把默认预设设为 kimi-code，并加上 team 预设。 */
 const DSH_HOME = fileURLToPath(new URL("../../src/init/fixtures/agent", import.meta.url));
 const SESSION_DIR = "/work/original";
 const CURRENT_DIR = "/work/current";
@@ -24,9 +24,9 @@ interface Harness {
   disposed: () => boolean;
 }
 
-function mount(workingDirectory: string | undefined): Harness {
+async function mount(workingDirectory: string | undefined): Promise<Harness> {
   let registered: DshCommandDefinition | undefined;
-  let disposer: (() => void) | undefined;
+  let effect: Promise<() => void> | undefined;
   let disposed = false;
   const ctx: DshContext = {
     commands: {
@@ -38,15 +38,18 @@ function mount(workingDirectory: string | undefined): Harness {
       },
     },
     effect(execute) {
-      disposer = execute();
+      effect = execute();
     },
     get: () => (workingDirectory ? { get: () => workingDirectory } : undefined),
   };
   apply(ctx);
-  if (!registered || !disposer) {
+  if (!effect) {
     throw new Error("/init was not registered inside an effect");
   }
-  const dispose = disposer;
+  const dispose = await effect;
+  if (!registered) {
+    throw new Error("/init was not registered");
+  }
   const sent: DshUserMessage[] = [];
   const session: DshSession = { header: { cwd: SESSION_DIR } };
   return {
@@ -73,10 +76,18 @@ test("reads the config from $DSH_HOME and falls back to ~/.dsh", () => {
   expect(dshConfigFile({})).toMatch(/\/\.dsh\/agent-stash\/init\.json$/);
 });
 
-test("/init queues the selected preset as a follow-up user message", async () => {
-  const { command, sent, agent } = mount(undefined);
-  expect(command).toMatchObject({ name: "init", input: { hint: "[preset] [extra prompt]" } });
+test("/init lists the presets in its description and input hint", async () => {
+  const { command } = await mount(undefined);
+  expect(command).toMatchObject({
+    name: "init",
+    description:
+      "Write AGENTS.md with an /init prompt preset. Presets: kimi-code (default), codex, opencode, team",
+    input: { hint: "[codex|kimi-code|opencode|team] [extra prompt]" },
+  });
+});
 
+test("/init queues the selected preset as a follow-up user message", async () => {
+  const { command, sent, agent } = await mount(undefined);
   const template = await readFile(
     fileURLToPath(new URL("../../vendor/init-prompts/codex/prompt.md", import.meta.url)),
     "utf8",
@@ -86,7 +97,7 @@ test("/init queues the selected preset as a follow-up user message", async () =>
   expect(result).toEqual({
     kind: "success",
     text: expect.stringMatching(
-      /^\/init codex · Codex · openai\/codex@[0-9a-f]{7} · Apache-2\.0\n/,
+      /^\/init codex: Use the `Codex CLI` prompt preset \(openai\/codex@[0-9a-f]{7}, Apache-2\.0\)\.\nPresets: kimi-code \(default\), codex, opencode, team$/,
     ),
   });
   expect(sent).toHaveLength(1);
@@ -105,24 +116,24 @@ test("/init queues the selected preset as a follow-up user message", async () =>
 });
 
 test("/init uses the $DSH_HOME default preset", async () => {
-  const { command, sent, agent } = mount(undefined);
+  const { command, sent, agent } = await mount(undefined);
   const template = await readFile(
     fileURLToPath(new URL("../../vendor/init-prompts/kimi-code/prompt.md", import.meta.url)),
     "utf8",
   );
   const result = await command.handler({ agent, rawInput: "" });
-  expect(result).toMatchObject({ text: expect.stringMatching(/^\/init kimi-code \u00b7 /) });
+  expect(result).toMatchObject({ text: expect.stringMatching(/^\/init kimi-code: /) });
   expect(sent[0]?.content[0]?.text).toBe(template);
 });
 
 test("/init fills ${path} with the current working directory", async () => {
-  const current = mount(CURRENT_DIR);
+  const current = await mount(CURRENT_DIR);
   await current.command.handler({ agent: current.agent, rawInput: " team release flow" });
   expect(current.sent[0]?.content[0]?.text).toBe(
     `Write the team AGENTS.md for ${CURRENT_DIR}.\n\nFocus: release flow\n`,
   );
 
-  const original = mount(undefined);
+  const original = await mount(undefined);
   await original.command.handler({ agent: original.agent, rawInput: "team" });
   expect(original.sent[0]?.content[0]?.text).toBe(
     `Write the team AGENTS.md for ${SESSION_DIR}.\n\nFocus: \n`,
@@ -130,13 +141,13 @@ test("/init fills ${path} with the current working directory", async () => {
 });
 
 test("/init fails without a working directory", async () => {
-  const { command } = mount(undefined);
+  const { command } = await mount(undefined);
   const agent: DshAgent = { session: { header: {} }, followup: () => {} };
   await expect(command.handler({ agent, rawInput: "" })).rejects.toThrow(
     "/init needs a session working directory",
   );
 });
 
-test("unloading the plugin removes the command", () => {
-  expect(mount(undefined).disposed()).toBe(true);
+test("unloading the plugin removes the command", async () => {
+  expect((await mount(undefined)).disposed()).toBe(true);
 });

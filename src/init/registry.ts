@@ -52,7 +52,7 @@ async function loadVendoredPresets(): Promise<InitPreset[]> {
   const manifest = await readJsonFile(join(VENDOR_DIR, MANIFEST_FILE), ManifestSchema);
   return manifest.presets.map((preset) => ({
     name: preset.name,
-    description: `${preset.title} · ${preset.repository}@${preset.commit.slice(0, 7)} · ${preset.license}`,
+    description: `Use the \`${preset.title}\` prompt preset (${preset.repository}@${preset.commit.slice(0, 7)}, ${preset.license}).`,
     file: join(VENDOR_DIR, preset.prompt),
   }));
 }
@@ -67,7 +67,7 @@ async function loadConfigLayer(configFile: string): Promise<ConfigLayer | undefi
     defaultPreset: config.defaultPreset,
     presets: Object.entries(config.presets ?? {}).map(([name, preset]) => ({
       name,
-      description: preset.description ?? `Custom · ${preset.file}`,
+      description: preset.description ?? `Use the custom prompt preset \`${preset.file}\`.`,
       file: resolve(baseDir, preset.file),
     })),
   };
@@ -101,4 +101,10 @@ export async function loadInitRegistry(configFiles: readonly string[]): Promise<
     );
   }
   return { defaultPreset, presets };
+}
+
+/** 预设名列表，默认预设排在最前，如 `codex (default), kimi-code, opencode`。 */
+export function listPresetNames(registry: InitRegistry): string {
+  const others = [...registry.presets.keys()].filter((name) => name !== registry.defaultPreset);
+  return [`${registry.defaultPreset} (default)`, ...others].join(", ");
 }

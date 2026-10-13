@@ -760,7 +760,7 @@ async function readJsonFile(file, schema) {
 async function loadVendoredPresets() {
 	return (await readJsonFile(join(VENDOR_DIR, MANIFEST_FILE), ManifestSchema)).presets.map((preset) => ({
 		name: preset.name,
-		description: `${preset.title} · ${preset.repository}@${preset.commit.slice(0, 7)} · ${preset.license}`,
+		description: `Use the \`${preset.title}\` prompt preset (${preset.repository}@${preset.commit.slice(0, 7)}, ${preset.license}).`,
 		file: join(VENDOR_DIR, preset.prompt)
 	}));
 }
@@ -772,7 +772,7 @@ async function loadConfigLayer(configFile) {
 		defaultPreset: config.defaultPreset,
 		presets: Object.entries(config.presets ?? {}).map(([name, preset]) => ({
 			name,
-			description: preset.description ?? `Custom · ${preset.file}`,
+			description: preset.description ?? `Use the custom prompt preset \`${preset.file}\`.`,
 			file: resolve(baseDir, preset.file)
 		}))
 	};
@@ -796,6 +796,11 @@ async function loadInitRegistry(configFiles) {
 		presets
 	};
 }
+/** 预设名列表，默认预设排在最前，如 `codex (default), kimi-code, opencode`。 */
+function listPresetNames(registry) {
+	const others = [...registry.presets.keys()].filter((name) => name !== registry.defaultPreset);
+	return [`${registry.defaultPreset} (default)`, ...others].join(", ");
+}
 //#endregion
 //#region dsh/init/index.ts
 const name = "agent-stash-init";
@@ -803,6 +808,10 @@ const inject = ["commands"];
 /** `$DSH_HOME`（默认 `~/.dsh`）下的 `agent-stash/init.json`。 */
 function dshConfigFile(env = process.env) {
 	return join(env["DSH_HOME"] ?? join(homedir(), ".dsh"), CONFIG_PATH);
+}
+/** 输入提示，如 `[codex|kimi-code|opencode] [extra prompt]`。 */
+function inputHint(registry) {
+	return `[${[...registry.presets.keys()].join("|")}] [extra prompt]`;
 }
 /** 会话当前目录：优先 working-directory 服务，旧版 DSH 退回会话创建时的 cwd。 */
 function sessionDirectory(ctx, session) {
@@ -822,22 +831,24 @@ function userMessage(text) {
 	});
 }
 function apply(ctx) {
-	ctx.effect(() => ctx.commands.register({
-		name: "init",
-		description: "Write AGENTS.md with an upstream /init prompt",
-		input: { hint: "[preset] [extra prompt]" },
-		handler: async ({ agent, rawInput }) => {
-			const registry = await loadInitRegistry([dshConfigFile()]);
-			const { preset, extra } = parseInitArgs(rawInput, registry);
-			const prompt = renderInitPrompt(await readFile(preset.file, "utf8"), extra, sessionDirectory(ctx, agent.session));
-			agent.followup(userMessage(prompt));
-			const others = [...registry.presets.keys()].filter((other) => other !== preset.name);
-			return {
-				kind: "success",
-				text: `/init ${preset.name} · ${preset.description}\nOther presets: ${others.join(", ")}`
-			};
-		}
-	}), "agent-stash /init command");
+	ctx.effect(async () => {
+		const registry = await loadInitRegistry([dshConfigFile()]);
+		return ctx.commands.register({
+			name: "init",
+			description: `Write AGENTS.md with an /init prompt preset. Presets: ${listPresetNames(registry)}`,
+			input: { hint: inputHint(registry) },
+			handler: async ({ agent, rawInput }) => {
+				const current = await loadInitRegistry([dshConfigFile()]);
+				const { preset, extra } = parseInitArgs(rawInput, current);
+				const prompt = renderInitPrompt(await readFile(preset.file, "utf8"), extra, sessionDirectory(ctx, agent.session));
+				agent.followup(userMessage(prompt));
+				return {
+					kind: "success",
+					text: `/init ${preset.name}: ${preset.description}\nPresets: ${listPresetNames(current)}`
+				};
+			}
+		});
+	}, "agent-stash /init command");
 }
 //#endregion
-export { apply, dshConfigFile, inject, name };
+export { apply, dshConfigFile, inject, inputHint, name };

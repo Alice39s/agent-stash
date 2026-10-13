@@ -2,7 +2,7 @@
   "presets": [
     {
       "name": "codex",
-      "title": "Codex",
+      "title": "Codex CLI",
       "repository": "openai/codex",
       "commit": "308ddf5e7c2aa7b8102eda043dc7656e691a96c8",
       "path": "codex-rs/tui/assets/prompt_for_init_command.md",
@@ -15,7 +15,7 @@
     },
     {
       "name": "kimi-code",
-      "title": "Kimi Code",
+      "title": "Kimi Code CLI",
       "repository": "MoonshotAI/kimi-code",
       "commit": "afd95f64a5444b649a4cc33504513bf88e4c54ba",
       "path": "packages/agent-core-v2/src/features/sessionInit/profile/init.md",

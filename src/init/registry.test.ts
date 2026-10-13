@@ -15,7 +15,7 @@ describe("loadInitRegistry", () => {
     expect([...registry.presets.keys()]).toEqual(["codex", "kimi-code", "opencode"]);
     expect(registry.presets.get("codex")?.file).toBe(join(VENDOR_DIR, "codex/prompt.md"));
     expect(registry.presets.get("kimi-code")?.description).toMatch(
-      /^Kimi Code · MoonshotAI\/kimi-code@[0-9a-f]{7} · MIT$/,
+      /^Use the `Kimi Code CLI` prompt preset \(MoonshotAI\/kimi-code@[0-9a-f]{7}, MIT\)\.$/,
     );
   });
 
@@ -37,7 +37,7 @@ describe("loadInitRegistry", () => {
     expect(registry.defaultPreset).toBe("team");
     expect(registry.presets.get("codex")).toEqual({
       name: "codex",
-      description: "Custom · ./codex-local.md",
+      description: "Use the custom prompt preset `./codex-local.md`.",
       file: join(fixture("project"), ".pi/agent-stash/codex-local.md"),
     });
   });
