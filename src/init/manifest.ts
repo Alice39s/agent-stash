@@ -1,7 +1,7 @@
 import { fileURLToPath } from "node:url";
 import * as v from "valibot";
 
-export const VENDOR_DIR = fileURLToPath(new URL("../../../vendor/init-prompts/", import.meta.url));
+export const VENDOR_DIR = fileURLToPath(new URL("../../vendor/init-prompts/", import.meta.url));
 export const MANIFEST_FILE = "manifest.json";
 
 export const VendoredPresetSchema = v.object({

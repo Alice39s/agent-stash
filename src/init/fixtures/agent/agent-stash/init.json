@@ -1,5 +1,5 @@
 {
-  "defaultPreset": "kimi",
+  "defaultPreset": "kimi-code",
   "presets": {
     "team": {
       "file": "./team.md",

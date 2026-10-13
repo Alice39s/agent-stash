@@ -4,18 +4,24 @@ import {
   type ExtensionAPI,
   type ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
-import { parseInitArgs, renderInitPrompt } from "./prompt.ts";
-import { loadInitRegistry, type InitRegistry, type RegistryLocation } from "./registry.ts";
+import { join } from "pathe";
+import { parseInitArgs, renderInitPrompt } from "../../../src/init/prompt.ts";
+import { CONFIG_PATH, loadInitRegistry, type InitRegistry } from "../../../src/init/registry.ts";
 
-function registryLocation(ctx: ExtensionContext): RegistryLocation {
-  return { agentDir: getAgentDir(), projectDir: ctx.isProjectTrusted() ? ctx.cwd : undefined };
+/** 个人配置在前，受信任项目的 `.pi` 配置在后。 */
+function configFiles(ctx: ExtensionContext): string[] {
+  const files = [join(getAgentDir(), CONFIG_PATH)];
+  if (ctx.isProjectTrusted()) {
+    files.push(join(ctx.cwd, ".pi", CONFIG_PATH));
+  }
+  return files;
 }
 
 export default function initExtension(pi: ExtensionAPI): void {
   let completionRegistry: InitRegistry | undefined;
 
   pi.on("session_start", async (_event, ctx) => {
-    completionRegistry = await loadInitRegistry(registryLocation(ctx));
+    completionRegistry = await loadInitRegistry(configFiles(ctx));
   });
 
   pi.registerCommand("init", {
@@ -36,7 +42,7 @@ export default function initExtension(pi: ExtensionAPI): void {
       return items.length > 0 ? items : null;
     },
     handler: async (args, ctx) => {
-      const registry = await loadInitRegistry(registryLocation(ctx));
+      const registry = await loadInitRegistry(configFiles(ctx));
       completionRegistry = registry;
       const { preset, extra } = parseInitArgs(args, registry);
       const template = await readFile(preset.file, "utf8");

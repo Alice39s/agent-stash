@@ -10,7 +10,7 @@ import {
 import { afterEach, beforeEach, expect, test, vi } from "vitest";
 
 const fixture = (name: string): string =>
-  fileURLToPath(new URL(`fixtures/${name}`, import.meta.url));
+  fileURLToPath(new URL(`../../../src/init/fixtures/${name}`, import.meta.url));
 const EXTENSION = fileURLToPath(new URL("index.ts", import.meta.url));
 /** 扩展通过 `PI_CODING_AGENT_DIR` 从这里读取 init 配置。 */
 const AGENT_DIR = fixture("agent");
@@ -112,12 +112,15 @@ test("/init completes preset names and marks the default", async () => {
   const command = session.extensionRunner.getCommand("init");
   expect(await command?.getArgumentCompletions?.("")).toEqual([
     expect.objectContaining({ value: "codex" }),
-    expect.objectContaining({ value: "kimi", description: expect.stringMatching(/^default · /) }),
+    expect.objectContaining({
+      value: "kimi-code",
+      description: expect.stringMatching(/^default · /),
+    }),
     expect.objectContaining({ value: "opencode" }),
     { value: "team", label: "team", description: "Team AGENTS.md preset" },
   ]);
   expect(await command?.getArgumentCompletions?.("o")).toEqual([
     expect.objectContaining({ value: "opencode" }),
   ]);
-  expect(await command?.getArgumentCompletions?.("kimi ")).toBeNull();
+  expect(await command?.getArgumentCompletions?.("kimi-code ")).toBeNull();
 });

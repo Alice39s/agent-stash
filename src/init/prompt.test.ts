@@ -8,7 +8,7 @@ function preset(name: string): InitPreset {
 
 const registry: InitRegistry = {
   defaultPreset: "codex",
-  presets: new Map(["codex", "kimi", "opencode"].map((name) => [name, preset(name)])),
+  presets: new Map(["codex", "kimi-code", "opencode"].map((name) => [name, preset(name)])),
 };
 
 describe("parseInitArgs", () => {
@@ -17,7 +17,10 @@ describe("parseInitArgs", () => {
   });
 
   test("selects a named preset", () => {
-    expect(parseInitArgs("kimi", registry)).toEqual({ preset: preset("kimi"), extra: "" });
+    expect(parseInitArgs("kimi-code", registry)).toEqual({
+      preset: preset("kimi-code"),
+      extra: "",
+    });
   });
 
   test("keeps the text after a preset name as the extra prompt", () => {

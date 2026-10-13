@@ -18,12 +18,6 @@ export interface InitRegistry {
   presets: ReadonlyMap<string, InitPreset>;
 }
 
-export interface RegistryLocation {
-  agentDir: string;
-  /** 读取 `.pi` 配置的项目目录；项目未受信任时为 undefined。 */
-  projectDir: string | undefined;
-}
-
 const ConfigSchema = v.strictObject({
   defaultPreset: v.optional(v.pipe(v.string(), v.nonEmpty())),
   presets: v.optional(
@@ -79,12 +73,11 @@ async function loadConfigLayer(configFile: string): Promise<ConfigLayer | undefi
   };
 }
 
-/** 按 vendor 预设、个人配置、受信任项目配置的顺序合并，后者覆盖前者。 */
-export async function loadInitRegistry(location: RegistryLocation): Promise<InitRegistry> {
-  const configFiles = [join(location.agentDir, CONFIG_PATH)];
-  if (location.projectDir) {
-    configFiles.push(join(location.projectDir, ".pi", CONFIG_PATH));
-  }
+/**
+ * 按 vendor 预设与 `configFiles` 的顺序合并，后者覆盖前者。
+ * 不存在的配置文件跳过。
+ */
+export async function loadInitRegistry(configFiles: readonly string[]): Promise<InitRegistry> {
   const [vendored, ...layers] = await Promise.all([
     loadVendoredPresets(),
     ...configFiles.map(loadConfigLayer),

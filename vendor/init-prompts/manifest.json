@@ -14,15 +14,15 @@
       ]
     },
     {
-      "name": "kimi",
+      "name": "kimi-code",
       "title": "Kimi Code",
       "repository": "MoonshotAI/kimi-code",
       "commit": "afd95f64a5444b649a4cc33504513bf88e4c54ba",
       "path": "packages/agent-core-v2/src/features/sessionInit/profile/init.md",
       "license": "MIT",
-      "prompt": "kimi/prompt.md",
+      "prompt": "kimi-code/prompt.md",
       "notices": [
-        "kimi/LICENSE"
+        "kimi-code/LICENSE"
       ]
     },
     {

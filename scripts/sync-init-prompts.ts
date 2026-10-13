@@ -7,7 +7,7 @@ import {
   ManifestSchema,
   VENDOR_DIR,
   type VendoredPreset,
-} from "../pi/extensions/init/manifest.ts";
+} from "../src/init/manifest.ts";
 
 interface UpstreamSource {
   name: string;
@@ -31,7 +31,7 @@ const SOURCES: UpstreamSource[] = [
     path: "codex-rs/tui/assets/prompt_for_init_command.md",
   },
   {
-    name: "kimi",
+    name: "kimi-code",
     title: "Kimi Code",
     owner: "MoonshotAI",
     repo: "kimi-code",
