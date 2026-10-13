@@ -1,46 +1,71 @@
 # agent-stash
 
-自用的 Agent Skills、[pi](https://pi.dev) 扩展与 DSH（DeepSeek Harness）插件合集。
+[![CI](https://github.com/Alice39s/agent-stash/actions/workflows/ci.yml/badge.svg)](https://github.com/Alice39s/agent-stash/actions/workflows/ci.yml)
+[![Sync init prompts](https://github.com/Alice39s/agent-stash/actions/workflows/sync-init-prompts.yml/badge.svg)](https://github.com/Alice39s/agent-stash/actions/workflows/sync-init-prompts.yml)
+[![License](https://img.shields.io/github/license/Alice39s/agent-stash)](LICENSE)
+[![Last commit](https://img.shields.io/github/last-commit/Alice39s/agent-stash)](https://github.com/Alice39s/agent-stash/commits/main)
+[![pi package](https://img.shields.io/badge/pi-package-111111)](https://pi.dev)
+[![DSH plugin](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D24-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
+[![pnpm](https://img.shields.io/badge/pnpm-11-f69220?logo=pnpm&logoColor=white)](https://pnpm.io)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](tsconfig.json)
+
+自用的 Agent Skills、[pi](https://pi.dev) 扩展与 [DSH（DeepSeek Harness）](https://github.com/deepseek-ai/deepseek-harness)插件合集。
 
 ## 目录
 
 | 路径                   | 内容                                                                              |
 | ---------------------- | --------------------------------------------------------------------------------- |
+| `src/`                 | pi 与 DSH 共用的实现                                                              |
 | `pi/extensions/`       | pi 扩展，由 `package.json` 的 `pi.extensions` 声明                                |
+| `dsh/`                 | DSH 插件源码、`cordis.patch.yml`、本地化文案与图标                                |
+| `dist/`                | DSH 插件的构建产物，由 `pnpm build` 生成，随仓库提交                              |
 | `vendor/init-prompts/` | 从上游仓库同步的 `/init` prompt、许可证与 `manifest.json`，由脚本生成，不手动修改 |
 | `scripts/`             | 同步脚本                                                                          |
 
-## 安装到 pi
+## 安装
+
+### pi
 
 ```bash
-pi install /path/to/agent-stash
+pi install git:github.com/Alice39s/agent-stash
 ```
 
 只在当前会话试用：
 
 ```bash
-pi -e /path/to/agent-stash
+pi -e git:github.com/Alice39s/agent-stash
 ```
+
+### DSH
+
+把仓库作为 bundle 装进某个 profile，例如 Web 界面使用的 `web`：
+
+```bash
+dsh plugin --profile web add github:Alice39s/agent-stash
+```
+
+`dist/` 已随仓库提交，安装时不需要构建。DSH 的斜杠命令目前只在 Web 界面里可用。
 
 ## `/init`
 
-让 agent 分析当前项目并写出 `AGENTS.md`，prompt 取自其他 coding agent 的开源实现。
+让 agent 分析当前项目并写出 `AGENTS.md`，prompt 取自其他 coding agent 的开源实现。pi 与 DSH 的用法相同。
 
 ```text
-/init                       使用默认预设
-/init kimi                  使用 kimi 预设
-/init opencode 重点写测试流程  使用 opencode 预设并附加额外指令
-/init 用中文写               第一个词不是预设名时，整段文字作为默认预设的额外指令
+/init                         使用默认预设
+/init kimi-code               使用 kimi-code 预设
+/init opencode 重点写测试流程    使用 opencode 预设并附加额外指令
+/init 用中文写                 第一个词不是预设名时，整段文字作为默认预设的额外指令
 ```
 
-输入 `/init ` 后按 Tab 可以补全预设名，默认预设会标出 `default`。
+在 pi 里输入 `/init ` 后按 Tab 可以补全预设名，默认预设会标出 `default`。在 DSH 里，命令结果会列出本次使用的预设和其余可选预设。
 
 ### 内置预设
 
 | 预设            | 上游                                                            | 文件                                                              | 许可证     |
 | --------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
 | `codex`（默认） | [openai/codex](https://github.com/openai/codex)                 | `codex-rs/tui/assets/prompt_for_init_command.md`                  | Apache-2.0 |
-| `kimi`          | [MoonshotAI/kimi-code](https://github.com/MoonshotAI/kimi-code) | `packages/agent-core-v2/src/features/sessionInit/profile/init.md` | MIT        |
+| `kimi-code`     | [MoonshotAI/kimi-code](https://github.com/MoonshotAI/kimi-code) | `packages/agent-core-v2/src/features/sessionInit/profile/init.md` | MIT        |
 | `opencode`      | [anomalyco/opencode](https://github.com/anomalyco/opencode)     | `packages/core/src/plugin/command/initialize.txt`                 | MIT        |
 
 每个预设对应的上游 commit 记录在 `vendor/init-prompts/manifest.json`。
@@ -49,17 +74,23 @@ pi -e /path/to/agent-stash
 
 模板里的占位符在发送前替换：
 
-- `${path}`：当前项目目录。
+- `${path}`：当前项目目录。DSH 里取会话的当前工作目录。
 - `$ARGUMENTS`：额外指令。
 
 模板没有 `$ARGUMENTS` 时，额外指令追加到 prompt 末尾的 `## Additional instructions from the user` 小节。
 
 ### 配置
 
-配置文件按以下顺序读取，后读的覆盖先读的：
+配置文件按以下顺序读取，后读的覆盖先读的。
+
+pi：
 
 1. `~/.pi/agent/agent-stash/init.json`（设置了 `PI_CODING_AGENT_DIR` 时为 `$PI_CODING_AGENT_DIR/agent-stash/init.json`）
 2. `<项目>/.pi/agent-stash/init.json`，仅在项目受信任时读取
+
+DSH：
+
+1. `$DSH_HOME/agent-stash/init.json`（未设置 `DSH_HOME` 时为 `~/.dsh/agent-stash/init.json`）
 
 ```json
 {
@@ -97,8 +128,11 @@ GITHUB_TOKEN=<token> pnpm sync:init-prompts
 ```bash
 pnpm install
 pnpm check    # oxfmt --check、oxlint 类型检查与 vitest
+pnpm build    # 用 tsdown 生成 dist/dsh/init.js
 pnpm format
 ```
+
+改动 `src/` 或 `dsh/` 后要运行 `pnpm build` 并提交 `dist/`。CI 会重新构建，`dist/` 与源码不一致时失败。
 
 ## 许可证
 
