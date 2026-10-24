@@ -1,5 +1,6 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { Octokit } from "@octokit/rest";
+import MurmurHash3 from "murmurhash3js-revisited";
 import { dirname, join } from "pathe";
 import * as v from "valibot";
 import {
@@ -127,7 +128,38 @@ async function fetchSource(
   return { preset, files };
 }
 
-const results = await Promise.all(SOURCES.map(fetchSource));
+/** MurmurHash3 (x64, 128-bit) of a preset's vendored paths and contents. */
+function contentHash(files: VendoredFile[]): string {
+  return MurmurHash3.x64.hash128(new TextEncoder().encode(JSON.stringify(files)));
+}
+
+async function readVendored(preset: VendoredPreset): Promise<VendoredFile[]> {
+  return Promise.all(
+    [preset.prompt, ...preset.notices].map(async (path) => ({
+      path,
+      content: await readFile(join(VENDOR_DIR, path), "utf8"),
+    })),
+  );
+}
+
+const previous = v.parse(
+  ManifestSchema,
+  JSON.parse(await readFile(join(VENDOR_DIR, MANIFEST_FILE), "utf8")),
+);
+const results = await Promise.all(
+  SOURCES.map(async (source) => {
+    const result = await fetchSource(source);
+    const hash = contentHash(result.files);
+    const known = previous.presets.find((preset) => preset.name === source.name);
+    const unchanged =
+      known !== undefined &&
+      known.path === result.preset.path &&
+      contentHash(await readVendored(known)) === hash;
+    // Unchanged content keeps the recorded commit, so a moving upstream HEAD alone produces no diff.
+    if (unchanged) result.preset.commit = known.commit;
+    return { preset: result.preset, files: result.files, hash, changed: !unchanged };
+  }),
+);
 const manifest = v.parse(ManifestSchema, { presets: results.map((result) => result.preset) });
 
 await rm(VENDOR_DIR, { recursive: true, force: true });
@@ -142,6 +174,15 @@ await Promise.all(
 );
 await writeFile(join(VENDOR_DIR, MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
 
-for (const preset of manifest.presets) {
-  console.log(`${preset.name}: ${preset.repository}@${preset.commit.slice(0, 12)} ${preset.path}`);
+for (const { preset, hash, changed } of results) {
+  const status = changed ? "changed" : "unchanged";
+  console.log(
+    `${preset.name}: ${preset.repository}@${preset.commit.slice(0, 12)} ${preset.path} murmur3:${hash} ${status}`,
+  );
+}
+if (process.env.GITHUB_OUTPUT) {
+  await appendFile(
+    process.env.GITHUB_OUTPUT,
+    `changed=${results.some((result) => result.changed)}\n`,
+  );
 }

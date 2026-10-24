@@ -123,7 +123,10 @@ DSH：
 
 ## 上游同步
 
-`.github/workflows/sync-init-prompts.yml` 每天运行一次，也可以手动触发。它拉取各上游默认分支最新 commit 中的 prompt 与根目录的 LICENSE、NOTICE 文件，运行检查后向 `chore/sync-init-prompts` 分支开 PR。
+`.github/workflows/sync-init-prompts.yml` 每天运行一次，也可以手动触发。它拉取各上游默认分支最新 commit 中的 prompt 与根目录的 LICENSE、NOTICE 文件，按预设计算内容的 MurmurHash3（x64 128 位），与已收录的文件比较：
+
+- 内容不变的预设保留 `manifest.json` 里原有的 commit，上游 HEAD 前进不产生改动。
+- 有预设内容变化时，运行检查后向 `chore/sync-init-prompts` 分支开 PR，并直接 squash 合并。
 
 仓库需要在 Settings → Actions → General 中开启「Allow GitHub Actions to create and approve pull requests」，workflow 才能创建 PR。
 
