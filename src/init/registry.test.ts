@@ -18,6 +18,8 @@ describe("loadInitRegistry", () => {
       "opencode",
       "crush",
       "copilot",
+      "qwen-code",
+      "kilo-code",
       "claude-code",
       "claude-code-init-new",
     ]);

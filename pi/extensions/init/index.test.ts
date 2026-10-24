@@ -123,6 +123,8 @@ test("/init completes preset names with an extra prompt hint", async () => {
     expect.objectContaining({ value: "opencode " }),
     expect.objectContaining({ value: "crush " }),
     expect.objectContaining({ value: "copilot " }),
+    expect.objectContaining({ value: "qwen-code " }),
+    expect.objectContaining({ value: "kilo-code " }),
     expect.objectContaining({
       value: "claude-code ",
       description: expect.stringMatching(/^Use the `Claude Code builtin slash command \/init/),

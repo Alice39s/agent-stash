@@ -9,6 +9,7 @@ import {
   VENDOR_DIR,
   type VendoredPreset,
 } from "../src/init/manifest.ts";
+import { extractSubmitPrompt, removeLeadingSentence } from "../src/init/extract.ts";
 
 interface UpstreamSource {
   name: string;
@@ -18,6 +19,8 @@ interface UpstreamSource {
   path: string;
   /** SPDX id for repositories whose license GitHub does not recognize. */
   license?: string;
+  /** Turns the upstream file into the vendored prompt when it is not a plain prompt file. */
+  extract?: (content: string) => string;
 }
 
 interface VendoredFile {
@@ -61,6 +64,28 @@ const SOURCES: UpstreamSource[] = [
     owner: "microsoft",
     repo: "vscode",
     path: "extensions/copilot/assets/prompts/skills/init/SKILL.md",
+  },
+  {
+    name: "qwen-code",
+    title: "Qwen Code",
+    owner: "QwenLM",
+    repo: "qwen-code",
+    path: "packages/cli/src/ui/commands/initCommand.ts",
+    // The prompt is a template literal; `contextFileName` is the instructions file it writes.
+    // The identity line names Qwen Code, so it is dropped for use in other agents.
+    extract: (content) =>
+      removeLeadingSentence(
+        extractSubmitPrompt("initCommand.ts", content, { contextFileName: "AGENTS.md" }),
+        "You are Qwen Code, an interactive CLI agent.",
+      ),
+  },
+  {
+    name: "kilo-code",
+    title: "Kilo Code",
+    owner: "Kilo-Org",
+    repo: "kilocode",
+    // The Kilo CLI command loads this template; packages/core carries the upstream OpenCode copy.
+    path: "packages/opencode/src/command/template/initialize.txt",
   },
 ];
 
@@ -122,8 +147,9 @@ async function fetchSource(
 
   const prompt = `${source.name}/prompt.md`;
   const noticeNames = await listNoticeFiles(source, commit.sha);
+  const upstream = await readFileAt(source, commit.sha, source.path);
   const files: VendoredFile[] = [
-    { path: prompt, content: await readFileAt(source, commit.sha, source.path) },
+    { path: prompt, content: source.extract ? source.extract(upstream) : upstream },
     ...(await Promise.all(
       noticeNames.map(async (name) => ({
         path: `${source.name}/${name}`,

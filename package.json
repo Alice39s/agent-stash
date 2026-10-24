@@ -59,6 +59,7 @@
     "hast-util-to-string": "^3.0.1",
     "mdast-util-to-string": "^4.0.0",
     "murmurhash3js-revisited": "^3.0.0",
+    "oxc-parser": "^0.155.0",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
     "oxlint-tsgolint": "^7.0.2004",
