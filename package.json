@@ -1,7 +1,6 @@
 {
   "name": "agent-stash",
   "version": "1.1.0",
-  "private": true,
   "description": "Personal Agent Skills and /init plugins for pi, DeepSeek Harness, Cline, Grok Build, goose, and Aider",
   "keywords": [
     "cline-plugin",
@@ -11,6 +10,7 @@
   "homepage": "https://github.com/Alice39s/agent-stash#readme",
   "bugs": "https://github.com/Alice39s/agent-stash/issues",
   "license": "Apache-2.0",
+  "author": "Alice39s",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Alice39s/agent-stash.git"
@@ -33,6 +33,7 @@
     "./dsh/init": "./dist/dsh/init.js",
     "./dsh/init/locale/*.json": "./dsh/init/locale/*.json",
     "./dsh/init/icon": "./dsh/init/icon.svg",
+    "./locale/*.json": "./dsh/locale/*.json",
     "./package.json": "./package.json"
   },
   "scripts": {
@@ -58,6 +59,7 @@
     "@types/mdast": "^4.0.4",
     "@types/murmurhash3js-revisited": "^3.0.3",
     "@types/node": "^26.6.5",
+    "@types/semver": "^7.8.0",
     "hast-util-select": "^6.0.4",
     "hast-util-to-mdast": "^10.1.2",
     "hast-util-to-string": "^3.0.1",
@@ -73,6 +75,7 @@
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
     "remark-stringify": "^11.0.0",
+    "semver": "^7.8.5",
     "tegami": "^1.5.0",
     "tsdown": "^0.23.1",
     "typescript": "^7.0.2",
@@ -89,7 +92,9 @@
       "optional": true
     }
   },
+  "icon": "./dsh/init/icon.svg",
   "engines": {
+    "dsh": ">=0.2.1-alpha.2",
     "node": ">=24"
   },
   "packageManager": "pnpm@11.22.0",
@@ -106,6 +111,7 @@
     ]
   },
   "dsh": {
+    "manifestVersion": 1,
     "bundle": {
       "patch": "./dsh/cordis.patch.yml"
     }
