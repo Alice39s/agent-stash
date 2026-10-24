@@ -33,5 +33,5 @@ Tests use Vitest and sit next to their source as `*.test.ts` (`src/init/registry
 ## Commit & Pull Request Guidelines
 
 - Commits follow Conventional Commits with a scope, for example `feat(init): add Crush preset` or `ci(release): ...`. Use the body to explain why.
-- For user-facing changes, add a changeset to `.tegami/<topic>.md` with `packages: { agent-stash: minor }` frontmatter and release notes in Chinese. Tegami opens the Version Packages PR on `main`.
+- For user-facing changes, add a changeset to `.tegami/<topic>.md` with `packages: { agent-stash: minor }` frontmatter and release notes in Chinese under at least one Markdown heading; Tegami ignores changesets without a heading. Tegami opens the Version Packages PR on `main`.
 - PRs must pass `pnpm check` and include the rebuilt `dist/`. Describe which agents or presets the change affects.

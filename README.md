@@ -246,7 +246,7 @@ pnpm format
 
 版本号遵循语义化版本，由 [Tegami](https://tegami.fuma-nama.dev) 管理，配置在 `scripts/tegami.ts`。
 
-1. 在 `.tegami/` 下新建 Markdown 文件，frontmatter 写明升级类型（`major`、`minor` 或 `patch`），正文是发布说明：
+1. 在 `.tegami/` 下新建 Markdown 文件，frontmatter 写明升级类型（`major`、`minor` 或 `patch`），正文是发布说明。正文至少要有一个 Markdown 标题，没有标题的文件 Tegami 不会读取：
 
    ```md
    ---
@@ -254,7 +254,9 @@ pnpm format
      agent-stash: minor
    ---
 
-   新增 xxx 预设。
+   ## 新增 xxx 预设
+
+   - xxx 预设从上游每天同步。
    ```
 
 2. 推送到 `main` 后，`.github/workflows/release.yml` 开 Version Packages PR，更新 `package.json` 的版本号与 `CHANGELOG.md`。
