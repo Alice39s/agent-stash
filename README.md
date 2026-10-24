@@ -1,29 +1,50 @@
-# agent-stash
+<div align="center">
 
-[![CI](https://github.com/Alice39s/agent-stash/actions/workflows/ci.yml/badge.svg)](https://github.com/Alice39s/agent-stash/actions/workflows/ci.yml)
-[![Sync init prompts](https://github.com/Alice39s/agent-stash/actions/workflows/sync-init-prompts.yml/badge.svg)](https://github.com/Alice39s/agent-stash/actions/workflows/sync-init-prompts.yml)
-[![License](https://img.shields.io/github/license/Alice39s/agent-stash)](LICENSE)
-[![Last commit](https://img.shields.io/github/last-commit/Alice39s/agent-stash)](https://github.com/Alice39s/agent-stash/commits/main)
-[![pi package](https://img.shields.io/badge/pi-package-111111)](https://pi.dev)
-[![DSH plugin](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D24-339933?logo=nodedotjs&logoColor=white)](https://nodejs.org)
-[![pnpm](https://img.shields.io/badge/pnpm-11-f69220?logo=pnpm&logoColor=white)](https://pnpm.io)
-[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6?logo=typescript&logoColor=white)](tsconfig.json)
+# Agent-Stash
 
-自用的 Agent Skills、[pi](https://pi.dev) 扩展与 [DSH（DeepSeek Harness）](https://github.com/deepseek-ai/deepseek-harness)插件合集。
+[![CI](https://img.shields.io/github/actions/workflow/status/Alice39s/agent-stash/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/Alice39s/agent-stash/actions/workflows/ci.yml) [![sync init prompts](https://img.shields.io/github/actions/workflow/status/Alice39s/agent-stash/sync-init-prompts.yml?branch=main&label=sync%20init%20prompts&logo=githubactions&logoColor=white)](https://github.com/Alice39s/agent-stash/actions/workflows/sync-init-prompts.yml) [![sync style guides](https://img.shields.io/github/actions/workflow/status/Alice39s/agent-stash/sync-code-styleguide.yml?branch=main&label=sync%20style%20guides&logo=githubactions&logoColor=white)](https://github.com/Alice39s/agent-stash/actions/workflows/sync-code-styleguide.yml)
+
+[![License](https://img.shields.io/github/license/Alice39s/agent-stash)](LICENSE) [![Last commit](https://img.shields.io/github/last-commit/Alice39s/agent-stash)](https://github.com/Alice39s/agent-stash/commits/main) [![GitHub repo size](https://img.shields.io/github/repo-size/Alice39s/agent-stash)](https://github.com/Alice39s/agent-stash) [![Stars](https://img.shields.io/github/stars/Alice39s/agent-stash?style=social)](https://github.com/Alice39s/agent-stash/stargazers)
+
+[![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest) [![Pi Plugins](https://img.shields.io/badge/pi-plugin-111111)](https://pi.dev) [![DSH Plugins](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness) ![powered by DSH](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white) ![powered by pi](https://img.shields.io/badge/powered_by-Pi-111111?style=flat-square&logo=pi&logoColor=white)
+
+> 自用的 Agent Skills、[Pi](https://pi.dev) 扩展与 [DSH (DeepSeek Harness)](https://github.com/deepseek-ai/deepseek-harness) 插件合集。
+
+</div>
 
 ## 目录
 
-| 路径                   | 内容                                                                              |
-| ---------------------- | --------------------------------------------------------------------------------- |
-| `src/`                 | pi 与 DSH 共用的实现                                                              |
-| `pi/extensions/`       | pi 扩展，由 `package.json` 的 `pi.extensions` 声明                                |
-| `dsh/`                 | DSH 插件源码、`cordis.patch.yml`、本地化文案与图标                                |
-| `dist/`                | DSH 插件的构建产物，由 `pnpm build` 生成，随仓库提交                              |
-| `vendor/init-prompts/` | 从上游仓库同步的 `/init` prompt、许可证与 `manifest.json`，由脚本生成，不手动修改 |
-| `prompts/init/`        | 手动维护的 `/init` prompt                                                         |
-| `skills/`              | Agent Skills，由 `package.json` 的 `pi.skills` 声明                               |
-| `scripts/`             | 同步脚本                                                                          |
+- [Agent-Stash](#agent-stash)
+  - [目录](#目录)
+  - [清单](#清单)
+    - [Plugins](#plugins)
+    - [Agent Skills](#agent-skills)
+  - [安装](#安装)
+    - [pi](#pi)
+    - [DSH](#dsh)
+  - [Plugin: `/init <preset> [extra prompt]`](#plugin-init-preset-extra-prompt)
+    - [上游同步的预设](#上游同步的预设)
+    - [手动维护的预设](#手动维护的预设)
+    - [额外指令与占位符](#额外指令与占位符)
+    - [配置](#配置)
+    - [上游同步](#上游同步)
+    - [`code-styleguide`](#code-styleguide)
+  - [开发](#开发)
+  - [许可证](#许可证)
+
+## 清单
+
+### Plugins
+
+| 名称             | 源码                                                | 说明                                                                        |
+| ---------------- | --------------------------------------------------- | --------------------------------------------------------------------------- |
+| [`/init`](#init) | pi 扩展 `pi/extensions/init/`，DSH 插件 `dsh/init/` | 用其他 coding agent 的 `/init` prompt 分析项目，写出 `AGENTS.md` 等说明文件 |
+
+### Agent Skills
+
+| 名称                                  | 源码                      | 说明                                                       |
+| ------------------------------------- | ------------------------- | ---------------------------------------------------------- |
+| [`code-styleguide`](#code-styleguide) | `skills/code-styleguide/` | Google、Angular 与 Android Kotlin 风格指南，每天从上游同步 |
 
 ## 安装
 
@@ -33,7 +54,7 @@
 pi install git:github.com/Alice39s/agent-stash
 ```
 
-只在当前会话试用：
+pi 会同时加载 `/init` 扩展与 `skills/` 下的技能。只在当前会话试用：
 
 ```bash
 pi -e git:github.com/Alice39s/agent-stash
@@ -49,71 +70,56 @@ DeepSeek Harness 桌面版：在「插件」页点「添加插件」，填入 `g
 dsh plugin --profile web add github:Alice39s/agent-stash
 ```
 
-`dist/` 已随仓库提交，安装时不需要构建。DSH 的斜杠命令目前只在 Web 界面与桌面版里可用。
+`dist/` 随仓库提交，安装时不需要构建。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
 
-## `/init`
+## Plugin: `/init <preset> [extra prompt]`
 
-让 agent 分析当前项目并写出 `AGENTS.md`，prompt 取自其他 coding agent 的开源实现。pi 与 DSH 的用法相同。
+[![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest) [![Pi Plugin](https://img.shields.io/badge/Pi-Plugin-111111)](https://pi.dev) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
+
+让 agent 分析当前项目并写出 AGENTS.md。pi 与 DSH 的用法相同：
 
 ```text
 /init                         使用默认预设
 /init kimi-code               使用 kimi-code 预设
-/init opencode 重点写测试流程    使用 opencode 预设并附加额外指令
-/init 用中文写                 第一个词不是预设名时，整段文字作为默认预设的额外指令
+/init opencode 重点写测试流程    使用 opencode 预设并附加额外 Prompt
+/init 用中文写                 第一个词不是预设名时，将绕过 Profile、直接使用你定义的 Prompt
 ```
 
-pi：
+### 上游同步的预设
 
-- 输入 `/init ` 后，补全菜单列出每个预设及其上游来源，默认预设标出 `(default)`。
-- 选中预设后，菜单提示可以继续输入 `[extra prompt]`。
-
-DSH：
-
-- 命令菜单列出全部预设，默认预设标出 `(default)`。
-- 输入框提示可用的预设名，例如 `[codex|kimi-code|opencode|…] [extra prompt]`。
-- 预设列表在 DSH 加载插件时生成，修改配置后要重启 DSH 才会更新。
-
-### 内置预设
-
-| 预设            | 上游                                                            | 文件                                                              | 许可证      |
-| --------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- | ----------- |
-| `codex`（默认） | [openai/codex](https://github.com/openai/codex)                 | `codex-rs/tui/assets/prompt_for_init_command.md`                  | Apache-2.0  |
-| `kimi-code`     | [MoonshotAI/kimi-code](https://github.com/MoonshotAI/kimi-code) | `packages/agent-core-v2/src/features/sessionInit/profile/init.md` | MIT         |
-| `opencode`      | [anomalyco/opencode](https://github.com/anomalyco/opencode)     | `packages/core/src/plugin/command/initialize.txt`                 | MIT         |
-| `crush`         | [charmbracelet/crush](https://github.com/charmbracelet/crush)   | `internal/agent/templates/initialize.md.tpl`                      | FSL-1.1-MIT |
-| `copilot`       | [microsoft/vscode](https://github.com/microsoft/vscode)         | `extensions/copilot/assets/prompts/skills/init/SKILL.md`          | MIT         |
-
-每个预设对应的上游 commit 记录在 `vendor/init-prompts/manifest.json`。
+| 预设            | 上游                                                            | 许可证      |
+| --------------- | --------------------------------------------------------------- | ----------- |
+| `codex`（默认） | [openai/codex](https://github.com/openai/codex)                 | Apache-2.0  |
+| `kimi-code`     | [MoonshotAI/kimi-code](https://github.com/MoonshotAI/kimi-code) | MIT         |
+| `opencode`      | [anomalyco/opencode](https://github.com/anomalyco/opencode)     | MIT         |
+| `crush`         | [charmbracelet/crush](https://github.com/charmbracelet/crush)   | FSL-1.1-MIT |
+| `copilot`       | [microsoft/vscode](https://github.com/microsoft/vscode)         | MIT         |
 
 ### 手动维护的预设
-
-`prompts/init/` 下的每个 `.md` 文件是一个预设，文件名即预设名，排在内置预设之后：
 
 | 预设                   | 来源                                        |
 | ---------------------- | ------------------------------------------- |
 | `claude-code`          | Claude Code v2.1.306 的 `/init`（经典版）   |
 | `claude-code-init-new` | Claude Code v2.1.306 的 `/init`（多阶段版） |
 
-文件开头的 YAML frontmatter 必须包含 `source` 与 `version`，命令菜单里的说明由这两项生成。更新时直接替换文件，不经过同步脚本。这两个 prompt 让 agent 写 `CLAUDE.md`，与 Claude Code 的行为一致。
-
 ### 额外指令与占位符
 
-模板开头的 YAML frontmatter 不发送。以下占位符在发送前替换：
+发送前去掉模板开头的 YAML frontmatter，并替换以下占位符：
 
 - `${path}`：当前项目目录。DSH 里取会话的当前工作目录。
-- `{{.Config.Options.InitializeAs}}`：Crush 模板里的说明文件名，换成 `AGENTS.md`。
+- `{{.Config.Options.InitializeAs}}`：Crush 模板里的说明文件名，替换为 `AGENTS.md`。
 - `$ARGUMENTS`：额外指令。
 
 模板没有 `$ARGUMENTS` 时，额外指令追加到 prompt 末尾的 `## Additional instructions from the user` 小节。
 
 ### 配置
 
-配置文件按以下顺序读取，后读的覆盖先读的。
+配置文件按以下顺序读取：
 
 pi：
 
 1. `~/.pi/agent/agent-stash/init.json`（设置了 `PI_CODING_AGENT_DIR` 时为 `$PI_CODING_AGENT_DIR/agent-stash/init.json`）
-2. `<项目>/.pi/agent-stash/init.json`，仅在项目受信任时读取
+2. `<{PROJECT_ROOT}}>/.pi/agent-stash/init.json`，仅在项目受信任时读取
 
 DSH：
 
@@ -132,60 +138,56 @@ DSH：
 ```
 
 - `defaultPreset`：不写预设名时使用的预设，默认为 `codex`。
-- `presets`：自定义预设。`file` 是相对配置文件所在目录的路径，同名预设覆盖内置预设。`description` 显示在补全菜单里，不写时显示文件路径。
+- `presets`：自定义预设。`file` 是相对配置文件所在目录的路径，同名预设覆盖内置预设。
+- `description` 显示在补全菜单里，不写时显示文件路径。
 
-配置格式错误或默认预设不存在时，`/init` 直接报错。
+### 上游同步
 
-## 上游同步
+`.github/workflows/sync-init-prompts.yml` 每天运行一次。
 
-`.github/workflows/sync-init-prompts.yml` 每天运行一次，也可以手动触发。它拉取各上游默认分支最新 commit 中的 prompt 与根目录的 LICENSE、NOTICE 文件，按预设计算内容的 MurmurHash3（x64 128 位），与已收录的文件比较：
+### `code-styleguide`
 
-- 内容不变的预设保留 `manifest.json` 里原有的 commit，上游 HEAD 前进不产生改动。
-- 有预设内容变化时，运行检查后向 `chore/sync-init-prompts` 分支开 PR，并直接 squash 合并。
+[![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest)
 
-仓库需要在 Settings → Actions → General 中开启「Allow GitHub Actions to create and approve pull requests」，workflow 才能创建 PR。
-
-本地同步：
-
-```bash
-GITHUB_TOKEN=<token> pnpm sync:init-prompts
-```
-
-上游列表在 `scripts/sync-init-prompts.ts` 的 `SOURCES` 中维护。
-
-## `code-styleguide` 技能
-
-`skills/code-styleguide/` 收录以下风格指南，转换为 Markdown 后放在 `references/` 下：
+收录的风格指南：
 
 - [google/styleguide](https://github.com/google/styleguide) README 列出的全部指南（CC-BY-3.0）
 - [Angular 风格指南](https://angular.dev/style-guide)（CC-BY-4.0）
 - [Android Kotlin 风格指南](https://developer.android.com/kotlin/style-guide)（Apache-2.0）
 
-`SKILL.md` 只有一张索引表，列出每份指南的文件、目录行范围与总行数。每份 reference 开头是章节目录，标出各章节所在行，agent 先读目录，再按行号只读需要的章节。代码示例的围栏标注 `good` 或 `bad`，对应上游的推荐与反例写法。
+`SKILL.md` 是一张索引表，列出每份指南的文件、目录所在的行范围与总行数。每份 reference 开头有章节目录，写明各章节的起始行，agent 读完目录后只读需要的章节。代码示例的围栏标注 `good` 或 `bad`，分别对应上游的推荐写法与反例。
 
-`skills/code-styleguide/` 下的文件全部由 `scripts/sync-code-styleguide.ts` 生成，不手动修改：
-
-- 转换：HTML 与 Markdown 统一经 unified（remark / rehype）解析，去掉站点目录、锚点与模板指令，相对链接改写为绝对地址。
-- 元数据：`sources.json` 记录每份指南的上游路径、revision、更新日期与许可证。GitHub 上的指南取最后一次修改该文件的 commit；developer.android.com 没有公开的 Git 历史，用页面内容的 SHA-256 作为 revision，内容变化时更新日期。`SKILL.md` 的 `metadata` 与索引表由 `sources.json` 生成。
-- 自动更新：`.github/workflows/sync-code-styleguide.yml` 每天运行一次，也可以手动触发。它重新生成整个技能目录，运行检查后向 `chore/sync-code-styleguide` 分支开 PR；上游没有变化时不开 PR。google/styleguide README 新增的指南会自动收录。
-
-本地同步：
-
-```bash
-GITHUB_TOKEN=<token> pnpm sync:code-styleguide
-```
+`skills/code-styleguide/` 下的文件全部由 `scripts/sync-code-styleguide.ts` 生成，不手动修改。脚本用 unified（remark / rehype）解析上游的 HTML 与 Markdown，去掉站点目录、锚点与模板指令，并把相对链接改成绝对地址。
 
 ## 开发
 
 ```bash
 pnpm install
-pnpm check    # oxfmt --check、oxlint 类型检查与 vitest
-pnpm build    # 用 tsdown 生成 dist/dsh/init.js
+pnpm check
+pnpm build # 发布 DSH Plugins 必选
 pnpm format
 ```
 
-改动 `src/` 或 `dsh/` 后要运行 `pnpm build` 并提交 `dist/`。CI 会重新构建，`dist/` 与源码不一致时失败。
+### 发布
+
+版本号遵循语义化版本，由 [Tegami](https://tegami.fuma-nama.dev) 管理，配置在 `scripts/tegami.ts`。
+
+1. 在 `.tegami/` 下新建 Markdown 文件，frontmatter 写明升级类型（`major`、`minor` 或 `patch`），正文是发布说明：
+
+   ```md
+   ---
+   packages:
+     agent-stash: minor
+   ---
+
+   新增 xxx 预设。
+   ```
+
+2. 推送到 `main` 后，`.github/workflows/release.yml` 开 Version Packages PR，更新 `package.json` 的版本号与 `CHANGELOG.md`。
+3. 合并这个 PR 后，同一个 workflow 打 `v<version>` tag 并创建 GitHub release。包不发布到 npm。
+
+README 里的版本 badge 读取最新的 GitHub release。
 
 ## 许可证
 
-本仓库使用 [Apache License 2.0](LICENSE)。`vendor/init-prompts/` 下的文件沿用各自上游的许可证，许可证原文与上游 prompt 放在同一目录。
+本仓库使用 [Apache License 2.0](LICENSE)。
