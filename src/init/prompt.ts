@@ -1,4 +1,15 @@
+import { VFile } from "vfile";
+import { matter } from "vfile-matter";
 import type { InitPreset, InitRegistry } from "./registry.ts";
+
+/** `/init` 生成的说明文件，Crush 模板里的 `{{.Config.Options.InitializeAs}}` 也换成它。 */
+const INSTRUCTIONS_FILE = "AGENTS.md";
+
+export interface PromptFile {
+  /** 开头 YAML frontmatter 的内容，没有时为空对象。 */
+  matter: unknown;
+  body: string;
+}
 
 export interface InitRequest {
   preset: InitPreset;
@@ -23,12 +34,22 @@ export function parseInitArgs(args: string, registry: InitRegistry): InitRequest
   return { preset, extra: trimmed };
 }
 
+/** 拆出 prompt 文件开头的 YAML frontmatter。 */
+export function parsePromptFile(text: string): PromptFile {
+  const file = new VFile(text);
+  matter(file, { strip: true });
+  return { matter: file.data.matter, body: String(file.value).trimStart() };
+}
+
 /**
- * 填充上游模板的占位符：`${path}` 换成项目目录，`$ARGUMENTS` 换成额外指令。
+ * 去掉开头的 YAML frontmatter，再填充上游模板的占位符：`${path}` 换成项目目录，
+ * `{{.Config.Options.InitializeAs}}` 换成 `AGENTS.md`，`$ARGUMENTS` 换成额外指令。
  * 模板里没有 `$ARGUMENTS` 时，额外指令追加到末尾。
  */
 export function renderInitPrompt(template: string, extra: string, projectDir: string): string {
-  const prompt = template.replaceAll("${path}", projectDir);
+  const prompt = parsePromptFile(template)
+    .body.replaceAll("${path}", projectDir)
+    .replaceAll("{{.Config.Options.InitializeAs}}", INSTRUCTIONS_FILE);
   if (prompt.includes("$ARGUMENTS")) {
     return prompt.replaceAll("$ARGUMENTS", extra);
   }

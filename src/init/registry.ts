@@ -1,10 +1,14 @@
 import { existsSync } from "node:fs";
-import { readFile } from "node:fs/promises";
-import { dirname, join, resolve } from "pathe";
+import { readdir, readFile } from "node:fs/promises";
+import { fileURLToPath } from "node:url";
+import { basename, dirname, join, resolve } from "pathe";
 import * as v from "valibot";
 import { MANIFEST_FILE, ManifestSchema, VENDOR_DIR } from "./manifest.ts";
+import { parsePromptFile } from "./prompt.ts";
 
 export const DEFAULT_PRESET = "codex";
+/** 手动维护的预设，文件名即预设名。 */
+export const MANUAL_DIR = fileURLToPath(new URL("../../prompts/init/", import.meta.url));
 export const CONFIG_PATH = join("agent-stash", "init.json");
 
 export interface InitPreset {
@@ -29,6 +33,11 @@ const ConfigSchema = v.strictObject({
       }),
     ),
   ),
+});
+
+const ManualMatterSchema = v.object({
+  source: v.pipe(v.string(), v.nonEmpty()),
+  version: v.pipe(v.string(), v.nonEmpty()),
 });
 
 interface ConfigLayer {
@@ -57,6 +66,28 @@ async function loadVendoredPresets(): Promise<InitPreset[]> {
   }));
 }
 
+async function loadManualPresets(): Promise<InitPreset[]> {
+  const names = (await readdir(MANUAL_DIR))
+    .filter((file) => file.endsWith(".md"))
+    .map((file) => basename(file, ".md"))
+    .toSorted();
+  return Promise.all(
+    names.map(async (name) => {
+      const file = join(MANUAL_DIR, `${name}.md`);
+      const { matter } = parsePromptFile(await readFile(file, "utf8"));
+      const result = v.safeParse(ManualMatterSchema, matter);
+      if (!result.success) {
+        throw new Error(`Invalid frontmatter in ${file}:\n${v.summarize(result.issues)}`);
+      }
+      return {
+        name,
+        description: `Use the \`${result.output.source}\` prompt preset (${result.output.version}).`,
+        file,
+      };
+    }),
+  );
+}
+
 async function loadConfigLayer(configFile: string): Promise<ConfigLayer | undefined> {
   if (!existsSync(configFile)) {
     return undefined;
@@ -74,16 +105,17 @@ async function loadConfigLayer(configFile: string): Promise<ConfigLayer | undefi
 }
 
 /**
- * 按 vendor 预设与 `configFiles` 的顺序合并，后者覆盖前者。
+ * 按 vendor 预设、手动维护的预设与 `configFiles` 的顺序合并，后者覆盖前者。
  * 不存在的配置文件跳过。
  */
 export async function loadInitRegistry(configFiles: readonly string[]): Promise<InitRegistry> {
-  const [vendored, ...layers] = await Promise.all([
+  const [vendored, manual, ...layers] = await Promise.all([
     loadVendoredPresets(),
+    loadManualPresets(),
     ...configFiles.map(loadConfigLayer),
   ]);
 
-  const presets = new Map(vendored.map((preset) => [preset.name, preset]));
+  const presets = new Map([...vendored, ...manual].map((preset) => [preset.name, preset]));
   let defaultPreset = DEFAULT_PRESET;
   for (const layer of layers) {
     if (!layer) {

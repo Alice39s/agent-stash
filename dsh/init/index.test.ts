@@ -81,8 +81,10 @@ test("/init lists the presets in its description and input hint", async () => {
   expect(command).toMatchObject({
     name: "init",
     description:
-      "Write AGENTS.md with an /init prompt preset. Presets: kimi-code (default), codex, opencode, team",
-    input: { hint: "[codex|kimi-code|opencode|team] [extra prompt]" },
+      "Write AGENTS.md with an /init prompt preset. Presets: kimi-code (default), codex, opencode, crush, copilot, claude-code, claude-code-init-new, team",
+    input: {
+      hint: "[codex|kimi-code|opencode|crush|copilot|claude-code|claude-code-init-new|team] [extra prompt]",
+    },
   });
 });
 
@@ -97,7 +99,7 @@ test("/init queues the selected preset as a follow-up user message", async () =>
   expect(result).toEqual({
     kind: "success",
     text: expect.stringMatching(
-      /^\/init codex: Use the `Codex CLI` prompt preset \(openai\/codex@[0-9a-f]{7}, Apache-2\.0\)\.\nPresets: kimi-code \(default\), codex, opencode, team$/,
+      /^\/init codex: Use the `Codex CLI` prompt preset \(openai\/codex@[0-9a-f]{7}, Apache-2\.0\)\.\nPresets: kimi-code \(default\), codex, opencode, crush, copilot, claude-code, claude-code-init-new, team$/,
     ),
   });
   expect(sent).toHaveLength(1);

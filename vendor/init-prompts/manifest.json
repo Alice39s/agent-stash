@@ -36,6 +36,30 @@
       "notices": [
         "opencode/LICENSE"
       ]
+    },
+    {
+      "name": "crush",
+      "title": "Crush",
+      "repository": "charmbracelet/crush",
+      "commit": "d6329fbd900a5c63a452797b74ff8d1c499aebef",
+      "path": "internal/agent/templates/initialize.md.tpl",
+      "license": "FSL-1.1-MIT",
+      "prompt": "crush/prompt.md",
+      "notices": [
+        "crush/LICENSE.md"
+      ]
+    },
+    {
+      "name": "copilot",
+      "title": "GitHub Copilot in VS Code",
+      "repository": "microsoft/vscode",
+      "commit": "4ff5ad971b5bc474e5fc6ca8cf2386d30a85d3eb",
+      "path": "extensions/copilot/assets/prompts/skills/init/SKILL.md",
+      "license": "MIT",
+      "prompt": "copilot/prompt.md",
+      "notices": [
+        "copilot/LICENSE.txt"
+      ]
     }
   ]
 }

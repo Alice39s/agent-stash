@@ -16,6 +16,7 @@
   },
   "files": [
     "pi",
+    "prompts",
     "src",
     "dsh",
     "dist",
@@ -41,7 +42,9 @@
   },
   "dependencies": {
     "pathe": "^2.0.3",
-    "valibot": "^1.5.0"
+    "valibot": "^1.5.0",
+    "vfile": "^6.0.3",
+    "vfile-matter": "^5.0.1"
   },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "^1.2.0",

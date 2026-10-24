@@ -21,6 +21,7 @@
 | `dsh/`                 | DSH 插件源码、`cordis.patch.yml`、本地化文案与图标                                |
 | `dist/`                | DSH 插件的构建产物，由 `pnpm build` 生成，随仓库提交                              |
 | `vendor/init-prompts/` | 从上游仓库同步的 `/init` prompt、许可证与 `manifest.json`，由脚本生成，不手动修改 |
+| `prompts/init/`        | 手动维护的 `/init` prompt                                                         |
 | `skills/`              | Agent Skills，由 `package.json` 的 `pi.skills` 声明                               |
 | `scripts/`             | 同步脚本                                                                          |
 
@@ -69,24 +70,38 @@ pi：
 DSH：
 
 - 命令菜单列出全部预设，默认预设标出 `(default)`。
-- 输入框提示可用的预设名，例如 `[codex|kimi-code|opencode] [extra prompt]`。
+- 输入框提示可用的预设名，例如 `[codex|kimi-code|opencode|…] [extra prompt]`。
 - 预设列表在 DSH 加载插件时生成，修改配置后要重启 DSH 才会更新。
 
 ### 内置预设
 
-| 预设            | 上游                                                            | 文件                                                              | 许可证     |
-| --------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- | ---------- |
-| `codex`（默认） | [openai/codex](https://github.com/openai/codex)                 | `codex-rs/tui/assets/prompt_for_init_command.md`                  | Apache-2.0 |
-| `kimi-code`     | [MoonshotAI/kimi-code](https://github.com/MoonshotAI/kimi-code) | `packages/agent-core-v2/src/features/sessionInit/profile/init.md` | MIT        |
-| `opencode`      | [anomalyco/opencode](https://github.com/anomalyco/opencode)     | `packages/core/src/plugin/command/initialize.txt`                 | MIT        |
+| 预设            | 上游                                                            | 文件                                                              | 许可证      |
+| --------------- | --------------------------------------------------------------- | ----------------------------------------------------------------- | ----------- |
+| `codex`（默认） | [openai/codex](https://github.com/openai/codex)                 | `codex-rs/tui/assets/prompt_for_init_command.md`                  | Apache-2.0  |
+| `kimi-code`     | [MoonshotAI/kimi-code](https://github.com/MoonshotAI/kimi-code) | `packages/agent-core-v2/src/features/sessionInit/profile/init.md` | MIT         |
+| `opencode`      | [anomalyco/opencode](https://github.com/anomalyco/opencode)     | `packages/core/src/plugin/command/initialize.txt`                 | MIT         |
+| `crush`         | [charmbracelet/crush](https://github.com/charmbracelet/crush)   | `internal/agent/templates/initialize.md.tpl`                      | FSL-1.1-MIT |
+| `copilot`       | [microsoft/vscode](https://github.com/microsoft/vscode)         | `extensions/copilot/assets/prompts/skills/init/SKILL.md`          | MIT         |
 
 每个预设对应的上游 commit 记录在 `vendor/init-prompts/manifest.json`。
 
+### 手动维护的预设
+
+`prompts/init/` 下的每个 `.md` 文件是一个预设，文件名即预设名，排在内置预设之后：
+
+| 预设                   | 来源                                        |
+| ---------------------- | ------------------------------------------- |
+| `claude-code`          | Claude Code v2.1.306 的 `/init`（经典版）   |
+| `claude-code-init-new` | Claude Code v2.1.306 的 `/init`（多阶段版） |
+
+文件开头的 YAML frontmatter 必须包含 `source` 与 `version`，命令菜单里的说明由这两项生成。更新时直接替换文件，不经过同步脚本。这两个 prompt 让 agent 写 `CLAUDE.md`，与 Claude Code 的行为一致。
+
 ### 额外指令与占位符
 
-模板里的占位符在发送前替换：
+模板开头的 YAML frontmatter 不发送。以下占位符在发送前替换：
 
 - `${path}`：当前项目目录。DSH 里取会话的当前工作目录。
+- `{{.Config.Options.InitializeAs}}`：Crush 模板里的说明文件名，换成 `AGENTS.md`。
 - `$ARGUMENTS`：额外指令。
 
 模板没有 `$ARGUMENTS` 时，额外指令追加到 prompt 末尾的 `## Additional instructions from the user` 小节。

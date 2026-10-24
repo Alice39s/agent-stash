@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { parseInitArgs, renderInitPrompt } from "./prompt.ts";
+import { parseInitArgs, parsePromptFile, renderInitPrompt } from "./prompt.ts";
 import type { InitPreset, InitRegistry } from "./registry.ts";
 
 function preset(name: string): InitPreset {
@@ -54,5 +54,27 @@ describe("renderInitPrompt", () => {
 
   test("returns the template unchanged without an extra prompt", () => {
     expect(renderInitPrompt("Generate AGENTS.md.\n", "", "/repo")).toBe("Generate AGENTS.md.\n");
+  });
+
+  test("drops the YAML frontmatter", () => {
+    const template =
+      "---\nname: init\ndescription: Generate AGENTS.md\n---\n\nExplore the codebase.\n";
+    expect(renderInitPrompt(template, "", "/repo")).toBe("Explore the codebase.\n");
+  });
+
+  test("names AGENTS.md in the Crush template", () => {
+    const template = "Create **{{.Config.Options.InitializeAs}}** for this repository.\n";
+    expect(renderInitPrompt(template, "", "/repo")).toBe(
+      "Create **AGENTS.md** for this repository.\n",
+    );
+  });
+});
+
+describe("parsePromptFile", () => {
+  test("exposes the frontmatter", () => {
+    expect(parsePromptFile("---\nversion: v1\n---\nBody\n")).toEqual({
+      matter: { version: "v1" },
+      body: "Body\n",
+    });
   });
 });

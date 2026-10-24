@@ -16,6 +16,8 @@ interface UpstreamSource {
   owner: string;
   repo: string;
   path: string;
+  /** SPDX id for repositories whose license GitHub does not recognize. */
+  license?: string;
 }
 
 interface VendoredFile {
@@ -44,6 +46,21 @@ const SOURCES: UpstreamSource[] = [
     owner: "anomalyco",
     repo: "opencode",
     path: "packages/core/src/plugin/command/initialize.txt",
+  },
+  {
+    name: "crush",
+    title: "Crush",
+    owner: "charmbracelet",
+    repo: "crush",
+    path: "internal/agent/templates/initialize.md.tpl",
+    license: "FSL-1.1-MIT",
+  },
+  {
+    name: "copilot",
+    title: "GitHub Copilot in VS Code",
+    owner: "microsoft",
+    repo: "vscode",
+    path: "extensions/copilot/assets/prompts/skills/init/SKILL.md",
   },
 ];
 
@@ -93,7 +110,7 @@ async function fetchSource(
   source: UpstreamSource,
 ): Promise<{ preset: VendoredPreset; files: VendoredFile[] }> {
   const { data: repo } = await octokit.rest.repos.get({ owner: source.owner, repo: source.repo });
-  const license = repo.license?.spdx_id;
+  const license = source.license ?? repo.license?.spdx_id;
   if (!license || license === "NOASSERTION") {
     throw new Error(`${repo.full_name} has no recognized SPDX license`);
   }
@@ -146,20 +163,32 @@ const previous = v.parse(
   ManifestSchema,
   JSON.parse(await readFile(join(VENDOR_DIR, MANIFEST_FILE), "utf8")),
 );
-const results = await Promise.all(
-  SOURCES.map(async (source) => {
-    const result = await fetchSource(source);
-    const hash = contentHash(result.files);
-    const known = previous.presets.find((preset) => preset.name === source.name);
-    const unchanged =
-      known !== undefined &&
-      known.path === result.preset.path &&
-      contentHash(await readVendored(known)) === hash;
-    // Unchanged content keeps the recorded commit, so a moving upstream HEAD alone produces no diff.
-    if (unchanged) result.preset.commit = known.commit;
-    return { preset: result.preset, files: result.files, hash, changed: !unchanged };
-  }),
-);
+interface SyncedPreset {
+  preset: VendoredPreset;
+  files: VendoredFile[];
+  hash: string;
+  changed: boolean;
+}
+
+async function syncSource(source: UpstreamSource): Promise<SyncedPreset> {
+  const result = await fetchSource(source);
+  const hash = contentHash(result.files);
+  const known = previous.presets.find((preset) => preset.name === source.name);
+  const unchanged =
+    known !== undefined &&
+    known.path === result.preset.path &&
+    contentHash(await readVendored(known)) === hash;
+  // Unchanged content keeps the recorded commit, so a moving upstream HEAD alone produces no diff.
+  if (unchanged) result.preset.commit = known.commit;
+  return { preset: result.preset, files: result.files, hash, changed: !unchanged };
+}
+
+const results: SyncedPreset[] = [];
+for (const source of SOURCES) {
+  // One upstream at a time keeps the run within GitHub's secondary rate limits.
+  // oxlint-disable-next-line no-await-in-loop
+  results.push(await syncSource(source));
+}
 const manifest = v.parse(ManifestSchema, { presets: results.map((result) => result.preset) });
 
 await rm(VENDOR_DIR, { recursive: true, force: true });
