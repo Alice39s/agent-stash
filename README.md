@@ -21,6 +21,7 @@
 | `dsh/`                 | DSH 插件源码、`cordis.patch.yml`、本地化文案与图标                                |
 | `dist/`                | DSH 插件的构建产物，由 `pnpm build` 生成，随仓库提交                              |
 | `vendor/init-prompts/` | 从上游仓库同步的 `/init` prompt、许可证与 `manifest.json`，由脚本生成，不手动修改 |
+| `skills/`              | Agent Skills，由 `package.json` 的 `pi.skills` 声明                               |
 | `scripts/`             | 同步脚本                                                                          |
 
 ## 安装
@@ -133,6 +134,28 @@ GITHUB_TOKEN=<token> pnpm sync:init-prompts
 ```
 
 上游列表在 `scripts/sync-init-prompts.ts` 的 `SOURCES` 中维护。
+
+## `code-styleguide` 技能
+
+`skills/code-styleguide/` 收录以下风格指南，转换为 Markdown 后放在 `references/` 下：
+
+- [google/styleguide](https://github.com/google/styleguide) README 列出的全部指南（CC-BY-3.0）
+- [Angular 风格指南](https://angular.dev/style-guide)（CC-BY-4.0）
+- [Android Kotlin 风格指南](https://developer.android.com/kotlin/style-guide)（Apache-2.0）
+
+`SKILL.md` 只有一张索引表，列出每份指南的文件、目录行范围与总行数。每份 reference 开头是章节目录，标出各章节所在行，agent 先读目录，再按行号只读需要的章节。代码示例的围栏标注 `good` 或 `bad`，对应上游的推荐与反例写法。
+
+`skills/code-styleguide/` 下的文件全部由 `scripts/sync-code-styleguide.ts` 生成，不手动修改：
+
+- 转换：HTML 与 Markdown 统一经 unified（remark / rehype）解析，去掉站点目录、锚点与模板指令，相对链接改写为绝对地址。
+- 元数据：`sources.json` 记录每份指南的上游路径、revision、更新日期与许可证。GitHub 上的指南取最后一次修改该文件的 commit；developer.android.com 没有公开的 Git 历史，用页面内容的 SHA-256 作为 revision，内容变化时更新日期。`SKILL.md` 的 `metadata` 与索引表由 `sources.json` 生成。
+- 自动更新：`.github/workflows/sync-code-styleguide.yml` 每天运行一次，也可以手动触发。它重新生成整个技能目录，运行检查后向 `chore/sync-code-styleguide` 分支开 PR；上游没有变化时不开 PR。google/styleguide README 新增的指南会自动收录。
+
+本地同步：
+
+```bash
+GITHUB_TOKEN=<token> pnpm sync:code-styleguide
+```
 
 ## 开发
 

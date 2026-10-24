@@ -19,6 +19,7 @@
     "src",
     "dsh",
     "dist",
+    "skills",
     "vendor",
     "LICENSE"
   ],
@@ -31,6 +32,7 @@
   },
   "scripts": {
     "build": "tsdown",
+    "sync:code-styleguide": "node scripts/sync-code-styleguide.ts",
     "sync:init-prompts": "node scripts/sync-init-prompts.ts",
     "test": "vitest run",
     "lint": "oxlint --type-aware --type-check --deny-warnings",
@@ -44,13 +46,28 @@
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "^1.2.0",
     "@octokit/rest": "^22.0.1",
+    "@types/hast": "^3.0.5",
+    "@types/mdast": "^4.0.4",
     "@types/node": "^26.6.5",
+    "hast-util-select": "^6.0.4",
+    "hast-util-to-mdast": "^10.1.2",
+    "hast-util-to-string": "^3.0.1",
+    "mdast-util-to-string": "^4.0.0",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
     "oxlint-tsgolint": "^7.0.2004",
+    "rehype-parse": "^9.0.1",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "remark-stringify": "^11.0.0",
     "tsdown": "^0.23.1",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.4"
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0",
+    "vitest": "^5.0.4",
+    "yaml": "^2.9.1"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
@@ -72,6 +89,9 @@
   "pi": {
     "extensions": [
       "./pi/extensions/init/index.ts"
+    ],
+    "skills": [
+      "./skills"
     ]
   }
 }
