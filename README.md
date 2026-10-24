@@ -41,7 +41,9 @@
 
 ### Plugins
 
-[![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest) [![Pi Plugin](https://img.shields.io/badge/Pi-Plugin-111111)](https://pi.dev) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness) [![Cline Plugin](https://img.shields.io/badge/Cline-Plugin-222222)](https://github.com/cline/cline) [![Grok Build Skills](https://img.shields.io/badge/Grok%20Build-Skills-000000)](https://docs.x.ai/build/overview) [![goose Recipes](https://img.shields.io/badge/goose-Recipes-2f2f2f)](https://github.com/aaif-goose/goose) [![Aider](https://img.shields.io/badge/Aider-CLI-14b014)](https://github.com/Aider-AI/aider)
+[![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest)
+
+![Pi Plugin](https://img.shields.io/badge/Pi-Plugin-111111) ![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe) ![Cline Plugin](https://img.shields.io/badge/Cline-Plugin-222222) ![goose Recipes](https://img.shields.io/badge/goose-Recipes-2f2f2f) ![Aider](https://img.shields.io/badge/Aider-CLI-14b014) ![Grok Build Skills](https://img.shields.io/badge/Grok%20Build-Skills-000000)
 
 | 名称                                      | 支持的 Agent                             | 说明                                                                        |
 | ----------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- |
@@ -50,6 +52,8 @@
 ### Agent Skills
 
 [![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest)
+
+![Grok Build Skills](https://img.shields.io/badge/Grok%20Build-Skills-000000)
 
 | 名称                                       | 说明                                                       |
 | ------------------------------------------ | ---------------------------------------------------------- |
@@ -95,15 +99,9 @@ Grok Build、goose 与 Aider 通过 `agent-stash` 命令行接入：
 
 ```bash
 npm install -g github:Alice39s/agent-stash
-agent-stash init install grok    # Grok Build：每个预设写成一个技能，放进 ~/.grok/skills
-agent-stash init install goose   # goose：每个预设写成一个 recipe，登记为斜杠命令
+agent-stash init install grok
+agent-stash init install goose
 ```
-
-- Grok Build：设置了 `GROK_HOME` 时写入 `$GROK_HOME/skills`。技能设置了 `disable-model-invocation`，只在用户输入斜杠命令时触发。
-- goose：recipe 放在 `~/.config/goose/agent-stash-init/`，并登记到同目录 `config.yaml` 的 `slash_commands`。`config.yaml` 里的其他配置与命令保持原样。
-- `--dir <目录>` 指定安装位置：Grok Build 是技能目录，goose 是配置目录。
-- 预设在安装时写成文件，自定义预设也一样。改了预设或配置后重新运行安装命令，上次写入的文件会被替换。
-- Aider 不需要安装步骤，用法见 [Aider](#aider)。
 
 ## Plugin: `/init <preset> [extra prompt]`
 
@@ -164,7 +162,7 @@ agent-stash init aider crush -- --model sonnet       # 指定 aider 的模型
 | `claude-code`          | Claude Code v2.1.306 的 `/init`（经典版）   |
 | `claude-code-init-new` | Claude Code v2.1.306 的 `/init`（多阶段版） |
 
-两份 prompt 里的说明文件都写作 `AGENTS.md`，和其他预设生成同一个文件。
+这两份 prompt 也都统一输出 `AGENTS.md`。
 
 ### 额外指令与占位符
 
@@ -215,7 +213,7 @@ Cline：
 
 ### 上游同步
 
-`.github/workflows/sync-init-prompts.yml` 每天运行一次。Qwen Code 的 prompt 写在 `initCommand.ts` 的模板字符串里，同步脚本用 oxc-parser 解析源码取出这段文字，把其中的 `contextFileName` 换成 `AGENTS.md`，并删去开头的身份句 `You are Qwen Code, an interactive CLI agent.`。上游改了这句的措辞时，同步会报错。
+`.github/workflows/sync-init-prompts.yml` 每天运行一次。
 
 ## Skills: `code-styleguide`
 
@@ -227,10 +225,6 @@ Cline：
 - [Angular 风格指南](https://angular.dev/style-guide)（CC-BY-4.0）
 - [Android Kotlin 风格指南](https://developer.android.com/kotlin/style-guide)（Apache-2.0）
 
-`SKILL.md` 是一张索引表，列出每份指南的文件、目录所在的行范围与总行数。每份 reference 开头有章节目录，写明各章节的起始行，agent 读完目录后只读需要的章节。代码示例的围栏标注 `good` 或 `bad`，分别对应上游的推荐写法与反例。
-
-`skills/code-styleguide/` 下的文件全部由 `scripts/sync-code-styleguide.ts` 生成，不手动修改。脚本用 unified（remark / rehype）解析上游的 HTML 与 Markdown，去掉站点目录、锚点与模板指令，并把相对链接改成绝对地址。
-
 ## 开发
 
 ```bash
@@ -239,8 +233,6 @@ pnpm check
 pnpm bundle # 更新 dist/：DSH、Cline 插件与 agent-stash 命令行都从这里加载
 pnpm format
 ```
-
-打包脚本叫 `bundle`。`package.json` 里有 `build` 脚本时，npm 从 Git 安装会先在克隆目录里执行一遍 `npm install`，`npm install -g github:…` 装出来的是指向临时目录的链接，命令无法使用。
 
 ### 发布
 
@@ -262,7 +254,7 @@ pnpm format
 2. 推送到 `main` 后，`.github/workflows/release.yml` 开 Version Packages PR，更新 `package.json` 的版本号与 `CHANGELOG.md`。
 3. 合并这个 PR 后，同一个 workflow 打 `v<version>` tag 并创建 GitHub release。包不发布到 npm。
 
-README 里的版本 badge 读取最新的 GitHub release。
+README 里的版本 badge 会自动读取最新的 GitHub release。
 
 ## 许可证
 
