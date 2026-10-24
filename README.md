@@ -85,7 +85,7 @@ dsh plugin --profile web add github:Alice39s/agent-stash
 
 `dist/` 随仓库提交，安装时不需要构建。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
 
-插件索引：DSH 0.2.1-alpha.4 起可以在「发现」页浏览 JSON 插件索引并从中安装。在「插件」页的「实验性插件」里打开「自定义插件市场」，切到「发现」，点「添加索引源」，填入：
+插件索引：DSH 0.2.1-alpha.4 起可以在「发现」页浏览 JSON 插件索引并从中安装。在「插件」页的「实验性插件」里打开「自定义插件市场」（较新的 DSH 叫「自定义插件索引」），切到「发现」，点「添加索引源」，填入：
 
 ```text
 https://alice39s.github.io/agent-stash/index.json
