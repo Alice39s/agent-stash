@@ -5,14 +5,14 @@ version: v2.1.306
 command: "/init"
 command_type: builtin prompt
 description: >-
-  Initialize a new CLAUDE.md file with codebase documentation
+  Initialize a new AGENTS.md file with codebase documentation
 description_other_variant: >-
-  Initialize new CLAUDE.md file(s) and optional skills/hooks with codebase documentation
+  Initialize new AGENTS.md file(s) and optional skills/hooks with codebase documentation
 ---
 
 # /init (Classic)
 
-Please analyze this codebase and create a CLAUDE.md file, which will be given to future instances of Claude Code to operate in this repository.
+Please analyze this codebase and create a AGENTS.md file, which will be given to future instances of Claude Code to operate in this repository.
 
 What to add:
 
@@ -21,8 +21,8 @@ What to add:
 
 Usage notes:
 
-- If there's already a CLAUDE.md, suggest improvements to it.
-- When you make the initial CLAUDE.md, do not repeat yourself and do not include obvious instructions like "Provide helpful error messages to users", "Write unit tests for all new utilities", "Never include sensitive information (API keys, tokens) in code or commits".
+- If there's already a AGENTS.md, suggest improvements to it.
+- When you make the initial AGENTS.md, do not repeat yourself and do not include obvious instructions like "Provide helpful error messages to users", "Write unit tests for all new utilities", "Never include sensitive information (API keys, tokens) in code or commits".
 - Avoid listing every component or file structure that can be easily discovered.
 - Don't include generic development practices.
 - If there are Cursor rules (in .cursor/rules/ or .cursorrules) or Copilot rules (in .github/copilot-instructions.md), make sure to include the important parts.
@@ -35,7 +35,7 @@ Usage notes:
 - Be sure to prefix the file with the following text:
 
 ```
-# CLAUDE.md
+# AGENTS.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 ```
