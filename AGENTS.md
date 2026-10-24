@@ -5,6 +5,8 @@
 - `src/init/`: shared `/init` core (preset registry, prompt rendering, agent adapters). Test fixtures live in `src/init/fixtures/`.
 - `src/code-styleguide/`: converter that turns upstream style guides into the skill.
 - Agent entry points: `pi/extensions/init/`, `dsh/init/` (with `locale/*.json` and `cordis.patch.yml`), `cline/init/`, and `cli/agent-stash.ts`.
+- DSH bundle metadata: `dsh/locale/*.json` (bundle title and description, exported as `./locale/*.json`), plus `icon`, `engines.dsh`, and `dsh.manifestVersion` in `package.json`. Keep the package public; plugin index generators skip private bundles.
+- `dsh/plugin-index.txt`: source list that `.github/workflows/plugin-index.yml` turns into the plugin index at `https://alice39s.github.io/agent-stash/index.json` with DSH's reference generator.
 - `prompts/init/`: hand-maintained presets (`claude-code*.md`).
 - Generated content, never edited by hand: `vendor/init-prompts/` (from `pnpm sync:init-prompts`), `skills/code-styleguide/` (from `pnpm sync:code-styleguide`), and `dist/` (from `pnpm bundle`).
 
