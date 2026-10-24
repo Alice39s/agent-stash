@@ -169,9 +169,11 @@ DSH：
 ```bash
 pnpm install
 pnpm check
-pnpm build # 发布 DSH Plugins 必选
+pnpm bundle # 更新 dist/：DSH、Cline 插件与 agent-stash 命令行都从这里加载
 pnpm format
 ```
+
+打包脚本叫 `bundle`。`package.json` 里有 `build` 脚本时，npm 从 Git 安装会先在克隆目录里执行一遍 `npm install`，`npm install -g github:…` 装出来的是指向临时目录的链接，命令无法使用。
 
 ### 发布
 
