@@ -20,47 +20,52 @@
     - [Plugins](#plugins)
     - [Agent Skills](#agent-skills)
   - [安装](#安装)
-    - [pi](#pi)
-    - [DSH](#dsh)
+    - [Pi](#pi)
+    - [DeepSeek Harness (DSH)](#deepseek-harness-dsh)
   - [Plugin: `/init <preset> [extra prompt]`](#plugin-init-preset-extra-prompt)
     - [上游同步的预设](#上游同步的预设)
     - [手动维护的预设](#手动维护的预设)
     - [额外指令与占位符](#额外指令与占位符)
     - [配置](#配置)
     - [上游同步](#上游同步)
-    - [`code-styleguide`](#code-styleguide)
+  - [Skills: `code-styleguide`](#skills-code-styleguide)
   - [开发](#开发)
+    - [发布](#发布)
   - [许可证](#许可证)
 
 ## 清单
 
 ### Plugins
 
-| 名称             | 源码                                                | 说明                                                                        |
-| ---------------- | --------------------------------------------------- | --------------------------------------------------------------------------- |
-| [`/init`](#init) | pi 扩展 `pi/extensions/init/`，DSH 插件 `dsh/init/` | 用其他 coding agent 的 `/init` prompt 分析项目，写出 `AGENTS.md` 等说明文件 |
+[![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest) [![Pi Plugin](https://img.shields.io/badge/Pi-Plugin-111111)](https://pi.dev) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
+
+| 名称           | 说明                                                                        |
+| -------------- | --------------------------------------------------------------------------- |
+| [/init](#init) | 用其他 Coding Agent 的 `/init` prompt 分析项目，写出 `AGENTS.md` 等说明文件 |
 
 ### Agent Skills
 
-| 名称                                  | 源码                      | 说明                                                       |
-| ------------------------------------- | ------------------------- | ---------------------------------------------------------- |
-| [`code-styleguide`](#code-styleguide) | `skills/code-styleguide/` | Google、Angular 与 Android Kotlin 风格指南，每天从上游同步 |
+[![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest)
+
+| 名称                                | 说明                                                       |
+| ----------------------------------- | ---------------------------------------------------------- |
+| [code-styleguide](#code-styleguide) | Google、Angular 与 Android Kotlin 风格指南，每天从上游同步 |
 
 ## 安装
 
-### pi
+### Pi
 
 ```bash
 pi install git:github.com/Alice39s/agent-stash
 ```
 
-pi 会同时加载 `/init` 扩展与 `skills/` 下的技能。只在当前会话试用：
+pi 会同时加载 `/init` 扩展与 `skills/` 下的技能，也可以只在当前会话试用：
 
 ```bash
 pi -e git:github.com/Alice39s/agent-stash
 ```
 
-### DSH
+### DeepSeek Harness (DSH)
 
 DeepSeek Harness 桌面版：在「插件」页点「添加插件」，填入 `github:Alice39s/agent-stash` 后安装。
 
@@ -79,10 +84,10 @@ dsh plugin --profile web add github:Alice39s/agent-stash
 让 agent 分析当前项目并写出 AGENTS.md。pi 与 DSH 的用法相同：
 
 ```text
-/init                         使用默认预设
-/init kimi-code               使用 kimi-code 预设
-/init opencode 重点写测试流程    使用 opencode 预设并附加额外 Prompt
-/init 用中文写                 第一个词不是预设名时，将绕过 Profile、直接使用你定义的 Prompt
+/init                         # 使用默认预设
+/init kimi-code               # 使用 kimi-code 预设
+/init opencode 重点写测试流程   # 使用 opencode 预设并附加额外 Prompt
+/init 用中文写                 # 第一个词不是预设名时，将绕过 Profile、直接使用你定义的 Prompt
 ```
 
 ### 上游同步的预设
@@ -131,7 +136,7 @@ DSH：
   "presets": {
     "team": {
       "file": "./team-init.md",
-      "description": "团队的 AGENTS.md 模板"
+      "description": "..."
     }
   }
 }
@@ -145,7 +150,7 @@ DSH：
 
 `.github/workflows/sync-init-prompts.yml` 每天运行一次。
 
-### `code-styleguide`
+## Skills: `code-styleguide`
 
 [![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest)
 
