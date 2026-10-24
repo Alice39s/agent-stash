@@ -6,6 +6,8 @@
     "dist/**",
     "skills/code-styleguide/**",
     "prompts/**",
+    ".tegami/**",
+    "CHANGELOG.md",
     "pnpm-lock.yaml"
   ]
 }
