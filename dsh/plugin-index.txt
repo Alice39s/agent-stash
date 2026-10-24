@@ -1,0 +1,2 @@
+# 插件索引的来源列表：.github/workflows/plugin-index.yml 用 DSH 的参考生成器把它生成 index.json。
+https://github.com/Alice39s/agent-stash
