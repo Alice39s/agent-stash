@@ -15,5 +15,13 @@
     "resolveJsonModule": true,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "pi/**/*.ts", "dsh/**/*.ts", "scripts/**/*.ts", "*.config.ts"]
+  "include": [
+    "src/**/*.ts",
+    "pi/**/*.ts",
+    "dsh/**/*.ts",
+    "cline/**/*.ts",
+    "cli/**/*.ts",
+    "scripts/**/*.ts",
+    "*.config.ts"
+  ]
 }

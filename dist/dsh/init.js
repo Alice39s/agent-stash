@@ -161,40 +161,6 @@ const basename = function(p, extension) {
 };
 //#endregion
 //#region node_modules/.pnpm/unist-util-stringify-position@4.0.0/node_modules/unist-util-stringify-position/lib/index.js
-/**
-* @typedef {import('unist').Node} Node
-* @typedef {import('unist').Point} Point
-* @typedef {import('unist').Position} Position
-*/
-/**
-* @typedef NodeLike
-* @property {string} type
-* @property {PositionLike | null | undefined} [position]
-*
-* @typedef PointLike
-* @property {number | null | undefined} [line]
-* @property {number | null | undefined} [column]
-* @property {number | null | undefined} [offset]
-*
-* @typedef PositionLike
-* @property {PointLike | null | undefined} [start]
-* @property {PointLike | null | undefined} [end]
-*/
-/**
-* Serialize the positional info of a point, position (start and end points),
-* or node.
-*
-* @param {Node | NodeLike | Point | PointLike | Position | PositionLike | null | undefined} [value]
-*   Node, position, or point.
-* @returns {string}
-*   Pretty printed positional info of a node (`string`).
-*
-*   In the format of a range `ls:cs-le:ce` (when given `node` or `position`)
-*   or a point `l:c` (when given `point`), where `l` stands for line, `c` for
-*   column, `s` for `start`, and `e` for end.
-*   An empty string (`''`) is returned if the given value is neither `node`,
-*   `position`, nor `point`.
-*/
 function stringifyPosition(value) {
 	if (!value || typeof value !== "object") return "";
 	if ("position" in value || "type" in value) return position(value.position);
@@ -202,115 +168,25 @@ function stringifyPosition(value) {
 	if ("line" in value || "column" in value) return point(value);
 	return "";
 }
-/**
-* @param {Point | PointLike | null | undefined} point
-* @returns {string}
-*/
 function point(point) {
 	return index(point && point.line) + ":" + index(point && point.column);
 }
-/**
-* @param {Position | PositionLike | null | undefined} pos
-* @returns {string}
-*/
 function position(pos) {
 	return point(pos && pos.start) + "-" + point(pos && pos.end);
 }
-/**
-* @param {number | null | undefined} value
-* @returns {number}
-*/
 function index(value) {
 	return value && typeof value === "number" ? value : 1;
 }
 //#endregion
 //#region node_modules/.pnpm/vfile-message@4.0.3/node_modules/vfile-message/lib/index.js
-/**
-* @import {Node, Point, Position} from 'unist'
-*/
-/**
-* @typedef {object & {type: string, position?: Position | undefined}} NodeLike
-*
-* @typedef Options
-*   Configuration.
-* @property {Array<Node> | null | undefined} [ancestors]
-*   Stack of (inclusive) ancestor nodes surrounding the message (optional).
-* @property {Error | null | undefined} [cause]
-*   Original error cause of the message (optional).
-* @property {Point | Position | null | undefined} [place]
-*   Place of message (optional).
-* @property {string | null | undefined} [ruleId]
-*   Category of message (optional, example: `'my-rule'`).
-* @property {string | null | undefined} [source]
-*   Namespace of who sent the message (optional, example: `'my-package'`).
-*/
-/**
-* Message.
-*/
 var VFileMessage = class extends Error {
-	/**
-	* Create a message for `reason`.
-	*
-	* > 🪦 **Note**: also has obsolete signatures.
-	*
-	* @overload
-	* @param {string} reason
-	* @param {Options | null | undefined} [options]
-	* @returns
-	*
-	* @overload
-	* @param {string} reason
-	* @param {Node | NodeLike | null | undefined} parent
-	* @param {string | null | undefined} [origin]
-	* @returns
-	*
-	* @overload
-	* @param {string} reason
-	* @param {Point | Position | null | undefined} place
-	* @param {string | null | undefined} [origin]
-	* @returns
-	*
-	* @overload
-	* @param {string} reason
-	* @param {string | null | undefined} [origin]
-	* @returns
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {Node | NodeLike | null | undefined} parent
-	* @param {string | null | undefined} [origin]
-	* @returns
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {Point | Position | null | undefined} place
-	* @param {string | null | undefined} [origin]
-	* @returns
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {string | null | undefined} [origin]
-	* @returns
-	*
-	* @param {Error | VFileMessage | string} causeOrReason
-	*   Reason for message, should use markdown.
-	* @param {Node | NodeLike | Options | Point | Position | string | null | undefined} [optionsOrParentOrPlace]
-	*   Configuration (optional).
-	* @param {string | null | undefined} [origin]
-	*   Place in code where the message originates (example:
-	*   `'my-package:my-rule'` or `'my-rule'`).
-	* @returns
-	*   Instance of `VFileMessage`.
-	*/
 	constructor(causeOrReason, optionsOrParentOrPlace, origin) {
 		super();
 		if (typeof optionsOrParentOrPlace === "string") {
 			origin = optionsOrParentOrPlace;
 			optionsOrParentOrPlace = void 0;
 		}
-		/** @type {string} */
 		let reason = "";
-		/** @type {Options} */
 		let options = {};
 		let legacyCause = false;
 		if (optionsOrParentOrPlace) {
@@ -341,119 +217,22 @@ var VFileMessage = class extends Error {
 			if (parent) options.place = parent.position;
 		}
 		const start = options.place && "start" in options.place ? options.place.start : options.place;
-		/**
-		* Stack of ancestor nodes surrounding the message.
-		*
-		* @type {Array<Node> | undefined}
-		*/
 		this.ancestors = options.ancestors || void 0;
-		/**
-		* Original error cause of the message.
-		*
-		* @type {Error | undefined}
-		*/
 		this.cause = options.cause || void 0;
-		/**
-		* Starting column of message.
-		*
-		* @type {number | undefined}
-		*/
 		this.column = start ? start.column : void 0;
-		/**
-		* State of problem.
-		*
-		* * `true` — error, file not usable
-		* * `false` — warning, change may be needed
-		* * `undefined` — change likely not needed
-		*
-		* @type {boolean | null | undefined}
-		*/
 		this.fatal = void 0;
-		/**
-		* Path of a file (used throughout the `VFile` ecosystem).
-		*
-		* @type {string | undefined}
-		*/
 		this.file = "";
-		/**
-		* Reason for message.
-		*
-		* @type {string}
-		*/
 		this.message = reason;
-		/**
-		* Starting line of error.
-		*
-		* @type {number | undefined}
-		*/
 		this.line = start ? start.line : void 0;
-		/**
-		* Serialized positional info of message.
-		*
-		* On normal errors, this would be something like `ParseError`, buit in
-		* `VFile` messages we use this space to show where an error happened.
-		*/
 		this.name = stringifyPosition(options.place) || "1:1";
-		/**
-		* Place of message.
-		*
-		* @type {Point | Position | undefined}
-		*/
 		this.place = options.place || void 0;
-		/**
-		* Reason for message, should use markdown.
-		*
-		* @type {string}
-		*/
 		this.reason = this.message;
-		/**
-		* Category of message (example: `'my-rule'`).
-		*
-		* @type {string | undefined}
-		*/
 		this.ruleId = options.ruleId || void 0;
-		/**
-		* Namespace of message (example: `'my-package'`).
-		*
-		* @type {string | undefined}
-		*/
 		this.source = options.source || void 0;
-		/**
-		* Stack of message.
-		*
-		* This is used by normal errors to show where something happened in
-		* programming code, irrelevant for `VFile` messages,
-		*
-		* @type {string}
-		*/
 		this.stack = legacyCause && options.cause && typeof options.cause.stack === "string" ? options.cause.stack : "";
-		/**
-		* Specify the source value that’s being reported, which is deemed
-		* incorrect.
-		*
-		* @type {string | undefined}
-		*/
 		this.actual = void 0;
-		/**
-		* Suggest acceptable values that can be used instead of `actual`.
-		*
-		* @type {Array<string> | undefined}
-		*/
 		this.expected = void 0;
-		/**
-		* Long form description of the message (you should use markdown).
-		*
-		* @type {string | undefined}
-		*/
 		this.note = void 0;
-		/**
-		* Link to docs for the message.
-		*
-		* > 👉 **Note**: this must be an absolute URL that can be passed as `x`
-		* > to `new URL(x)`.
-		*
-		* @type {string | undefined}
-		*/
 		this.url = void 0;
 	}
 };
@@ -472,42 +251,11 @@ VFileMessage.prototype.ruleId = void 0;
 VFileMessage.prototype.source = void 0;
 //#endregion
 //#region node_modules/.pnpm/vfile@6.0.3/node_modules/vfile/lib/minurl.shared.js
-/**
-* Checks if a value has the shape of a WHATWG URL object.
-*
-* Using a symbol or instanceof would not be able to recognize URL objects
-* coming from other implementations (e.g. in Electron), so instead we are
-* checking some well known properties for a lack of a better test.
-*
-* We use `href` and `protocol` as they are the only properties that are
-* easy to retrieve and calculate due to the lazy nature of the getters.
-*
-* We check for auth attribute to distinguish legacy url instance with
-* WHATWG URL instance.
-*
-* @param {unknown} fileUrlOrPath
-*   File path or URL.
-* @returns {fileUrlOrPath is URL}
-*   Whether it’s a URL.
-*/
 function isUrl(fileUrlOrPath) {
 	return Boolean(fileUrlOrPath !== null && typeof fileUrlOrPath === "object" && "href" in fileUrlOrPath && fileUrlOrPath.href && "protocol" in fileUrlOrPath && fileUrlOrPath.protocol && fileUrlOrPath.auth === void 0);
 }
 //#endregion
 //#region node_modules/.pnpm/vfile@6.0.3/node_modules/vfile/lib/index.js
-/**
-* @import {Node, Point, Position} from 'unist'
-* @import {Options as MessageOptions} from 'vfile-message'
-* @import {Compatible, Data, Map, Options, Value} from 'vfile'
-*/
-/**
-* @typedef {object & {type: string, position?: Position | undefined}} NodeLike
-*/
-/**
-* Order of setting (least specific to most), we need this because otherwise
-* `{stem: 'a', path: '~/b.js'}` would throw, as a path is needed before a
-* stem can be set.
-*/
 const order = [
 	"history",
 	"path",
@@ -517,175 +265,46 @@ const order = [
 	"dirname"
 ];
 var VFile = class {
-	/**
-	* Create a new virtual file.
-	*
-	* `options` is treated as:
-	*
-	* *   `string` or `Uint8Array` — `{value: options}`
-	* *   `URL` — `{path: options}`
-	* *   `VFile` — shallow copies its data over to the new file
-	* *   `object` — all fields are shallow copied over to the new file
-	*
-	* Path related fields are set in the following order (least specific to
-	* most specific): `history`, `path`, `basename`, `stem`, `extname`,
-	* `dirname`.
-	*
-	* You cannot set `dirname` or `extname` without setting either `history`,
-	* `path`, `basename`, or `stem` too.
-	*
-	* @param {Compatible | null | undefined} [value]
-	*   File value.
-	* @returns
-	*   New instance.
-	*/
 	constructor(value) {
-		/** @type {Options | VFile} */
 		let options;
 		if (!value) options = {};
 		else if (isUrl(value)) options = { path: value };
 		else if (typeof value === "string" || isUint8Array(value)) options = { value };
 		else options = value;
-		/**
-		* Base of `path` (default: `process.cwd()` or `'/'` in browsers).
-		*
-		* @type {string}
-		*/
 		this.cwd = "cwd" in options ? "" : minproc.cwd();
-		/**
-		* Place to store custom info (default: `{}`).
-		*
-		* It’s OK to store custom data directly on the file but moving it to
-		* `data` is recommended.
-		*
-		* @type {Data}
-		*/
 		this.data = {};
-		/**
-		* List of file paths the file moved between.
-		*
-		* The first is the original path and the last is the current path.
-		*
-		* @type {Array<string>}
-		*/
 		this.history = [];
-		/**
-		* List of messages associated with the file.
-		*
-		* @type {Array<VFileMessage>}
-		*/
 		this.messages = [];
-		/**
-		* Raw value.
-		*
-		* @type {Value}
-		*/
 		this.value;
-		/**
-		* Source map.
-		*
-		* This type is equivalent to the `RawSourceMap` type from the `source-map`
-		* module.
-		*
-		* @type {Map | null | undefined}
-		*/
 		this.map;
-		/**
-		* Custom, non-string, compiled, representation.
-		*
-		* This is used by unified to store non-string results.
-		* One example is when turning markdown into React nodes.
-		*
-		* @type {unknown}
-		*/
 		this.result;
-		/**
-		* Whether a file was saved to disk.
-		*
-		* This is used by vfile reporters.
-		*
-		* @type {boolean}
-		*/
 		this.stored;
 		let index = -1;
 		while (++index < order.length) {
 			const field = order[index];
 			if (field in options && options[field] !== void 0 && options[field] !== null) this[field] = field === "history" ? [...options[field]] : options[field];
 		}
-		/** @type {string} */
 		let field;
 		for (field in options) if (!order.includes(field)) this[field] = options[field];
 	}
-	/**
-	* Get the basename (including extname) (example: `'index.min.js'`).
-	*
-	* @returns {string | undefined}
-	*   Basename.
-	*/
 	get basename() {
 		return typeof this.path === "string" ? minpath.basename(this.path) : void 0;
 	}
-	/**
-	* Set basename (including extname) (`'index.min.js'`).
-	*
-	* Cannot contain path separators (`'/'` on unix, macOS, and browsers, `'\'`
-	* on windows).
-	* Cannot be nullified (use `file.path = file.dirname` instead).
-	*
-	* @param {string} basename
-	*   Basename.
-	* @returns {undefined}
-	*   Nothing.
-	*/
 	set basename(basename) {
 		assertNonEmpty(basename, "basename");
 		assertPart(basename, "basename");
 		this.path = minpath.join(this.dirname || "", basename);
 	}
-	/**
-	* Get the parent path (example: `'~'`).
-	*
-	* @returns {string | undefined}
-	*   Dirname.
-	*/
 	get dirname() {
 		return typeof this.path === "string" ? minpath.dirname(this.path) : void 0;
 	}
-	/**
-	* Set the parent path (example: `'~'`).
-	*
-	* Cannot be set if there’s no `path` yet.
-	*
-	* @param {string | undefined} dirname
-	*   Dirname.
-	* @returns {undefined}
-	*   Nothing.
-	*/
 	set dirname(dirname) {
 		assertPath(this.basename, "dirname");
 		this.path = minpath.join(dirname || "", this.basename);
 	}
-	/**
-	* Get the extname (including dot) (example: `'.js'`).
-	*
-	* @returns {string | undefined}
-	*   Extname.
-	*/
 	get extname() {
 		return typeof this.path === "string" ? minpath.extname(this.path) : void 0;
 	}
-	/**
-	* Set the extname (including dot) (example: `'.js'`).
-	*
-	* Cannot contain path separators (`'/'` on unix, macOS, and browsers, `'\'`
-	* on windows).
-	* Cannot be set if there’s no `path` yet.
-	*
-	* @param {string | undefined} extname
-	*   Extname.
-	* @returns {undefined}
-	*   Nothing.
-	*/
 	set extname(extname) {
 		assertPart(extname, "extname");
 		assertPath(this.dirname, "extname");
@@ -695,244 +314,32 @@ var VFile = class {
 		}
 		this.path = minpath.join(this.dirname, this.stem + (extname || ""));
 	}
-	/**
-	* Get the full path (example: `'~/index.min.js'`).
-	*
-	* @returns {string}
-	*   Path.
-	*/
 	get path() {
 		return this.history[this.history.length - 1];
 	}
-	/**
-	* Set the full path (example: `'~/index.min.js'`).
-	*
-	* Cannot be nullified.
-	* You can set a file URL (a `URL` object with a `file:` protocol) which will
-	* be turned into a path with `url.fileURLToPath`.
-	*
-	* @param {URL | string} path
-	*   Path.
-	* @returns {undefined}
-	*   Nothing.
-	*/
 	set path(path) {
 		if (isUrl(path)) path = urlToPath(path);
 		assertNonEmpty(path, "path");
 		if (this.path !== path) this.history.push(path);
 	}
-	/**
-	* Get the stem (basename w/o extname) (example: `'index.min'`).
-	*
-	* @returns {string | undefined}
-	*   Stem.
-	*/
 	get stem() {
 		return typeof this.path === "string" ? minpath.basename(this.path, this.extname) : void 0;
 	}
-	/**
-	* Set the stem (basename w/o extname) (example: `'index.min'`).
-	*
-	* Cannot contain path separators (`'/'` on unix, macOS, and browsers, `'\'`
-	* on windows).
-	* Cannot be nullified (use `file.path = file.dirname` instead).
-	*
-	* @param {string} stem
-	*   Stem.
-	* @returns {undefined}
-	*   Nothing.
-	*/
 	set stem(stem) {
 		assertNonEmpty(stem, "stem");
 		assertPart(stem, "stem");
 		this.path = minpath.join(this.dirname || "", stem + (this.extname || ""));
 	}
-	/**
-	* Create a fatal message for `reason` associated with the file.
-	*
-	* The `fatal` field of the message is set to `true` (error; file not usable)
-	* and the `file` field is set to the current file path.
-	* The message is added to the `messages` field on `file`.
-	*
-	* > 🪦 **Note**: also has obsolete signatures.
-	*
-	* @overload
-	* @param {string} reason
-	* @param {MessageOptions | null | undefined} [options]
-	* @returns {never}
-	*
-	* @overload
-	* @param {string} reason
-	* @param {Node | NodeLike | null | undefined} parent
-	* @param {string | null | undefined} [origin]
-	* @returns {never}
-	*
-	* @overload
-	* @param {string} reason
-	* @param {Point | Position | null | undefined} place
-	* @param {string | null | undefined} [origin]
-	* @returns {never}
-	*
-	* @overload
-	* @param {string} reason
-	* @param {string | null | undefined} [origin]
-	* @returns {never}
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {Node | NodeLike | null | undefined} parent
-	* @param {string | null | undefined} [origin]
-	* @returns {never}
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {Point | Position | null | undefined} place
-	* @param {string | null | undefined} [origin]
-	* @returns {never}
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {string | null | undefined} [origin]
-	* @returns {never}
-	*
-	* @param {Error | VFileMessage | string} causeOrReason
-	*   Reason for message, should use markdown.
-	* @param {Node | NodeLike | MessageOptions | Point | Position | string | null | undefined} [optionsOrParentOrPlace]
-	*   Configuration (optional).
-	* @param {string | null | undefined} [origin]
-	*   Place in code where the message originates (example:
-	*   `'my-package:my-rule'` or `'my-rule'`).
-	* @returns {never}
-	*   Never.
-	* @throws {VFileMessage}
-	*   Message.
-	*/
 	fail(causeOrReason, optionsOrParentOrPlace, origin) {
 		const message = this.message(causeOrReason, optionsOrParentOrPlace, origin);
 		message.fatal = true;
 		throw message;
 	}
-	/**
-	* Create an info message for `reason` associated with the file.
-	*
-	* The `fatal` field of the message is set to `undefined` (info; change
-	* likely not needed) and the `file` field is set to the current file path.
-	* The message is added to the `messages` field on `file`.
-	*
-	* > 🪦 **Note**: also has obsolete signatures.
-	*
-	* @overload
-	* @param {string} reason
-	* @param {MessageOptions | null | undefined} [options]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {string} reason
-	* @param {Node | NodeLike | null | undefined} parent
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {string} reason
-	* @param {Point | Position | null | undefined} place
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {string} reason
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {Node | NodeLike | null | undefined} parent
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {Point | Position | null | undefined} place
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @param {Error | VFileMessage | string} causeOrReason
-	*   Reason for message, should use markdown.
-	* @param {Node | NodeLike | MessageOptions | Point | Position | string | null | undefined} [optionsOrParentOrPlace]
-	*   Configuration (optional).
-	* @param {string | null | undefined} [origin]
-	*   Place in code where the message originates (example:
-	*   `'my-package:my-rule'` or `'my-rule'`).
-	* @returns {VFileMessage}
-	*   Message.
-	*/
 	info(causeOrReason, optionsOrParentOrPlace, origin) {
 		const message = this.message(causeOrReason, optionsOrParentOrPlace, origin);
 		message.fatal = void 0;
 		return message;
 	}
-	/**
-	* Create a message for `reason` associated with the file.
-	*
-	* The `fatal` field of the message is set to `false` (warning; change may be
-	* needed) and the `file` field is set to the current file path.
-	* The message is added to the `messages` field on `file`.
-	*
-	* > 🪦 **Note**: also has obsolete signatures.
-	*
-	* @overload
-	* @param {string} reason
-	* @param {MessageOptions | null | undefined} [options]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {string} reason
-	* @param {Node | NodeLike | null | undefined} parent
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {string} reason
-	* @param {Point | Position | null | undefined} place
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {string} reason
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {Node | NodeLike | null | undefined} parent
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {Point | Position | null | undefined} place
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @overload
-	* @param {Error | VFileMessage} cause
-	* @param {string | null | undefined} [origin]
-	* @returns {VFileMessage}
-	*
-	* @param {Error | VFileMessage | string} causeOrReason
-	*   Reason for message, should use markdown.
-	* @param {Node | NodeLike | MessageOptions | Point | Position | string | null | undefined} [optionsOrParentOrPlace]
-	*   Configuration (optional).
-	* @param {string | null | undefined} [origin]
-	*   Place in code where the message originates (example:
-	*   `'my-package:my-rule'` or `'my-rule'`).
-	* @returns {VFileMessage}
-	*   Message.
-	*/
 	message(causeOrReason, optionsOrParentOrPlace, origin) {
 		const message = new VFileMessage(causeOrReason, optionsOrParentOrPlace, origin);
 		if (this.path) {
@@ -943,72 +350,21 @@ var VFile = class {
 		this.messages.push(message);
 		return message;
 	}
-	/**
-	* Serialize the file.
-	*
-	* > **Note**: which encodings are supported depends on the engine.
-	* > For info on Node.js, see:
-	* > <https://nodejs.org/api/util.html#whatwg-supported-encodings>.
-	*
-	* @param {string | null | undefined} [encoding='utf8']
-	*   Character encoding to understand `value` as when it’s a `Uint8Array`
-	*   (default: `'utf-8'`).
-	* @returns {string}
-	*   Serialized file.
-	*/
 	toString(encoding) {
 		if (this.value === void 0) return "";
 		if (typeof this.value === "string") return this.value;
 		return new TextDecoder(encoding || void 0).decode(this.value);
 	}
 };
-/**
-* Assert that `part` is not a path (as in, does not contain `path.sep`).
-*
-* @param {string | null | undefined} part
-*   File path part.
-* @param {string} name
-*   Part name.
-* @returns {undefined}
-*   Nothing.
-*/
 function assertPart(part, name) {
 	if (part && part.includes(minpath.sep)) throw new Error("`" + name + "` cannot be a path: did not expect `" + minpath.sep + "`");
 }
-/**
-* Assert that `part` is not empty.
-*
-* @param {string | undefined} part
-*   Thing.
-* @param {string} name
-*   Part name.
-* @returns {asserts part is string}
-*   Nothing.
-*/
 function assertNonEmpty(part, name) {
 	if (!part) throw new Error("`" + name + "` cannot be empty");
 }
-/**
-* Assert `path` exists.
-*
-* @param {string | undefined} path
-*   Path.
-* @param {string} name
-*   Dependency name.
-* @returns {asserts path is string}
-*   Nothing.
-*/
 function assertPath(path, name) {
 	if (!path) throw new Error("Setting `" + name + "` requires `path` to be set too");
 }
-/**
-* Assert `value` is an `Uint8Array`.
-*
-* @param {unknown} value
-*   thing.
-* @returns {value is Uint8Array}
-*   Whether `value` is an `Uint8Array`.
-*/
 function isUint8Array(value) {
 	return Boolean(value && typeof value === "object" && "byteLength" in value && "byteOffset" in value);
 }
@@ -1069,47 +425,14 @@ var require_visit = /* @__PURE__ */ __commonJSMin(((exports) => {
 	const BREAK = Symbol("break visit");
 	const SKIP = Symbol("skip children");
 	const REMOVE = Symbol("remove node");
-	/**
-	* Apply a visitor to an AST node or document.
-	*
-	* Walks through the tree (depth-first) starting from `node`, calling a
-	* `visitor` function with three arguments:
-	*   - `key`: For sequence values and map `Pair`, the node's index in the
-	*     collection. Within a `Pair`, `'key'` or `'value'`, correspondingly.
-	*     `null` for the root node.
-	*   - `node`: The current node.
-	*   - `path`: The ancestry of the current node.
-	*
-	* The return value of the visitor may be used to control the traversal:
-	*   - `undefined` (default): Do nothing and continue
-	*   - `visit.SKIP`: Do not visit the children of this node, continue with next
-	*     sibling
-	*   - `visit.BREAK`: Terminate traversal completely
-	*   - `visit.REMOVE`: Remove the current node, then continue with the next one
-	*   - `Node`: Replace the current node, then continue by visiting it
-	*   - `number`: While iterating the items of a sequence or map, set the index
-	*     of the next step. This is useful especially if the index of the current
-	*     node has changed.
-	*
-	* If `visitor` is a single function, it will be called with all values
-	* encountered in the tree, including e.g. `null` values. Alternatively,
-	* separate visitor functions may be defined for each `Map`, `Pair`, `Seq`,
-	* `Alias` and `Scalar` node. To define the same visitor function for more than
-	* one node type, use the `Collection` (map and seq), `Value` (map, seq & scalar)
-	* and `Node` (alias, map, seq & scalar) targets. Of all these, only the most
-	* specific defined one will be used for each node.
-	*/
 	function visit(node, visitor) {
 		const visitor_ = initVisitor(visitor);
 		if (identity.isDocument(node)) {
 			if (visit_(null, node.contents, visitor_, Object.freeze([node])) === REMOVE) node.contents = null;
 		} else visit_(null, node, visitor_, Object.freeze([]));
 	}
-	/** Terminate visit traversal completely */
 	visit.BREAK = BREAK;
-	/** Do not visit the children of the current node */
 	visit.SKIP = SKIP;
-	/** Remove the current node */
 	visit.REMOVE = REMOVE;
 	function visit_(key, node, visitor, path) {
 		const ctrl = callVisitor(key, node, visitor, path);
@@ -1141,48 +464,14 @@ var require_visit = /* @__PURE__ */ __commonJSMin(((exports) => {
 		}
 		return ctrl;
 	}
-	/**
-	* Apply an async visitor to an AST node or document.
-	*
-	* Walks through the tree (depth-first) starting from `node`, calling a
-	* `visitor` function with three arguments:
-	*   - `key`: For sequence values and map `Pair`, the node's index in the
-	*     collection. Within a `Pair`, `'key'` or `'value'`, correspondingly.
-	*     `null` for the root node.
-	*   - `node`: The current node.
-	*   - `path`: The ancestry of the current node.
-	*
-	* The return value of the visitor may be used to control the traversal:
-	*   - `Promise`: Must resolve to one of the following values
-	*   - `undefined` (default): Do nothing and continue
-	*   - `visit.SKIP`: Do not visit the children of this node, continue with next
-	*     sibling
-	*   - `visit.BREAK`: Terminate traversal completely
-	*   - `visit.REMOVE`: Remove the current node, then continue with the next one
-	*   - `Node`: Replace the current node, then continue by visiting it
-	*   - `number`: While iterating the items of a sequence or map, set the index
-	*     of the next step. This is useful especially if the index of the current
-	*     node has changed.
-	*
-	* If `visitor` is a single function, it will be called with all values
-	* encountered in the tree, including e.g. `null` values. Alternatively,
-	* separate visitor functions may be defined for each `Map`, `Pair`, `Seq`,
-	* `Alias` and `Scalar` node. To define the same visitor function for more than
-	* one node type, use the `Collection` (map and seq), `Value` (map, seq & scalar)
-	* and `Node` (alias, map, seq & scalar) targets. Of all these, only the most
-	* specific defined one will be used for each node.
-	*/
 	async function visitAsync(node, visitor) {
 		const visitor_ = initVisitor(visitor);
 		if (identity.isDocument(node)) {
 			if (await visitAsync_(null, node.contents, visitor_, Object.freeze([node])) === REMOVE) node.contents = null;
 		} else await visitAsync_(null, node, visitor_, Object.freeze([]));
 	}
-	/** Terminate visit traversal completely */
 	visitAsync.BREAK = BREAK;
-	/** Do not visit the children of the current node */
 	visitAsync.SKIP = SKIP;
-	/** Remove the current node */
 	visitAsync.REMOVE = REMOVE;
 	async function visitAsync_(key, node, visitor, path) {
 		const ctrl = await callVisitor(key, node, visitor, path);
@@ -1269,12 +558,7 @@ var require_directives = /* @__PURE__ */ __commonJSMin(((exports) => {
 	const escapeTagName = (tn) => tn.replace(/[!,[\]{}]/g, (ch) => escapeChars[ch]);
 	var Directives = class Directives {
 		constructor(yaml, tags) {
-			/**
-			* The directives-end/doc-start marker `---`. If `null`, a marker may still be
-			* included in the document's stringified representation.
-			*/
 			this.docStart = null;
-			/** The doc-end marker `...`.  */
 			this.docEnd = false;
 			this.yaml = Object.assign({}, Directives.defaultYaml, yaml);
 			this.tags = Object.assign({}, Directives.defaultTags, tags);
@@ -1284,10 +568,6 @@ var require_directives = /* @__PURE__ */ __commonJSMin(((exports) => {
 			copy.docStart = this.docStart;
 			return copy;
 		}
-		/**
-		* During parsing, get a Directives instance for the current document and
-		* update the stream state according to the current version's spec.
-		*/
 		atDocument() {
 			const res = new Directives(this.yaml, this.tags);
 			switch (this.yaml.version) {
@@ -1304,10 +584,6 @@ var require_directives = /* @__PURE__ */ __commonJSMin(((exports) => {
 			}
 			return res;
 		}
-		/**
-		* @param onError - May be called even if the action was successful
-		* @returns `true` on success
-		*/
 		add(line, onError) {
 			if (this.atNextDocument) {
 				this.yaml = {
@@ -1350,12 +626,6 @@ var require_directives = /* @__PURE__ */ __commonJSMin(((exports) => {
 					return false;
 			}
 		}
-		/**
-		* Resolves a tag, matching handles to those defined in %TAG directives.
-		*
-		* @returns Resolved tag, which may also be the non-specific tag `'!'` or a
-		*   `'!local'` tag, or `null` if unresolvable.
-		*/
 		tagName(source, onError) {
 			if (source === "!") return "!";
 			if (source[0] !== "!") {
@@ -1384,10 +654,6 @@ var require_directives = /* @__PURE__ */ __commonJSMin(((exports) => {
 			onError(`Could not resolve tag: ${source}`);
 			return null;
 		}
-		/**
-		* Given a fully resolved tag, returns its printable string form,
-		* taking into account current tag prefixes and defaults.
-		*/
 		tagString(tag) {
 			for (const [handle, prefix] of Object.entries(this.tags)) if (tag.startsWith(prefix)) return handle + escapeTagName(tag.substring(prefix.length));
 			return tag[0] === "!" ? tag : `!<${tag}>`;
@@ -1422,11 +688,6 @@ var require_directives = /* @__PURE__ */ __commonJSMin(((exports) => {
 var require_anchors = /* @__PURE__ */ __commonJSMin(((exports) => {
 	var identity = require_identity();
 	var visit = require_visit();
-	/**
-	* Verify that the input string is a valid anchor.
-	*
-	* Will throw on errors.
-	*/
 	function anchorIsValid(anchor) {
 		if (/[\x00-\x19\s,[\]{}]/.test(anchor)) {
 			const msg = `Anchor must not contain whitespace or control characters: ${JSON.stringify(anchor)}`;
@@ -1441,7 +702,6 @@ var require_anchors = /* @__PURE__ */ __commonJSMin(((exports) => {
 		} });
 		return anchors;
 	}
-	/** Find a new anchor name with the given `prefix` and a one-indexed suffix. */
 	function findNewAnchor(prefix, exclude) {
 		for (let i = 1;; ++i) {
 			const name = `${prefix}${i}`;
@@ -1460,11 +720,6 @@ var require_anchors = /* @__PURE__ */ __commonJSMin(((exports) => {
 				prevAnchors.add(anchor);
 				return anchor;
 			},
-			/**
-			* With circular references, the source node is only resolved after all
-			* of its child nodes are. This is why anchors are set only after all of
-			* the nodes have been created.
-			*/
 			setAnchors: () => {
 				for (const source of aliasObjects) {
 					const ref = sourceObjects.get(source);
@@ -1487,13 +742,6 @@ var require_anchors = /* @__PURE__ */ __commonJSMin(((exports) => {
 //#endregion
 //#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/doc/applyReviver.js
 var require_applyReviver = /* @__PURE__ */ __commonJSMin(((exports) => {
-	/**
-	* Applies the JSON.parse reviver algorithm as defined in the ECMA-262 spec,
-	* in section 24.5.1.1 "Runtime Semantics: InternalizeJSONProperty" of the
-	* 2021 edition: https://tc39.es/ecma262/#sec-json.parse
-	*
-	* Includes extensions for handling Map and Set objects.
-	*/
 	function applyReviver(reviver, obj, key, val) {
 		if (val && typeof val === "object") {
 			if (Array.isArray(val)) for (let i = 0, len = val.length; i < len; ++i) {
@@ -1530,16 +778,6 @@ var require_applyReviver = /* @__PURE__ */ __commonJSMin(((exports) => {
 //#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/nodes/toJS.js
 var require_toJS = /* @__PURE__ */ __commonJSMin(((exports) => {
 	var identity = require_identity();
-	/**
-	* Recursively convert any node or its contents to native JavaScript
-	*
-	* @param value - The input value
-	* @param arg - If `value` defines a `toJSON()` method, use this
-	*   as its first argument
-	* @param ctx - Conversion context, originally set in Document#toJS(). If
-	*   `{ keep: true }` is not set, output should be suitable for JSON
-	*   stringification.
-	*/
 	function toJS(value, arg, ctx) {
 		if (Array.isArray(value)) return value.map((v, i) => toJS(v, String(i), ctx));
 		if (value && typeof value.toJSON === "function") {
@@ -1573,13 +811,11 @@ var require_Node = /* @__PURE__ */ __commonJSMin(((exports) => {
 		constructor(type) {
 			Object.defineProperty(this, identity.NODE_TYPE, { value: type });
 		}
-		/** Create a copy of this node.  */
 		clone() {
 			const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
 			if (this.range) copy.range = this.range.slice();
 			return copy;
 		}
-		/** A plain JavaScript representation of this node. */
 		toJS(doc, { mapAsMap, maxAliasCount, onAnchor, reviver } = {}) {
 			if (!identity.isDocument(doc)) throw new TypeError("A document argument is required");
 			const ctx = {
@@ -1613,10 +849,6 @@ var require_Alias = /* @__PURE__ */ __commonJSMin(((exports) => {
 				throw new Error("Alias nodes cannot have tags");
 			} });
 		}
-		/**
-		* Resolve the value of this alias within `doc`, finding the last
-		* instance of the `source` anchor before this node.
-		*/
 		resolve(doc, ctx) {
 			if (ctx?.maxAliasCount === 0) throw new ReferenceError("Alias resolution is disabled");
 			let nodes;
@@ -1820,11 +1052,6 @@ var require_Collection = /* @__PURE__ */ __commonJSMin(((exports) => {
 				writable: true
 			});
 		}
-		/**
-		* Create a copy of this collection.
-		*
-		* @param schema - If defined, overwrites the original's schema
-		*/
 		clone(schema) {
 			const copy = Object.create(Object.getPrototypeOf(this), Object.getOwnPropertyDescriptors(this));
 			if (schema) copy.schema = schema;
@@ -1832,11 +1059,6 @@ var require_Collection = /* @__PURE__ */ __commonJSMin(((exports) => {
 			if (this.range) copy.range = this.range.slice();
 			return copy;
 		}
-		/**
-		* Adds a value to the collection. For `!!map` and `!!omap` the value must
-		* be a Pair instance or a `{ key, value }` object, which may not have a key
-		* that already exists in the map.
-		*/
 		addIn(path, value) {
 			if (isEmptyPath(path)) this.add(value);
 			else {
@@ -1847,10 +1069,6 @@ var require_Collection = /* @__PURE__ */ __commonJSMin(((exports) => {
 				else throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
 			}
 		}
-		/**
-		* Removes a value from the collection.
-		* @returns `true` if the item was found and removed.
-		*/
 		deleteIn(path) {
 			const [key, ...rest] = path;
 			if (rest.length === 0) return this.delete(key);
@@ -1858,11 +1076,6 @@ var require_Collection = /* @__PURE__ */ __commonJSMin(((exports) => {
 			if (identity.isCollection(node)) return node.deleteIn(rest);
 			else throw new Error(`Expected YAML collection at ${key}. Remaining path: ${rest}`);
 		}
-		/**
-		* Returns item at `key`, or `undefined` if not found. By default unwraps
-		* scalar values from their surrounding node; to disable set `keepScalar` to
-		* `true` (collections are always returned intact).
-		*/
 		getIn(path, keepScalar) {
 			const [key, ...rest] = path;
 			const node = this.get(key, true);
@@ -1876,19 +1089,12 @@ var require_Collection = /* @__PURE__ */ __commonJSMin(((exports) => {
 				return n == null || allowScalar && identity.isScalar(n) && n.value == null && !n.commentBefore && !n.comment && !n.tag;
 			});
 		}
-		/**
-		* Checks if the collection includes a value with the key `key`.
-		*/
 		hasIn(path) {
 			const [key, ...rest] = path;
 			if (rest.length === 0) return this.has(key);
 			const node = this.get(key, true);
 			return identity.isCollection(node) ? node.hasIn(rest) : false;
 		}
-		/**
-		* Sets a value in this collection. For `!!set`, `value` needs to be a
-		* boolean to add/remove the item from the set.
-		*/
 		setIn(path, value) {
 			const [key, ...rest] = path;
 			if (rest.length === 0) this.set(key, value);
@@ -1907,13 +1113,6 @@ var require_Collection = /* @__PURE__ */ __commonJSMin(((exports) => {
 //#endregion
 //#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/stringify/stringifyComment.js
 var require_stringifyComment = /* @__PURE__ */ __commonJSMin(((exports) => {
-	/**
-	* Stringifies a comment.
-	*
-	* Empty comment lines are left empty,
-	* lines consisting of a single space are replaced by `#`,
-	* and all other lines are prefixed with a `#`.
-	*/
 	const stringifyComment = (str) => str.replace(/^(?!$)(?: $)?/gm, "#");
 	function indentComment(comment, indent) {
 		if (/^\n+$/.test(comment)) return comment.substring(1);
@@ -1930,11 +1129,6 @@ var require_foldFlowLines = /* @__PURE__ */ __commonJSMin(((exports) => {
 	const FOLD_FLOW = "flow";
 	const FOLD_BLOCK = "block";
 	const FOLD_QUOTED = "quoted";
-	/**
-	* Tries to keep input at up to `lineWidth` characters, splitting only on spaces
-	* not followed by newlines or spaces unless `mode` is `'quoted'`. Lines are
-	* terminated with `\n` and started with `indent`.
-	*/
 	function foldFlowLines(text, indent, mode = "flow", { indentAtStart, lineWidth = 80, minContentWidth = 20, onFold, onOverflow } = {}) {
 		if (!lineWidth || lineWidth < 0) return text;
 		if (lineWidth < minContentWidth) minContentWidth = 0;
@@ -2020,10 +1214,6 @@ var require_foldFlowLines = /* @__PURE__ */ __commonJSMin(((exports) => {
 		}
 		return res;
 	}
-	/**
-	* Presumes `i + 1` is at the start of a line
-	* @returns index of last newline in more-indented block
-	*/
 	function consumeMoreIndentedLines(text, i, indent) {
 		let end = i;
 		let start = i + 1;
@@ -2758,10 +1948,6 @@ var require_YAMLMap = /* @__PURE__ */ __commonJSMin(((exports) => {
 			super(identity.MAP, schema);
 			this.items = [];
 		}
-		/**
-		* A generic collection parsing method that can be extended
-		* to other node classes that inherit from YAMLMap
-		*/
 		static from(schema, obj, ctx) {
 			const { keepUndefined, replacer } = ctx;
 			const map = new this(schema);
@@ -2775,12 +1961,6 @@ var require_YAMLMap = /* @__PURE__ */ __commonJSMin(((exports) => {
 			if (typeof schema.sortMapEntries === "function") map.items.sort(schema.sortMapEntries);
 			return map;
 		}
-		/**
-		* Adds a value to the collection.
-		*
-		* @param overwrite - If not set `true`, using a key that is already in the
-		*   collection will throw. Otherwise, overwrites the previous value.
-		*/
 		add(pair, overwrite) {
 			let _pair;
 			if (identity.isPair(pair)) _pair = pair;
@@ -2813,11 +1993,6 @@ var require_YAMLMap = /* @__PURE__ */ __commonJSMin(((exports) => {
 		set(key, value) {
 			this.add(new Pair.Pair(key, value), true);
 		}
-		/**
-		* @param ctx - Conversion context, originally set in Document#toJS()
-		* @param {Class} Type - If set, forces the returned collection type
-		* @returns Instance of Type, Map, or Object
-		*/
 		toJSON(_, ctx, Type) {
 			const map = Type ? new Type() : ctx?.mapAsMap ? /* @__PURE__ */ new Map() : {};
 			if (ctx?.onCreate) ctx.onCreate(map);
@@ -2880,14 +2055,6 @@ var require_YAMLSeq = /* @__PURE__ */ __commonJSMin(((exports) => {
 		add(value) {
 			this.items.push(value);
 		}
-		/**
-		* Removes a value from the collection.
-		*
-		* `key` must contain a representation of an integer for this to succeed.
-		* It may be wrapped in a `Scalar`.
-		*
-		* @returns `true` if the item was found and removed.
-		*/
 		delete(key) {
 			const idx = asItemIndex(key);
 			if (typeof idx !== "number") return false;
@@ -2899,23 +2066,10 @@ var require_YAMLSeq = /* @__PURE__ */ __commonJSMin(((exports) => {
 			const it = this.items[idx];
 			return !keepScalar && identity.isScalar(it) ? it.value : it;
 		}
-		/**
-		* Checks if the collection includes a value with the key `key`.
-		*
-		* `key` must contain a representation of an integer for this to succeed.
-		* It may be wrapped in a `Scalar`.
-		*/
 		has(key) {
 			const idx = asItemIndex(key);
 			return typeof idx === "number" && idx < this.items.length;
 		}
-		/**
-		* Sets a value in this collection. For `!!set`, `value` needs to be a
-		* boolean to add/remove the item from the set.
-		*
-		* If `key` does not contain a representation of an integer, this will throw.
-		* It may be wrapped in a `Scalar`.
-		*/
 		set(key, value) {
 			const idx = asItemIndex(key);
 			if (typeof idx !== "number") throw new Error(`Expected a valid index, not ${key}.`);
@@ -3231,14 +2385,6 @@ var require_binary = /* @__PURE__ */ __commonJSMin(((exports) => {
 		identify: (value) => value instanceof Uint8Array,
 		default: false,
 		tag: "tag:yaml.org,2002:binary",
-		/**
-		* Returns a Buffer in node and an Uint8Array in browsers
-		*
-		* To use the resulting buffer as an image, you'll want to do something like:
-		*
-		*   const blob = new Blob([buffer], { type: 'image/jpeg' })
-		*   document.querySelector('#photo').src = URL.createObjectURL(blob)
-		*/
 		resolve(src, onError) {
 			if (typeof node_buffer.Buffer === "function") return node_buffer.Buffer.from(src, "base64");
 			else if (typeof atob === "function") {
@@ -3356,10 +2502,6 @@ var require_omap = /* @__PURE__ */ __commonJSMin(((exports) => {
 			this.set = YAMLMap.YAMLMap.prototype.set.bind(this);
 			this.tag = YAMLOMap.tag;
 		}
-		/**
-		* If `ctx` is given, the return type is actually `Map<unknown, unknown>`,
-		* but TypeScript won't allow widening the signature of a child method.
-		*/
 		toJSON(_, ctx) {
 			if (!ctx) return super.toJSON(_);
 			const map = /* @__PURE__ */ new Map();
@@ -3565,10 +2707,6 @@ var require_set = /* @__PURE__ */ __commonJSMin(((exports) => {
 			else pair = new Pair.Pair(key, null);
 			if (!YAMLMap.findPair(this.items, pair.key)) this.items.push(pair);
 		}
-		/**
-		* If `keepPair` is `true`, returns the Pair matching `key`.
-		* Otherwise, returns the value of that Pair's key.
-		*/
 		get(key, keepPair) {
 			const pair = YAMLMap.findPair(this.items, key);
 			return !keepPair && identity.isPair(pair) ? identity.isScalar(pair.key) ? pair.key.value : pair.key : pair;
@@ -3620,7 +2758,6 @@ var require_set = /* @__PURE__ */ __commonJSMin(((exports) => {
 //#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/schema/yaml-1.1/timestamp.js
 var require_timestamp = /* @__PURE__ */ __commonJSMin(((exports) => {
 	var stringifyNumber = require_stringifyNumber();
-	/** Internal types handle bigint as number, because TS can't figure it out. */
 	function parseSexagesimal(str, asBigInt) {
 		const sign = str[0];
 		const parts = sign === "-" || sign === "+" ? str.substring(1) : str;
@@ -3628,11 +2765,6 @@ var require_timestamp = /* @__PURE__ */ __commonJSMin(((exports) => {
 		const res = parts.replace(/_/g, "").split(":").reduce((res, p) => res * num(60) + num(p), num(0));
 		return sign === "-" ? num(-1) * res : res;
 	}
-	/**
-	* hhhh:mm:ss.sss
-	*
-	* Internal types handle bigint as number, because TS can't figure it out.
-	*/
 	function stringifySexagesimal(node) {
 		let { value } = node;
 		let num = (n) => n;
@@ -3931,13 +3063,9 @@ var require_Document = /* @__PURE__ */ __commonJSMin(((exports) => {
 	var directives = require_directives();
 	var Document = class Document {
 		constructor(value, replacer, options) {
-			/** A comment before this Document */
 			this.commentBefore = null;
-			/** A comment immediately after this Document */
 			this.comment = null;
-			/** Errors encountered during parsing. */
 			this.errors = [];
-			/** Warnings encountered during parsing. */
 			this.warnings = [];
 			Object.defineProperty(this, identity.NODE_TYPE, { value: identity.DOC });
 			let _replacer = null;
@@ -3965,11 +3093,6 @@ var require_Document = /* @__PURE__ */ __commonJSMin(((exports) => {
 			this.setSchema(version, options);
 			this.contents = value === void 0 ? null : this.createNode(value, _replacer, options);
 		}
-		/**
-		* Create a deep copy of this Document and its contents.
-		*
-		* Custom Node values that inherit from `Object` still refer to their original instances.
-		*/
 		clone() {
 			const copy = Object.create(Document.prototype, { [identity.NODE_TYPE]: { value: identity.DOC } });
 			copy.commentBefore = this.commentBefore;
@@ -3983,23 +3106,12 @@ var require_Document = /* @__PURE__ */ __commonJSMin(((exports) => {
 			if (this.range) copy.range = this.range.slice();
 			return copy;
 		}
-		/** Adds a value to the document. */
 		add(value) {
 			if (assertCollection(this.contents)) this.contents.add(value);
 		}
-		/** Adds a value to the document. */
 		addIn(path, value) {
 			if (assertCollection(this.contents)) this.contents.addIn(path, value);
 		}
-		/**
-		* Create a new `Alias` node, ensuring that the target `node` has the required anchor.
-		*
-		* If `node` already has an anchor, `name` is ignored.
-		* Otherwise, the `node.anchor` value will be set to `name`,
-		* or if an anchor with that name is already present in the document,
-		* `name` will be used as a prefix for a new unique anchor.
-		* If `name` is undefined, the generated anchor will use 'a' as a prefix.
-		*/
 		createAlias(node, name) {
 			if (!node.anchor) {
 				const prev = anchors.anchorNames(this);
@@ -4037,26 +3149,14 @@ var require_Document = /* @__PURE__ */ __commonJSMin(((exports) => {
 			setAnchors();
 			return node;
 		}
-		/**
-		* Convert a key and a value into a `Pair` using the current schema,
-		* recursively wrapping all values as `Scalar` or `Collection` nodes.
-		*/
 		createPair(key, value, options = {}) {
 			const k = this.createNode(key, null, options);
 			const v = this.createNode(value, null, options);
 			return new Pair.Pair(k, v);
 		}
-		/**
-		* Removes a value from the document.
-		* @returns `true` if the item was found and removed.
-		*/
 		delete(key) {
 			return assertCollection(this.contents) ? this.contents.delete(key) : false;
 		}
-		/**
-		* Removes a value from the document.
-		* @returns `true` if the item was found and removed.
-		*/
 		deleteIn(path) {
 			if (Collection.isEmptyPath(path)) {
 				if (this.contents == null) return false;
@@ -4065,60 +3165,29 @@ var require_Document = /* @__PURE__ */ __commonJSMin(((exports) => {
 			}
 			return assertCollection(this.contents) ? this.contents.deleteIn(path) : false;
 		}
-		/**
-		* Returns item at `key`, or `undefined` if not found. By default unwraps
-		* scalar values from their surrounding node; to disable set `keepScalar` to
-		* `true` (collections are always returned intact).
-		*/
 		get(key, keepScalar) {
 			return identity.isCollection(this.contents) ? this.contents.get(key, keepScalar) : void 0;
 		}
-		/**
-		* Returns item at `path`, or `undefined` if not found. By default unwraps
-		* scalar values from their surrounding node; to disable set `keepScalar` to
-		* `true` (collections are always returned intact).
-		*/
 		getIn(path, keepScalar) {
 			if (Collection.isEmptyPath(path)) return !keepScalar && identity.isScalar(this.contents) ? this.contents.value : this.contents;
 			return identity.isCollection(this.contents) ? this.contents.getIn(path, keepScalar) : void 0;
 		}
-		/**
-		* Checks if the document includes a value with the key `key`.
-		*/
 		has(key) {
 			return identity.isCollection(this.contents) ? this.contents.has(key) : false;
 		}
-		/**
-		* Checks if the document includes a value at `path`.
-		*/
 		hasIn(path) {
 			if (Collection.isEmptyPath(path)) return this.contents !== void 0;
 			return identity.isCollection(this.contents) ? this.contents.hasIn(path) : false;
 		}
-		/**
-		* Sets a value in this document. For `!!set`, `value` needs to be a
-		* boolean to add/remove the item from the set.
-		*/
 		set(key, value) {
 			if (this.contents == null) this.contents = Collection.collectionFromPath(this.schema, [key], value);
 			else if (assertCollection(this.contents)) this.contents.set(key, value);
 		}
-		/**
-		* Sets a value in this document. For `!!set`, `value` needs to be a
-		* boolean to add/remove the item from the set.
-		*/
 		setIn(path, value) {
 			if (Collection.isEmptyPath(path)) this.contents = value;
 			else if (this.contents == null) this.contents = Collection.collectionFromPath(this.schema, Array.from(path), value);
 			else if (assertCollection(this.contents)) this.contents.setIn(path, value);
 		}
-		/**
-		* Change the YAML version and schema used by the document.
-		* A `null` version disables support for directives, explicit tags, anchors, and aliases.
-		* It also requires the `schema` option to be given as a `Schema` instance value.
-		*
-		* Overrides all previously set schema options.
-		*/
 		setSchema(version, options = {}) {
 			if (typeof version === "number") version = String(version);
 			let opt;
@@ -4166,12 +3235,6 @@ var require_Document = /* @__PURE__ */ __commonJSMin(((exports) => {
 			if (typeof onAnchor === "function") for (const { count, res } of ctx.anchors.values()) onAnchor(res, count);
 			return typeof reviver === "function" ? applyReviver.applyReviver(reviver, { "": res }, "", res) : res;
 		}
-		/**
-		* A JSON representation of the document `contents`.
-		*
-		* @param jsonArg Used by `JSON.stringify` to indicate the array index or
-		*   property name.
-		*/
 		toJSON(jsonArg, onAnchor) {
 			return this.toJS({
 				json: true,
@@ -4180,7 +3243,6 @@ var require_Document = /* @__PURE__ */ __commonJSMin(((exports) => {
 				onAnchor
 			});
 		}
-		/** A YAML representation of the document. */
 		toString(options = {}) {
 			if (this.errors.length > 0) throw new Error("Document with errors cannot be stringified");
 			if ("indent" in options && (!Number.isInteger(options.indent) || Number(options.indent) <= 0)) {
@@ -4961,7 +4023,6 @@ var require_resolve_block_scalar = /* @__PURE__ */ __commonJSMin(((exports) => {
 			length
 		};
 	}
-	/** @returns Array of lines split up as `[indent, content]` */
 	function splitLines(source) {
 		const split = source.split(/\n( *)/);
 		const first = split[0];
@@ -5053,13 +4114,6 @@ var require_resolve_flow_scalar = /* @__PURE__ */ __commonJSMin(((exports) => {
 		const line = /(.*?)\r?\n/sy;
 		let match = line.exec(source);
 		if (!match) return source;
-		/**
-		* The negative lookbehinds in these RegExps are to
-		* prevent causing a polynomial search time in certain cases.
-		*
-		* The try-catch is for Safari < 16.4 and other old browsers:
-		* https://caniuse.com/js-regexp-lookbehind
-		*/
 		let trimEnd, trimBoth;
 		try {
 			trimEnd = /* @__PURE__ */ new RegExp("(?<![ 	])[ 	]+$");
@@ -5125,10 +4179,6 @@ var require_resolve_flow_scalar = /* @__PURE__ */ __commonJSMin(((exports) => {
 		if (source[source.length - 1] !== "\"" || source.length === 1) onError(source.length, "MISSING_CHAR", "Missing closing \"quote");
 		return res;
 	}
-	/**
-	* Fold a single newline into a space, multiple newlines to N - 1 newlines.
-	* Presumes `source[offset] === '\n'`
-	*/
 	function foldNewline(source, offset) {
 		let fold = "";
 		let ch = source[offset + 1];
@@ -5440,17 +4490,6 @@ var require_composer = /* @__PURE__ */ __commonJSMin(((exports) => {
 			afterEmptyLine
 		};
 	}
-	/**
-	* Compose a stream of CST nodes into a stream of YAML Documents.
-	*
-	* ```ts
-	* import { Composer, Parser } from 'yaml'
-	*
-	* const src: string = ...
-	* const tokens = new Parser().parse(src)
-	* const docs = new Composer().compose(tokens)
-	* ```
-	*/
 	var Composer = class {
 		constructor(options = {}) {
 			this.doc = null;
@@ -5493,11 +4532,6 @@ var require_composer = /* @__PURE__ */ __commonJSMin(((exports) => {
 			this.errors = [];
 			this.warnings = [];
 		}
-		/**
-		* Current stream status information.
-		*
-		* Mostly useful at the end of input for an empty stream.
-		*/
 		streamInfo() {
 			return {
 				comment: parsePrelude(this.prelude).comment,
@@ -5506,17 +4540,10 @@ var require_composer = /* @__PURE__ */ __commonJSMin(((exports) => {
 				warnings: this.warnings
 			};
 		}
-		/**
-		* Compose tokens into documents.
-		*
-		* @param forceDoc - If the stream contains no document, still emit a final document including any comments and directives that would be applied to a subsequent document.
-		* @param endOffset - Should be set if `forceDoc` is also set, to set the document range end and to indicate errors correctly.
-		*/
 		*compose(tokens, forceDoc = false, endOffset = -1) {
 			for (const token of tokens) yield* this.next(token);
 			yield* this.end(forceDoc, endOffset);
 		}
-		/** Advance the composer by one CST token. */
 		*next(token) {
 			if (node_process$1.env.LOG_STREAM) console.dir(token, { depth: null });
 			switch (token.type) {
@@ -5569,12 +4596,6 @@ var require_composer = /* @__PURE__ */ __commonJSMin(((exports) => {
 				default: this.errors.push(new errors.YAMLParseError(getErrorPos(token), "UNEXPECTED_TOKEN", `Unsupported token ${token.type}`));
 			}
 		}
-		/**
-		* Call at end of input to yield any remaining document.
-		*
-		* @param forceDoc - If the stream contains no document, still emit a final document including any comments and directives that would be applied to a subsequent document.
-		* @param endOffset - Should be set if `forceDoc` is also set, to set the document range end and to indicate errors correctly.
-		*/
 		*end(forceDoc = false, endOffset = -1) {
 			if (this.doc) {
 				this.decorate(this.doc, true);
@@ -5619,20 +4640,6 @@ var require_cst_scalar = /* @__PURE__ */ __commonJSMin(((exports) => {
 		}
 		return null;
 	}
-	/**
-	* Create a new scalar token with `value`
-	*
-	* Values that represent an actual string but may be parsed as a different type should use a `type` other than `'PLAIN'`,
-	* as this function does not support any schema operations and won't check for such conflicts.
-	*
-	* @param value The string representation of the value, which will have its content properly indented.
-	* @param context.end Comments and whitespace after the end of the value, or after the block scalar header. If undefined, a newline will be added.
-	* @param context.implicitKey Being within an implicit key may affect the resolved type of the token's value.
-	* @param context.indent The indent level of the token.
-	* @param context.inFlow Is this scalar within a flow collection? This may affect the resolved type of the token's value.
-	* @param context.offset The offset position of the token.
-	* @param context.type The preferred type of the scalar token. If undefined, the previous type of the `token` will be used, defaulting to `'PLAIN'`.
-	*/
 	function createScalarToken(value, context) {
 		const { implicitKey = false, indent, inFlow = false, offset = -1, type = "PLAIN" } = context;
 		const source = stringifyString.stringifyString({
@@ -5702,22 +4709,6 @@ var require_cst_scalar = /* @__PURE__ */ __commonJSMin(((exports) => {
 			};
 		}
 	}
-	/**
-	* Set the value of `token` to the given string `value`, overwriting any previous contents and type that it may have.
-	*
-	* Best efforts are made to retain any comments previously associated with the `token`,
-	* though all contents within a collection's `items` will be overwritten.
-	*
-	* Values that represent an actual string but may be parsed as a different type should use a `type` other than `'PLAIN'`,
-	* as this function does not support any schema operations and won't check for such conflicts.
-	*
-	* @param token Any token. If it does not include an `indent` value, the value will be stringified as if it were an implicit key.
-	* @param value The string representation of the value, which will have its content properly indented.
-	* @param context.afterKey In most cases, values after a key should have an additional level of indentation.
-	* @param context.implicitKey Being within an implicit key may affect the resolved type of the token's value.
-	* @param context.inFlow Being within a flow collection may affect the resolved type of the token's value.
-	* @param context.type The preferred type of the scalar token. If undefined, the previous type of the `token` will be used, defaulting to `'PLAIN'`.
-	*/
 	function setScalarValue(token, value, context = {}) {
 		let { afterKey = false, implicitKey = false, inFlow = false, type } = context;
 		let indent = "indent" in token ? token.indent : null;
@@ -5796,7 +4787,6 @@ var require_cst_scalar = /* @__PURE__ */ __commonJSMin(((exports) => {
 			});
 		}
 	}
-	/** @returns `true` if last token is a newline */
 	function addEndtoBlockProps(props, end) {
 		if (end) for (const st of end) switch (st.type) {
 			case "space":
@@ -5866,12 +4856,6 @@ var require_cst_scalar = /* @__PURE__ */ __commonJSMin(((exports) => {
 //#endregion
 //#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/parse/cst-stringify.js
 var require_cst_stringify = /* @__PURE__ */ __commonJSMin(((exports) => {
-	/**
-	* Stringify a CST document, token, or collection item
-	*
-	* Fair warning: This applies no validation whatsoever, and
-	* simply concatenates the sources in their logical order.
-	*/
 	const stringify = (cst) => "type" in cst ? stringifyToken(cst) : stringifyItem(cst);
 	function stringifyToken(token) {
 		switch (token.type) {
@@ -5920,34 +4904,6 @@ var require_cst_visit = /* @__PURE__ */ __commonJSMin(((exports) => {
 	const BREAK = Symbol("break visit");
 	const SKIP = Symbol("skip children");
 	const REMOVE = Symbol("remove item");
-	/**
-	* Apply a visitor to a CST document or item.
-	*
-	* Walks through the tree (depth-first) starting from the root, calling a
-	* `visitor` function with two arguments when entering each item:
-	*   - `item`: The current item, which included the following members:
-	*     - `start: SourceToken[]` – Source tokens before the key or value,
-	*       possibly including its anchor or tag.
-	*     - `key?: Token | null` – Set for pair values. May then be `null`, if
-	*       the key before the `:` separator is empty.
-	*     - `sep?: SourceToken[]` – Source tokens between the key and the value,
-	*       which should include the `:` map value indicator if `value` is set.
-	*     - `value?: Token` – The value of a sequence item, or of a map pair.
-	*   - `path`: The steps from the root to the current node, as an array of
-	*     `['key' | 'value', number]` tuples.
-	*
-	* The return value of the visitor may be used to control the traversal:
-	*   - `undefined` (default): Do nothing and continue
-	*   - `visit.SKIP`: Do not visit the children of this token, continue with
-	*      next sibling
-	*   - `visit.BREAK`: Terminate traversal completely
-	*   - `visit.REMOVE`: Remove the current item, then continue with the next one
-	*   - `number`: Set the index of the next step. This is useful especially if
-	*     the index of the current token has changed.
-	*   - `function`: Define the next visitor for this item. After the original
-	*     visitor is called on item entry, next visitors are called after handling
-	*     a non-empty `key` and when exiting the item.
-	*/
 	function visit(cst, visitor) {
 		if ("type" in cst && cst.type === "document") cst = {
 			start: cst.start,
@@ -5955,13 +4911,9 @@ var require_cst_visit = /* @__PURE__ */ __commonJSMin(((exports) => {
 		};
 		_visit(Object.freeze([]), cst, visitor);
 	}
-	/** Terminate visit traversal completely */
 	visit.BREAK = BREAK;
-	/** Do not visit the children of the current item */
 	visit.SKIP = SKIP;
-	/** Remove the current item */
 	visit.REMOVE = REMOVE;
-	/** Find the item at `path` from `cst` as the root */
 	visit.itemAtPath = (cst, path) => {
 		let item = cst;
 		for (const [field, index] of path) {
@@ -5971,11 +4923,6 @@ var require_cst_visit = /* @__PURE__ */ __commonJSMin(((exports) => {
 		}
 		return item;
 	};
-	/**
-	* Get the immediate parent collection of the item at `path` from `cst` as the root.
-	*
-	* Throws an error if the collection is not found, which should never happen if the item itself exists.
-	*/
 	visit.parentCollection = (cst, path) => {
 		const parent = visit.itemAtPath(cst, path.slice(0, -1));
 		const field = path[path.length - 1][0];
@@ -6011,20 +4958,13 @@ var require_cst = /* @__PURE__ */ __commonJSMin(((exports) => {
 	var cstScalar = require_cst_scalar();
 	var cstStringify = require_cst_stringify();
 	var cstVisit = require_cst_visit();
-	/** The byte order mark */
 	const BOM = "﻿";
-	/** Start of doc-mode */
 	const DOCUMENT = "";
-	/** Unexpected end of flow-mode */
 	const FLOW_END = "";
-	/** Next token is a scalar value */
 	const SCALAR = "";
-	/** @returns `true` if `token` is a flow or block collection */
 	const isCollection = (token) => !!token && "items" in token;
-	/** @returns `true` if `token` is a flow or block scalar; not an alias */
 	const isScalar = (token) => !!token && (token.type === "scalar" || token.type === "single-quoted-scalar" || token.type === "double-quoted-scalar" || token.type === "block-scalar");
 	/* istanbul ignore next */
-	/** Get a printable representation of a lexer token */
 	function prettyToken(token) {
 		switch (token) {
 			case BOM: return "<BOM>";
@@ -6034,7 +4974,6 @@ var require_cst = /* @__PURE__ */ __commonJSMin(((exports) => {
 			default: return JSON.stringify(token);
 		}
 	}
-	/** Identify the type of a lexer token. May return `null` for unknown tokens. */
 	function tokenType(source) {
 		switch (source) {
 			case BOM: return "byte-order-mark";
@@ -6103,69 +5042,20 @@ var require_lexer = /* @__PURE__ */ __commonJSMin(((exports) => {
 	const flowIndicatorChars = /* @__PURE__ */ new Set(",[]{}");
 	const invalidAnchorChars = /* @__PURE__ */ new Set(" ,[]{}\n\r	");
 	const isNotAnchorChar = (ch) => !ch || invalidAnchorChars.has(ch);
-	/**
-	* Splits an input string into lexical tokens, i.e. smaller strings that are
-	* easily identifiable by `tokens.tokenType()`.
-	*
-	* Lexing starts always in a "stream" context. Incomplete input may be buffered
-	* until a complete token can be emitted.
-	*
-	* In addition to slices of the original input, the following control characters
-	* may also be emitted:
-	*
-	* - `\x02` (Start of Text): A document starts with the next token
-	* - `\x18` (Cancel): Unexpected end of flow-mode (indicates an error)
-	* - `\x1f` (Unit Separator): Next token is a scalar value
-	* - `\u{FEFF}` (Byte order mark): Emitted separately outside documents
-	*/
 	var Lexer = class {
 		constructor() {
-			/**
-			* Flag indicating whether the end of the current buffer marks the end of
-			* all input
-			*/
 			this.atEnd = false;
-			/**
-			* Explicit indent set in block scalar header, as an offset from the current
-			* minimum indent, so e.g. set to 1 from a header `|2+`. Set to -1 if not
-			* explicitly set.
-			*/
 			this.blockScalarIndent = -1;
-			/**
-			* Block scalars that include a + (keep) chomping indicator in their header
-			* include trailing empty lines, which are otherwise excluded from the
-			* scalar's contents.
-			*/
 			this.blockScalarKeep = false;
-			/** Current input */
 			this.buffer = "";
-			/**
-			* Flag noting whether the map value indicator : can immediately follow this
-			* node within a flow context.
-			*/
 			this.flowKey = false;
-			/** Count of surrounding flow collection levels. */
 			this.flowLevel = 0;
-			/**
-			* Minimum level of indentation required for next lines to be parsed as a
-			* part of the current scalar value.
-			*/
 			this.indentNext = 0;
-			/** Indentation level of the current line. */
 			this.indentValue = 0;
-			/** Position of the next \n character. */
 			this.lineEndPos = null;
-			/** Stores the state of the lexer if reaching the end of incpomplete input */
 			this.next = null;
-			/** A pointer to `buffer`; the current position of the lexer. */
 			this.pos = 0;
 		}
-		/**
-		* Generate YAML tokens from the `source` string. If `incomplete`,
-		* a part of the last line may be left as a buffer for the next call.
-		*
-		* @returns A generator of lexical tokens
-		*/
 		*lex(source, incomplete = false) {
 			if (source) {
 				if (typeof source !== "string") throw TypeError("source is not a string");
@@ -6620,24 +5510,10 @@ var require_lexer = /* @__PURE__ */ __commonJSMin(((exports) => {
 //#endregion
 //#region node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/parse/line-counter.js
 var require_line_counter = /* @__PURE__ */ __commonJSMin(((exports) => {
-	/**
-	* Tracks newlines during parsing in order to provide an efficient API for
-	* determining the one-indexed `{ line, col }` position for any offset
-	* within the input.
-	*/
 	var LineCounter = class {
 		constructor() {
 			this.lineStarts = [];
-			/**
-			* Should be called in ascending order. Otherwise, call
-			* `lineCounter.lineStarts.sort()` before calling `linePos()`.
-			*/
 			this.addNewLine = (offset) => this.lineStarts.push(offset);
-			/**
-			* Performs a binary search and returns the 1-indexed { line, col }
-			* position of `offset`. If `line === 0`, `addNewLine` has never been
-			* called or `offset` is before the first known newline.
-			*/
 			this.linePos = (offset) => {
 				let low = 0;
 				let high = this.lineStarts.length;
@@ -6705,7 +5581,6 @@ var require_parser = /* @__PURE__ */ __commonJSMin(((exports) => {
 			default: return [];
 		}
 	}
-	/** Note: May modify input array */
 	function getFirstKeyStartProps(prev) {
 		if (prev.length === 0) return [];
 		let i = prev.length;
@@ -6736,74 +5611,24 @@ var require_parser = /* @__PURE__ */ __commonJSMin(((exports) => {
 			}
 		}
 	}
-	/**
-	* A YAML concrete syntax tree (CST) parser
-	*
-	* ```ts
-	* const src: string = ...
-	* for (const token of new Parser().parse(src)) {
-	*   // token: Token
-	* }
-	* ```
-	*
-	* To use the parser with a user-provided lexer:
-	*
-	* ```ts
-	* function* parse(source: string, lexer: Lexer) {
-	*   const parser = new Parser()
-	*   for (const lexeme of lexer.lex(source))
-	*     yield* parser.next(lexeme)
-	*   yield* parser.end()
-	* }
-	*
-	* const src: string = ...
-	* const lexer = new Lexer()
-	* for (const token of parse(src, lexer)) {
-	*   // token: Token
-	* }
-	* ```
-	*/
 	var Parser = class {
-		/**
-		* @param onNewLine - If defined, called separately with the start position of
-		*   each new line (in `parse()`, including the start of input).
-		*/
 		constructor(onNewLine) {
-			/** If true, space and sequence indicators count as indentation */
 			this.atNewLine = true;
-			/** If true, next token is a scalar value */
 			this.atScalar = false;
-			/** Current indentation level */
 			this.indent = 0;
-			/** Current offset since the start of parsing */
 			this.offset = 0;
-			/** On the same line with a block map key */
 			this.onKeyLine = false;
-			/** Top indicates the node that's currently being built */
 			this.stack = [];
-			/** The source of the current token, set in parse() */
 			this.source = "";
-			/** The type of the current token, set in parse() */
 			this.type = "";
 			this.lexer = new lexer.Lexer();
 			this.onNewLine = onNewLine;
 		}
-		/**
-		* Parse `source` as a YAML stream.
-		* If `incomplete`, a part of the last line may be left as a buffer for the next call.
-		*
-		* Errors are not thrown, but yielded as `{ type: 'error', message }` tokens.
-		*
-		* @returns A generator of tokens representing each directive, document, and other structure.
-		*/
 		*parse(source, incomplete = false) {
 			if (this.onNewLine && this.offset === 0) this.onNewLine(0);
 			for (const lexeme of this.lexer.lex(source, incomplete)) yield* this.next(lexeme);
 			if (!incomplete) yield* this.end();
 		}
-		/**
-		* Advance the parser by the `source` of one lexical token.
-		*/
 		*next(source) {
 			this.source = source;
 			if (node_process.env.LOG_TOKENS) console.log("|", cst.prettyToken(source));
@@ -6851,7 +5676,6 @@ var require_parser = /* @__PURE__ */ __commonJSMin(((exports) => {
 				this.offset += source.length;
 			}
 		}
-		/** Call at end of input to push out any remaining constructions */
 		*end() {
 			while (this.stack.length > 0) yield* this.pop();
 		}
@@ -7547,15 +6371,6 @@ var require_public_api = /* @__PURE__ */ __commonJSMin(((exports) => {
 			prettyErrors
 		};
 	}
-	/**
-	* Parse the input as a stream of YAML documents.
-	*
-	* Documents should be separated from each other by `...` or `---` marker lines.
-	*
-	* @returns If an empty `docs` array is returned, it will be of type
-	*   EmptyStream and contain additional stream information. In
-	*   TypeScript, you should use `'empty' in docs` as a type guard for it.
-	*/
 	function parseAllDocuments(source, options = {}) {
 		const { lineCounter, prettyErrors } = parseOptions(options);
 		const parser$1 = new parser.Parser(lineCounter?.addNewLine);
@@ -7568,7 +6383,6 @@ var require_public_api = /* @__PURE__ */ __commonJSMin(((exports) => {
 		if (docs.length > 0) return docs;
 		return Object.assign([], { empty: true }, composer$1.streamInfo());
 	}
-	/** Parse an input string into a single YAML.Document */
 	function parseDocument(source, options = {}) {
 		const { lineCounter, prettyErrors } = parseOptions(options);
 		const parser$1 = new parser.Parser(lineCounter?.addNewLine);
@@ -7668,25 +6482,8 @@ var import_dist = /* @__PURE__ */ __toESM((/* @__PURE__ */ __commonJSMin(((expor
 	exports.visitAsync = visit.visitAsync;
 })))(), 1);
 const regex$1 = /^---(?:\r?\n|\r)(?:([\s\S]*?)(?:\r?\n|\r))?---(?:\r?\n|\r|$)/;
-/** @type {Readonly<Options>} */
 const emptyOptions = {};
-/** @type {Readonly<YamlOptions>} */
 const emptyYamlOptions = {};
-/**
-* Parse the YAML front matter in a file and expose it as `file.data.matter`.
-*
-* If no matter is found in the file, nothing happens, except that
-* `file.data.matter` is set to an empty object (`{}`).
-*
-* If the file value is an `Uint8Array`, assumes it is encoded in UTF-8.
-*
-* @param {VFile} file
-*   Virtual file.
-* @param {Readonly<Options> | null | undefined} [options={}]
-*   Configuration (optional).
-* @returns {undefined}
-*   Nothing.
-*/
 function matter(file, options) {
 	const options_ = options || emptyOptions;
 	const strip = options_.strip;
@@ -7703,10 +6500,8 @@ function matter(file, options) {
 }
 //#endregion
 //#region src/init/prompt.ts
-/** `/init` 生成的说明文件，Crush 模板里的 `{{.Config.Options.InitializeAs}}` 也换成它。 */
 const INSTRUCTIONS_FILE = "AGENTS.md";
 const LEADING_WORD = /^(\S+)\s*([\s\S]*)$/;
-/** 解析 `/init [preset] [extra prompt]`，第一个词不是预设名时整段参数都算额外指令。 */
 function parseInitArgs(args, registry) {
 	const trimmed = args.trim();
 	const [, head = "", rest = ""] = LEADING_WORD.exec(trimmed) ?? [];
@@ -7722,7 +6517,6 @@ function parseInitArgs(args, registry) {
 		extra: trimmed
 	};
 }
-/** 拆出 prompt 文件开头的 YAML frontmatter。 */
 function parsePromptFile(text) {
 	const file = new VFile(text);
 	matter(file, { strip: true });
@@ -7731,16 +6525,16 @@ function parsePromptFile(text) {
 		body: String(file.value).trimStart()
 	};
 }
-/**
-* 去掉开头的 YAML frontmatter，再填充上游模板的占位符：`${path}` 换成项目目录，
-* `{{.Config.Options.InitializeAs}}` 换成 `AGENTS.md`，`$ARGUMENTS` 换成额外指令。
-* 模板里没有 `$ARGUMENTS` 时，额外指令追加到末尾。
-*/
+const ARGUMENTS = "$ARGUMENTS";
+const EXTRA_HEADING = "## Additional instructions from the user";
+function fillInitTemplate(template, projectDir) {
+	return parsePromptFile(template).body.replaceAll("${path}", projectDir).replaceAll("{{.Config.Options.InitializeAs}}", INSTRUCTIONS_FILE);
+}
 function renderInitPrompt(template, extra, projectDir) {
-	const prompt = parsePromptFile(template).body.replaceAll("${path}", projectDir).replaceAll("{{.Config.Options.InitializeAs}}", INSTRUCTIONS_FILE);
-	if (prompt.includes("$ARGUMENTS")) return prompt.replaceAll("$ARGUMENTS", extra);
+	const prompt = fillInitTemplate(template, projectDir);
+	if (prompt.includes("$ARGUMENTS")) return prompt.replaceAll(ARGUMENTS, extra);
 	if (!extra) return prompt;
-	return `${prompt.trimEnd()}\n\n## Additional instructions from the user\n\n${extra}\n`;
+	return `${prompt.trimEnd()}\n\n${EXTRA_HEADING}\n\n${extra}\n`;
 }
 const DEFAULT_CONFIG = {
 	lang: void 0,
@@ -7748,13 +6542,6 @@ const DEFAULT_CONFIG = {
 	abortEarly: void 0,
 	abortPipeEarly: void 0
 };
-/**
-* Returns the global configuration.
-*
-* @param config The config to merge.
-*
-* @returns The configuration.
-*/
 /* @__NO_SIDE_EFFECTS__ */
 function getGlobalConfig(config$1) {
 	if (!config$1 && true) return DEFAULT_CONFIG;
@@ -7765,15 +6552,6 @@ function getGlobalConfig(config$1) {
 		abortPipeEarly: config$1?.abortPipeEarly ?? void 0
 	};
 }
-/**
-* Stringifies an unknown input to a literal or type string.
-*
-* @param input The unknown input.
-*
-* @returns A literal or type string.
-*
-* @internal
-*/
 /* @__NO_SIDE_EFFECTS__ */
 function _stringify(input) {
 	const type = typeof input;
@@ -7782,17 +6560,6 @@ function _stringify(input) {
 	if (type === "object" || type === "function") return (input && Object.getPrototypeOf(input)?.constructor?.name) ?? "null";
 	return type;
 }
-/**
-* Adds an issue to the dataset.
-*
-* @param context The issue context.
-* @param label The issue label.
-* @param dataset The input dataset.
-* @param config The configuration.
-* @param other The optional props.
-*
-* @internal
-*/
 function _addIssue(context, label, dataset, config$1, other) {
 	const input = other && "input" in other ? other.input : dataset.value;
 	const expected = other?.expected ?? context.expects ?? null;
@@ -7818,33 +6585,10 @@ function _addIssue(context, label, dataset, config$1, other) {
 	if (dataset.issues) dataset.issues.push(issue);
 	else dataset.issues = [issue];
 }
-/**
-* Disallows inherited object properties and prevents object prototype
-* pollution by disallowing certain keys.
-*
-* @param object The object to check.
-* @param key The key to check.
-*
-* @returns Whether the key is allowed.
-*
-* @internal
-*/
 /* @__NO_SIDE_EFFECTS__ */
 function _isValidObjectKey(object$1, key) {
 	return Object.prototype.hasOwnProperty.call(object$1, key) && key !== "__proto__" && key !== "prototype" && key !== "constructor";
 }
-/**
-* Eagerly creates and attaches the Standard Schema properties of a schema.
-*
-* Hint: The contextual `this` type includes the standard properties that are
-* attached before the schema is returned.
-*
-* @param schema The schema to attach standard properties to.
-*
-* @returns The schema with standard properties attached.
-*
-* @internal
-*/
 function _standardSchema(schema) {
 	schema["~standard"] = {
 		version: 1,
@@ -7949,28 +6693,10 @@ function regex(requirement, message$1) {
 		}
 	};
 }
-/**
-* Returns the fallback value of the schema.
-*
-* @param schema The schema to get it from.
-* @param dataset The output dataset if available.
-* @param config The config if available.
-*
-* @returns The fallback value.
-*/
 /* @__NO_SIDE_EFFECTS__ */
 function getFallback(schema, dataset, config$1) {
 	return typeof schema.fallback === "function" ? schema.fallback(dataset, config$1) : schema.fallback;
 }
-/**
-* Returns the default value of the schema.
-*
-* @param schema The schema to get it from.
-* @param dataset The input dataset if available.
-* @param config The config if available.
-*
-* @returns The default value.
-*/
 /* @__NO_SIDE_EFFECTS__ */
 function getDefault(schema, dataset, config$1) {
 	return typeof schema.default === "function" ? schema.default(dataset, config$1) : schema.default;
@@ -8280,15 +7006,6 @@ function pipe(...pipe$1) {
 		}
 	});
 }
-/**
-* Parses an unknown input based on a schema.
-*
-* @param schema The schema to be used.
-* @param input The input to be parsed.
-* @param config The parse configuration.
-*
-* @returns The parse result.
-*/
 /* @__NO_SIDE_EFFECTS__ */
 function safeParse(schema, input, config$1) {
 	const dataset = schema["~run"]({ value: input }, /* @__PURE__ */ getGlobalConfig(config$1));
@@ -8299,15 +7016,6 @@ function safeParse(schema, input, config$1) {
 		issues: dataset.issues
 	};
 }
-/**
-* Summarize the error messages of issues in a pretty-printable multi-line string.
-*
-* @param issues The list of issues.
-*
-* @returns A summary of the issues.
-*
-* @beta
-*/
 /* @__NO_SIDE_EFFECTS__ */
 function summarize(issues) {
 	let summary = "";
@@ -8336,7 +7044,6 @@ const ManifestSchema = /* @__PURE__ */ object({ presets: /* @__PURE__ */ pipe(/*
 //#endregion
 //#region src/init/registry.ts
 const DEFAULT_PRESET = "codex";
-/** 手动维护的预设，文件名即预设名。 */
 const MANUAL_DIR = fileURLToPath(new URL("../../prompts/init/", import.meta.url));
 const CONFIG_PATH = join("agent-stash", "init.json");
 const ConfigSchema = /* @__PURE__ */ strictObject({
@@ -8390,10 +7097,6 @@ async function loadConfigLayer(configFile) {
 		}))
 	};
 }
-/**
-* 按 vendor 预设、手动维护的预设与 `configFiles` 的顺序合并，后者覆盖前者。
-* 不存在的配置文件跳过。
-*/
 async function loadInitRegistry(configFiles) {
 	const [vendored, manual, ...layers] = await Promise.all([
 		loadVendoredPresets(),
@@ -8413,7 +7116,6 @@ async function loadInitRegistry(configFiles) {
 		presets
 	};
 }
-/** 预设名列表，默认预设排在最前，如 `codex (default), kimi-code, opencode`。 */
 function listPresetNames(registry) {
 	const others = [...registry.presets.keys()].filter((name) => name !== registry.defaultPreset);
 	return [`${registry.defaultPreset} (default)`, ...others].join(", ");
@@ -8422,15 +7124,12 @@ function listPresetNames(registry) {
 //#region dsh/init/index.ts
 const name = "agent-stash-init";
 const inject = ["commands"];
-/** `$DSH_HOME`（默认 `~/.dsh`）下的 `agent-stash/init.json`。 */
 function dshConfigFile(env = process.env) {
 	return join(env["DSH_HOME"] ?? join(homedir(), ".dsh"), CONFIG_PATH);
 }
-/** 输入提示，如 `[codex|kimi-code|opencode] [extra prompt]`。 */
 function inputHint(registry) {
 	return `[${[...registry.presets.keys()].join("|")}] [extra prompt]`;
 }
-/** 会话当前目录：优先 working-directory 服务，旧版 DSH 退回会话创建时的 cwd。 */
 function sessionDirectory(ctx, session) {
 	const directory = ctx.get("workingDirectory")?.get(session) ?? session.header.cwd;
 	if (!directory) throw new Error("/init needs a session working directory");

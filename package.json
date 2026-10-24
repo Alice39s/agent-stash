@@ -2,8 +2,9 @@
   "name": "agent-stash",
   "version": "1.0.0",
   "private": true,
-  "description": "Personal Agent Skills, Pi extensions, and DeepSeek Harness plugins",
+  "description": "Personal Agent Skills and /init plugins for pi, DeepSeek Harness, Cline, Grok Build, goose, and Aider",
   "keywords": [
+    "cline-plugin",
     "dsh-plugin",
     "pi-package"
   ],
@@ -13,6 +14,9 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Alice39s/agent-stash.git"
+  },
+  "bin": {
+    "agent-stash": "./dist/cli/agent-stash.js"
   },
   "files": [
     "pi",
@@ -89,6 +93,18 @@
     "node": ">=24"
   },
   "packageManager": "pnpm@11.22.0",
+  "cline": {
+    "plugins": [
+      {
+        "paths": [
+          "./dist/cline/init.js"
+        ],
+        "capabilities": [
+          "commands"
+        ]
+      }
+    ]
+  },
   "dsh": {
     "bundle": {
       "patch": "./dsh/cordis.patch.yml"

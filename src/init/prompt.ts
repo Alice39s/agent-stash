@@ -41,20 +41,30 @@ export function parsePromptFile(text: string): PromptFile {
   return { matter: file.data.matter, body: String(file.value).trimStart() };
 }
 
+/** 上游模板里额外指令的占位符。 */
+export const ARGUMENTS = "$ARGUMENTS";
+
+/** 模板没有 `$ARGUMENTS` 时，额外指令放进末尾的这个小节。 */
+export const EXTRA_HEADING = "## Additional instructions from the user";
+
 /**
  * 去掉开头的 YAML frontmatter，再填充上游模板的占位符：`${path}` 换成项目目录，
- * `{{.Config.Options.InitializeAs}}` 换成 `AGENTS.md`，`$ARGUMENTS` 换成额外指令。
- * 模板里没有 `$ARGUMENTS` 时，额外指令追加到末尾。
+ * `{{.Config.Options.InitializeAs}}` 换成 `AGENTS.md`。`$ARGUMENTS` 原样保留。
  */
-export function renderInitPrompt(template: string, extra: string, projectDir: string): string {
-  const prompt = parsePromptFile(template)
+export function fillInitTemplate(template: string, projectDir: string): string {
+  return parsePromptFile(template)
     .body.replaceAll("${path}", projectDir)
     .replaceAll("{{.Config.Options.InitializeAs}}", INSTRUCTIONS_FILE);
-  if (prompt.includes("$ARGUMENTS")) {
-    return prompt.replaceAll("$ARGUMENTS", extra);
+}
+
+/** 填充模板后把 `$ARGUMENTS` 换成额外指令；模板里没有 `$ARGUMENTS` 时，额外指令追加到末尾。 */
+export function renderInitPrompt(template: string, extra: string, projectDir: string): string {
+  const prompt = fillInitTemplate(template, projectDir);
+  if (prompt.includes(ARGUMENTS)) {
+    return prompt.replaceAll(ARGUMENTS, extra);
   }
   if (!extra) {
     return prompt;
   }
-  return `${prompt.trimEnd()}\n\n## Additional instructions from the user\n\n${extra}\n`;
+  return `${prompt.trimEnd()}\n\n${EXTRA_HEADING}\n\n${extra}\n`;
 }
