@@ -1,0 +1,7 @@
+## agent-stash@1.0.0
+
+### 首个稳定版本
+
+- `/init` 同时支持 pi 扩展与 DSH 插件，内置 `codex`、`kimi-code`、`opencode`、`crush`、`copilot` 五个从上游同步的预设，以及手动维护的 `claude-code`、`claude-code-init-new`。
+- 新增 `code-styleguide` 技能，收录 Google、Angular 与 Android Kotlin 风格指南。
+- `/init` 预设与风格指南每天从上游同步。
