@@ -47,7 +47,10 @@ jobs:
           branch: chore/sync-init-prompts
           delete-branch: true
           add-paths: vendor/init-prompts
-          commit-message: "chore(init): sync upstream init prompts"
+          commit-message: |
+            chore(init): sync upstream init prompts
+
+            Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>
           title: "chore(init): sync upstream init prompts"
           body-path: ${{ runner.temp }}/pr-body.md
       - name: Merge the sync PR

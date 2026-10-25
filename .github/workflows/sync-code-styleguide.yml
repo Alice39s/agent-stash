@@ -43,6 +43,9 @@ jobs:
           branch: chore/sync-code-styleguide
           delete-branch: true
           add-paths: skills/code-styleguide
-          commit-message: "chore(skills): sync code-styleguide references"
+          commit-message: |
+            chore(skills): sync code-styleguide references
+
+            Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>
           title: "chore(skills): sync code-styleguide references"
           body-path: ${{ runner.temp }}/pr-body.md

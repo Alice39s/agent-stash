@@ -4,6 +4,7 @@ import { github } from "tegami/plugins/github";
 
 const REPO = "Alice39s/agent-stash";
 const ROOT_PACKAGE = "agent-stash";
+const CO_AUTHOR_TRAILER = "Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>";
 
 /**
  * 根包不发布到 npm：发布即打 `v<version>` tag 并创建 GitHub release。
@@ -31,7 +32,17 @@ function githubReleaseOnly(): TegamiPlugin {
 }
 
 const paper = tegami({
-  plugins: [githubReleaseOnly(), github({ repo: REPO, versionPr: { base: "main" } })],
+  plugins: [
+    githubReleaseOnly(),
+    github({
+      repo: REPO,
+      versionPr: {
+        base: "main",
+        // Version Packages 提交由 github-actions[bot] 在 CI 中创建，署上仓库所有者为共同作者。
+        commit: () => ({ title: "Version Packages", body: CO_AUTHOR_TRAILER }),
+      },
+    }),
+  ],
 });
 
 await runCli(paper);
