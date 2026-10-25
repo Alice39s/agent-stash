@@ -33,6 +33,7 @@
     - [配置](#配置)
     - [上游同步](#上游同步)
   - [Skills: `code-styleguide`](#skills-code-styleguide)
+  - [Skills: `self-use-<model>-subagent`](#skills-self-use-model-subagent)
   - [开发](#开发)
     - [发布](#发布)
   - [许可证](#许可证)
@@ -55,9 +56,13 @@
 
 ![Grok Build Skills](https://img.shields.io/badge/Grok%20Build-Skills-000000)
 
-| 名称                                       | 说明                                                       |
-| ------------------------------------------ | ---------------------------------------------------------- |
-| [code-styleguide](#skills-code-styleguide) | Google、Angular 与 Android Kotlin 风格指南，每天从上游同步 |
+| 名称                                                        | 说明                                                       |
+| ----------------------------------------------------------- | ---------------------------------------------------------- |
+| [code-styleguide](#skills-code-styleguide)                  | Google、Angular 与 Android Kotlin 风格指南，每天从上游同步 |
+| [self-use-haiku-subagent](#skills-self-use-model-subagent)  | 在 DSH 里把任务委托给 Haiku 5.5 子代理                     |
+| [self-use-sonnet-subagent](#skills-self-use-model-subagent) | 在 DSH 里把任务委托给 Sonnet 5.5 子代理                    |
+| [self-use-luna-subagent](#skills-self-use-model-subagent)   | 在 DSH 里把任务委托给 GPT-5.6 Luna 子代理                  |
+| [self-use-dpsk-subagent](#skills-self-use-model-subagent)   | 在 DSH 里把任务委托给 DeepSeek V4.1 Flash 子代理           |
 
 ## 安装
 
@@ -232,6 +237,25 @@ Cline：
 - [google/styleguide](https://github.com/google/styleguide) README 列出的全部指南（CC-BY-3.0）
 - [Angular 风格指南](https://angular.dev/style-guide)（CC-BY-4.0）
 - [Android Kotlin 风格指南](https://developer.android.com/kotlin/style-guide)（Apache-2.0）
+
+## Skills: `self-use-<model>-subagent`
+
+在 DSH 里派发子代理时用的四个技能，每个模型一份：
+
+| 技能                       | 模型                | 单个子代理的上下文预算 |
+| -------------------------- | ------------------- | ---------------------- |
+| `self-use-haiku-subagent`  | Haiku 5.5           | 100k                   |
+| `self-use-sonnet-subagent` | Sonnet 5.5          | 400k                   |
+| `self-use-luna-subagent`   | GPT-5.6 Luna        | 200k                   |
+| `self-use-dpsk-subagent`   | DeepSeek V4.1 Flash | 200k                   |
+
+每个技能写了调用参数、按预算估算一个子代理能做多少、提示词怎么写，以及子代理用满上下文被终止后怎么接手。
+
+四份 `SKILL.md` 由同一份模板生成，模板、模型参数和生成脚本都在 `skills/self-use-haiku-subagent/scripts/` 下。改正文就改 `templates/` 下的模板，改模型参数就改 `models.yaml`，然后重新生成：
+
+```bash
+uv run skills/self-use-haiku-subagent/scripts/render.py
+```
 
 ## 开发
 

@@ -1,0 +1,56 @@
+# self-use-<slug>-subagent 四个技能的模型参数。改完在本目录运行 `uv run render.py` 重新生成。
+# max_pages、max_files、max_calls 按 usable_k 估算：网页每页约 35k，源码文件每个约 17k，工具调用每次约 5k。
+author: Alice39s
+models:
+  - slug: haiku
+    display: Haiku 5.5
+    provider: aigw
+    model: claude-haiku-5-5
+    efforts: [high]
+    default_effort: high
+    budget_k: 100
+    budget_reason: 这样设是因为 Haiku 5.5 的上下文超过 100k 以后按五倍计费。
+    usable_k: 70
+    max_pages: 2
+    max_files: 4
+    max_calls: 15
+    human_time: 半小时
+  - slug: sonnet
+    display: Sonnet 5.5
+    provider: aigw
+    model: claude-sonnet-5-5
+    efforts: [high, max]
+    default_effort: high
+    budget_k: 400
+    budget_reason: 这样设是因为上下文超过 400k 以后模型能力会下降。
+    usable_k: 370
+    max_pages: 10
+    max_files: 20
+    max_calls: 70
+    human_time: 两小时
+  - slug: luna
+    display: GPT-5.6 Luna
+    provider: aigw
+    model: gpt-5.6-luna
+    efforts: [high, xhigh, max]
+    default_effort: high
+    budget_k: 200
+    budget_reason: ""
+    usable_k: 170
+    max_pages: 5
+    max_files: 10
+    max_calls: 35
+    human_time: 一小时
+  - slug: dpsk
+    display: DeepSeek V4.1 Flash
+    provider: aigw
+    model: deepseek/deepseek-v4.1-flash
+    efforts: [high, max]
+    default_effort: high
+    budget_k: 200
+    budget_reason: 这样设是因为上下文超过 200k 以后模型能力会下降。
+    usable_k: 170
+    max_pages: 5
+    max_files: 10
+    max_calls: 35
+    human_time: 一小时

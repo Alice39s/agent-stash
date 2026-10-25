@@ -1,0 +1,3 @@
+interface:
+  display_name: Self Use Haiku Subagent
+  short_description: Haiku 5.5 子代理的上下文预算、任务大小、提示词写法与终止后的接手

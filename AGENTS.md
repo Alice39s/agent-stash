@@ -8,7 +8,7 @@
 - DSH bundle metadata: `dsh/locale/*.json` (bundle title and description, exported as `./locale/*.json`), plus `icon`, `engines.dsh`, and `dsh.manifestVersion` in `package.json`. Keep the package public; plugin index generators skip private bundles.
 - `dsh/plugin-index.txt`: source list that `.github/workflows/plugin-index.yml` turns into the plugin index at `https://alice39s.github.io/agent-stash/index.json` with DSH's reference generator.
 - `prompts/init/`: hand-maintained presets (`claude-code*.md`).
-- Generated content, never edited by hand: `vendor/init-prompts/` (from `pnpm sync:init-prompts`), `skills/code-styleguide/` (from `pnpm sync:code-styleguide`), and `dist/` (from `pnpm bundle`).
+- Generated content, never edited by hand: `vendor/init-prompts/` (from `pnpm sync:init-prompts`), `skills/code-styleguide/` (from `pnpm sync:code-styleguide`), `SKILL.md` and `agents/openai.yaml` in each `skills/self-use-*-subagent/` (from `uv run skills/self-use-haiku-subagent/scripts/render.py`, which renders that directory's `templates/` with `models.yaml`), and `dist/` (from `pnpm bundle`).
 
 ## Build, Test, and Development Commands
 
