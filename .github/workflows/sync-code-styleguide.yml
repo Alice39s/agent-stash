@@ -1,0 +1,51 @@
+name: Sync code style guides
+
+on:
+  schedule:
+    - cron: "41 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-code-styleguide
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Regenerate the code-styleguide skill
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "Regenerated \`skills/code-styleguide\` from the upstream style guides:"
+            echo
+            echo '```'
+            pnpm --silent sync:code-styleguide
+            echo '```'
+          } > "$RUNNER_TEMP/pr-body.md"
+          cat "$RUNNER_TEMP/pr-body.md"
+      # 用 GITHUB_TOKEN 创建的 PR 不会触发其他 workflow，在这里检查。
+      - run: pnpm check
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          branch: chore/sync-code-styleguide
+          delete-branch: true
+          add-paths: skills/code-styleguide
+          commit-message: |
+            chore(skills): sync code-styleguide references
+
+            Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>
+          title: "chore(skills): sync code-styleguide references"
+          body-path: ${{ runner.temp }}/pr-body.md

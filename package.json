@@ -1,24 +1,30 @@
 {
   "name": "agent-stash",
-  "version": "0.1.0",
-  "private": true,
-  "description": "Personal Agent Skills, Pi extensions, and DeepSeek Harness plugins",
+  "version": "1.1.0",
+  "description": "Personal Agent Skills and /init plugins for pi, DeepSeek Harness, Cline, Grok Build, goose, and Aider",
   "keywords": [
+    "cline-plugin",
     "dsh-plugin",
     "pi-package"
   ],
   "homepage": "https://github.com/Alice39s/agent-stash#readme",
   "bugs": "https://github.com/Alice39s/agent-stash/issues",
   "license": "Apache-2.0",
+  "author": "Alice39s",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Alice39s/agent-stash.git"
   },
+  "bin": {
+    "agent-stash": "./dist/cli/agent-stash.js"
+  },
   "files": [
     "pi",
+    "prompts",
     "src",
     "dsh",
     "dist",
+    "skills",
     "vendor",
     "LICENSE"
   ],
@@ -27,11 +33,14 @@
     "./dsh/init": "./dist/dsh/init.js",
     "./dsh/init/locale/*.json": "./dsh/init/locale/*.json",
     "./dsh/init/icon": "./dsh/init/icon.svg",
+    "./locale/*.json": "./dsh/locale/*.json",
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "tsdown",
+    "bundle": "tsdown",
+    "sync:code-styleguide": "node scripts/sync-code-styleguide.ts",
     "sync:init-prompts": "node scripts/sync-init-prompts.ts",
+    "tegami": "node scripts/tegami.ts",
     "test": "vitest run",
     "lint": "oxlint --type-aware --type-check --deny-warnings",
     "format": "oxfmt",
@@ -39,18 +48,41 @@
   },
   "dependencies": {
     "pathe": "^2.0.3",
-    "valibot": "^1.5.0"
+    "valibot": "^1.5.0",
+    "vfile": "^6.0.3",
+    "vfile-matter": "^5.0.1"
   },
   "devDependencies": {
     "@earendil-works/pi-coding-agent": "^1.2.0",
     "@octokit/rest": "^22.0.1",
+    "@types/hast": "^3.0.5",
+    "@types/mdast": "^4.0.4",
+    "@types/murmurhash3js-revisited": "^3.0.3",
     "@types/node": "^26.6.5",
+    "@types/semver": "^7.8.0",
+    "hast-util-select": "^6.0.4",
+    "hast-util-to-mdast": "^10.1.2",
+    "hast-util-to-string": "^3.0.1",
+    "mdast-util-to-string": "^4.0.0",
+    "murmurhash3js-revisited": "^3.0.0",
+    "oxc-parser": "^0.155.0",
     "oxfmt": "^0.72.0",
     "oxlint": "^1.87.0",
     "oxlint-tsgolint": "^7.0.2004",
+    "rehype-parse": "^9.0.1",
+    "rehype-raw": "^7.0.0",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "remark-stringify": "^11.0.0",
+    "semver": "^7.8.5",
+    "tegami": "^1.5.0",
     "tsdown": "^0.23.1",
     "typescript": "^7.0.2",
-    "vitest": "^5.0.4"
+    "unified": "^11.0.5",
+    "unist-util-visit": "^5.1.0",
+    "vitest": "^5.0.4",
+    "yaml": "^2.9.1"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
@@ -60,11 +92,26 @@
       "optional": true
     }
   },
+  "icon": "./dsh/init/icon.svg",
   "engines": {
+    "dsh": ">=0.2.1-alpha.2",
     "node": ">=24"
   },
   "packageManager": "pnpm@11.22.0",
+  "cline": {
+    "plugins": [
+      {
+        "paths": [
+          "./dist/cline/init.js"
+        ],
+        "capabilities": [
+          "commands"
+        ]
+      }
+    ]
+  },
   "dsh": {
+    "manifestVersion": 1,
     "bundle": {
       "patch": "./dsh/cordis.patch.yml"
     }
@@ -72,6 +119,9 @@
   "pi": {
     "extensions": [
       "./pi/extensions/init/index.ts"
+    ],
+    "skills": [
+      "./skills"
     ]
   }
 }

@@ -2,7 +2,7 @@ import { fileURLToPath } from "node:url";
 import { join } from "pathe";
 import { describe, expect, test } from "vitest";
 import { VENDOR_DIR } from "./manifest.ts";
-import { CONFIG_PATH, DEFAULT_PRESET, loadInitRegistry } from "./registry.ts";
+import { CONFIG_PATH, DEFAULT_PRESET, MANUAL_DIR, loadInitRegistry } from "./registry.ts";
 
 const fixture = (name: string): string =>
   fileURLToPath(new URL(`fixtures/${name}`, import.meta.url));
@@ -12,11 +12,31 @@ describe("loadInitRegistry", () => {
   test("exposes the vendored presets with codex as the default", async () => {
     const registry = await loadInitRegistry([configFile("no-config")]);
     expect(registry.defaultPreset).toBe(DEFAULT_PRESET);
-    expect([...registry.presets.keys()]).toEqual(["codex", "kimi-code", "opencode"]);
+    expect([...registry.presets.keys()]).toEqual([
+      "codex",
+      "kimi-code",
+      "opencode",
+      "crush",
+      "copilot",
+      "qwen-code",
+      "kilo-code",
+      "claude-code",
+      "claude-code-init-new",
+    ]);
     expect(registry.presets.get("codex")?.file).toBe(join(VENDOR_DIR, "codex/prompt.md"));
     expect(registry.presets.get("kimi-code")?.description).toMatch(
       /^Use the `Kimi Code CLI` prompt preset \(MoonshotAI\/kimi-code@[0-9a-f]{7}, MIT\)\.$/,
     );
+  });
+
+  test("describes manual presets from their frontmatter", async () => {
+    const registry = await loadInitRegistry([configFile("no-config")]);
+    expect(registry.presets.get("claude-code")).toEqual({
+      name: "claude-code",
+      description:
+        "Use the `Claude Code builtin slash command /init (classic prompt variant)` prompt preset (v2.1.306).",
+      file: join(MANUAL_DIR, "claude-code.md"),
+    });
   });
 
   test("adds personal presets and default", async () => {

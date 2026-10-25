@@ -1,0 +1,110 @@
+# Google's R Style Guide
+
+Source: <https://google.github.io/styleguide/Rguide.html> · google/styleguide@24cfcced577a (2026-10-17) · CC-BY-3.0
+
+## Index
+
+- L27 Syntax
+  - L29 Naming conventions
+  - L49 Don't use attach()
+- L53 Pipes
+  - L55 Right-hand assignment
+  - L66 Use explicit returns
+  - L82 Qualifying namespaces
+- L100 Documentation
+  - L102 Package-level documentation
+- L106 Errors
+  - L108 Use of bullets
+
+---
+
+R is a high-level programming language used primarily for statistical computing and graphics. The goal of the R Programming Style Guide is to make our R code easier to read, share, and verify.
+
+The Google R Style Guide is a fork of the [Tidyverse Style Guide](https://style.tidyverse.org/) by Hadley Wickham [license](https://creativecommons.org/licenses/by-sa/2.0/). Google modifications were developed in collaboration with the internal R user community. The rest of this document explains Google's primary differences with the Tidyverse guide, and why these differences exist.
+
+Google uses the [styler](https://github.com/r-lib/styler) package on every checked in file to ensure code consistency and help reviewers focus on more important issues.
+
+## Syntax
+
+### Naming conventions
+
+Google prefers identifying functions with `BigCamelCase` to clearly distinguish them from other objects.
+
+```r
+DoNothing <- function() {
+  return(invisible(NULL))
+}
+```
+
+The names of private functions should begin with a dot. This helps communicate both the origin of the function and its intended use.
+
+```r
+.DoNothingPrivately <- function() {
+  return(invisible(NULL))
+}
+```
+
+We previously recommended naming objects with `dot.case`. We're moving away from that, as it creates confusion with S3 methods.
+
+### Don't use attach()
+
+The possibilities for creating errors when using `attach()` are numerous.
+
+## Pipes
+
+### Right-hand assignment
+
+We do not support using right-hand assignment.
+
+```r
+iris %>%
+  dplyr::summarize(max_petal = max(Petal.Width)) -> results
+```
+
+This convention differs substantially from practices in other languages and makes it harder to see in code where an object is defined. E.g. searching for `foo <-` is easier than searching for `foo <-` and `-> foo` (possibly split over lines).
+
+### Use explicit returns
+
+Do not rely on R's implicit return feature. It is better to be clear about your intent to `return()` an object.
+
+```r
+AddValues <- function(x, y) {
+  return(x + y)
+}
+```
+
+```r
+AddValues <- function(x, y) {
+  x + y
+}
+```
+
+### Qualifying namespaces
+
+Users should explicitly qualify namespaces for all external functions.
+
+```r
+purrr::map()
+```
+
+We discourage using the `@import` Roxygen tag to bring in all functions into a NAMESPACE. Google has a very big R codebase, and importing all functions creates too much risk for name collisions.
+
+While there is a small performance penalty for using `::`, it makes it easier to understand dependencies in your code. There are some exceptions to this rule.
+
+- Infix functions (`%name%`) always need to be imported.
+- Certain `rlang` pronouns, notably `.data`, need to be imported.
+- Functions from default R packages, including `datasets`, `utils`, `grDevices`, `graphics`, `stats` and `methods`. If needed, you can `@import` the full package.
+
+When importing functions, place the `@importFrom` tag in the Roxygen header above the function where the external dependency is used.
+
+## Documentation
+
+### Package-level documentation
+
+All packages should have a package documentation file, in a `packagename-package.R` file.
+
+## Errors
+
+### Use of bullets
+
+We prefer ASCII style bullets (`*`) to unicode when producing error messages.

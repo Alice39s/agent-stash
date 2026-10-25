@@ -36,6 +36,54 @@
       "notices": [
         "opencode/LICENSE"
       ]
+    },
+    {
+      "name": "crush",
+      "title": "Crush",
+      "repository": "charmbracelet/crush",
+      "commit": "d6329fbd900a5c63a452797b74ff8d1c499aebef",
+      "path": "internal/agent/templates/initialize.md.tpl",
+      "license": "FSL-1.1-MIT",
+      "prompt": "crush/prompt.md",
+      "notices": [
+        "crush/LICENSE.md"
+      ]
+    },
+    {
+      "name": "copilot",
+      "title": "GitHub Copilot in VS Code",
+      "repository": "microsoft/vscode",
+      "commit": "4ff5ad971b5bc474e5fc6ca8cf2386d30a85d3eb",
+      "path": "extensions/copilot/assets/prompts/skills/init/SKILL.md",
+      "license": "MIT",
+      "prompt": "copilot/prompt.md",
+      "notices": [
+        "copilot/LICENSE.txt"
+      ]
+    },
+    {
+      "name": "qwen-code",
+      "title": "Qwen Code",
+      "repository": "QwenLM/qwen-code",
+      "commit": "e847dfc0de14966cdb23cac1f26f88d4aea1e9b7",
+      "path": "packages/cli/src/ui/commands/initCommand.ts",
+      "license": "Apache-2.0",
+      "prompt": "qwen-code/prompt.md",
+      "notices": [
+        "qwen-code/LICENSE"
+      ]
+    },
+    {
+      "name": "kilo-code",
+      "title": "Kilo Code",
+      "repository": "Kilo-Org/kilocode",
+      "commit": "9723be621429771ea47a2614b0ac433448023cec",
+      "path": "packages/opencode/src/command/template/initialize.txt",
+      "license": "MIT",
+      "prompt": "kilo-code/prompt.md",
+      "notices": [
+        "kilo-code/LICENSE"
+      ]
     }
   ]
 }

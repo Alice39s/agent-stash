@@ -1,5 +1,6 @@
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { appendFile, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { Octokit } from "@octokit/rest";
+import MurmurHash3 from "murmurhash3js-revisited";
 import { dirname, join } from "pathe";
 import * as v from "valibot";
 import {
@@ -8,6 +9,7 @@ import {
   VENDOR_DIR,
   type VendoredPreset,
 } from "../src/init/manifest.ts";
+import { extractSubmitPrompt, removeLeadingSentence } from "../src/init/extract.ts";
 
 interface UpstreamSource {
   name: string;
@@ -15,6 +17,10 @@ interface UpstreamSource {
   owner: string;
   repo: string;
   path: string;
+  /** SPDX id for repositories whose license GitHub does not recognize. */
+  license?: string;
+  /** Turns the upstream file into the vendored prompt when it is not a plain prompt file. */
+  extract?: (content: string) => string;
 }
 
 interface VendoredFile {
@@ -43,6 +49,43 @@ const SOURCES: UpstreamSource[] = [
     owner: "anomalyco",
     repo: "opencode",
     path: "packages/core/src/plugin/command/initialize.txt",
+  },
+  {
+    name: "crush",
+    title: "Crush",
+    owner: "charmbracelet",
+    repo: "crush",
+    path: "internal/agent/templates/initialize.md.tpl",
+    license: "FSL-1.1-MIT",
+  },
+  {
+    name: "copilot",
+    title: "GitHub Copilot in VS Code",
+    owner: "microsoft",
+    repo: "vscode",
+    path: "extensions/copilot/assets/prompts/skills/init/SKILL.md",
+  },
+  {
+    name: "qwen-code",
+    title: "Qwen Code",
+    owner: "QwenLM",
+    repo: "qwen-code",
+    path: "packages/cli/src/ui/commands/initCommand.ts",
+    // The prompt is a template literal; `contextFileName` is the instructions file it writes.
+    // The identity line names Qwen Code, so it is dropped for use in other agents.
+    extract: (content) =>
+      removeLeadingSentence(
+        extractSubmitPrompt("initCommand.ts", content, { contextFileName: "AGENTS.md" }),
+        "You are Qwen Code, an interactive CLI agent.",
+      ),
+  },
+  {
+    name: "kilo-code",
+    title: "Kilo Code",
+    owner: "Kilo-Org",
+    repo: "kilocode",
+    // The Kilo CLI command loads this template; packages/core carries the upstream OpenCode copy.
+    path: "packages/opencode/src/command/template/initialize.txt",
   },
 ];
 
@@ -92,7 +135,7 @@ async function fetchSource(
   source: UpstreamSource,
 ): Promise<{ preset: VendoredPreset; files: VendoredFile[] }> {
   const { data: repo } = await octokit.rest.repos.get({ owner: source.owner, repo: source.repo });
-  const license = repo.license?.spdx_id;
+  const license = source.license ?? repo.license?.spdx_id;
   if (!license || license === "NOASSERTION") {
     throw new Error(`${repo.full_name} has no recognized SPDX license`);
   }
@@ -104,8 +147,9 @@ async function fetchSource(
 
   const prompt = `${source.name}/prompt.md`;
   const noticeNames = await listNoticeFiles(source, commit.sha);
+  const upstream = await readFileAt(source, commit.sha, source.path);
   const files: VendoredFile[] = [
-    { path: prompt, content: await readFileAt(source, commit.sha, source.path) },
+    { path: prompt, content: source.extract ? source.extract(upstream) : upstream },
     ...(await Promise.all(
       noticeNames.map(async (name) => ({
         path: `${source.name}/${name}`,
@@ -127,7 +171,50 @@ async function fetchSource(
   return { preset, files };
 }
 
-const results = await Promise.all(SOURCES.map(fetchSource));
+/** MurmurHash3 (x64, 128-bit) of a preset's vendored paths and contents. */
+function contentHash(files: VendoredFile[]): string {
+  return MurmurHash3.x64.hash128(new TextEncoder().encode(JSON.stringify(files)));
+}
+
+async function readVendored(preset: VendoredPreset): Promise<VendoredFile[]> {
+  return Promise.all(
+    [preset.prompt, ...preset.notices].map(async (path) => ({
+      path,
+      content: await readFile(join(VENDOR_DIR, path), "utf8"),
+    })),
+  );
+}
+
+const previous = v.parse(
+  ManifestSchema,
+  JSON.parse(await readFile(join(VENDOR_DIR, MANIFEST_FILE), "utf8")),
+);
+interface SyncedPreset {
+  preset: VendoredPreset;
+  files: VendoredFile[];
+  hash: string;
+  changed: boolean;
+}
+
+async function syncSource(source: UpstreamSource): Promise<SyncedPreset> {
+  const result = await fetchSource(source);
+  const hash = contentHash(result.files);
+  const known = previous.presets.find((preset) => preset.name === source.name);
+  const unchanged =
+    known !== undefined &&
+    known.path === result.preset.path &&
+    contentHash(await readVendored(known)) === hash;
+  // Unchanged content keeps the recorded commit, so a moving upstream HEAD alone produces no diff.
+  if (unchanged) result.preset.commit = known.commit;
+  return { preset: result.preset, files: result.files, hash, changed: !unchanged };
+}
+
+const results: SyncedPreset[] = [];
+for (const source of SOURCES) {
+  // One upstream at a time keeps the run within GitHub's secondary rate limits.
+  // oxlint-disable-next-line no-await-in-loop
+  results.push(await syncSource(source));
+}
 const manifest = v.parse(ManifestSchema, { presets: results.map((result) => result.preset) });
 
 await rm(VENDOR_DIR, { recursive: true, force: true });
@@ -142,6 +229,15 @@ await Promise.all(
 );
 await writeFile(join(VENDOR_DIR, MANIFEST_FILE), `${JSON.stringify(manifest, null, 2)}\n`);
 
-for (const preset of manifest.presets) {
-  console.log(`${preset.name}: ${preset.repository}@${preset.commit.slice(0, 12)} ${preset.path}`);
+for (const { preset, hash, changed } of results) {
+  const status = changed ? "changed" : "unchanged";
+  console.log(
+    `${preset.name}: ${preset.repository}@${preset.commit.slice(0, 12)} ${preset.path} murmur3:${hash} ${status}`,
+  );
+}
+if (process.env.GITHUB_OUTPUT) {
+  await appendFile(
+    process.env.GITHUB_OUTPUT,
+    `changed=${results.some((result) => result.changed)}\n`,
+  );
 }

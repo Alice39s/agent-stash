@@ -121,6 +121,15 @@ test("/init completes preset names with an extra prompt hint", async () => {
       description: expect.stringMatching(/^\(default\) Use the `Kimi Code CLI` prompt preset/),
     }),
     expect.objectContaining({ value: "opencode " }),
+    expect.objectContaining({ value: "crush " }),
+    expect.objectContaining({ value: "copilot " }),
+    expect.objectContaining({ value: "qwen-code " }),
+    expect.objectContaining({ value: "kilo-code " }),
+    expect.objectContaining({
+      value: "claude-code ",
+      description: expect.stringMatching(/^Use the `Claude Code builtin slash command \/init/),
+    }),
+    expect.objectContaining({ value: "claude-code-init-new " }),
     { value: "team ", label: "team [extra prompt]", description: "Team AGENTS.md preset" },
   ]);
   expect(await command?.getArgumentCompletions?.("o")).toEqual([
