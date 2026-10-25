@@ -53,8 +53,13 @@ jobs:
             Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>
           title: "chore(init): sync upstream init prompts"
           body-path: ${{ runner.temp }}/pr-body.md
+      # 可以立即合并时直接 squash 合并，否则开启 auto-merge，等 GitHub 算完可合并状态后自动合并。
       - name: Merge the sync PR
-        if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
+        if: steps.pr.outputs.pull-request-number != '' && steps.pr.outputs.pull-request-operation != 'closed'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh pr merge "${{ steps.pr.outputs.pull-request-number }}" --repo "$GITHUB_REPOSITORY" --squash --delete-branch
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+        run: >-
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --squash --delete-branch
+          --subject "chore(init): sync upstream init prompts (#$PR_NUMBER)"
+          --body "Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>"
