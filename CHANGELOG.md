@@ -1,3 +1,17 @@
+## @agent-stash/init@1.4.0
+
+### 新增文档站
+
+- 中英双语文档站发布在 <https://alice39s.github.io/agent-stash/>，收录安装方法、`/init`、技能，以及 `dsh-recall`、`dsh-autosuggest` 与 Agent Stash 框架的录屏和截图。
+- 每页都有 Markdown 副本，站点提供 `llms.txt`、`llms-full.txt`、站内搜索与站点地图。
+- 插件索引仍在 `https://alice39s.github.io/agent-stash/index.json`，与文档站一起发布。
+
+### DSH 的 `/init` 进入 `/` 菜单
+
+- `/init` 排在 `/` 菜单的「指令」区，和内置指令一样带图标、标题「初始化」和一句靠右的说明，英文界面显示为 Init。
+- 在菜单里选中它，或者只输入 `/init` 就回车，会打开预设列表：默认预设打勾并已高亮，再按回车就用它；输入文字可以筛选预设，`init.json` 里的自定义预设单独列在「自定义」组。
+- 在 `/init` 后面打空格，可以接着写预设名和额外 Prompt，规则不变。
+
 ## @agent-stash/init@1.3.1
 
 ### DSH 插件页的名称与图标
