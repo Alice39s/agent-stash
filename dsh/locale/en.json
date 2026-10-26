@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Agent Stash",
+    "title": "/init",
     "description": "Adds /init [preset] [extra prompt], which asks the agent to write AGENTS.md with the /init prompt of Codex, Claude Code, Kimi Code, OpenCode, or another coding agent."
   }
 }
