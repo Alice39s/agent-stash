@@ -46,9 +46,10 @@
 
 ![Pi Plugin](https://img.shields.io/badge/Pi-Plugin-111111) ![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe) ![Cline Plugin](https://img.shields.io/badge/Cline-Plugin-222222) ![goose Recipes](https://img.shields.io/badge/goose-Recipes-2f2f2f) ![Aider](https://img.shields.io/badge/Aider-CLI-14b014) ![Grok Build Skills](https://img.shields.io/badge/Grok%20Build-Skills-000000)
 
-| 名称                                      | 支持的 Agent                             | 说明                                                                        |
-| ----------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- |
-| [/init](#plugin-init-preset-extra-prompt) | pi、DSH、Cline、Grok Build、goose、Aider | 用其他 Coding Agent 的 `/init` prompt 分析项目，写出 `AGENTS.md` 等说明文件 |
+| 名称                                            | npm 包                                                                                         | 支持的 Agent                             | 说明                                                                        |
+| ----------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- |
+| [/init](#plugin-init-preset-extra-prompt)       | [`@agent-stash/init`](https://www.npmjs.com/package/@agent-stash/init)                         | pi、DSH、Cline、Grok Build、goose、Aider | 用其他 Coding Agent 的 `/init` prompt 分析项目，写出 `AGENTS.md` 等说明文件 |
+| [消息编辑](packages/dsh-message-edit/README.md) | [`@agent-stash/dsh-message-edit`](https://www.npmjs.com/package/@agent-stash/dsh-message-edit) | DSH                                      | 编辑消息、重新生成回复或重试回合，每次改动另开一个会话版本，可随时切换回去  |
 
 ### Agent Skills
 
@@ -80,15 +81,16 @@ pi -e git:github.com/Alice39s/agent-stash
 
 ### DeepSeek Harness (DSH)
 
-DeepSeek Harness 桌面版：在「插件」页点「添加插件」，填入 `github:Alice39s/agent-stash` 后安装。
+DeepSeek Harness 桌面版：在「插件」页点「添加插件」，填入 npm 包名后安装：`@agent-stash/init`（`/init`）或 `@agent-stash/dsh-message-edit`（消息编辑）。
 
-命令行：把仓库作为 bundle 装进某个 profile，例如 Web 界面使用的 `web`：
+命令行：把包作为 bundle 装进某个 profile，例如 Web 界面使用的 `web`：
 
 ```bash
-dsh plugin --profile web add github:Alice39s/agent-stash
+dsh plugin --profile web add @agent-stash/init
+dsh plugin --profile web add @agent-stash/dsh-message-edit
 ```
 
-`dist/` 随仓库提交，安装时不需要构建。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
+npm 包由 GitHub Actions 经 npm trusted publishing 发布，带 provenance。也可以装 `main` 上的最新版本：`github:Alice39s/agent-stash`（只含 `/init`）。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
 
 插件索引：DSH 0.2.1-alpha.4 起可以在「发现」页浏览 JSON 插件索引并从中安装。在「插件」页的「实验性插件」里打开「自定义插件市场」（较新的 DSH 叫「自定义插件索引」），切到「发现」，点「添加索引源」，填入：
 
@@ -96,7 +98,7 @@ dsh plugin --profile web add github:Alice39s/agent-stash
 https://alice39s.github.io/agent-stash/index.json
 ```
 
-索引由 GitHub Actions 用 DSH 的参考生成器生成，每次发布后更新，列出每个 `v<version>` tag 和 `main` 上的版本。
+索引由 GitHub Actions 用 DSH 的参考生成器生成，每次发布后更新，列出两个 npm 包的每个发布版本。
 
 ### Cline
 
@@ -266,11 +268,19 @@ pnpm bundle # 更新 dist/：DSH、Cline 插件与 agent-stash 命令行都从�
 pnpm format
 ```
 
+工作区包放在 `packages/` 下，各自的 `bundle` 脚本产出随仓库提交的 `dist/`。CI 与发布流程的步骤都由 `scripts/ci` 里的 Python 命令行执行（uv + Typer），本地可以用同一条命令复现：
+
+```bash
+uv run --project scripts/ci ci --help
+uv run --project scripts/ci ci bundle --check # 重建所有工作区包的 dist/，与检出内容不一致时失败
+uv run --project scripts/ci ci npm status     # 列出各包在 npm 上的版本与是否经 trusted publishing 发布
+```
+
 ### 发布
 
 版本号遵循语义化版本，由 [Tegami](https://tegami.fuma-nama.dev) 管理，配置在 `scripts/tegami.ts`。
 
-1. 在 `.tegami/` 下新建 Markdown 文件，frontmatter 写明升级类型（`major`、`minor` 或 `patch`），正文是发布说明。正文至少要有一个 Markdown 标题，没有标题的文件 Tegami 不会读取：
+1. 在 `.tegami/` 下新建 Markdown 文件，frontmatter 写明每个改动的包与升级类型（`major`、`minor` 或 `patch`），正文是发布说明。正文至少要有一个 Markdown 标题，没有标题的文件 Tegami 不会读取：
 
    ```md
    ---
@@ -283,8 +293,20 @@ pnpm format
    - xxx 预设从上游每天同步。
    ```
 
-2. 推送到 `main` 后，`.github/workflows/release.yml` 开 Version Packages PR，更新 `package.json` 的版本号与 `CHANGELOG.md`。
-3. 合并这个 PR 后，同一个 workflow 打 `v<version>` tag 并创建 GitHub release。包不发布到 npm。
+2. 推送到 `main` 后，`.github/workflows/release.yml` 开 Version Packages PR，更新各包的版本号与 `CHANGELOG.md`。
+3. 合并这个 PR 后，同一个 workflow 经 npm trusted publishing（OIDC）把升级过的包发布到 npm 并附带 provenance，然后打 tag、创建 GitHub release：`@agent-stash/init` 用 `v<version>`，其他包用 `<name>@<version>`。
+
+npm 上的包禁止 bypass 2FA 的令牌发布，CI 只通过 trusted publishing 发布。
+
+#### 新增一个 npm 包
+
+npm 只能给已经存在的包配置 Trusted Publisher，新包要先用一次性的令牌占个名字：
+
+1. 在 npmjs.com 生成一个只用于这一步的发布令牌，复制到剪贴板后运行 `uv run --project scripts/ci ci bootstrap store-token`，它把剪贴板内容存成仓库的 `NPM_TOKEN` secret 并清空剪贴板。
+2. 运行 `uv run --project scripts/ci ci bootstrap publish --auth token`：release workflow 用令牌给还没有正式版本的包发布一个空的 `0.0.0-placeholder.<n>`（dist-tag `placeholder`）。
+3. 在包的 npm 设置页添加 Trusted Publisher：仓库 `Alice39s/agent-stash`，workflow `release.yml`。
+4. 运行 `uv run --project scripts/ci ci bootstrap publish --auth oidc`，确认 `ci npm status` 显示 trusted publishing 为 yes。
+5. 运行 `uv run --project scripts/ci ci bootstrap remove-token`，在 npmjs.com 吊销令牌，并把包的发布权限设为禁止 bypass 2FA 令牌。
 
 README 里的版本 badge 会自动读取最新的 GitHub release。
 
