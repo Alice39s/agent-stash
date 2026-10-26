@@ -13,30 +13,21 @@ concurrency:
   group: sync-init-prompts
   cancel-in-progress: false
 
+env:
+  UV_PROJECT: ${{ github.workspace }}/scripts/ci
+  UV_LOCKED: "1"
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - name: Fetch upstream prompts
         id: sync
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          {
-            echo "Upstream \`/init\` prompts at their default branch heads:"
-            echo
-            echo '```'
-            pnpm --silent sync:init-prompts
-            echo '```'
-          } > "$RUNNER_TEMP/pr-body.md"
-          cat "$RUNNER_TEMP/pr-body.md"
+        run: uv run ci sync init-prompts --body "${{ runner.temp }}/pr-body.md"
       # 用 GITHUB_TOKEN 创建的 PR 不会触发其他 workflow，在这里检查。
       - if: steps.sync.outputs.changed == 'true'
         run: pnpm check

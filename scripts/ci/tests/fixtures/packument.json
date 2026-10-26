@@ -1,0 +1,73 @@
+{
+  "name": "@agent-stash/example",
+  "dist-tags": { "latest": "0.3.0", "placeholder": "0.0.0-placeholder.1" },
+  "versions": {
+    "0.0.0-stage": {
+      "name": "@agent-stash/example",
+      "version": "0.0.0-stage",
+      "description": "Temporary package placeholder for staged publishing",
+      "dist": {
+        "shasum": "9",
+        "tarball": "https://registry.npmjs.org/@agent-stash/example/-/example-0.0.0-stage.tgz"
+      },
+      "_npmUser": { "name": "alice39s", "email": "alice39s@example.com" }
+    },
+    "0.0.0-placeholder.0": {
+      "name": "@agent-stash/example",
+      "version": "0.0.0-placeholder.0",
+      "dist": {
+        "shasum": "0",
+        "tarball": "https://registry.npmjs.org/@agent-stash/example/-/example-0.0.0-placeholder.0.tgz"
+      },
+      "_npmUser": { "name": "alice39s", "email": "alice39s@example.com" }
+    },
+    "0.0.0-placeholder.1": {
+      "name": "@agent-stash/example",
+      "version": "0.0.0-placeholder.1",
+      "dist": {
+        "shasum": "1",
+        "tarball": "https://registry.npmjs.org/@agent-stash/example/-/example-0.0.0-placeholder.1.tgz",
+        "attestations": {
+          "url": "https://registry.npmjs.org/-/npm/v1/attestations/@agent-stash%2fexample@0.0.0-placeholder.1",
+          "provenance": { "predicateType": "https://slsa.dev/provenance/v1" }
+        }
+      },
+      "_npmUser": {
+        "name": "GitHub Actions",
+        "email": "npm-oidc-no-reply@github.com",
+        "trustedPublisher": {
+          "id": "github",
+          "oidcConfigId": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    },
+    "0.3.0": {
+      "name": "@agent-stash/example",
+      "version": "0.3.0",
+      "dist": {
+        "shasum": "2",
+        "tarball": "https://registry.npmjs.org/@agent-stash/example/-/example-0.3.0.tgz",
+        "attestations": {
+          "url": "https://registry.npmjs.org/-/npm/v1/attestations/@agent-stash%2fexample@0.3.0",
+          "provenance": { "predicateType": "https://slsa.dev/provenance/v1" }
+        }
+      },
+      "_npmUser": {
+        "name": "GitHub Actions",
+        "email": "npm-oidc-no-reply@github.com",
+        "trustedPublisher": {
+          "id": "github",
+          "oidcConfigId": "00000000-0000-0000-0000-000000000000"
+        }
+      }
+    }
+  },
+  "time": {
+    "created": "2026-10-26T04:00:00.000Z",
+    "modified": "2026-10-26T06:00:00.000Z",
+    "0.0.0-stage": "2026-10-26T04:00:00.000Z",
+    "0.0.0-placeholder.0": "2026-10-26T04:01:30.000Z",
+    "0.0.0-placeholder.1": "2026-10-26T05:00:00.000Z",
+    "0.3.0": "2026-10-26T06:00:00.000Z"
+  }
+}

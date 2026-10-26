@@ -8,17 +8,31 @@ on:
 permissions:
   contents: read
 
+env:
+  # `uv run ci ...` 调用 scripts/ci 里的 Typer 命令，并要求 uv.lock 与依赖一致。
+  UV_PROJECT: ${{ github.workspace }}/scripts/ci
+  UV_LOCKED: "1"
+
 jobs:
   check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm check
-      - name: Check that dist matches the sources
-        run: pnpm bundle && git diff --exit-code -- dist
+      - name: Check that the committed bundles match the sources
+        run: uv run ci bundle --check
+
+  scripts:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: scripts/ci
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.2
+        with:
+          cache-dependency-glob: scripts/ci/uv.lock
+      - run: uv run ruff format --check
+      - run: uv run ruff check
+      - run: uv run pytest

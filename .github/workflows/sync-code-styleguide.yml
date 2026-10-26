@@ -13,29 +13,20 @@ concurrency:
   group: sync-code-styleguide
   cancel-in-progress: false
 
+env:
+  UV_PROJECT: ${{ github.workspace }}/scripts/ci
+  UV_LOCKED: "1"
+
 jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - name: Regenerate the code-styleguide skill
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: |
-          {
-            echo "Regenerated \`skills/code-styleguide\` from the upstream style guides:"
-            echo
-            echo '```'
-            pnpm --silent sync:code-styleguide
-            echo '```'
-          } > "$RUNNER_TEMP/pr-body.md"
-          cat "$RUNNER_TEMP/pr-body.md"
+        run: uv run ci sync code-styleguide --body "${{ runner.temp }}/pr-body.md"
       # 用 GITHUB_TOKEN 创建的 PR 不会触发其他 workflow，在这里检查。
       - run: pnpm check
       - uses: peter-evans/create-pull-request@v8
