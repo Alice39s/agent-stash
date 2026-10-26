@@ -1,0 +1,432 @@
+/* 基础控件，按 design.md 4.3 的替换规则复制宿主类：
+   IconButton header ← ScheduleCatalogAction `.trigger`，row ← MessageFeedbackActions `.action`；
+   QuietAction header ← JobListAction `.trigger`，toolbar ← TrajectoryToolbar `.action` 与 `.toggle`；
+   Button ← ui-primitives `Button`；ListRow ← ui-primitives `Menu` `.item`；
+   TextField ← FeedbackDialog `.detail`；StateDot ← `StateDot`。 */
+
+.iconButton,
+.quiet,
+.button,
+.listRow,
+.field {
+  box-sizing: border-box;
+  margin: 0;
+  transition:
+    color var(--ds-transition-duration-fast) var(--ds-ease-in-out),
+    background-color var(--ds-transition-duration-fast) var(--ds-ease-in-out),
+    border-color var(--ds-transition-duration-fast) var(--ds-ease-in-out),
+    opacity var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+.iconButton,
+.quiet,
+.button,
+.listRow {
+  border: 0;
+  background: transparent;
+}
+
+.iconButton svg,
+.quiet svg,
+.button svg {
+  flex: none;
+}
+
+.iconButton[aria-busy="true"],
+.quiet[aria-busy="true"],
+.button[aria-busy="true"] {
+  cursor: default;
+}
+
+/* IconButton。宿主类没有不可用规则：不透明度 0.4，悬停保持静止颜色。 */
+.iconButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+}
+
+.iconButton:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+}
+
+.iconButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.iconButton:focus-visible {
+  outline: var(--message-edit-focus-width) solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+.iconHeader {
+  padding: 0;
+  border-radius: 28px;
+  corner-shape: round;
+}
+
+.iconHeader:focus-visible {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+}
+
+.iconRow {
+  padding: 6px;
+  border-radius: var(--message-edit-radius-sm);
+}
+
+/* QuietAction。 */
+.quiet {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  color: var(--dsw-alias-label-tertiary);
+  font: var(--dsw-font-xxs-12);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.quiet:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.quietHeader {
+  gap: 3px;
+  min-height: 28px;
+  padding: 3px 2px;
+  border-radius: var(--message-edit-radius-sm);
+}
+
+.quietHeader:hover:not(:disabled),
+.quietHeader:focus-visible {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.quietHeader:focus-visible {
+  outline: var(--message-edit-focus-width) solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+.quietToolbar {
+  gap: 4px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: var(--message-edit-radius-sm);
+}
+
+/* 选项开关沿用 `.toggle` 的内边距。 */
+.quietToolbar[role="radio"] {
+  padding: 0 7px;
+}
+
+.quietToolbar:hover:not(:disabled),
+.quietToolbar[aria-checked="true"] {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.quietToolbar:focus-visible {
+  outline: 1px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 1px;
+}
+
+.failed,
+.failed:hover:not(:disabled),
+.failed:focus-visible {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+/* Button。 */
+.button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0 14px;
+  border-radius: var(--message-edit-radius-md);
+  color: var(--dsw-alias-label-primary);
+  font: var(--dsw-font-s-14);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.button:focus-visible {
+  outline: var(--message-edit-focus-width) solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+.md {
+  height: 36px;
+}
+
+.sm {
+  height: 28px;
+  padding: 0 10px;
+  border-radius: var(--message-edit-radius-sm);
+  font: var(--dsw-font-xxs-12);
+}
+
+.primary {
+  background: var(--dsw-alias-button-primary-fill);
+  color: var(--dsw-alias-label-primary-foreground);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--dsw-alias-button-primary-hover);
+}
+
+.outline {
+  border: 0.5px solid var(--dsw-alias-border-l3);
+}
+
+.outline:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+/* ListRow：键盘聚焦与指针悬停用同一底色，底色就是焦点指示。 */
+.listRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  padding: 6px 8px;
+  border-radius: var(--message-edit-radius-md);
+  color: var(--dsw-alias-label-primary);
+  font: var(--dsw-font-xs-13);
+  text-align: start;
+}
+
+button.listRow {
+  cursor: pointer;
+}
+
+button.listRow:hover:not(:disabled),
+button.listRow:focus-visible:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+  outline: none;
+}
+
+button.listRow:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.listRow[aria-current="true"] {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+.option {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 2px;
+}
+
+/* 版本树行：每层缩进 12px，最多六层；标记列上画一条 1px 的导线，不画拐角。 */
+.tree {
+  --message-edit-tree-inset: 8px;
+
+  position: relative;
+  align-items: flex-start;
+  gap: 8px;
+  padding-left: var(--message-edit-tree-inset);
+}
+
+.tree[data-indent="1"] {
+  --message-edit-tree-inset: 20px;
+}
+
+.tree[data-indent="2"] {
+  --message-edit-tree-inset: 32px;
+}
+
+.tree[data-indent="3"] {
+  --message-edit-tree-inset: 44px;
+}
+
+.tree[data-indent="4"] {
+  --message-edit-tree-inset: 56px;
+}
+
+.tree[data-indent="5"] {
+  --message-edit-tree-inset: 68px;
+}
+
+.tree[data-indent="6"] {
+  --message-edit-tree-inset: 80px;
+}
+
+.tree::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  bottom: -1px;
+  left: calc(var(--message-edit-tree-inset) + 4.5px);
+  width: 1px;
+  background: var(--dsw-alias-border-l2);
+}
+
+/* 行内容叠在导线上方。 */
+.tree > * {
+  position: relative;
+}
+
+/* TextField：约六行起，到上限后自己滚动。 */
+.field {
+  display: block;
+  width: 100%;
+  min-height: 160px;
+  max-height: 360px;
+  padding: 12px 14px;
+  border: 0.5px solid var(--dsw-alias-border-l4);
+  border-radius: var(--message-edit-radius-lg);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  font: var(--dsw-font-s-14);
+  field-sizing: content;
+  resize: none;
+}
+
+.field::placeholder {
+  color: var(--dsw-alias-label-caption);
+}
+
+.field:focus {
+  outline: none;
+  border-color: var(--dsw-alias-border-l3);
+  box-shadow: 0 0 0 1px var(--dsw-alias-state-business-primary);
+}
+
+.field:read-only {
+  color: var(--dsw-alias-label-dimmed);
+}
+
+/* StateDot ongoing：淡色整圈打底，呼吸的弧线随整个图形旋转，两段动画同周期。 */
+.spinner {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.spinnerMotion {
+  transform-origin: center;
+  animation: spin 1.5s linear infinite;
+}
+
+.spinnerTrack,
+.spinnerArc {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.spinnerTrack {
+  opacity: 0.25;
+}
+
+.spinnerArc {
+  stroke-dasharray: 12 150;
+  animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 12 150;
+    stroke-dashoffset: 0;
+  }
+
+  50% {
+    stroke-dasharray: 24 150;
+    stroke-dashoffset: -6;
+  }
+
+  100% {
+    stroke-dasharray: 12 150;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* StateDot dot：10px 的槽位里画一个 6px 的圆点。 */
+.dot {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  width: 10px;
+  height: 10px;
+}
+
+.dot::after {
+  content: "";
+  position: absolute;
+  inset: 20%;
+  border-radius: 50%;
+  corner-shape: round;
+  background: currentColor;
+}
+
+.dot[data-tone="current"] {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.dot[data-tone="ancestor"] {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.dot[data-tone="other"] {
+  color: var(--dsw-alias-label-caption);
+}
+
+/* 两到四个互斥选项的紧凑切换。 */
+.radioGroup {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.radioLabel {
+  margin-right: 4px;
+  color: var(--dsw-alias-label-tertiary);
+  font: var(--dsw-font-xxs-12);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .iconButton,
+  .quiet,
+  .button,
+  .listRow,
+  .field {
+    transition: none;
+  }
+
+  .spinnerMotion,
+  .spinnerArc {
+    animation: none;
+  }
+
+  .spinnerArc {
+    stroke-dasharray: 18 150;
+    stroke-dashoffset: -3;
+  }
+}

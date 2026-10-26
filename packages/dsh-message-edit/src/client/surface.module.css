@@ -1,0 +1,20 @@
+/* 每个表面根上的圆角与焦点宽度。0.1.0-rc.3 没有 --dsw-radius-* 与 --dsw-focus-ring-width，
+   插件在这里固定一份 0.2 的取值。按钮、tooltip 与对话框可能挂在宿主节点下，各自也带上这个类。 */
+.root {
+  --message-edit-radius-xs: 4px;
+  --message-edit-radius-sm: 8px;
+  --message-edit-radius-md: 12px;
+  --message-edit-radius-lg: 16px;
+  --message-edit-radius-panel: 28px;
+  --message-edit-focus-width: 2px;
+}
+
+/* 只给辅助技术读的文字。 */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

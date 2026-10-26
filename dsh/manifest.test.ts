@@ -6,8 +6,9 @@ import semver from "semver";
 import * as v from "valibot";
 import { expect, test } from "vitest";
 
-/** 仓库根目录，即 `agent-stash` 包根。 */
+/** 仓库根目录，即 `@agent-stash/init` 包根。 */
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
+const PACKAGE_NAME = "@agent-stash/init";
 const require = createRequire(import.meta.url);
 
 /** 第一个带「发现」页、能从插件索引安装组合包的 DSH 版本。 */
@@ -19,7 +20,7 @@ const NonEmptySchema = v.pipe(v.string(), v.regex(/\S/u));
 
 /** 插件索引生成器从 package.json 读取的字段。 */
 const ManifestSchema = v.object({
-  name: v.literal("agent-stash"),
+  name: v.literal(PACKAGE_NAME),
   private: v.optional(v.literal(false)),
   icon: NonEmptySchema,
   engines: v.object({ dsh: NonEmptySchema }),
@@ -52,11 +53,11 @@ test("declares an engines.dsh range that accepts every DSH release with plugin i
 });
 
 test("exports bundle locale files from one directory through the package name", async () => {
-  const english = require.resolve("agent-stash/locale/en.json");
+  const english = require.resolve(`${PACKAGE_NAME}/locale/en.json`);
   const directory = dirname(english);
   const files = (await readdir(directory)).filter((name) => name.endsWith(".json")).toSorted();
   expect(files).toEqual(["en.json", "zh.json"]);
-  const resolved = files.map((name) => require.resolve(`agent-stash/locale/${name}`));
+  const resolved = files.map((name) => require.resolve(`${PACKAGE_NAME}/locale/${name}`));
   expect(resolved.map((file) => dirname(file))).toEqual(files.map(() => directory));
   const locales = await Promise.all(resolved.map((file) => readFile(file, "utf8")));
   for (const locale of locales) v.parse(LocaleSchema, JSON.parse(locale));

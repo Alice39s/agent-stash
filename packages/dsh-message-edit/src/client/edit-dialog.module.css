@@ -1,0 +1,43 @@
+/* 编辑对话框正文：选项行的文字与正文下方的说明、进行中、错误三种提示行。 */
+.options {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.optionTitle {
+  font: var(--dsw-font-xs-strong-13);
+}
+
+.optionPreview {
+  overflow: hidden;
+  color: var(--dsw-alias-label-tertiary);
+  font: var(--dsw-font-xxs-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder {
+  color: var(--dsw-alias-label-caption);
+}
+
+/* 说明行取 helper 色；进行中取 WorkspaceBrowser `.deleteStatus`，错误取 `.renameError`。 */
+.message {
+  margin: 8px 0 0;
+  color: var(--dsw-alias-label-tertiary);
+  font: var(--dsw-font-xxs-12);
+  overflow-wrap: anywhere;
+}
+
+.message[role="status"] {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.message[role="alert"] {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.cascade {
+  display: flex;
+  margin-top: 12px;
+}

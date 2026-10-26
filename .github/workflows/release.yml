@@ -5,31 +5,55 @@ on:
     branches:
       - main
   workflow_dispatch:
+    inputs:
+      placeholder:
+        description: Publish an empty placeholder version of each unreleased package instead of releasing
+        type: choice
+        options:
+          - none
+          - token
+          - oidc
+        default: none
 
 permissions:
   contents: write
   pull-requests: write
+  # npm trusted publishing 用 GitHub OIDC 换取一次性的发布凭据，发布时不需要 NPM_TOKEN。
+  id-token: write
 
 concurrency:
   group: release
   cancel-in-progress: false
 
+env:
+  UV_PROJECT: ${{ github.workspace }}/scripts/ci
+  UV_LOCKED: "1"
+
 jobs:
   release:
+    if: github.event_name == 'push' || inputs.placeholder == 'none'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
+      - uses: ./.github/actions/setup
       - run: pnpm check
-      # 有待发布的 .tegami/*.md 时开 Version Packages PR；PR 合并后打 v<version> tag 并创建 GitHub release。
+      # 有待发布的 .tegami/*.md 时开 Version Packages PR；PR 合并后经 npm trusted publishing 发布各包，再打 tag 并创建 GitHub release。
       - name: Version or release
         run: pnpm tegami ci
         env:
           GITHUB_TOKEN: ${{ github.token }}
+
+  placeholder:
+    if: github.event_name == 'workflow_dispatch' && inputs.placeholder != 'none'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      # 新包先用 NPM_TOKEN 发一个空版本让 npm 认识它；在 npmjs.com 配好 Trusted Publisher 后，再用 OIDC 发一个空版本验证配置。
+      - name: Publish placeholder versions
+        run: uv run ci npm placeholder
+        env:
+          PLACEHOLDER_AUTH: ${{ inputs.placeholder }}
+          NPM_TOKEN: ${{ inputs.placeholder == 'token' && secrets.NPM_TOKEN || '' }}

@@ -22,6 +22,7 @@
     "cline/**/*.ts",
     "cli/**/*.ts",
     "scripts/**/*.ts",
-    "*.config.ts"
+    "*.config.ts",
+    "packages/*/tsdown.*.ts"
   ]
 }

@@ -1,0 +1,148 @@
+/* Dialog：卡片外观取自宿主 `Modal.module.css`。元素本身是原生 <dialog>，showModal() 后进入
+   top layer；它就是卡片，遮罩画在 ::backdrop 上。卡片四周留出宿主 `.root` 的 24px 空白。 */
+.dialog {
+  box-sizing: border-box;
+  width: min(560px, 100% - 48px);
+  max-width: none;
+  max-height: calc(100% - 48px);
+  margin: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--message-edit-radius-panel);
+  background: var(--dsw-alias-bg-layer-2);
+  box-shadow:
+    0 0 0 0.5px var(--dsw-alias-border-l4),
+    var(--dsw-shadow-lv3);
+  color: var(--dsw-alias-label-primary);
+  font: var(--dsw-font-s-14);
+  text-align: start;
+  white-space: normal;
+  cursor: auto;
+}
+
+.dialog[open] {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-bottom: 24px;
+  animation: modalEnter var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.dialog::backdrop {
+  background: var(--dsw-alias-bg-mask-1);
+  backdrop-filter: var(--dsw-mask-blur);
+  animation: modalEnter var(--ds-transition-duration) var(--ds-ease-in-out);
+}
+
+.dialog:focus {
+  outline: none;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* 标题行与按钮行固定，卡片到达最大高度后正文滚动。 */
+.content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 22px 14px 12px 24px;
+}
+
+.title {
+  min-width: 0;
+  margin: 0;
+  color: var(--dsw-alias-label-primary);
+  font: var(--dsw-font-base-strong-16);
+  overflow-wrap: anywhere;
+}
+
+.close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--message-edit-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+  transition:
+    background-color var(--ds-transition-duration-fast) var(--ds-ease-in-out),
+    opacity var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+.close:hover:not(:disabled) {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.close:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.close:focus-visible {
+  outline: var(--message-edit-focus-width) solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+.description {
+  flex: none;
+  margin: 0;
+  padding: 0 24px;
+  color: var(--dsw-alias-label-primary);
+  font: var(--dsw-font-s-14);
+}
+
+/* 上下各留 2px，滚动裁切时不切掉文本框的焦点描边；上外边距相应减 2px。 */
+.body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  margin-top: 18px;
+  padding: 2px 24px;
+  overflow-y: auto;
+}
+
+.footer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 0 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog[open],
+  .dialog::backdrop {
+    animation: none;
+  }
+
+  .close {
+    transition: none;
+  }
+}

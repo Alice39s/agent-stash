@@ -1,7 +1,7 @@
 name: Plugin index
 
 on:
-  # 发布流程打完 v<version> tag 之后重新生成，新版本随即出现在索引里。
+  # 发布流程把新版本发到 npm 之后重新生成，新版本随即出现在索引里。
   workflow_run:
     workflows: [Release]
     types: [completed]
@@ -20,6 +20,8 @@ concurrency:
 env:
   # 参考生成器 apps/plugin-market-generator 所在的 DeepSeek Harness 版本。
   DSH_REF: dsh-v0.2.1-rc.3
+  UV_PROJECT: ${{ github.workspace }}/scripts/ci
+  UV_LOCKED: "1"
 
 jobs:
   build:
@@ -32,20 +34,9 @@ jobs:
           repository: deepseek-ai/deepseek-harness
           ref: ${{ env.DSH_REF }}
           path: .dsh
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-      - name: Install the reference generator
-        run: pnpm --dir .dsh install --frozen-lockfile --filter '@deepseek-ai/dsh-plugin-market-generator...'
+      - uses: ./.github/actions/setup
       - name: Generate index.json
-        run: >-
-          pnpm --dir .dsh --filter @deepseek-ai/dsh-plugin-market-generator start
-          --input "$GITHUB_WORKSPACE/dsh/plugin-index.txt"
-          --output "$GITHUB_WORKSPACE/site/index.json"
-          --cache "$RUNNER_TEMP/plugin-index-cache"
-          --title "Agent Stash"
-          --description "DeepSeek Harness bundles from Alice39s/agent-stash"
+        run: uv run ci plugin-index --dsh .dsh --output site/index.json --cache "${{ runner.temp }}/plugin-index-cache"
       - uses: actions/upload-pages-artifact@v5
         with:
           path: site

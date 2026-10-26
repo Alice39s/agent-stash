@@ -16,5 +16,5 @@
     "typescript/no-floating-promises": "error",
     "import/no-default-export": "off"
   },
-  "ignorePatterns": ["vendor/**", "dist/**", "node_modules/**"]
+  "ignorePatterns": ["vendor/**", "dist/**", "packages/*/dist/**", "node_modules/**"]
 }

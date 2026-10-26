@@ -3,16 +3,16 @@ import { runCli } from "tegami/cli";
 import { github } from "tegami/plugins/github";
 
 const REPO = "Alice39s/agent-stash";
-const ROOT_PACKAGE = "agent-stash";
+const ROOT_PACKAGE = "@agent-stash/init";
 const CO_AUTHOR_TRAILER = "Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>";
 
 /**
- * 根包不发布到 npm：发布即打 `v<version>` tag 并创建 GitHub release。
- * preflight 抢在 npm 插件之前把根包标记为待发布，willPublish 再跳过 npm publish。
+ * 根包沿用 `v<version>` tag，与既有的发布历史一致；工作区里的其他包使用默认的 `<name>@<version>`。
+ * 各包都经 npm trusted publishing 发布，见 `.github/workflows/release.yml`。
  */
-function githubReleaseOnly(): TegamiPlugin {
+function rootVersionTag(): TegamiPlugin {
   return {
-    name: "github-release-only",
+    name: "root-version-tag",
     enforce: "pre",
     initPublishPlan({ plan }) {
       for (const [id, packagePlan] of plan.packages) {
@@ -22,18 +22,12 @@ function githubReleaseOnly(): TegamiPlugin {
         }
       }
     },
-    publishPreflight({ pkg }) {
-      return pkg.name === ROOT_PACKAGE ? { shouldPublish: true } : undefined;
-    },
-    willPublish({ pkg }) {
-      return pkg.name === ROOT_PACKAGE ? false : undefined;
-    },
   };
 }
 
 const paper = tegami({
   plugins: [
-    githubReleaseOnly(),
+    rootVersionTag(),
     github({
       repo: REPO,
       versionPr: {

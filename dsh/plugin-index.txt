@@ -1,2 +1,4 @@
 # 插件索引的来源列表：.github/workflows/plugin-index.yml 用 DSH 的参考生成器把它生成 index.json。
-https://github.com/Alice39s/agent-stash
+# npm 上每个声明了 dsh.bundle 的发布版本都会列出。
+@agent-stash/init
+@agent-stash/dsh-message-edit

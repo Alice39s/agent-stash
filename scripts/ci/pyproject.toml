@@ -1,0 +1,29 @@
+[project]
+name = "agent-stash-ci"
+version = "0.1.0"
+description = "CI and release tasks for the agent-stash workspace"
+authors = [{ name = "Alice39s" }]
+requires-python = ">=3.14"
+dependencies = ["pydantic>=2.14.1", "requests>=2.34.2", "typer>=0.27.3"]
+
+[project.scripts]
+ci = "agent_stash_ci.cli:app"
+
+[build-system]
+requires = ["uv_build>=0.11.26,<0.12.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = ["pytest>=9.1.1", "ruff>=0.17.2"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "PTH", "RUF"]
+# 注释与 docstring 用中文标点。
+allowed-confusables = ["，", "；", "：", "（", "）"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

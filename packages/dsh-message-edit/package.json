@@ -1,0 +1,76 @@
+{
+  "name": "@agent-stash/dsh-message-edit",
+  "version": "0.2.3",
+  "description": "Edit, reroll, and retry DeepSeek Harness conversation turns as reversible session branches",
+  "keywords": [
+    "deepseek-harness",
+    "dsh-plugin",
+    "message-edit",
+    "reroll"
+  ],
+  "homepage": "https://github.com/Alice39s/agent-stash/tree/main/packages/dsh-message-edit#readme",
+  "bugs": "https://github.com/Alice39s/agent-stash/issues",
+  "license": "MIT",
+  "author": "Alice39s",
+  "contributors": [
+    "Moeblack"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alice39s/agent-stash.git",
+    "directory": "packages/dsh-message-edit"
+  },
+  "files": [
+    "dist",
+    "cordis.patch.yml",
+    "locale",
+    "icon.svg",
+    "LICENSE"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./client": "./dist/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "bundle": "tsdown"
+  },
+  "devDependencies": {
+    "@types/react": "~18.3.31",
+    "@types/react-dom": "~18.3.7",
+    "lightningcss": "^1.32.0",
+    "pathe": "^2.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "tsdown": "^0.23.1",
+    "valibot": "^1.5.0"
+  },
+  "icon": "./icon.svg",
+  "engines": {
+    "dsh": ">=0.1.0-rc.3"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-connection",
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-ui-renderer",
+        "@deepseek-ai/dsh-api-session-controller",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-chat"
+      ]
+    }
+  }
+}

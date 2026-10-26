@@ -1,0 +1,36 @@
+/* Tooltip 气泡，外观取自宿主 0.2.1-rc.3 的 `Tooltip.module.css`。气泡用 Popover API 进入 top layer，
+   先清掉 popover 的 UA 样式；位置由脚本按触发元素写入 left/top。不设 display，未打开时由 UA 隐藏。 */
+.bubble {
+  position: fixed;
+  inset: auto;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(50vw, calc(100vw - 24px));
+  height: auto;
+  max-height: calc(100vh - 24px);
+  margin: 0;
+  padding: 3px 7px;
+  overflow: auto;
+  border: 0;
+  border-radius: var(--message-edit-radius-sm);
+  background: var(--dsw-alias-tooltip-bg);
+  color: var(--dsw-static-neutral-bluish-00);
+  font: var(--dsw-font-xs-13);
+  text-align: start;
+  white-space: pre-line;
+  overflow-wrap: break-word;
+  pointer-events: none;
+  animation: tooltipIn 150ms var(--ds-ease-in-out);
+}
+
+@keyframes tooltipIn {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubble {
+    animation: none;
+  }
+}
