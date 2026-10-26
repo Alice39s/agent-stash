@@ -28,7 +28,9 @@
     "dist",
     "skills",
     "vendor",
-    "LICENSE"
+    "LICENSE",
+    "!**/*.test.ts",
+    "!src/init/fixtures"
   ],
   "type": "module",
   "exports": {
