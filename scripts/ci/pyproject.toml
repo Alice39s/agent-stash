@@ -17,6 +17,11 @@ build-backend = "uv_build"
 # 与 uv_build 的范围一致；setup-uv 按这里选 uv 版本，本地与 CI 用同一个小版本。
 required-version = ">=0.11.26,<0.12.0"
 
+# uv.lock 记下每个包的下载地址，CI 按它下载；固定为 PyPI，锁文件不随本机配置的镜像变化。
+[[tool.uv.index]]
+url = "https://pypi.org/simple"
+default = true
+
 [dependency-groups]
 dev = ["pytest>=9.1.1", "ruff>=0.17.2"]
 
