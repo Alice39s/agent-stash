@@ -77,6 +77,30 @@ def sync(
     stdout.print(text, markup=False)
 
 
+@app.command("plugin-index")
+def plugin_index(
+    dsh: Annotated[
+        Path, typer.Option(help="Checkout of deepseek-ai/deepseek-harness with the generator.")
+    ],
+    output: Annotated[Path, typer.Option(help="index.json to write.")],
+    cache: Annotated[Path, typer.Option(help="Generator result cache, kept between runs.")],
+) -> None:
+    """Generate the DSH plugin index from dsh/plugin-index.txt with DSH's reference generator."""
+    generator = "@deepseek-ai/dsh-plugin-market-generator"
+    run(["pnpm", "install", "--frozen-lockfile", "--filter", f"{generator}..."], cwd=dsh)
+    run(
+        [
+            "pnpm", "--filter", generator, "start",
+            "--input", str(repo_root() / "dsh" / "plugin-index.txt"),
+            "--output", str(output.resolve()),
+            "--cache", str(cache.resolve()),
+            "--title", "Agent Stash",
+            "--description", "DeepSeek Harness bundles from Alice39s/agent-stash",
+        ],
+        cwd=dsh,
+    )  # fmt: skip
+
+
 @npm_app.command()
 def status() -> None:
     """List publishable packages on npm and whether trusted publishing made their newest version."""
