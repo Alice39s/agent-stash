@@ -13,8 +13,12 @@ export const CONFIG_PATH = join("agent-stash", "init.json");
 
 export interface InitPreset {
   name: string;
+  /** 界面里显示的名称：vendor 预设取上游产品名，手动维护的预设取 frontmatter 的 `title`，自定义预设取预设名。 */
+  title: string;
   description: string;
   file: string;
+  /** 来自配置文件的自定义预设，包括覆盖了内置预设的同名条目。 */
+  custom: boolean;
 }
 
 export interface InitRegistry {
@@ -36,6 +40,7 @@ const ConfigSchema = v.strictObject({
 });
 
 const ManualMatterSchema = v.object({
+  title: v.pipe(v.string(), v.nonEmpty()),
   source: v.pipe(v.string(), v.nonEmpty()),
   version: v.pipe(v.string(), v.nonEmpty()),
 });
@@ -61,8 +66,10 @@ async function loadVendoredPresets(): Promise<InitPreset[]> {
   const manifest = await readJsonFile(join(VENDOR_DIR, MANIFEST_FILE), ManifestSchema);
   return manifest.presets.map((preset) => ({
     name: preset.name,
+    title: preset.title,
     description: `Use the \`${preset.title}\` prompt preset (${preset.repository}@${preset.commit.slice(0, 7)}, ${preset.license}).`,
     file: join(VENDOR_DIR, preset.prompt),
+    custom: false,
   }));
 }
 
@@ -81,8 +88,10 @@ async function loadManualPresets(): Promise<InitPreset[]> {
       }
       return {
         name,
+        title: result.output.title,
         description: `Use the \`${result.output.source}\` prompt preset (${result.output.version}).`,
         file,
+        custom: false,
       };
     }),
   );
@@ -98,8 +107,10 @@ async function loadConfigLayer(configFile: string): Promise<ConfigLayer | undefi
     defaultPreset: config.defaultPreset,
     presets: Object.entries(config.presets ?? {}).map(([name, preset]) => ({
       name,
+      title: name,
       description: preset.description ?? `Use the custom prompt preset \`${preset.file}\`.`,
       file: resolve(baseDir, preset.file),
+      custom: true,
     })),
   };
 }

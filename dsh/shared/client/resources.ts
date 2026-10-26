@@ -2,7 +2,7 @@ import type { DshClientContext } from "./dsh.ts";
 
 /** 注册中英文词典，卸载时移除。 */
 export function installDictionaries(
-  ctx: DshClientContext,
+  ctx: Pick<DshClientContext, "locale" | "effect">,
   ns: string,
   dictionaries: Readonly<Record<"en" | "zh", Readonly<Record<string, string>>>>,
 ): void {

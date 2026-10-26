@@ -6,6 +6,7 @@ import minpath from "node:path";
 import minproc from "node:process";
 import { fileURLToPath, fileURLToPath as urlToPath } from "node:url";
 import { existsSync } from "node:fs";
+import { text } from "node:stream/consumers";
 //#region \0rolldown/runtime.js
 var __create = Object.create;
 var __defProp = Object.defineProperty;
@@ -7054,6 +7055,7 @@ const ConfigSchema = /* @__PURE__ */ strictObject({
 	})))
 });
 const ManualMatterSchema = /* @__PURE__ */ object({
+	title: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ nonEmpty()),
 	source: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ nonEmpty()),
 	version: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ nonEmpty())
 });
@@ -7066,8 +7068,10 @@ async function readJsonFile(file, schema) {
 async function loadVendoredPresets() {
 	return (await readJsonFile(join(VENDOR_DIR, MANIFEST_FILE), ManifestSchema)).presets.map((preset) => ({
 		name: preset.name,
+		title: preset.title,
 		description: `Use the \`${preset.title}\` prompt preset (${preset.repository}@${preset.commit.slice(0, 7)}, ${preset.license}).`,
-		file: join(VENDOR_DIR, preset.prompt)
+		file: join(VENDOR_DIR, preset.prompt),
+		custom: false
 	}));
 }
 async function loadManualPresets() {
@@ -7079,8 +7083,10 @@ async function loadManualPresets() {
 		if (!result.success) throw new Error(`Invalid frontmatter in ${file}:\n${/* @__PURE__ */ summarize(result.issues)}`);
 		return {
 			name,
+			title: result.output.title,
 			description: `Use the \`${result.output.source}\` prompt preset (${result.output.version}).`,
-			file
+			file,
+			custom: false
 		};
 	}));
 }
@@ -7092,8 +7098,10 @@ async function loadConfigLayer(configFile) {
 		defaultPreset: config.defaultPreset,
 		presets: Object.entries(config.presets ?? {}).map(([name, preset]) => ({
 			name,
+			title: name,
 			description: preset.description ?? `Use the custom prompt preset \`${preset.file}\`.`,
-			file: resolve(baseDir, preset.file)
+			file: resolve(baseDir, preset.file),
+			custom: true
 		}))
 	};
 }
@@ -7116,19 +7124,62 @@ async function loadInitRegistry(configFiles) {
 		presets
 	};
 }
-function listPresetNames(registry) {
-	const others = [...registry.presets.keys()].filter((name) => name !== registry.defaultPreset);
-	return [`${registry.defaultPreset} (default)`, ...others].join(", ");
+//#endregion
+//#region dsh/shared/host/http.ts
+function sendJson(res, status, payload) {
+	res.statusCode = status;
+	res.setHeader("content-type", "application/json; charset=utf-8");
+	res.setHeader("cache-control", "no-store");
+	res.end(JSON.stringify(payload));
 }
+async function readJsonBody(req, schema) {
+	const type = req.headers["content-type"] ?? "";
+	if (!/^application\/json\s*(?:;|$)/iu.test(type)) return {
+		ok: false,
+		status: 415,
+		message: "the request body must be application/json"
+	};
+	const result = /* @__PURE__ */ safeParse(/* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ parseJson(), schema), await text(req));
+	if (!result.success) return {
+		ok: false,
+		status: 400,
+		message: /* @__PURE__ */ summarize(result.issues)
+	};
+	return {
+		ok: true,
+		value: result.output
+	};
+}
+//#endregion
+//#region dsh/init/wire.ts
+const ROUTE_PREFIX = "agent-stash-init";
+const PRESETS_PATH = `${ROUTE_PREFIX}/presets`;
+const RUN_PATH = `${ROUTE_PREFIX}/run`;
+const RunRequestSchema = /* @__PURE__ */ object({
+	session: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ nonEmpty()),
+	input: /* @__PURE__ */ string()
+});
 //#endregion
 //#region dsh/init/index.ts
 const name = "agent-stash-init";
-const inject = ["commands"];
+const inject = [
+	"webServer",
+	"connection",
+	"sessionController"
+];
 function dshConfigFile(env = process.env) {
 	return join(env["DSH_HOME"] ?? join(homedir(), ".dsh"), CONFIG_PATH);
 }
-function inputHint(registry) {
-	return `[${[...registry.presets.keys()].join("|")}] [extra prompt]`;
+function presetList(registry) {
+	const presets = [...registry.presets.values()];
+	return {
+		defaultPreset: registry.defaultPreset,
+		presets: [...presets.filter((preset) => !preset.custom), ...presets.filter((preset) => preset.custom)].map((preset) => ({
+			name: preset.name,
+			title: preset.title,
+			custom: preset.custom
+		}))
+	};
 }
 function sessionDirectory(ctx, session) {
 	const directory = ctx.get("workingDirectory")?.get(session) ?? session.header.cwd;
@@ -7146,25 +7197,69 @@ function userMessage(text) {
 		source: Object.freeze({ kind: "user" })
 	});
 }
-function apply(ctx) {
-	ctx.effect(async () => {
-		const registry = await loadInitRegistry([dshConfigFile()]);
-		return ctx.commands.register({
-			name: "init",
-			description: `Write AGENTS.md with an /init prompt preset. Presets: ${listPresetNames(registry)}`,
-			input: { hint: inputHint(registry) },
-			handler: async ({ agent, rawInput }) => {
-				const current = await loadInitRegistry([dshConfigFile()]);
-				const { preset, extra } = parseInitArgs(rawInput, current);
-				const prompt = renderInitPrompt(await readFile(preset.file, "utf8"), extra, sessionDirectory(ctx, agent.session));
-				agent.followup(userMessage(prompt));
-				return {
-					kind: "success",
-					text: `/init ${preset.name}: ${preset.description}\nPresets: ${listPresetNames(current)}`
-				};
+async function runInit(ctx, agent, input) {
+	const { preset, extra } = parseInitArgs(input, await loadInitRegistry([dshConfigFile()]));
+	const prompt = renderInitPrompt(await readFile(preset.file, "utf8"), extra, sessionDirectory(ctx, agent.session));
+	agent.followup(userMessage(prompt));
+	return preset.name;
+}
+function reason(error) {
+	return error instanceof Error ? error.message : String(error);
+}
+function guarded(ctx, method, handle) {
+	return async (req, res) => {
+		const rejected = ctx.connection.requestRejection(req);
+		if (rejected !== void 0) {
+			res.statusCode = rejected;
+			res.end();
+			return;
+		}
+		if (req.method !== method) {
+			res.setHeader("allow", method);
+			sendJson(res, 405, { message: `only ${method} is allowed` });
+			return;
+		}
+		await handle(req, res);
+	};
+}
+function presetsRoute(ctx) {
+	return {
+		kind: "exact",
+		path: `/${PRESETS_PATH}`,
+		handler: guarded(ctx, "GET", async (_req, res) => {
+			try {
+				sendJson(res, 200, presetList(await loadInitRegistry([dshConfigFile()])));
+			} catch (error) {
+				sendJson(res, 500, { message: `reading the /init presets failed: ${reason(error)}` });
 			}
-		});
-	}, "agent-stash /init command");
+		})
+	};
+}
+function runRoute(ctx) {
+	return {
+		kind: "exact",
+		path: `/${RUN_PATH}`,
+		handler: guarded(ctx, "POST", async (req, res) => {
+			const body = await readJsonBody(req, RunRequestSchema);
+			if (!body.ok) {
+				sendJson(res, body.status, { message: body.message });
+				return;
+			}
+			try {
+				const found = await ctx.sessionController.resolveAgent(body.value.session);
+				if ("error" in found) {
+					sendJson(res, found.error.code === "session/not-found" ? 404 : 409, { message: found.error.message });
+					return;
+				}
+				sendJson(res, 200, { preset: await runInit(ctx, found.agent, body.value.input) });
+			} catch (error) {
+				sendJson(res, 500, { message: `/init failed: ${reason(error)}` });
+			}
+		})
+	};
+}
+function apply(ctx) {
+	for (const route of [presetsRoute(ctx), runRoute(ctx)]) ctx.effect(() => ctx.webServer.register(route), `${name}: ${route.path}`);
 }
 //#endregion
-export { apply, dshConfigFile, inject, inputHint, name };
+export { apply, dshConfigFile, inject, name, presetList, presetsRoute, runInit, runRoute };

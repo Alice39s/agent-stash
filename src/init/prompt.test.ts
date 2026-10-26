@@ -3,7 +3,13 @@ import { parseInitArgs, parsePromptFile, renderInitPrompt } from "./prompt.ts";
 import type { InitPreset, InitRegistry } from "./registry.ts";
 
 function preset(name: string): InitPreset {
-  return { name, description: `${name} preset`, file: `/presets/${name}.md` };
+  return {
+    name,
+    title: name,
+    description: `${name} preset`,
+    file: `/presets/${name}.md`,
+    custom: false,
+  };
 }
 
 const registry: InitRegistry = {

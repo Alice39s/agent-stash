@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type Server } from "node:http";
 import { afterEach, describe, expect, test } from "vitest";
 import type { PromptEvent } from "../prompts.ts";
+import type { DshWebRoute } from "./http.ts";
 import {
   dshHistorySource,
   promptRouteHandler,
@@ -8,7 +9,6 @@ import {
   type DshHostContext,
   type DshProjectionSnapshot,
   type DshSessionHeader,
-  type DshWebRoute,
 } from "./plugin.ts";
 
 function message(seq: number, text: string, kind = "user"): PromptEvent {

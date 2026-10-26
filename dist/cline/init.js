@@ -7053,6 +7053,7 @@ const ConfigSchema = /* @__PURE__ */ strictObject({
 	})))
 });
 const ManualMatterSchema = /* @__PURE__ */ object({
+	title: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ nonEmpty()),
 	source: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ nonEmpty()),
 	version: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ nonEmpty())
 });
@@ -7065,8 +7066,10 @@ async function readJsonFile(file, schema) {
 async function loadVendoredPresets() {
 	return (await readJsonFile(join(VENDOR_DIR, MANIFEST_FILE), ManifestSchema)).presets.map((preset) => ({
 		name: preset.name,
+		title: preset.title,
 		description: `Use the \`${preset.title}\` prompt preset (${preset.repository}@${preset.commit.slice(0, 7)}, ${preset.license}).`,
-		file: join(VENDOR_DIR, preset.prompt)
+		file: join(VENDOR_DIR, preset.prompt),
+		custom: false
 	}));
 }
 async function loadManualPresets() {
@@ -7078,8 +7081,10 @@ async function loadManualPresets() {
 		if (!result.success) throw new Error(`Invalid frontmatter in ${file}:\n${/* @__PURE__ */ summarize(result.issues)}`);
 		return {
 			name,
+			title: result.output.title,
 			description: `Use the \`${result.output.source}\` prompt preset (${result.output.version}).`,
-			file
+			file,
+			custom: false
 		};
 	}));
 }
@@ -7091,8 +7096,10 @@ async function loadConfigLayer(configFile) {
 		defaultPreset: config.defaultPreset,
 		presets: Object.entries(config.presets ?? {}).map(([name, preset]) => ({
 			name,
+			title: name,
 			description: preset.description ?? `Use the custom prompt preset \`${preset.file}\`.`,
-			file: resolve(baseDir, preset.file)
+			file: resolve(baseDir, preset.file),
+			custom: true
 		}))
 	};
 }

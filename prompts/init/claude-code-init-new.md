@@ -1,5 +1,6 @@
 ---
 name: claude-code-init-multi-phase
+title: Claude Code (multi-phase)
 source: Claude Code builtin slash command /init (new multi-phase prompt variant)
 version: v2.1.306
 command: "/init"

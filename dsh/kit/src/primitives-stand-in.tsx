@@ -107,3 +107,7 @@ export function SettingsForm(props: {
     </div>
   );
 }
+
+export function IconListPenOutlineRegular(props: { size?: number }): ReactNode {
+  return <svg aria-hidden="true" data-icon="list-pen" width={props.size} height={props.size} />;
+}
