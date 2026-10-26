@@ -2,3 +2,6 @@
 # npm 上每个声明了 dsh.bundle 的发布版本都会列出。
 @agent-stash/init
 @agent-stash/dsh-message-edit
+@agent-stash/dsh-recall
+@agent-stash/dsh-autosuggest
+@agent-stash/dsh-stash-kit
