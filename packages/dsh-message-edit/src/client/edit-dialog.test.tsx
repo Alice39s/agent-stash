@@ -10,7 +10,7 @@ function render(overrides: Partial<EditDialogProps>): string {
   return renderToStaticMarkup(
     <EditDialog
       t={translator("en")}
-      useMessageEdit={FACE.useMessageEdit}
+      store={FACE.store}
       edit={FACE.edit}
       choices={TIMELINE.messages.slice(0, 3)}
       hasLaterTurns
@@ -61,7 +61,7 @@ describe("EditDialog", () => {
 
   test("ignores controller errors that no save from this dialog produced", () => {
     const failed = faceOf({ ...READY, error: "conflict" });
-    const html = render({ choices: [reply()], useMessageEdit: failed.useMessageEdit });
+    const html = render({ choices: [reply()], store: failed.store });
     expect(html).not.toContain('role="alert"');
     expect(html).toContain("Saving creates a new version");
   });

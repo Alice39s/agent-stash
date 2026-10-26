@@ -51,11 +51,6 @@ export function cascadeCopy(
   return { label: t(CASCADE_LABEL_KEYS[policy]), hint: t(CASCADE_HINT_KEYS[policy]) };
 }
 
-/** 选取整个控制器快照；快照不可变，引用只在更新时变化。 */
-export function selectState(state: MessageEditState): MessageEditState {
-  return state;
-}
-
 /** 有操作在进行，或时间线不是就绪状态时，发起操作的控件都不可用；控制器在这两种情况下也会拒绝操作。 */
 export function operationsBlocked(state: MessageEditState): boolean {
   return state.pending !== null || state.status !== "ready";

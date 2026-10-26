@@ -51,7 +51,10 @@ interface Triggers {
 
 const IDLE: Triggers = { hover: false, focus: false };
 
-/** 显示中的气泡：挂上后进入 top layer 并按触发元素定位，窗口尺寸变化时重新定位。 */
+/**
+ * 显示中的气泡：挂上后进入 top layer 并按触发元素定位，窗口尺寸变化时重新定位。
+ * 文字变化时调用方换 `key` 重新挂载，新尺寸随之重新定位。
+ */
 function Bubble({
   label,
   anchor,
@@ -84,7 +87,7 @@ function Bubble({
     return () => {
       window.removeEventListener("resize", fit);
     };
-  }, [anchor, label]);
+  }, [anchor]);
 
   return (
     <span ref={bubble} popover="manual" role="tooltip" className={cx(surface.root, styles.bubble)}>
@@ -129,7 +132,7 @@ export function Tooltip({ label, children }: TooltipProps): ReactNode {
           set({ focus: false });
         },
       })}
-      {visible && anchor !== null && <Bubble label={label} anchor={anchor} />}
+      {visible && anchor !== null && <Bubble key={label} label={label} anchor={anchor} />}
     </>
   );
 }

@@ -5,8 +5,9 @@ import type {
   MessageEditTimeline,
   VersionSummary,
 } from "../shared.ts";
-import type { MessageEditProps, MessageEditState } from "./controller.ts";
+import type { MessageEditFace, MessageEditState } from "./controller.ts";
 import { MESSAGE_EDIT_DICTIONARIES, type MessageEditTranslate } from "./locale.ts";
+import { createSnapshotStore } from "./store.ts";
 
 /** 与宿主 `locale.bind` 相同的 `{name}` 插值；缺参数时直接报错。 */
 export function translator(locale: "en" | "zh"): MessageEditTranslate {
@@ -146,9 +147,9 @@ export const READY: MessageEditState = {
 };
 
 /** 注入面替身：读固定的快照，操作一律成功。 */
-export function faceOf(state: MessageEditState): MessageEditProps {
+export function faceOf(state: MessageEditState): MessageEditFace {
   return {
-    useMessageEdit: (selector) => selector(state),
+    store: createSnapshotStore(state),
     acquire: () => () => {},
     load: () => {},
     edit: async () => true,

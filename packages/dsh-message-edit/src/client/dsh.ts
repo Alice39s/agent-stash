@@ -7,7 +7,7 @@
  */
 import type { ComponentType } from "react";
 
-/** 订阅一份不可变快照；Slot 注入面的 `hooks` 只要求这两个方法。 */
+/** 订阅一份不可变快照，`useSyncExternalStore` 只要求这两个方法。 */
 export interface Observable<T> {
   getSnapshot(): T;
   subscribe(listener: () => void): () => void;
@@ -85,6 +85,3 @@ export interface ClientContext {
   on(event: "connection/reset", listener: () => void): () => void;
   effect(execute: () => () => void, label?: string): () => Promise<void>;
 }
-
-/** Slot 渲染器按注入面 `hooks.<name>` 生成的 `use<Name>` 选择器 Hook。 */
-export type SelectorHook<T> = <R>(selector: (value: T) => R) => R;
