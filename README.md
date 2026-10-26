@@ -294,7 +294,7 @@ uv run --project scripts/ci ci npm status     # 列出各包在 npm 上的版本
    ```
 
 2. 推送到 `main` 后，`.github/workflows/release.yml` 开 Version Packages PR，更新各包的版本号与 `CHANGELOG.md`。
-3. 合并这个 PR 后，同一个 workflow 经 npm trusted publishing（OIDC）把升级过的包发布到 npm 并附带 provenance，然后打 tag、创建 GitHub release：`@agent-stash/init` 用 `v<version>`，其他包用 `<name>@<version>`。
+3. 合并这个 PR 后，同一个 workflow 经 npm trusted publishing（OIDC）把升级过的包发布到 npm 并附带 provenance，然后打 tag、创建 GitHub release：`@agent-stash/init` 用 `v<version>`，其他包用 `<name>@<version>`。workflow 等到 npm 能安装新版本才结束，随后运行的插件索引工作流就会列出这次发布。
 
 npm 上的包禁止 bypass 2FA 的令牌发布，CI 只通过 trusted publishing 发布。
 
