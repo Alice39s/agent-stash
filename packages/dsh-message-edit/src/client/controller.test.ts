@@ -111,7 +111,7 @@ describe("createMessageEditController", () => {
     const { face } = createMessageEditController(ctx, "root");
 
     const release = face.acquire();
-    await vi.waitFor(() => expect(face.hooks.messageEdit.getSnapshot().status).toBe("ready"));
+    await vi.waitFor(() => expect(face.store.getSnapshot().status).toBe("ready"));
     expect(fetch).toHaveBeenCalledTimes(1);
 
     session.update((state) => ({ ...state, running: false }));

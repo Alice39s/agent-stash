@@ -10,7 +10,7 @@ import type {
   VersionSummary,
 } from "../shared.ts";
 import { cx } from "./class-names.ts";
-import type { MessageEditProps, MessageEditState } from "./controller.ts";
+import type { MessageEditFace, MessageEditState } from "./controller.ts";
 import {
   Button,
   CascadeToggle,
@@ -23,6 +23,7 @@ import {
 } from "./controls.tsx";
 import { EditDialog } from "./edit-dialog.tsx";
 import { formatClock, formatLocale, formatPlural, shortId, type FormatLocale } from "./format.ts";
+import { useNow, useSnapshot } from "./hooks.ts";
 import { IconChevronLeft, IconChevronRight, IconEdit, IconRefresh } from "./icons.tsx";
 import type { MessageEditTranslate } from "./locale.ts";
 import surface from "./surface.module.css";
@@ -32,7 +33,6 @@ import {
   canReroll,
   lastTurn,
   operationsBlocked,
-  selectState,
   stepper,
   turnGroups,
   versionRows,
@@ -41,10 +41,13 @@ import {
   type VersionRow,
 } from "./view-model.ts";
 
-export type TimelineViewProps = MessageEditProps & { readonly t: MessageEditTranslate };
+export type TimelineViewProps = MessageEditFace & { readonly t: MessageEditTranslate };
 
 /** 载入骨架每栏的行数。 */
 const SKELETON_ROWS = [0, 1, 2] as const;
+
+/** 时间标签只区分今天与更早的日期，每分钟刷新一次当前时间就够了。 */
+const CLOCK_REFRESH_MS = 60_000;
 
 interface ToolbarProps {
   readonly t: MessageEditTranslate;
@@ -302,6 +305,8 @@ interface PrimaryContentProps {
   readonly t: MessageEditTranslate;
   readonly timeline: MessageEditTimeline;
   readonly state: MessageEditState;
+  /** 渲染时间标签用的当前时间。 */
+  readonly now: number;
   /** 这个视图发起、仍在进行的重试所在的回合。 */
   readonly retryingTurn: number | null;
   readonly onRetry: (turn: number) => void;
@@ -312,13 +317,13 @@ function PrimaryContent({
   t,
   timeline,
   state,
+  now,
   retryingTurn,
   onRetry,
   onEdit,
 }: PrimaryContentProps): ReactNode {
   const groups = turnGroups(timeline);
   if (groups.length === 0) return <p className={styles.statusLine}>{t("status.empty")}</p>;
-  const now = Date.now();
   return groups.map((group) => (
     <TurnGroupView
       key={group.turn}
@@ -336,7 +341,7 @@ function PrimaryContent({
 
 export function TimelineView({
   t,
-  useMessageEdit,
+  store,
   acquire,
   load,
   edit,
@@ -345,7 +350,8 @@ export function TimelineView({
   openVersion,
 }: TimelineViewProps): ReactNode {
   useEffect(() => acquire(), [acquire]);
-  const state = useMessageEdit(selectState);
+  const state = useSnapshot(store);
+  const now = useNow(CLOCK_REFRESH_MS);
   const [cascade, setCascade] = useState<CascadePolicy>("truncate");
   /** 这个视图发起、仍在进行的重试所在的回合。 */
   const [retryingTurn, setRetryingTurn] = useState<number | null>(null);
@@ -354,7 +360,6 @@ export function TimelineView({
   const locale = formatLocale(t);
   const timeline = state.timeline;
   const loading = state.status === "idle" || state.status === "loading";
-  const now = Date.now();
 
   const primary =
     timeline !== null ? (
@@ -362,6 +367,7 @@ export function TimelineView({
         t={t}
         timeline={timeline}
         state={state}
+        now={now}
         retryingTurn={state.pending === "retry" ? retryingTurn : null}
         onRetry={(turn) => {
           setRetryingTurn(turn);
@@ -456,7 +462,7 @@ export function TimelineView({
       {editing !== null && timeline !== null && (
         <EditDialog
           t={t}
-          useMessageEdit={useMessageEdit}
+          store={store}
           edit={edit}
           choices={[editing]}
           hasLaterTurns={lastTurn(timeline) !== editing.turn}

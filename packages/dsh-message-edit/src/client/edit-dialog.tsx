@@ -8,23 +8,23 @@
 import { useState, type ReactNode } from "react";
 import type { CascadePolicy, EditableMessageBlock } from "../shared.ts";
 import { cx } from "./class-names.ts";
-import type { MessageEditProps } from "./controller.ts";
+import type { MessageEditFace } from "./controller.ts";
 import { Button, CascadeToggle, ListRow, TextField } from "./controls.tsx";
 import { Dialog } from "./dialog.tsx";
 import styles from "./edit-dialog.module.css";
+import { useSnapshot } from "./hooks.ts";
 import type { MessageEditTranslate } from "./locale.ts";
 import {
   BLOCK_LABEL_KEYS,
   DIALOG_TITLE_KEYS,
   dialogHintKey,
   operationsBlocked,
-  selectState,
 } from "./view-model.ts";
 
 export interface EditDialogProps {
   readonly t: MessageEditTranslate;
-  readonly useMessageEdit: MessageEditProps["useMessageEdit"];
-  readonly edit: MessageEditProps["edit"];
+  readonly store: MessageEditFace["store"];
+  readonly edit: MessageEditFace["edit"];
   /** 可以编辑的块，至少一个；只有一个时直接进入文本步骤。 */
   readonly choices: readonly EditableMessageBlock[];
   /** 块所在回合之后还有回合时，显示后续回合策略。 */
@@ -35,7 +35,7 @@ export interface EditDialogProps {
 
 export function EditDialog({
   t,
-  useMessageEdit,
+  store,
   edit,
   choices,
   hasLaterTurns,
@@ -45,7 +45,7 @@ export function EditDialog({
   const first = choices[0];
   if (first === undefined) throw new Error("the edit dialog needs at least one block");
   const single = choices.length === 1;
-  const state = useMessageEdit(selectState);
+  const state = useSnapshot(store);
   const [block, setBlock] = useState<EditableMessageBlock | undefined>(single ? first : undefined);
   const [draft, setDraft] = useState(single ? first.text : "");
   const [cascade, setCascade] = useState(initialCascade);

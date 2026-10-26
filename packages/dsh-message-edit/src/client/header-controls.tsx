@@ -4,29 +4,30 @@
  */
 import { useEffect, useState, type ReactNode } from "react";
 import { cx } from "./class-names.ts";
-import type { MessageEditProps } from "./controller.ts";
+import type { MessageEditFace } from "./controller.ts";
 import { Glyph, GLYPH_SIZE, IconButton, QuietAction } from "./controls.tsx";
 import { formatCount, formatLocale, formatPlural } from "./format.ts";
 import styles from "./header-controls.module.css";
+import { useSnapshot } from "./hooks.ts";
 import { IconChevronLeft, IconChevronRight, IconRefresh } from "./icons.tsx";
 import type { MessageEditTranslate } from "./locale.ts";
 import surface from "./surface.module.css";
-import { canReroll, operationsBlocked, selectState, stepper } from "./view-model.ts";
+import { canReroll, operationsBlocked, stepper } from "./view-model.ts";
 
-export type HeaderControlsProps = MessageEditProps & { readonly t: MessageEditTranslate };
+export type HeaderControlsProps = MessageEditFace & { readonly t: MessageEditTranslate };
 
 /** 失败标签停留的时长，取自宿主 ui-jobs 的 `KILL_FAILED_MS`。 */
 export const HEADER_FAILURE_MS = 4_000;
 
 export function HeaderControls({
   t,
-  useMessageEdit,
+  store,
   acquire,
   reroll,
   openVersion,
 }: HeaderControlsProps): ReactNode {
   useEffect(() => acquire(), [acquire]);
-  const state = useMessageEdit(selectState);
+  const state = useSnapshot(store);
   /** 每次失败一个新标记，重新开始计时。 */
   const [failure, setFailure] = useState<symbol | null>(null);
   useEffect(() => {

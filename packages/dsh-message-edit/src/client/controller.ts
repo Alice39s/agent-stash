@@ -11,7 +11,7 @@ import type {
 } from "../shared.ts";
 import { fetchTimeline, postOperation } from "./api.ts";
 import type { ClientContext, Observable, SessionListState, SessionSnapshot } from "./dsh.ts";
-import { createSnapshotStore, type SnapshotStore } from "./store.ts";
+import { createSnapshotStore } from "./store.ts";
 
 /** 一阵连续的会话变化合并成一次刷新。 */
 const REFRESH_DELAY_MS = 300;
@@ -26,21 +26,21 @@ export interface MessageEditState {
   readonly timeline: MessageEditTimeline | null;
 }
 
-/** 通过 Slot `inject` 交给组件的注入面；`hooks.messageEdit` 在组件里是 `useMessageEdit`。 */
+/** 通过 Slot `inject` 交给组件的注入面；组件解构后直接调用，各成员不依赖 `this`。 */
 export interface MessageEditFace {
-  readonly hooks: { readonly messageEdit: SnapshotStore<MessageEditState> };
+  /** 控制器快照，组件用 `useSnapshot` 订阅。 */
+  readonly store: Observable<MessageEditState>;
   /** 组件挂载时登记使用，返回的函数在卸载时注销；有使用者时才跟随会话刷新。 */
-  acquire(): () => void;
-  load(): void;
-  edit(block: EditableMessageBlock, text: string, cascade: CascadePolicy): Promise<boolean>;
-  retry(turn: number, cascade: CascadePolicy): Promise<boolean>;
-  reroll(): Promise<boolean>;
-  openVersion(sessionId: string): void;
-}
-
-/** 组件实际收到的注入面：`hooks` 换成了选择器 Hook。 */
-export interface MessageEditProps extends Omit<MessageEditFace, "hooks"> {
-  readonly useMessageEdit: <R>(selector: (state: MessageEditState) => R) => R;
+  readonly acquire: () => () => void;
+  readonly load: () => void;
+  readonly edit: (
+    block: EditableMessageBlock,
+    text: string,
+    cascade: CascadePolicy,
+  ) => Promise<boolean>;
+  readonly retry: (turn: number, cascade: CascadePolicy) => Promise<boolean>;
+  readonly reroll: () => Promise<boolean>;
+  readonly openVersion: (sessionId: string) => void;
 }
 
 const INITIAL_STATE: MessageEditState = {
@@ -233,7 +233,7 @@ export function createMessageEditController(
   };
 
   const face: MessageEditFace = {
-    hooks: { messageEdit: store },
+    store,
     acquire() {
       users += 1;
       if (users === 1) {

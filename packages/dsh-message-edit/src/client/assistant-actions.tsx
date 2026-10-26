@@ -7,14 +7,15 @@
  */
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import styles from "./assistant-actions.module.css";
-import type { MessageEditProps } from "./controller.ts";
+import type { MessageEditFace } from "./controller.ts";
 import { IconButton } from "./controls.tsx";
 import { EditDialog } from "./edit-dialog.tsx";
+import { useSnapshot } from "./hooks.ts";
 import { IconEdit, IconRefresh } from "./icons.tsx";
 import type { MessageEditTranslate } from "./locale.ts";
-import { messageTarget, operationsBlocked, selectState } from "./view-model.ts";
+import { messageTarget, operationsBlocked } from "./view-model.ts";
 
-export type AssistantActionsProps = MessageEditProps & {
+export type AssistantActionsProps = MessageEditFace & {
   readonly t: MessageEditTranslate;
   /** 宿主动作行的 owner prop：这条助手消息的 id。 */
   readonly messageId: string;
@@ -34,13 +35,13 @@ function StatusLine({ text }: { readonly text: string }): ReactNode {
 export function AssistantActions({
   t,
   messageId,
-  useMessageEdit,
+  store,
   acquire,
   edit,
   retry,
 }: AssistantActionsProps): ReactNode {
   useEffect(() => acquire(), [acquire]);
-  const state = useMessageEdit(selectState);
+  const state = useSnapshot(store);
   const timeline = state.timeline;
   const target = useMemo(
     () => (timeline === null ? undefined : messageTarget(timeline, messageId)),
@@ -111,7 +112,7 @@ export function AssistantActions({
       {editing && (
         <EditDialog
           t={t}
-          useMessageEdit={useMessageEdit}
+          store={store}
           edit={edit}
           choices={target.choices}
           hasLaterTurns={target.hasLaterTurns}

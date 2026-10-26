@@ -1,6 +1,6 @@
 /**
  * 最小的快照 store：快照不可变，更新即替换引用，订阅者在每次替换后收到通知。
- * 两版 DSH 的 Slot 渲染器只用 `getSnapshot` 与 `subscribe` 读取注入面的 `hooks`。
+ * 组件经 `useSnapshot`（`hooks.ts`）订阅。
  */
 import type { Observable } from "./dsh.ts";
 

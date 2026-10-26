@@ -665,7 +665,10 @@ window.__ModuleLoader__.load({
 			hover: false,
 			focus: false
 		};
-		/** 显示中的气泡：挂上后进入 top layer 并按触发元素定位，窗口尺寸变化时重新定位。 */
+		/**
+		* 显示中的气泡：挂上后进入 top layer 并按触发元素定位，窗口尺寸变化时重新定位。
+		* 文字变化时调用方换 `key` 重新挂载，新尺寸随之重新定位。
+		*/
 		function Bubble({ label, anchor }) {
 			const bubble = (0, react.useRef)(null);
 			(0, react.useEffect)(() => {
@@ -697,7 +700,7 @@ window.__ModuleLoader__.load({
 				return () => {
 					window.removeEventListener("resize", fit);
 				};
-			}, [anchor, label]);
+			}, [anchor]);
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 				ref: bubble,
 				popover: "manual",
@@ -744,7 +747,7 @@ window.__ModuleLoader__.load({
 			}), visible && anchor !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Bubble, {
 				label,
 				anchor
-			})] });
+			}, label)] });
 		}
 		//#endregion
 		//#region src/client/view-model.ts
@@ -776,10 +779,6 @@ window.__ModuleLoader__.load({
 				label: t(CASCADE_LABEL_KEYS[policy]),
 				hint: t(CASCADE_HINT_KEYS[policy])
 			};
-		}
-		/** 选取整个控制器快照；快照不可变，引用只在更新时变化。 */
-		function selectState(state) {
-			return state;
 		}
 		/** 有操作在进行，或时间线不是就绪状态时，发起操作的控件都不可用；控制器在这两种情况下也会拒绝操作。 */
 		function operationsBlocked(state) {
@@ -1294,6 +1293,26 @@ window.__ModuleLoader__.load({
 			"placeholder": "J08Aha_placeholder"
 		};
 		//#endregion
+		//#region src/client/hooks.ts
+		/**
+		* 组件共用的 React Hook。Hook 都定义在模块顶层，组件每次渲染调用的是同一个函数。
+		*/
+		/** 订阅一份不可变快照；快照引用变化时组件重新渲染。服务端渲染（组件测试）读同一份快照。 */
+		function useSnapshot(store) {
+			const subscribe = (0, react.useCallback)((listener) => store.subscribe(listener), [store]);
+			const getSnapshot = (0, react.useCallback)(() => store.getSnapshot(), [store]);
+			return (0, react.useSyncExternalStore)(subscribe, getSnapshot, getSnapshot);
+		}
+		/** 每隔 `intervalMs` 更新一次的当前时间，供相对时间显示；渲染期间不直接读时钟。 */
+		function useNow(intervalMs) {
+			const [now, setNow] = (0, react.useState)(Date.now);
+			(0, react.useEffect)(() => {
+				const timer = setInterval(() => setNow(Date.now()), intervalMs);
+				return () => clearInterval(timer);
+			}, [intervalMs]);
+			return now;
+		}
+		//#endregion
 		//#region src/client/edit-dialog.tsx
 		/**
 		* 编辑对话框，时间线视图与消息动作按钮共用；只在打开期间挂载。
@@ -1302,11 +1321,11 @@ window.__ModuleLoader__.load({
 		* 块所在回合之后还有回合时，文本步骤里可以切换后续回合策略。保存进行中文本框只读、所有关闭途径
 		* 都不生效；保存成功后关闭，失败时保留草稿并显示错误。
 		*/
-		function EditDialog({ t, useMessageEdit, edit, choices, hasLaterTurns, initialCascade, onClose }) {
+		function EditDialog({ t, store, edit, choices, hasLaterTurns, initialCascade, onClose }) {
 			const first = choices[0];
 			if (first === void 0) throw new Error("the edit dialog needs at least one block");
 			const single = choices.length === 1;
-			const state = useMessageEdit(selectState);
+			const state = useSnapshot(store);
 			const [block, setBlock] = (0, react.useState)(single ? first : void 0);
 			const [draft, setDraft] = (0, react.useState)(single ? first.text : "");
 			const [cascade, setCascade] = (0, react.useState)(initialCascade);
@@ -1436,9 +1455,9 @@ window.__ModuleLoader__.load({
 				children: text
 			});
 		}
-		function AssistantActions({ t, messageId, useMessageEdit, acquire, edit, retry }) {
+		function AssistantActions({ t, messageId, store, acquire, edit, retry }) {
 			(0, react.useEffect)(() => acquire(), [acquire]);
-			const state = useMessageEdit(selectState);
+			const state = useSnapshot(store);
 			const timeline = state.timeline;
 			const target = (0, react.useMemo)(() => timeline === null ? void 0 : messageTarget(timeline, messageId), [timeline, messageId]);
 			const [editing, setEditing] = (0, react.useState)(false);
@@ -1493,7 +1512,7 @@ window.__ModuleLoader__.load({
 				failed && state.error !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(StatusLine, { text: t("error.retry", { error: state.error }) }),
 				editing && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EditDialog, {
 					t,
-					useMessageEdit,
+					store,
 					edit,
 					choices: target.choices,
 					hasLaterTurns: target.hasLaterTurns,
@@ -1741,7 +1760,7 @@ window.__ModuleLoader__.load({
 			};
 			return {
 				face: {
-					hooks: { messageEdit: store },
+					store,
 					acquire() {
 						users += 1;
 						if (users === 1) {
@@ -1856,9 +1875,9 @@ window.__ModuleLoader__.load({
 		*/
 		/** 失败标签停留的时长，取自宿主 ui-jobs 的 `KILL_FAILED_MS`。 */
 		const HEADER_FAILURE_MS = 4e3;
-		function HeaderControls({ t, useMessageEdit, acquire, reroll, openVersion }) {
+		function HeaderControls({ t, store, acquire, reroll, openVersion }) {
 			(0, react.useEffect)(() => acquire(), [acquire]);
-			const state = useMessageEdit(selectState);
+			const state = useSnapshot(store);
 			/** 每次失败一个新标记，重新开始计时。 */
 			const [failure, setFailure] = (0, react.useState)(null);
 			(0, react.useEffect)(() => {
@@ -2163,6 +2182,8 @@ window.__ModuleLoader__.load({
 			1,
 			2
 		];
+		/** 时间标签只区分今天与更早的日期，每分钟刷新一次当前时间就够了。 */
+		const CLOCK_REFRESH_MS = 6e4;
 		/** 控件在前侧，刷新状态在后侧。 */
 		function Toolbar({ t, state, locale, cascade, onCascade, onReroll, openVersion }) {
 			const timeline = state.timeline;
@@ -2360,13 +2381,12 @@ window.__ModuleLoader__.load({
 				}, row))
 			});
 		}
-		function PrimaryContent({ t, timeline, state, retryingTurn, onRetry, onEdit }) {
+		function PrimaryContent({ t, timeline, state, now, retryingTurn, onRetry, onEdit }) {
 			const groups = turnGroups(timeline);
 			if (groups.length === 0) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 				className: timeline_view_module_css_default.statusLine,
 				children: t("status.empty")
 			});
-			const now = Date.now();
 			return groups.map((group) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(TurnGroupView, {
 				t,
 				group,
@@ -2378,9 +2398,10 @@ window.__ModuleLoader__.load({
 				onEdit
 			}, group.turn));
 		}
-		function TimelineView({ t, useMessageEdit, acquire, load, edit, retry, reroll, openVersion }) {
+		function TimelineView({ t, store, acquire, load, edit, retry, reroll, openVersion }) {
 			(0, react.useEffect)(() => acquire(), [acquire]);
-			const state = useMessageEdit(selectState);
+			const state = useSnapshot(store);
+			const now = useNow(CLOCK_REFRESH_MS);
 			const [cascade, setCascade] = (0, react.useState)("truncate");
 			/** 这个视图发起、仍在进行的重试所在的回合。 */
 			const [retryingTurn, setRetryingTurn] = (0, react.useState)(null);
@@ -2389,11 +2410,11 @@ window.__ModuleLoader__.load({
 			const locale = formatLocale(t);
 			const timeline = state.timeline;
 			const loading = state.status === "idle" || state.status === "loading";
-			const now = Date.now();
 			const primary = timeline !== null ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PrimaryContent, {
 				t,
 				timeline,
 				state,
+				now,
 				retryingTurn: state.pending === "retry" ? retryingTurn : null,
 				onRetry: (turn) => {
 					setRetryingTurn(turn);
@@ -2484,7 +2505,7 @@ window.__ModuleLoader__.load({
 					}),
 					editing !== null && timeline !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(EditDialog, {
 						t,
-						useMessageEdit,
+						store,
 						edit,
 						choices: [editing],
 						hasLaterTurns: lastTurn(timeline) !== editing.turn,
