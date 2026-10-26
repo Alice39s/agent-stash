@@ -2,3 +2,8 @@ node_modules/
 .scratch/
 .test-output/
 .vitest/
+docs/.next/
+docs/out/
+docs/.source/
+docs/next-env.d.ts
+docs/tsconfig.tsbuildinfo

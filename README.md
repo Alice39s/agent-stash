@@ -9,6 +9,8 @@
 [![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest) [![Pi Plugins](https://img.shields.io/badge/pi-plugin-111111)](https://pi.dev) [![DSH Plugins](https://img.shields.io/badge/DeepSeek%20Harness-plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness) ![powered by DSH](https://img.shields.io/badge/powered_by-dsh-4D6BFE?style=flat-square&logo=deepseek&logoColor=white) ![powered by pi](https://img.shields.io/badge/powered_by-Pi-111111?style=flat-square&logo=pi&logoColor=white)
 
 > 自用的 Agent Skills，以及给 [Pi](https://pi.dev)、[DSH (DeepSeek Harness)](https://github.com/deepseek-ai/deepseek-harness)、Cline、Grok Build、goose 与 Aider 用的 `/init` 插件。
+>
+> 文档站：[中文](https://alice39s.github.io/agent-stash/zh/) · [English](https://alice39s.github.io/agent-stash/en/)
 
 </div>
 
@@ -39,6 +41,7 @@
   - [Skills: `code-styleguide`](#skills-code-styleguide)
   - [Skills: `self-use-<model>-subagent`](#skills-self-use-model-subagent)
   - [开发](#开发)
+    - [文档站](#文档站)
     - [发布](#发布)
   - [许可证](#许可证)
 
@@ -107,7 +110,7 @@ npm 包由 GitHub Actions 经 npm trusted publishing 发布，带 provenance。�
 https://alice39s.github.io/agent-stash/index.json
 ```
 
-索引由 GitHub Actions 用 DSH 的参考生成器生成，每次发布后更新，列出这些 npm 包的每个发布版本。
+索引由 GitHub Actions 用 DSH 的参考生成器生成，每次发布后和每天定时更新，列出这些 npm 包的每个发布版本。它和文档站发布在同一个 GitHub Pages 站点上。
 
 ### Cline
 
@@ -131,7 +134,7 @@ agent-stash init install goose
 
 [![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest) [![Pi Plugin](https://img.shields.io/badge/Pi-Plugin-111111)](https://pi.dev) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness) [![Cline Plugin](https://img.shields.io/badge/Cline-Plugin-222222)](https://github.com/cline/cline) [![Grok Build Skills](https://img.shields.io/badge/Grok%20Build-Skills-000000)](https://docs.x.ai/build/overview) [![goose Recipes](https://img.shields.io/badge/goose-Recipes-2f2f2f)](https://github.com/aaif-goose/goose) [![Aider](https://img.shields.io/badge/Aider-CLI-14b014)](https://github.com/Aider-AI/aider)
 
-让 agent 分析当前项目并写出 AGENTS.md。pi、DSH 与 Cline 的用法相同：
+让 agent 分析当前项目并写出 AGENTS.md，完整说明见[文档站](https://alice39s.github.io/agent-stash/zh/plugins/init/)。pi、DSH 与 Cline 的用法相同：
 
 ```text
 /init                         # 使用默认预设
@@ -243,7 +246,7 @@ Cline：
 
 [![npm](https://img.shields.io/npm/v/@agent-stash/dsh-recall)](https://www.npmjs.com/package/@agent-stash/dsh-recall) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
 
-Prompt 回溯：在 DSH 的输入框里翻看当前会话发过的 Prompt。
+Prompt 回溯：在 DSH 的输入框里翻看当前会话发过的 Prompt，录屏见[文档站](https://alice39s.github.io/agent-stash/zh/plugins/dsh-recall/)：
 
 | 按键            | 作用                                       |
 | --------------- | ------------------------------------------ |
@@ -260,7 +263,7 @@ Prompt 回溯：在 DSH 的输入框里翻看当前会话发过的 Prompt。
 
 [![npm](https://img.shields.io/npm/v/@agent-stash/dsh-autosuggest)](https://www.npmjs.com/package/@agent-stash/dsh-autosuggest) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
 
-Prompt 补全，参照 zsh-autosuggestions：输入的内容是某条历史 Prompt 的开头（区分大小写）时，光标后以灰字显示剩余部分，输入框上方列出最多五条匹配，标出来源会话与日期。
+Prompt 补全，参照 zsh-autosuggestions：输入的内容是某条历史 Prompt 的开头（区分大小写）时，光标后以灰字显示剩余部分，输入框上方列出最多五条匹配，标出来源会话与日期。录屏见[文档站](https://alice39s.github.io/agent-stash/zh/plugins/dsh-autosuggest/)。
 
 | 按键    | 作用                       |
 | ------- | -------------------------- |
@@ -291,7 +294,7 @@ Agent Stash 框架（`dsh/kit`）为 Agent Stash 系列的 DSH 插件提供共�
 
 面板与宿主 `/` 菜单使用同一套几何：离输入框 4px，圆角与内边距一致，内容左边线对齐输入框的文字列。底色完全不透明，默认再加一层背景模糊。
 
-在「插件」页打开「Agent Stash 框架」，点它的条目进入配置页。页面顶部有实时预览，可以重播动画；改动点保存后立即生效。
+在「插件」页打开「Agent Stash 框架」，点它的条目进入配置页。页面顶部有实时预览，可以重播动画；改动点保存后立即生效。配置页的录屏见[文档站](https://alice39s.github.io/agent-stash/zh/plugins/dsh-stash-kit/)：
 
 | 配置项     | 字段        | 可选值                                             | 默认 |
 | ---------- | ----------- | -------------------------------------------------- | ---- |
@@ -368,6 +371,17 @@ uv run --project scripts/ci ci bundle --check # 重建所有工作区包的 dist
 uv run --project scripts/ci ci npm status     # 列出各包在 npm 上的版本与是否经 trusted publishing 发布
 ```
 
+### 文档站
+
+文档站在 `docs/` 下，是静态导出的 [Fumadocs](https://fumadocs.dev) 站点，由 `.github/workflows/pages.yml` 与插件索引一起发布到 GitHub Pages。改动 `docs/` 的 Pull Request 会构建一份预览产物，合并到 `main` 后部署。
+
+```bash
+pnpm --filter agent-stash-docs dev    # http://localhost:3883/agent-stash/
+pnpm --filter agent-stash-docs build  # 输出到 docs/out/
+```
+
+修改文档站界面前先读 [`docs/design.md`](docs/design.md)。
+
 ### 发布
 
 版本号遵循语义化版本，由 [Tegami](https://tegami.fuma-nama.dev) 管理，配置在 `scripts/tegami.ts`。
@@ -386,7 +400,7 @@ uv run --project scripts/ci ci npm status     # 列出各包在 npm 上的版本
    ```
 
 2. 推送到 `main` 后，`.github/workflows/release.yml` 开 Version Packages PR，更新各包的版本号与 `CHANGELOG.md`。
-3. 合并这个 PR 后，同一个 workflow 经 npm trusted publishing（OIDC）把升级过的包发布到 npm 并附带 provenance，然后打 tag、创建 GitHub release：`@agent-stash/init` 用 `v<version>`，其他包用 `<name>@<version>`。workflow 等到 npm 能安装新版本才结束，随后运行的插件索引工作流就会列出这次发布。
+3. 合并这个 PR 后，同一个 workflow 经 npm trusted publishing（OIDC）把升级过的包发布到 npm 并附带 provenance，然后打 tag、创建 GitHub release：`@agent-stash/init` 用 `v<version>`，其他包用 `<name>@<version>`。workflow 等到 npm 能安装新版本才结束，随后运行的 Pages 工作流就会在插件索引里列出这次发布，并重新发布文档站。
 
 npm 上的包禁止 bypass 2FA 的令牌发布，CI 只通过 trusted publishing 发布。
 

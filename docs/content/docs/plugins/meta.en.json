@@ -1,0 +1,6 @@
+{
+  "title": "Plugins",
+  "icon": "Puzzle",
+  "defaultOpen": true,
+  "pages": ["dsh-recall", "dsh-autosuggest", "dsh-stash-kit", "dsh-message-edit", "init"]
+}

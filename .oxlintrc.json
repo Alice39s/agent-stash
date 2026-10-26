@@ -15,6 +15,7 @@
     "typescript/no-explicit-any": "error",
     "typescript/no-floating-promises": "error",
     "import/no-default-export": "off",
+    "import/no-unassigned-import": ["warn", { "allow": ["**/*.css"] }],
     "react/react-in-jsx-scope": "off"
   },
   "ignorePatterns": [
@@ -22,6 +23,10 @@
     "dist/**",
     "packages/*/dist/**",
     "dsh/*/dist/**",
-    "node_modules/**"
+    "node_modules/**",
+    "docs/.next/**",
+    "docs/.source/**",
+    "docs/out/**",
+    "docs/next-env.d.ts"
   ]
 }

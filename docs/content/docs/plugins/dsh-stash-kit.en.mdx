@@ -1,0 +1,65 @@
+---
+title: dsh-stash-kit
+description: The panel, ghost text, motion and appearance settings that the Agent Stash DSH plugins share. You change them on one settings page.
+icon: SwatchBook
+---
+
+<Showcase
+  name="kit-settings"
+  alt="The Agent Stash Kit settings page. The pointer hovers over the rows of the preview panel, turns Frosted glass off and on again, switches Ghost text to Fade and back to Wave, switches Row height to Compact and back to Comfortable, and then clicks Replay."
+  caption="The preview at the top of the settings page follows the settings live. Click Replay to watch the animation again"
+/>
+
+The browser half of the Agent Stash Kit (`dsh-stash-kit`) provides the `stashKit` service. [dsh-recall](./dsh-recall.mdx) and [dsh-autosuggest](./dsh-autosuggest.mdx) use it to render the panel and the gray text. The Host half holds the appearance settings. When you change them once, the change applies to all plugins at the same time.
+
+The panel uses the same geometry as the built-in DSH `/` menu. It sits 4px from the input box and has the same corner radius and padding. The left edge of its content lines up with the text column of the input box. The panel background is fully opaque. By default a backdrop blur is added on top.
+
+## Settings
+
+On the Plugins page, open Agent Stash Kit and click its entry to go to the settings page. Changes take effect as soon as you click Save.
+
+<Showcase
+  name="kit-settings-page"
+  alt="The full Agent Stash Kit settings page. The preview is at the top. Below it are Frosted glass, Motion, Ghost text, Highlight, Row height and Key hints, in that order, followed by the Save button."
+  caption="The full settings page with the preview, six settings and the Save button"
+/>
+
+| Setting       | Field       | Values                                                     | Default     |
+| ------------- | ----------- | ---------------------------------------------------------- | ----------- |
+| Frosted glass | `glass`     | On (opaque, with backdrop blur) / Off (opaque)             | On          |
+| Motion        | `motion`    | `lively` Lively, `subtle` Subtle, `off` Off                | Lively      |
+| Ghost text    | `ghost`     | `wave` Wave, `fade` Fade, `none` None                      | Wave        |
+| Highlight     | `highlight` | `glide` Glide, `instant` Instant                           | Glide       |
+| Row height    | `density`   | `comfortable` Comfortable (34px), `compact` Compact (28px) | Comfortable |
+| Key hints     | `hints`     | On / Off                                                   | On          |
+
+## Motion
+
+- Lively: the panel rises from the direction of the input box and goes from blurred to sharp. The rows appear one by one, starting with the row next to the input box. On close, the panel fades out downward. When you go back with <Kbd>↑</Kbd>, the new draft slides into the input box from the direction you browse in.
+- Subtle: the panel only fades in and out briefly. Draft switches play no animation.
+- Off: the panel and the gray text appear and disappear at once.
+- For Ghost text, Wave reveals the rest of the text with a fading mask that sweeps from left to right. Fade fades in the rest of the text as a whole.
+- When the system Reduce motion setting is on, all movement and blur are removed. Only the fades stay.
+
+## Configure in a profile
+
+You can also set the values in the profile patch:
+
+```yaml title="cordis.patch.yml"
+- id: dsh-stash-kit
+  name: "@agent-stash/dsh-stash-kit"
+  config:
+    glass: false
+    motion: subtle
+```
+
+## Install separately
+
+```bash
+dsh plugin --profile web add @agent-stash/dsh-stash-kit
+```
+
+<Callout type="info" title="Disabling the kit">
+  After you disable the kit, the plugins that depend on it stop at Waiting for dependencies. When
+  you enable those plugins again, the kit is enabled again.
+</Callout>

@@ -1,0 +1,108 @@
+---
+title: /init
+description: 用其他 Coding Agent 的 /init Prompt 分析当前项目，写出 AGENTS.md；Pi、DSH、Cline、Grok Build、goose 与 Aider 用法一致。
+icon: FileText
+---
+
+## 用法
+
+Pi、DSH 与 Cline 的用法相同：
+
+```text
+/init                         # 使用默认预设
+/init kimi-code               # 使用 kimi-code 预设
+/init opencode 重点写测试流程   # 使用 opencode 预设并附加额外 Prompt
+/init 用中文写                 # 第一个词不是预设名时，整句作为额外 Prompt，使用默认预设
+```
+
+<Tabs items={['Grok Build 与 goose', 'Aider']}>
+<Tab value="Grok Build 与 goose">
+
+每个预设对应一个 `/init-<预设名>` 命令，`/init` 使用默认预设。命令后面的文字都是额外 Prompt：
+
+```text
+/init                          # 使用默认预设
+/init-kimi-code                # 使用 kimi-code 预设
+/init-opencode 重点写测试流程    # 使用 opencode 预设并附加额外 Prompt
+```
+
+非交互运行时也能用：
+
+```bash
+grok -p "/init-opencode 重点写测试流程"
+goose run -t "/init-crush 重点写测试流程"
+```
+
+</Tab>
+<Tab value="Aider">
+
+`agent-stash init aider` 渲染预设后交给 `aider --message`，Aider 处理完这一轮就退出。参数与 `/init` 相同，`--` 之后的参数原样传给 Aider：
+
+```bash
+agent-stash init aider                               # 使用默认预设
+agent-stash init aider opencode 重点写测试流程         # 使用 opencode 预设并附加额外 Prompt
+agent-stash init aider crush -- --model sonnet       # 指定 Aider 的模型
+```
+
+</Tab>
+</Tabs>
+
+## 预设
+
+上游同步的预设由 `.github/workflows/sync-init-prompts.yml` 每天更新一次：
+
+| 预设            | 上游                                                            | 许可证      |
+| --------------- | --------------------------------------------------------------- | ----------- |
+| `codex`（默认） | [openai/codex](https://github.com/openai/codex)                 | Apache-2.0  |
+| `kimi-code`     | [MoonshotAI/kimi-code](https://github.com/MoonshotAI/kimi-code) | MIT         |
+| `opencode`      | [anomalyco/opencode](https://github.com/anomalyco/opencode)     | MIT         |
+| `crush`         | [charmbracelet/crush](https://github.com/charmbracelet/crush)   | FSL-1.1-MIT |
+| `copilot`       | [microsoft/vscode](https://github.com/microsoft/vscode)         | MIT         |
+| `qwen-code`     | [QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)         | Apache-2.0  |
+| `kilo-code`     | [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode)       | MIT         |
+
+手动维护的预设：
+
+| 预设                   | 来源                                        |
+| ---------------------- | ------------------------------------------- |
+| `claude-code`          | Claude Code v2.1.306 的 `/init`（经典版）   |
+| `claude-code-init-new` | Claude Code v2.1.306 的 `/init`（多阶段版） |
+
+所有预设都统一输出 `AGENTS.md`。
+
+## 额外指令与占位符
+
+发送前去掉模板开头的 YAML frontmatter，并替换以下占位符：
+
+- `${path}`：当前项目目录。DSH 里取会话的当前工作目录，Cline 里取工作区根目录。Grok Build 与 goose 的命令是安装时写好的文件，写成 `.`，即 Agent 运行时的当前目录。
+- `{{.Config.Options.InitializeAs}}`：Crush 模板里的说明文件名，替换为 `AGENTS.md`。
+- `$ARGUMENTS`：额外指令。
+
+模板没有 `$ARGUMENTS` 时，额外指令追加到 Prompt 末尾的 `## Additional instructions from the user` 小节，没有额外指令就不加。Grok Build 的技能是静态文件，这个小节始终存在，没有额外指令时内容为空。
+
+## 配置
+
+| Agent                                            | 配置文件                                                                                                     |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Pi                                               | `~/.pi/agent/agent-stash/init.json`，然后是 `<项目根目录>/.pi/agent-stash/init.json`（仅在项目受信任时读取） |
+| DSH                                              | `$DSH_HOME/agent-stash/init.json`（默认 `~/.dsh/agent-stash/init.json`）                                     |
+| Cline                                            | `$CLINE_DIR/agent-stash/init.json`（默认 `~/.cline/agent-stash/init.json`）                                  |
+| `agent-stash` 命令行（Grok Build、goose、Aider） | `$XDG_CONFIG_HOME/agent-stash/init.json`（默认 `~/.config/agent-stash/init.json`）                           |
+
+Pi 设置了 `PI_CODING_AGENT_DIR` 时，第一个文件改为 `$PI_CODING_AGENT_DIR/agent-stash/init.json`。
+
+```json title="init.json"
+{
+  "defaultPreset": "team",
+  "presets": {
+    "team": {
+      "file": "./team-init.md",
+      "description": "..."
+    }
+  }
+}
+```
+
+- `defaultPreset`：不写预设名时使用的预设，默认为 `codex`。
+- `presets`：自定义预设。`file` 是相对配置文件所在目录的路径，同名预设覆盖内置预设。
+- `description` 显示在补全菜单里，不写时显示文件路径。

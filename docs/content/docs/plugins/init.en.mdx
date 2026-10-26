@@ -1,0 +1,108 @@
+---
+title: /init
+description: Analyze the current project with the /init prompt of another coding agent and write AGENTS.md. Usage is the same in Pi, DSH, Cline, Grok Build, goose and Aider.
+icon: FileText
+---
+
+## Usage
+
+Usage is the same in Pi, DSH and Cline:
+
+```text
+/init                                      # use the default preset
+/init kimi-code                            # use the kimi-code preset
+/init opencode focus on the test workflow  # use the opencode preset and append an extra prompt
+/init write in Chinese                     # if the first word is not a preset name, the whole line is the extra prompt and the default preset is used
+```
+
+<Tabs items={['Grok Build and goose', 'Aider']}>
+<Tab value="Grok Build and goose">
+
+Each preset has its own `/init-<preset>` command, and `/init` uses the default preset. All text after the command is the extra prompt:
+
+```text
+/init                                      # use the default preset
+/init-kimi-code                            # use the kimi-code preset
+/init-opencode focus on the test workflow  # use the opencode preset and append an extra prompt
+```
+
+The commands also work in non-interactive runs:
+
+```bash
+grok -p "/init-opencode focus on the test workflow"
+goose run -t "/init-crush focus on the test workflow"
+```
+
+</Tab>
+<Tab value="Aider">
+
+`agent-stash init aider` renders the preset and passes it to `aider --message`. Aider exits after it finishes this turn. The arguments are the same as for `/init`. Arguments after `--` go to Aider unchanged:
+
+```bash
+agent-stash init aider                                      # use the default preset
+agent-stash init aider opencode focus on the test workflow  # use the opencode preset and append an extra prompt
+agent-stash init aider crush -- --model sonnet              # set the Aider model
+```
+
+</Tab>
+</Tabs>
+
+## Presets
+
+`.github/workflows/sync-init-prompts.yml` updates the presets synced from upstream once a day:
+
+| Preset            | Upstream                                                        | License     |
+| ----------------- | --------------------------------------------------------------- | ----------- |
+| `codex` (default) | [openai/codex](https://github.com/openai/codex)                 | Apache-2.0  |
+| `kimi-code`       | [MoonshotAI/kimi-code](https://github.com/MoonshotAI/kimi-code) | MIT         |
+| `opencode`        | [anomalyco/opencode](https://github.com/anomalyco/opencode)     | MIT         |
+| `crush`           | [charmbracelet/crush](https://github.com/charmbracelet/crush)   | FSL-1.1-MIT |
+| `copilot`         | [microsoft/vscode](https://github.com/microsoft/vscode)         | MIT         |
+| `qwen-code`       | [QwenLM/qwen-code](https://github.com/QwenLM/qwen-code)         | Apache-2.0  |
+| `kilo-code`       | [Kilo-Org/kilocode](https://github.com/Kilo-Org/kilocode)       | MIT         |
+
+Presets maintained by hand:
+
+| Preset                 | Source                                          |
+| ---------------------- | ----------------------------------------------- |
+| `claude-code`          | `/init` from Claude Code v2.1.306 (classic)     |
+| `claude-code-init-new` | `/init` from Claude Code v2.1.306 (multi-stage) |
+
+All presets write `AGENTS.md`.
+
+## Extra instructions and placeholders
+
+Before the prompt is sent, the YAML frontmatter at the start of the template is removed and the following placeholders are replaced:
+
+- `${path}`: the current project directory. In DSH it is the current working directory of the session. In Cline it is the workspace root. For Grok Build and goose, the commands are files written at install time, so the value is `.`, the current directory of the agent at run time.
+- `{{.Config.Options.InitializeAs}}`: the instructions file name in the Crush template. It is replaced with `AGENTS.md`.
+- `$ARGUMENTS`: the extra instructions.
+
+If the template has no `$ARGUMENTS`, the extra instructions are appended to a `## Additional instructions from the user` section at the end of the prompt. Without extra instructions, the section is not added. Grok Build skills are static files, so this section is always present and stays empty when there are no extra instructions.
+
+## Configuration
+
+| Agent                                        | Config file                                                                                                                  |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| Pi                                           | `~/.pi/agent/agent-stash/init.json`, then `<project-root>/.pi/agent-stash/init.json` (read only when the project is trusted) |
+| DSH                                          | `$DSH_HOME/agent-stash/init.json` (default `~/.dsh/agent-stash/init.json`)                                                   |
+| Cline                                        | `$CLINE_DIR/agent-stash/init.json` (default `~/.cline/agent-stash/init.json`)                                                |
+| `agent-stash` CLI (Grok Build, goose, Aider) | `$XDG_CONFIG_HOME/agent-stash/init.json` (default `~/.config/agent-stash/init.json`)                                         |
+
+When `PI_CODING_AGENT_DIR` is set for Pi, the first file is `$PI_CODING_AGENT_DIR/agent-stash/init.json` instead.
+
+```json title="init.json"
+{
+  "defaultPreset": "team",
+  "presets": {
+    "team": {
+      "file": "./team-init.md",
+      "description": "..."
+    }
+  }
+}
+```
+
+- `defaultPreset`: the preset to use when no preset name is given. The default is `codex`.
+- `presets`: custom presets. `file` is a path relative to the directory of the config file. A preset with the same name as a built-in preset overrides the built-in one.
+- `description` shows in the completion menu. Without it, the menu shows the file path.

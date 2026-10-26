@@ -1,0 +1,40 @@
+---
+title: dsh-recall
+description: 在 DSH 输入框里按 ↑↓ 翻看当前会话发过的 Prompt，像终端里的命令历史。
+icon: History
+---
+
+<Showcase
+  name="recall"
+  alt="指针点击 Test Session 2 的输入框后，在开头按 ↑，输入框上方打开按日期分组的历史面板，高亮行随 ↑↓ 移动，按 Esc 后面板收起"
+  caption="↑ 打开面板并放入最近一条，↑↓ 切换，Esc 回到原来的草稿"
+/>
+
+## 按键
+
+| 按键                       | 作用                                       |
+| -------------------------- | ------------------------------------------ |
+| <Kbd>↑</Kbd>（光标在开头） | 打开历史面板，把最近一条 Prompt 放进输入框 |
+| <Keys keys={['↑', '↓']} /> | 在更早与更新的 Prompt 之间切换             |
+| <Kbd>↓</Kbd>（最新一条）   | 回到打开面板前的草稿                       |
+| <Kbd>Esc</Kbd>             | 回到打开面板前的草稿                       |
+| <Kbd>Tab</Kbd>             | 保留当前这条，关闭面板继续编辑             |
+| <Kbd>Enter</Kbd>           | 直接发送当前这条                           |
+
+面板按日期分组，点任意一行也能把它放进输入框。`/`、`@` 菜单打开时方向键仍归菜单使用。
+
+## 历史从哪里来
+
+历史只包含当前会话里亲手发送的 Prompt，按发送时间排列。插件的 Host 半部注册只读路由 `/dsh-recall/prompts`，从会话日志里取出这些 Prompt，经 DSH 的连接校验后返回；切换会话后面板随之换成新会话的历史。
+
+## 安装
+
+```bash
+dsh plugin --profile web add @agent-stash/dsh-recall
+```
+
+桌面版在「插件」页点「添加插件」，填入 `@agent-stash/dsh-recall`。需要 DSH 0.2.1-alpha.4 或更新的版本。
+
+插件的界面建立在 [dsh-stash-kit](./dsh-stash-kit.mdx) 上，第一次启动时通过插件管理器从 npm 自动安装并启用它；profile 里已经装了框架但没有启用时，插件会把它启用。框架就绪之前，「插件」页里插件的浏览器半部显示「等待依赖」，Prompt 历史路由照常工作。
+
+面板的毛玻璃、动画、行高与按键提示在 [dsh-stash-kit 的配置页](./dsh-stash-kit.mdx#配置项)统一修改。

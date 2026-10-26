@@ -12,6 +12,10 @@
     "prompts/**",
     ".tegami/**",
     "CHANGELOG.md",
-    "pnpm-lock.yaml"
+    "pnpm-lock.yaml",
+    "docs/.next/**",
+    "docs/.source/**",
+    "docs/out/**",
+    "docs/next-env.d.ts"
   ]
 }

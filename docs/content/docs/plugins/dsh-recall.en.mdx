@@ -1,0 +1,40 @@
+---
+title: dsh-recall
+description: Press ↑↓ in the DSH input box to browse the prompts sent in the current session, like command history in a terminal.
+icon: History
+---
+
+<Showcase
+  name="recall"
+  alt="The pointer clicks the input box of Test Session 2. Pressing ↑ at the start opens a history panel grouped by date above the input box. The highlighted row moves with ↑↓. Pressing Esc closes the panel."
+  caption="↑ opens the panel and puts in the latest prompt, ↑↓ switches, Esc returns to the original draft"
+/>
+
+## Keys
+
+| Key                                 | Action                                                                |
+| ----------------------------------- | --------------------------------------------------------------------- |
+| <Kbd>↑</Kbd> (cursor at the start)  | Opens the history panel and puts the latest prompt in the input box   |
+| <Keys keys={['↑', '↓']} />          | Switches between older and newer prompts                              |
+| <Kbd>↓</Kbd> (on the newest prompt) | Returns to the draft from before the panel opened                     |
+| <Kbd>Esc</Kbd>                      | Returns to the draft from before the panel opened                     |
+| <Kbd>Tab</Kbd>                      | Keeps the current prompt and closes the panel so you can keep editing |
+| <Kbd>Enter</Kbd>                    | Sends the current prompt directly                                     |
+
+The panel groups prompts by date. You can also click any row to put it in the input box. When the `/` or `@` menu is open, the arrow keys still control the menu.
+
+## Where the history comes from
+
+The history contains only the prompts that you typed and sent in the current session, ordered by send time. The Host half of the plugin registers the read-only route `/dsh-recall/prompts`. The route reads these prompts from the session log and returns them after the DSH connection check. When you switch sessions, the panel switches to the history of the new session.
+
+## Install
+
+```bash
+dsh plugin --profile web add @agent-stash/dsh-recall
+```
+
+In the desktop app, click Add plugin on the Plugins page and enter `@agent-stash/dsh-recall`. The plugin needs DSH 0.2.1-alpha.4 or later.
+
+The plugin interface builds on [dsh-stash-kit](./dsh-stash-kit.mdx). On first start, the plugin installs the kit from npm through the plugin manager and enables it. If the profile already has the kit installed but not enabled, the plugin enables it. Until the kit is ready, the Plugins page shows Waiting for dependencies for the browser half of the plugin, and the prompt history route works as usual.
+
+Change the frosted glass, motion, row height and key hints of the panel in one place on the [dsh-stash-kit settings page](./dsh-stash-kit.mdx#settings).

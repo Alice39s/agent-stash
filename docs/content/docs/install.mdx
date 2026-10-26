@@ -1,0 +1,80 @@
+---
+title: 安装
+description: 在 Pi、DeepSeek Harness、Cline 与 agent-stash 命令行里安装 Agent Stash。
+icon: Download
+---
+
+仓库的 `dist/` 随代码提交，安装时不需要构建。
+
+<Tabs items={['DeepSeek Harness', 'Pi', 'Cline', 'agent-stash 命令行']}>
+<Tab value="DeepSeek Harness">
+
+桌面版：在「插件」页点「添加插件」，填入下面的 npm 包名后安装：
+
+```text
+@agent-stash/init
+@agent-stash/dsh-message-edit
+@agent-stash/dsh-recall
+@agent-stash/dsh-autosuggest
+```
+
+命令行：把 bundle 装进某个 profile，例如 Web 界面使用的 `web`：
+
+```bash
+dsh plugin --profile web add @agent-stash/init
+dsh plugin --profile web add @agent-stash/dsh-message-edit
+dsh plugin --profile web add @agent-stash/dsh-recall
+dsh plugin --profile web add @agent-stash/dsh-autosuggest
+```
+
+npm 包由 GitHub Actions 经 npm trusted publishing 发布，带 provenance。也可以装 `main` 上的最新版本 `github:Alice39s/agent-stash`（只含 `/init`）。
+
+`dsh-recall` 与 `dsh-autosuggest` 第一次启动时会从 npm 自动安装并启用 [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)。三个插件都需要 DSH 0.2.1-alpha.4 或更新的版本。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
+
+</Tab>
+<Tab value="Pi">
+
+```bash
+pi install git:github.com/Alice39s/agent-stash
+```
+
+Pi 会同时加载 `/init` 扩展与 `skills/` 下的技能。只在当前会话试用：
+
+```bash
+pi -e git:github.com/Alice39s/agent-stash
+```
+
+</Tab>
+<Tab value="Cline">
+
+```bash
+cline plugin install --git github.com/Alice39s/agent-stash
+```
+
+插件注册 `/init` 斜杠命令，在 TUI（`cline -i`）里使用。`cline "<prompt>"` 单次运行时不处理斜杠命令。
+
+</Tab>
+<Tab value="agent-stash 命令行">
+
+Grok Build、goose 与 Aider 通过 `agent-stash` 命令行接入：
+
+```bash
+npm install -g github:Alice39s/agent-stash
+agent-stash init install grok
+agent-stash init install goose
+```
+
+Aider 的用法见 [/init 的用法](./plugins/init.mdx#用法)里的 Aider 标签页。
+
+</Tab>
+</Tabs>
+
+## DSH 插件索引
+
+DSH 0.2.1-alpha.4 起可以在「发现」页浏览 JSON 插件索引并从中安装。在「插件」页的「实验性插件」里打开「自定义插件市场」（较新的 DSH 叫「自定义插件索引」），切到「发现」，点「添加索引源」，填入：
+
+```text
+https://alice39s.github.io/agent-stash/index.json
+```
+
+索引由 GitHub Actions 用 DSH 的参考生成器生成，每次发布后和每天定时更新，列出这些 npm 包的每个发布版本。它和这个文档站发布在同一个 GitHub Pages 站点上。

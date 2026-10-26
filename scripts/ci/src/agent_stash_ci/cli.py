@@ -102,6 +102,27 @@ def plugin_index(
     )  # fmt: skip
 
 
+@app.command()
+def docs(
+    base_path: Annotated[
+        str,
+        typer.Option(
+            envvar="DOCS_BASE_PATH", help="Path prefix the site is served under, e.g. /agent-stash."
+        ),
+    ],
+    origin: Annotated[
+        str,
+        typer.Option(envvar="SITE_ORIGIN", help="Origin of the published site, for absolute URLs."),
+    ],
+) -> None:
+    """Export the docs site to docs/out for GitHub Pages."""
+    run(
+        ["pnpm", "--filter", "agent-stash-docs", "build"],
+        cwd=repo_root(),
+        env={"DOCS_BASE_PATH": base_path, "SITE_ORIGIN": origin},
+    )
+
+
 @npm_app.command()
 def status() -> None:
     """List publishable packages on npm and whether trusted publishing made their newest version."""

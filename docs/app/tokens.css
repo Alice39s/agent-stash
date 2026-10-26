@@ -1,0 +1,95 @@
+/*
+ * design.md「字体与颜色」：文档站的颜色 token 与字号角色。中性色取自 DeepSeek Harness 界面的蓝灰色阶，
+ * primary 取插件图标的蓝色并按对比度调整明暗；Fumadocs 的 shadcn 预设再把这些名字映射为 fd-* 颜色。
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #0f1115;
+  --card: #ffffff;
+  --card-foreground: #0f1115;
+  --popover: #ffffff;
+  --popover-foreground: #0f1115;
+  /* 插件图标蓝 #4d6bfe 在白底上只有 4.3:1；加深一档后正文链接与 10% 底色上的当前导航都达到 4.5:1。 */
+  --primary: #3654e6;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f4f6;
+  --secondary-foreground: #0f1115;
+  --muted: #f5f5f7;
+  --muted-foreground: #61666b;
+  --accent: rgb(38 49 72 / 0.06);
+  --accent-foreground: #0f1115;
+  --destructive: #dc2626;
+  --success: #16a34a;
+  --warning: #b45309;
+  --border: rgb(0 0 0 / 0.1);
+  --input: rgb(0 0 0 / 0.12);
+  --ring: #3654e6;
+  --radius: 8px;
+  --radius-card: 16px;
+  --radius-frame: 10px;
+  --shadow-overlay: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px rgb(0 0 0 / 0.1);
+  --showcase-board: #f5f5f7;
+  --shadow-frame:
+    0 0 0 0.5px rgb(0 0 0 / 0.08), 0 2px 6px rgb(0 0 0 / 0.04), 0 12px 32px rgb(0 0 0 / 0.08),
+    0 32px 64px -16px rgb(0 0 0 / 0.14);
+  color-scheme: light;
+}
+
+.dark {
+  --background: #151517;
+  --foreground: #f9fafb;
+  --card: #232324;
+  --card-foreground: #f9fafb;
+  --popover: #232324;
+  --popover-foreground: #f9fafb;
+  /* 深色底上图标蓝只有 4.2:1；提亮一档后达到 4.5:1，primary 表面上的文字改用深色。 */
+  --primary: #7a90ff;
+  --primary-foreground: #0f1115;
+  --secondary: #2c2c2e;
+  --secondary-foreground: #f9fafb;
+  --muted: #232324;
+  --muted-foreground: #adb2b8;
+  --accent: rgb(255 255 255 / 0.08);
+  --accent-foreground: #f9fafb;
+  --destructive: #f25a5a;
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --border: rgb(255 255 255 / 0.12);
+  --input: rgb(255 255 255 / 0.16);
+  --ring: #7a90ff;
+  --shadow-overlay: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.4);
+  --showcase-board: #1d1d1f;
+  --shadow-frame:
+    0 0 0 0.5px rgb(255 255 255 / 0.1), 0 2px 6px rgb(0 0 0 / 0.08), 0 12px 32px rgb(0 0 0 / 0.16),
+    0 32px 64px -16px rgb(0 0 0 / 0.28);
+  color-scheme: dark;
+}
+
+/* 字号角色 */
+@utility text-h1 {
+  font-size: 1.875rem;
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+@utility text-section-title {
+  font-size: 1.25rem;
+  line-height: 1.4;
+  font-weight: 600;
+}
+@utility text-card-title {
+  font-size: 1rem;
+  line-height: 1.5;
+  font-weight: 600;
+}
+@utility text-body {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  font-weight: 400;
+}
+@utility text-meta {
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  font-weight: 400;
+}

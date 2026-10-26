@@ -1,0 +1,111 @@
+---
+title: 参与开发
+description: 本地开发环境、常用命令、CI 命令行、文档站的构建方式和发布流程。
+icon: Code
+---
+
+## 环境要求
+
+| 工具    | 版本   | 声明位置                                          |
+| ------- | ------ | ------------------------------------------------- |
+| Node.js | 24 起  | `package.json` 的 `engines` 字段                  |
+| pnpm    | 11     | `package.json` 的 `packageManager` 字段           |
+| uv      | 见配置 | `scripts/ci/pyproject.toml` 的 `required-version` |
+
+## 常用命令
+
+```bash
+pnpm install
+pnpm check   # oxfmt --check、oxlint 类型检查与 vitest，CI 运行的就是它
+pnpm bundle  # 更新 dist/ 与 dsh/*/dist/：DSH、Cline 插件与 agent-stash 命令行都从这里加载
+pnpm format
+```
+
+工作区包放在 `packages/` 下，各自的 `bundle` 脚本产出随仓库提交的 `dist/`。CI 与发布流程的每一步都由 `scripts/ci` 里的 Python 命令行执行（uv + Typer），本地可以用同一条命令复现：
+
+```bash
+uv run --project scripts/ci ci --help
+uv run --project scripts/ci ci bundle --check # 重建所有工作区包的 dist/，与检出内容不一致时失败
+uv run --project scripts/ci ci npm status     # 列出各包在 npm 上的版本与是否经 trusted publishing 发布
+```
+
+## 仓库结构
+
+<Files>
+  <Folder name="src" defaultOpen>
+    <Folder name="init" />
+    <Folder name="code-styleguide" />
+  </Folder>
+  <Folder name="dsh" defaultOpen>
+    <Folder name="init" />
+    <Folder name="recall" />
+    <Folder name="autosuggest" />
+    <Folder name="kit" />
+    <Folder name="shared" />
+  </Folder>
+  <Folder name="packages" defaultOpen>
+    <Folder name="dsh-message-edit" />
+  </Folder>
+  <Folder name="pi" />
+  <Folder name="cline" />
+  <Folder name="cli" />
+  <Folder name="skills" />
+  <Folder name="scripts" defaultOpen>
+    <Folder name="ci" />
+  </Folder>
+  <Folder name="docs" defaultOpen>
+    <Folder name="content" />
+    <Folder name="public" />
+    <File name="design.md" />
+  </Folder>
+</Files>
+
+## 文档站
+
+文档站在 `docs/` 下，是一个静态导出的 [Fumadocs](https://fumadocs.dev) 站点。`.github/workflows/pages.yml` 用 `ci docs` 构建它、用 `ci plugin-index` 生成插件索引，两者放进同一个 GitHub Pages 产物：改动 `docs/` 的 Pull Request 只构建预览产物，`main` 上的运行才部署。页面在 `docs/content/docs/` 下，中文页面是 `*.mdx`，英文页面是同名的 `*.en.mdx`。
+
+```bash
+pnpm --filter agent-stash-docs dev    # http://localhost:3883/agent-stash/
+pnpm --filter agent-stash-docs build  # 输出到 docs/out/
+```
+
+修改文档站的界面前先读 [设计规范](./design.mdx)。截图与录屏放在 `docs/public/media/`，尺寸登记在 `docs/lib/media.ts`，页面用 `<Showcase>` 展示。
+
+## 发布
+
+版本号遵循语义化版本，由 [Tegami](https://tegami.fuma-nama.dev) 管理，配置在 `scripts/tegami.ts`。
+
+<Steps>
+<Step>
+
+### 写变更说明
+
+在 `.tegami/` 下新建 Markdown 文件，frontmatter 写明每个改动的包与升级类型（`major`、`minor` 或 `patch`），正文是发布说明。正文至少要有一个 Markdown 标题，没有标题的文件 Tegami 不会读取：
+
+```md title=".tegami/xxx.md"
+---
+packages:
+  "@agent-stash/init": minor
+---
+
+## 新增 xxx 预设
+
+- xxx 预设从上游每天同步。
+```
+
+</Step>
+<Step>
+
+### 合并 Version Packages PR
+
+推送到 `main` 后，`.github/workflows/release.yml` 开 Version Packages PR，更新各包的版本号与 `CHANGELOG.md`。
+
+</Step>
+<Step>
+
+### 发布到 npm
+
+合并这个 PR 后，同一个 workflow 经 npm trusted publishing（OIDC）把升级过的包发布到 npm 并附带 provenance，然后打 tag、创建 GitHub release：`@agent-stash/init` 用 `v<version>`，其他包用 `<name>@<version>`。workflow 等到 npm 能安装新版本才结束，随后运行的 Pages 工作流重新生成插件索引和文档站。
+
+</Step>
+</Steps>

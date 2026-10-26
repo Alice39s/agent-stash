@@ -3,8 +3,10 @@ packages:
   - dsh/kit
   - dsh/recall
   - dsh/autosuggest
+  - docs
 allowBuilds:
   "@google/genai": false
+  esbuild: false
   protobufjs: false
 minimumReleaseAgeExclude:
   - "@earendil-works/pi-agent-core@1.2.0"

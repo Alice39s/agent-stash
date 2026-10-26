@@ -1,0 +1,36 @@
+---
+title: dsh-autosuggest
+description: Modeled on zsh-autosuggestions. When you type the start of a past prompt, gray text completes the rest. The history spans sessions.
+icon: Sparkles
+---
+
+<Showcase
+  name="autosuggest"
+  alt="The pointer clicks the input box. Typing The lists three matches from Test Session 2 above it, and gray text appears after the cursor. Pressing ↓ twice and then Tab fills the input box with the full text of the third match."
+  caption="Typing The shows three suggestions, ↓ switches, Tab fills in the highlighted one"
+/>
+
+## Keys
+
+| Key                          | Action                                                              |
+| ---------------------------- | ------------------------------------------------------------------- |
+| <Keys keys={['Tab', '→']} /> | Fills in the highlighted suggestion                                 |
+| <Keys keys={['↑', '↓']} />   | Switches between suggestions when there are several matches         |
+| <Kbd>Esc</Kbd>               | Hides the suggestions. They appear again after you change the draft |
+
+## Matching rules
+
+- When the input is the start of a past prompt (case-sensitive), gray text after the cursor shows the rest. Above the input box, a list shows up to five matches with their source session and date.
+- The history comes from the 50 sessions with the most recent prompts across all sessions, newest first. For identical text, only the newest prompt stays.
+- Suggestions appear only for text that you type yourself. Text that [dsh-recall](./dsh-recall.mdx) puts in the input box does not trigger them.
+- When you keep typing along the suggestion, the gray text does not replay. When you switch to another suggestion, the gray text appears again with the [Ghost text](./dsh-stash-kit.mdx#settings) setting.
+
+The Host half of the plugin registers the read-only route `/dsh-autosuggest/prompts`. The route reads the prompts that the user typed and sent from the session logs and returns them after the DSH connection check.
+
+## Install
+
+```bash
+dsh plugin --profile web add @agent-stash/dsh-autosuggest
+```
+
+In the desktop app, click Add plugin on the Plugins page and enter `@agent-stash/dsh-autosuggest`. The plugin needs DSH 0.2.1-alpha.4 or later. Like dsh-recall, the plugin installs [dsh-stash-kit](./dsh-stash-kit.mdx) from npm and enables it on first start.
