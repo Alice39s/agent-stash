@@ -21,7 +21,7 @@ pnpm bundle  # update dist/ and dsh/*/dist/, which DSH, the Cline plugin and the
 pnpm format
 ```
 
-Workspace packages live in `packages/`. Each one has a `bundle` script whose `dist/` output is committed. Every CI and release step runs through the Python command line in `scripts/ci` (uv + Typer), and you can run the same commands locally:
+Each workspace package under `packages/` has a `bundle` script whose `dist/` output is committed. `dsh/recall`, `dsh/autosuggest` and `dsh/kit` are also workspace packages, and the root `pnpm bundle` builds them. The CI steps for bundles, upstream syncs, the plugin index, the docs site and npm run through the Python command line in `scripts/ci` (uv + Typer). The workflows call `pnpm check` and the release command `pnpm tegami ci` directly. You can run the same commands locally:
 
 ```bash
 uv run --project scripts/ci ci --help

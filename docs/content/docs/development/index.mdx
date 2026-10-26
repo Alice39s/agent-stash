@@ -21,7 +21,7 @@ pnpm bundle  # 更新 dist/ 与 dsh/*/dist/：DSH、Cline 插件与 agent-stash 
 pnpm format
 ```
 
-工作区包放在 `packages/` 下，各自的 `bundle` 脚本产出随仓库提交的 `dist/`。CI 与发布流程的每一步都由 `scripts/ci` 里的 Python 命令行执行（uv + Typer），本地可以用同一条命令复现：
+工作区包放在 `packages/` 下，各自的 `bundle` 脚本产出随仓库提交的 `dist/`；`dsh/recall`、`dsh/autosuggest` 与 `dsh/kit` 也是工作区包，由根目录的 `pnpm bundle` 构建。构建、上游同步、插件索引、文档站和 npm 相关的 CI 步骤由 `scripts/ci` 里的 Python 命令行执行（uv + Typer），`pnpm check` 与发布用的 `pnpm tegami ci` 由 workflow 直接调用。本地可以用同样的命令复现：
 
 ```bash
 uv run --project scripts/ci ci --help
@@ -79,7 +79,7 @@ pnpm --filter agent-stash-docs build  # 输出到 docs/out/
 
 ### 写变更说明
 
-在 `.tegami/` 下新建 Markdown 文件，frontmatter 写明每个改动的包与升级类型（`major`、`minor` 或 `patch`），正文是发布说明。正文至少要有一个 Markdown 标题，没有标题的文件 Tegami 不会读取：
+在 `.tegami/` 下新建 Markdown 文件，frontmatter 写明每个改动的包与升级类型（`major`、`minor` 或 `patch`），正文是用中文写的发布说明。正文至少要有一个 Markdown 标题，没有标题的文件 Tegami 不会读取：
 
 ```md title=".tegami/xxx.md"
 ---

@@ -1,21 +1,21 @@
 ---
 title: /init
-description: 用其他 Coding Agent 的 /init Prompt 分析当前项目，写出 AGENTS.md；Pi、DSH、Cline、Grok Build、goose 与 Aider 用法一致。
+description: 用其他 Coding Agent 的 /init Prompt 分析当前项目，写出 AGENTS.md；支持 Pi、DSH、Cline、Grok Build、goose 与 Aider。
 icon: FileText
 ---
 
 ## 用法
 
-Pi、DSH 与 Cline 的用法相同：
+Pi、DSH 与 Cline 的参数写法相同：
 
 ```text
-/init                         # 使用默认预设
+/init                         # 使用默认预设（DSH 里先打开预设列表）
 /init kimi-code               # 使用 kimi-code 预设
 /init opencode 重点写测试流程   # 使用 opencode 预设并附加额外 Prompt
 /init 用中文写                 # 第一个词不是预设名时，整句作为额外 Prompt，使用默认预设
 ```
 
-DSH 的 `/` 菜单里，`/init` 排在「指令」区，标题是「初始化」。在菜单里选中它，或者只输入 `/init` 就回车，会打开预设列表：默认预设打勾并已高亮，再按回车就用它，输入文字可以筛选预设，自定义预设单独列在「自定义」组里。要写预设名或额外 Prompt，在 `/init` 后面打空格接着输入，规则和上面一样。
+DSH 的 `/` 菜单里，`/init` 排在「指令」区，标题是「初始化」。在菜单里选中它，或者只输入 `/init` 就回车，会打开预设列表：默认预设打勾并已高亮，再按回车就用它，输入文字可以筛选预设，自定义预设单独列在「自定义」组里。要写预设名或额外 Prompt，在 `/init` 后面打空格接着输入，规则和上面一样。子代理会话里没有 `/init`。
 
 <Tabs items={['Grok Build 与 goose', 'Aider']}>
 <Tab value="Grok Build 与 goose">
@@ -70,7 +70,10 @@ agent-stash init aider crush -- --model sonnet       # 指定 Aider 的模型
 | `claude-code`          | Claude Code v2.1.306 的 `/init`（经典版）   |
 | `claude-code-init-new` | Claude Code v2.1.306 的 `/init`（多阶段版） |
 
-所有预设都统一输出 `AGENTS.md`。
+除 `copilot` 与 `claude-code-init-new` 外，所有预设都输出 `AGENTS.md`。
+
+- `copilot` 沿用 VS Code 上游的做法：优先写 `AGENTS.md`，项目里已有 `AGENTS.md` 或 `.github/copilot-instructions.md` 时更新已有的那个文件，还可能新建技能和自定义 Agent。
+- `claude-code-init-new` 先询问要设置什么：可以写项目的 `AGENTS.md`、个人的 `CLAUDE.local.md` 或两者都写，还可能在 `.claude/skills/` 下新建技能、在 `.claude/settings.json` 里加 hook。
 
 ## 额外指令与占位符
 
