@@ -1,27 +1,30 @@
 core:changelogs:
-  - content: "---\npackages:\n  \"@agent-stash/dsh-recall\":\n    type: minor\n  \"@agent-stash/dsh-autosuggest\":\n    type: minor\n  \"@agent-stash/dsh-stash-kit\":\n    type: minor\n---\n\n## 新增 DSH 插件 Prompt 回溯、Prompt 补全与 Agent Stash 框架\n\n- `@agent-stash/dsh-recall`（Prompt 回溯）：在 DSH 输入框开头按 ↑ 打开历史面板，用 ↑↓ 翻看当前会话发过的 Prompt；越过最新一条或按 Esc 回到原来的草稿，Tab 留下当前这条继续编辑，Enter 直接发送。\n- `@agent-stash/dsh-autosuggest`（Prompt 补全）：输入的内容是某条历史 Prompt 的开头时，光标后以灰字补出剩余部分，按 Tab 或 → 填入，多条匹配时用 ↑↓ 切换。历史来自所有会话，区分大小写。\n- `@agent-stash/dsh-stash-kit`（Agent Stash 框架）：两个插件共用的面板、补全灰字与动画。面板与 `/` 菜单同一套几何和间距，底色不透明，默认加背景模糊；在「插件」页的框架配置页统一设置毛玻璃、动画强度（灵动 / 轻柔 / 关闭）、补全灰字的出现方式、高亮移动方式、行高与按键提示，页面带实时预览。\n- 安装 `@agent-stash/dsh-recall` 或 `@agent-stash/dsh-autosuggest` 后，插件第一次启动时会从 npm 自动安装并启用框架。\n- 三个插件都需要 DSH 0.2.1-alpha.4 或更新的版本，在「插件」页填入 npm 包名即可安装，也列在插件索引 `https://alice39s.github.io/agent-stash/index.json` 里。图标与 `/init`、消息编辑同一套画法。\n"
-    filename: dsh-prompt-history.md
+  - content: "---\npackages:\n  \"@agent-stash/init\":\n    type: patch\n---\n\n## 新增文档站\n\n- 中英双语文档站发布在 <https://alice39s.github.io/agent-stash/>，收录安装方法、`/init`、技能，以及 `dsh-recall`、`dsh-autosuggest` 与 Agent Stash 框架的录屏和截图。\n- 每页都有 Markdown 副本，站点提供 `llms.txt`、`llms-full.txt`、站内搜索与站点地图。\n- 插件索引仍在 `https://alice39s.github.io/agent-stash/index.json`，与文档站一起发布。\n"
+    filename: docs-site.md
+    v: 0.0.0
+  - content: "---\npackages:\n  \"@agent-stash/init\":\n    type: minor\n---\n\n## DSH 的 `/init` 进入 `/` 菜单\n\n- `/init` 排在 `/` 菜单的「指令」区，和内置指令一样带图标、标题「初始化」和一句靠右的说明，英文界面显示为 Init。\n- 在菜单里选中它，或者只输入 `/init` 就回车，会打开预设列表：默认预设打勾并已高亮，再按回车就用它；输入文字可以筛选预设，`init.json` 里的自定义预设单独列在「自定义」组。\n- 在 `/init` 后面打空格，可以接着写预设名和额外 Prompt，规则不变。\n"
+    filename: dsh-init-command.md
     v: 0.0.0
 core:packages:
-  - id: npm:@agent-stash/init
+  - changelogIds:
+      - docs-site.md
+      - dsh-init-command.md
+    id: npm:@agent-stash/init
+    updated: true
+  - id: npm:@agent-stash/dsh-autosuggest
     updated: false
-  - changelogIds:
-      - dsh-prompt-history.md
-    id: npm:@agent-stash/dsh-stash-kit
-    updated: true
-  - changelogIds:
-      - dsh-prompt-history.md
-    id: npm:@agent-stash/dsh-recall
-    updated: true
-  - changelogIds:
-      - dsh-prompt-history.md
-    id: npm:@agent-stash/dsh-autosuggest
-    updated: true
+  - id: npm:@agent-stash/dsh-stash-kit
+    updated: false
+  - id: npm:agent-stash-docs
+    updated: false
+  - id: npm:@agent-stash/dsh-recall
+    updated: false
   - id: npm:@agent-stash/dsh-message-edit
     updated: false
 npm:packages:
   - id: npm:@agent-stash/init
-  - id: npm:@agent-stash/dsh-stash-kit
-  - id: npm:@agent-stash/dsh-recall
   - id: npm:@agent-stash/dsh-autosuggest
+  - id: npm:@agent-stash/dsh-stash-kit
+  - id: npm:agent-stash-docs
+  - id: npm:@agent-stash/dsh-recall
   - id: npm:@agent-stash/dsh-message-edit
