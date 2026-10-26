@@ -68,7 +68,7 @@ pnpm --filter agent-stash-docs dev    # http://localhost:3883/agent-stash/
 pnpm --filter agent-stash-docs build  # 输出到 docs/out/
 ```
 
-截图与录屏放在 `docs/public/media/`，尺寸登记在 `docs/lib/media.ts`，页面用 `<Showcase>` 展示。插件页与技能页末尾的贡献者和页面历史在构建时从 Git 读取，构建环境需要完整的提交历史；新页面提交之后才显示它们。
+截图与录屏放在 `docs/public/media/`，尺寸登记在 `docs/lib/media.ts`，页面用 `<Showcase>` 展示。英文页用同一段操作在英文界面下的录制，场景名带 `-en` 后缀。插件页与技能页末尾的贡献者和页面历史在构建时从 Git 读取，构建环境需要完整的提交历史；新页面提交之后才显示它们。
 
 ## 发布
 

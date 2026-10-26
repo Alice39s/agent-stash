@@ -213,7 +213,7 @@ version: 2026-10-27.1
 - [SHOULD] 预览图不读 CSS 变量，颜色取 `lib/palette.ts` 导出的深色色板；字体由 `lib/og.server.ts` 注册 `@fontsource-variable/noto-sans-sc` 的全部子集（预览图渲染器不读系统字体）。
 - [MUST] 主题由 next-themes 在 `html` 上切换 `dark` 类，默认跟随系统；原生控件和滚动条使用当前主题的 color-scheme。
 - [SHOULD] 文档站的 MDX 组件映射在 `components/mdx.tsx`；表头与短列由 `lib/remark-label-columns.ts` 标记为不换行；内容链接由 `lib/remark-content-links.ts` 改写为页面地址。
-- [SHOULD] 截图与录屏放在 `docs/public/media/`，文件名用场景名（`recall.mp4`、`recall.png`），尺寸登记在 `lib/media.ts`；录屏为 H.264 MP4、60fps、无音轨。
+- [SHOULD] 截图与录屏放在 `docs/public/media/`，文件名用场景名（`recall.mp4`、`recall.png`），尺寸登记在 `lib/media.ts`；录屏为 H.264 MP4、60fps、无音轨。中文页用中文界面的录制，英文页用同一段操作在英文界面下的录制，场景名加 `-en`（`recall-en`）。
 - [SHOULD] 浮层与菜单用 Base UI（Fumadocs 默认的组件库）；图标用 lucide-react。不引入另一套组件系统。
 - [SHOULD] 打开方式菜单用 `fumadocs-extras`，贡献者与页面历史用 `fumadocs-page-history`；两者的样式预设在 `globals.css` 里紧跟 Fumadocs 的预设导入，页面历史的站点调整写在 `.as-page-history` 下。
 - [MUST] 页面历史在构建时由 `lib/page-history.tsx` 从 Git 读取，哪些页面显示它也在这里决定；构建需要完整的提交历史，Pages 工作流检出时用 `fetch-depth: 0`。页面历史不进入 Markdown 副本、`llms-full.txt` 和站内搜索。
