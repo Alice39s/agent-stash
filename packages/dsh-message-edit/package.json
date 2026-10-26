@@ -1,0 +1,27 @@
+{
+  "name": "@agent-stash/dsh-message-edit",
+  "version": "0.2.3",
+  "description": "Edit, reroll, and retry DeepSeek Harness conversation turns as reversible session branches",
+  "keywords": [
+    "deepseek-harness",
+    "dsh-plugin",
+    "message-edit",
+    "reroll"
+  ],
+  "homepage": "https://github.com/Alice39s/agent-stash/tree/main/packages/dsh-message-edit#readme",
+  "bugs": "https://github.com/Alice39s/agent-stash/issues",
+  "license": "MIT",
+  "author": "Alice39s",
+  "contributors": [
+    "Moeblack"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alice39s/agent-stash.git",
+    "directory": "packages/dsh-message-edit"
+  },
+  "type": "module",
+  "publishConfig": {
+    "access": "public"
+  }
+}
