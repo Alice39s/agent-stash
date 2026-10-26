@@ -4,6 +4,8 @@
   "ignorePatterns": [
     "vendor/**",
     "dist/**",
+    "packages/*/dist/**",
+    "packages/*/CHANGELOG.md",
     "skills/code-styleguide/**",
     "prompts/**",
     ".tegami/**",
