@@ -1,7 +1,7 @@
 ---
 name: agent-stash-docs-design
-description: 用于 Agent Stash 文档站（docs/）的长文文档页、语言入口页、未找到页、页面内的截图与录屏展示，以及构建生成的链接预览图。读者是给 Coding Agent 安装插件和技能的开发者，在桌面上对照命令、按键和配置操作，也会在手机上查阅；目标是沿用 DeepSeek Harness 界面的中性色与系统字体、插件图标的蓝色作为唯一强调色、Apple 式的截图展示板，中英双语，浅色与深色主题。
-version: 2026-10-26.2
+description: 用于 Agent Stash 文档站（docs/）的长文文档页、页面末尾的贡献者与页面历史、语言入口页、未找到页、页面内的截图与录屏展示，以及构建生成的链接预览图。读者是给 Coding Agent 安装插件和技能的开发者，在桌面上对照命令、按键和配置操作，也会在手机上查阅；目标是沿用 DeepSeek Harness 界面的中性色与系统字体、插件图标的蓝色作为唯一强调色、Apple 式的截图展示板，中英双语，浅色与深色主题。
+version: 2026-10-27.1
 ---
 
 ## 1. 范围与优先级
@@ -37,7 +37,8 @@ version: 2026-10-26.2
 ### 长文文档
 
 - [SHOULD] 顶栏下为 1280px 框架：768px 起左侧为页面树侧栏（顶部是搜索框），中间为正文，1280px 起右侧为本页目录。768px 以下页面树改为抽屉，顶栏下方 48px 的 `DocsBar` 放目录和搜索按钮，本页目录收为可展开的条。（决策：侧栏在 Fumadocs 切换抽屉的同一宽度出现，任何宽度下都能打开页面树。来源：2026-10-26 文档站评审。）
-- [SHOULD] 正文自上而下：`text-h1` 标题、`text-body` muted 描述、页面操作行（复制 Markdown、打开方式菜单，底部 1px 分隔线和 24px 间距）、正文、最后更新时间。
+- [SHOULD] 正文自上而下：`text-h1` 标题、`text-body` muted 描述、页面操作行（复制 Markdown、打开方式菜单，底部 1px 分隔线和 24px 间距）、正文、最后更新时间。插件页与技能页把最后更新时间换成贡献者与页面历史。
+- [SHOULD] 打开方式菜单按页面来源、网页对话、桌面应用、编程 Agent 分组，分组之间有分隔线；菜单文案按页面语言显示，交给 AI 的 Prompt 里写发布站点上的页面地址。
 - [SHOULD] 介绍单个界面功能的页面，第一屏在描述之后先放这个功能的 `Showcase`，再写按键与配置。（决策：读者先看到效果，再决定要不要读细节。来源：2026-10-26 文档站初版设计决策。）
 - [SHOULD] 页面标题用 `text-h1`；描述、卡片描述和提示框正文用 `text-body`；h2 用 `text-section-title`，h3 用 `text-card-title`；正文段落 15px、行高 1.75；行内代码和代码块用等宽字体。层级由侧栏的页面树表达，页面不显示面包屑。
 - [SHOULD] `Card` 为 `--radius-card` 圆角、1px 边框、16px 内边距、无阴影，卡片间隔 16px；图标用 muted-foreground 放在标题左侧，不放图标底板。可点击的卡片悬停时边框变为 40% primary，底色变为 60% accent。
@@ -57,6 +58,17 @@ version: 2026-10-26.2
 - [SHOULD] 一个展示板只放一段素材；同一功能的录屏和截图不并排重复展示。
 - [MUST] 素材里的界面语言、主题和数据如实来自拍摄时的程序，说明里不描述素材里没有的效果。
 - [MUST] 录屏在用全新 DSH_HOME 启动的 dsh web 里拍摄，会话只含演示用的 Prompt；画面里有指针（点击时指尖扩散一圈波纹）和按键提示，操作从指针点击输入框或控件开始。封面图不带指针和按键提示。（来源：2026-10-26 文档站素材重拍。）
+
+### 贡献者与页面历史
+
+- [MUST] 只出现在插件页与技能页，放在正文之后、翻页卡片之前，代替最后更新时间；“贡献者”和“页面历史”两个分节也列在本页目录末尾。
+- [MUST] 记录来自构建时的 Git 历史。还没有提交的新页面不显示这一块，仍显示最后更新时间。
+- [SHOULD] 与正文之间是一条 1px 分隔线，正文到分隔线、分隔线到第一个分节、两个分节之间都是 24px；分节标题与文档 h2 相同，用 `text-section-title`，标题下 12px。
+- [SHOULD] 贡献者一行排开：28px 圆形头像加 `text-body` 名字，名字为正文色，悬停时出现 primary 下划线；悬停整项显示提交次数。
+- [SHOULD] 页面历史是一张折叠卡片：`--radius-card` 圆角、1px 边框、card 表面、无阴影。折叠按钮占满卡片宽度，离卡片边缘 6px，圆角为卡片圆角减去这 6px，与卡片同心；按钮左侧是 muted 的历史图标和 600 字重的“最后编辑于”与相对时间，右侧是“查看完整历史”和箭头。默认收起。
+- [SHOULD] 展开后按时间倒序列出提交，右上角的图标按钮切换先后顺序：每行是等宽字体的短哈希（链接到提交）、提交说明和 `text-meta` muted 的日期。提交说明里的链接与正文链接相同。
+- [MUST] 日期按页面语言和读者所在时区显示；页面加载前用 UTC 渲染，相对时间在加载后出现。
+- [MUST] 640px 以下隐藏提交图标、分隔符和“查看完整历史”文字，短哈希保留；768px 以下折叠按钮与排序按钮至少 44px。
 
 ### 语言入口页
 
@@ -142,21 +154,23 @@ version: 2026-10-26.2
 
 ## 5. 可用原语
 
-| 原语            | 位置                                        | 用途与变体                                                                                                |
-| --------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| `SiteHeader`    | `components/site-header.tsx`                | 顶栏；`locale`                                                                                            |
-| `BrandMark`     | `components/brand-mark.tsx`                 | 品牌图形；`className` 决定尺寸                                                                            |
-| `ThemeMenu`     | `components/theme-menu.tsx`                 | 主题单选菜单（Base UI `Menu`）；`locale`                                                                  |
-| `DocsBar`       | `components/docs-bar.tsx`                   | 768px 以下的目录与搜索条，作为 `DocsLayout` 的 `header` 槽                                                |
-| `iconButton`    | `components/icon-button.ts`                 | 图标按钮的类名                                                                                            |
-| `Card`、`Cards` | `components/card.tsx`、`components/mdx.tsx` | 卡片；`title`、`description`、`icon`、`href`、`external`                                                  |
-| `Callout`       | `components/callout.tsx`                    | 提示框；`type`：`info`、`idea`、`warn`/`warning`、`error`、`success`；`title`                             |
-| `Showcase`      | `components/showcase.tsx`                   | 截图与录屏展示板；`name`（`lib/media.ts` 里的场景名）、`alt`、`caption`                                   |
-| `Kbd`、`Keys`   | `components/kbd.tsx`                        | 按键帽；`Keys` 的 `keys` 列出可替换的一组按键                                                             |
-| `KeyStrip`      | `components/key-strip.tsx`                  | 品牌装饰                                                                                                  |
-| `OgImage`       | `lib/og-image.tsx`                          | 链接预览图模板                                                                                            |
-| Fumadocs 组件   | `components/mdx.tsx`                        | `Steps`/`Step`、`Tabs`/`Tab`、`Files`/`Folder`/`File`、`Accordions`/`Accordion`、`TypeTable`、`ImageZoom` |
-| 图标            | `lib/icons.tsx`                             | 侧栏与卡片可用的 lucide 图标；新图标先加入这张表                                                          |
+| 原语                 | 位置                                        | 用途与变体                                                                                                |
+| -------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `SiteHeader`         | `components/site-header.tsx`                | 顶栏；`locale`                                                                                            |
+| `BrandMark`          | `components/brand-mark.tsx`                 | 品牌图形；`className` 决定尺寸                                                                            |
+| `ThemeMenu`          | `components/theme-menu.tsx`                 | 主题单选菜单（Base UI `Menu`）；`locale`                                                                  |
+| `DocsBar`            | `components/docs-bar.tsx`                   | 768px 以下的目录与搜索条，作为 `DocsLayout` 的 `header` 槽                                                |
+| `iconButton`         | `components/icon-button.ts`                 | 图标按钮的类名                                                                                            |
+| `Card`、`Cards`      | `components/card.tsx`、`components/mdx.tsx` | 卡片；`title`、`description`、`icon`、`href`、`external`                                                  |
+| `Callout`            | `components/callout.tsx`                    | 提示框；`type`：`info`、`idea`、`warn`/`warning`、`error`、`success`；`title`                             |
+| `Showcase`           | `components/showcase.tsx`                   | 截图与录屏展示板；`name`（`lib/media.ts` 里的场景名）、`alt`、`caption`                                   |
+| `Kbd`、`Keys`        | `components/kbd.tsx`                        | 按键帽；`Keys` 的 `keys` 列出可替换的一组按键                                                             |
+| `KeyStrip`           | `components/key-strip.tsx`                  | 品牌装饰                                                                                                  |
+| `OgImage`            | `lib/og-image.tsx`                          | 链接预览图模板                                                                                            |
+| `ViewOptionsPopover` | `fumadocs-extras/page-actions`              | 页面操作行的打开方式菜单；`markdownUrl`、`githubUrl`、`pageUrl`、`locale`                                 |
+| `GitChangelog`       | `fumadocs-page-history/ui`                  | 贡献者与页面历史；记录与本页目录条目来自 `lib/page-history.tsx`，样式类名 `as-page-history`               |
+| Fumadocs 组件        | `components/mdx.tsx`                        | `Steps`/`Step`、`Tabs`/`Tab`、`Files`/`Folder`/`File`、`Accordions`/`Accordion`、`TypeTable`、`ImageZoom` |
+| 图标                 | `lib/icons.tsx`                             | 侧栏与卡片可用的 lucide 图标；新图标先加入这张表                                                          |
 
 `Showcase` 的固定取值：展示板浅色 `#f5f5f7`、深色 `#1d1d1f`；画框阴影 `--shadow-frame`，浅色为 `0 0 0 0.5px rgb(0 0 0 / 0.08), 0 2px 6px rgb(0 0 0 / 0.04), 0 12px 32px rgb(0 0 0 / 0.08), 0 32px 64px -16px rgb(0 0 0 / 0.14)`，深色把描边换成 `rgb(255 255 255 / 0.1)`、投影透明度翻倍。
 
@@ -201,21 +215,24 @@ version: 2026-10-26.2
 - [SHOULD] 文档站的 MDX 组件映射在 `components/mdx.tsx`；表头与短列由 `lib/remark-label-columns.ts` 标记为不换行；内容链接由 `lib/remark-content-links.ts` 改写为页面地址。
 - [SHOULD] 截图与录屏放在 `docs/public/media/`，文件名用场景名（`recall.mp4`、`recall.png`），尺寸登记在 `lib/media.ts`；录屏为 H.264 MP4、60fps、无音轨。
 - [SHOULD] 浮层与菜单用 Base UI（Fumadocs 默认的组件库）；图标用 lucide-react。不引入另一套组件系统。
+- [SHOULD] 打开方式菜单用 `fumadocs-extras`，贡献者与页面历史用 `fumadocs-page-history`；两者的样式预设在 `globals.css` 里紧跟 Fumadocs 的预设导入，页面历史的站点调整写在 `.as-page-history` 下。
+- [MUST] 页面历史在构建时由 `lib/page-history.tsx` 从 Git 读取，哪些页面显示它也在这里决定；构建需要完整的提交历史，Pages 工作流检出时用 `fetch-depth: 0`。页面历史不进入 Markdown 副本、`llms-full.txt` 和站内搜索。
 
 ## 词汇表
 
-| 概念                               | 名称                 |
-| ---------------------------------- | -------------------- |
-| 所有文档页共用的顶部条             | 顶栏 `SiteHeader`    |
-| 顶栏左侧的图形与站名               | 品牌标识             |
-| 侧栏、正文、本页目录组成的页面类型 | 长文文档             |
-| 768px 以下顶栏下方的目录与搜索条   | `DocsBar`            |
-| 放截图或录屏的浅灰或深灰底板       | 展示板 `Showcase`    |
-| 展示板中间带圆角和阴影的素材框     | 画框                 |
-| 单个按键的方形标记                 | 按键帽 `Kbd`         |
-| 一行按键帽组成的装饰               | 按键帽条 `KeyStrip`  |
-| 站点根路径的语言选择页             | 语言入口页           |
-| 文档构建生成的 Open Graph 图片     | 链接预览图 `OgImage` |
+| 概念                                 | 名称                    |
+| ------------------------------------ | ----------------------- |
+| 所有文档页共用的顶部条               | 顶栏 `SiteHeader`       |
+| 顶栏左侧的图形与站名                 | 品牌标识                |
+| 侧栏、正文、本页目录组成的页面类型   | 长文文档                |
+| 768px 以下顶栏下方的目录与搜索条     | `DocsBar`               |
+| 放截图或录屏的浅灰或深灰底板         | 展示板 `Showcase`       |
+| 展示板中间带圆角和阴影的素材框       | 画框                    |
+| 单个按键的方形标记                   | 按键帽 `Kbd`            |
+| 一行按键帽组成的装饰                 | 按键帽条 `KeyStrip`     |
+| 站点根路径的语言选择页               | 语言入口页              |
+| 文档构建生成的 Open Graph 图片       | 链接预览图 `OgImage`    |
+| 插件页与技能页末尾的贡献者与提交记录 | 页面历史 `GitChangelog` |
 
 ## 待定事项
 

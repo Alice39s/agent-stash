@@ -56,7 +56,6 @@ uv run --project scripts/ci ci npm status     # 列出各包在 npm 上的版本
   <Folder name="docs" defaultOpen>
     <Folder name="content" />
     <Folder name="public" />
-    <File name="design.md" />
   </Folder>
 </Files>
 
@@ -69,7 +68,7 @@ pnpm --filter agent-stash-docs dev    # http://localhost:3883/agent-stash/
 pnpm --filter agent-stash-docs build  # 输出到 docs/out/
 ```
 
-修改文档站的界面前先读 [设计规范](./design.mdx)。截图与录屏放在 `docs/public/media/`，尺寸登记在 `docs/lib/media.ts`，页面用 `<Showcase>` 展示。
+截图与录屏放在 `docs/public/media/`，尺寸登记在 `docs/lib/media.ts`，页面用 `<Showcase>` 展示。插件页与技能页末尾的贡献者和页面历史在构建时从 Git 读取，构建环境需要完整的提交历史；新页面提交之后才显示它们。
 
 ## 发布
 

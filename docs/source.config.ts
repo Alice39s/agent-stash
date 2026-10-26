@@ -12,7 +12,7 @@ export default defineConfig({
     // GitHub 默认主题的注释在两种主题的代码块表面上都达到 4.5:1。
     rehypeCodeOptions: { themes: { light: "github-light-default", dark: "github-dark-default" } },
     // 内容链接在 Fumadocs 自带插件之前改写，给 LLM 读的 Markdown 也带上页面地址；文件树在它们之后变成组件，
-    // Markdown 里保留源码。步骤只用显式的 <Steps> 组件：design.md 的章节标题带序号，不能被当成步骤。
+    // Markdown 里保留源码。步骤只用显式的 <Steps> 组件。
     remarkPlugins: (defaults) => [
       remarkContentLinks,
       remarkLabelColumns,

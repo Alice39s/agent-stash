@@ -47,7 +47,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7
         with:
-          # 每页的最后更新时间取自 Git 历史。
+          # 每页的最后更新时间，以及插件页与技能页的贡献者和页面历史，都取自完整的 Git 历史。
           fetch-depth: 0
       - uses: actions/checkout@v7
         with:

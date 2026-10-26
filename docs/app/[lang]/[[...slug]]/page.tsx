@@ -1,15 +1,17 @@
+import { ViewOptionsPopover } from "fumadocs-extras/page-actions";
+import { GitChangelog } from "fumadocs-page-history/ui";
 import {
   DocsBody,
   DocsPage,
   MarkdownCopyButton,
   PageLastUpdate,
-  ViewOptionsPopover,
 } from "fumadocs-ui/layouts/docs/page";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getMDXComponents } from "@/components/mdx";
-import { htmlLang, i18n } from "@/lib/i18n";
+import { htmlLang, i18n, type Locale } from "@/lib/i18n";
 import { siteText } from "@/lib/layout.shared";
+import { PAGE_HISTORY_IDS, pageHistoryToc, readPageHistory } from "@/lib/page-history";
 import {
   absoluteUrl,
   pageImagePath,
@@ -38,14 +40,19 @@ async function resolvePage({ params }: PageProps): Promise<Page> {
   return page;
 }
 
+function pageLocale(page: Page): Locale {
+  return page.locale === "en" ? "en" : i18n.defaultLanguage;
+}
+
 export default async function DocPage(props: PageProps) {
   const page = await resolvePage(props);
   const MDX = page.data.body;
-  // Fumadocs 的页面操作会给地址加上 basePath，这里传不带前缀的路径。
+  const locale = pageLocale(page);
   const markdownUrl = pageMarkdownPath(page);
+  const commits = await readPageHistory(page.path);
   return (
     <DocsPage
-      toc={page.data.toc}
+      toc={commits.length > 0 ? [...page.data.toc, ...pageHistoryToc] : page.data.toc}
       full={page.data.full}
       // 本页目录是页面的分节导航，名字取自“本页目录”标题。
       tableOfContent={{
@@ -62,23 +69,38 @@ export default async function DocPage(props: PageProps) {
         <p className="text-body text-fd-muted-foreground">{page.data.description}</p>
       )}
       <div className="flex flex-row flex-wrap items-center gap-2 border-b pb-6">
+        {/* 两个页面操作都经 Next.js 的链接加上 basePath，这里传不带前缀的路径。 */}
         <MarkdownCopyButton markdownUrl={markdownUrl} />
         <ViewOptionsPopover
           markdownUrl={markdownUrl}
           githubUrl={`${repositoryUrl}/blob/${repository.branch}/${repository.contentDir}/${page.path}`}
+          // 发给 AI 的 Prompt 里用发布站点上的地址，本地预览时也一样。
+          pageUrl={absoluteUrl(pagePath(page.url))}
+          locale={htmlLang[locale]}
         />
       </div>
       <DocsBody>
         <MDX components={getMDXComponents()} />
       </DocsBody>
-      {page.data.lastModified && <PageLastUpdate date={page.data.lastModified} />}
+      {commits.length > 0 ? (
+        <GitChangelog
+          commits={commits}
+          locale={htmlLang[locale]}
+          repository={{ url: repositoryUrl }}
+          id={PAGE_HISTORY_IDS.history}
+          contributorsId={PAGE_HISTORY_IDS.contributors}
+          className="as-page-history"
+        />
+      ) : (
+        page.data.lastModified && <PageLastUpdate date={page.data.lastModified} />
+      )}
     </DocsPage>
   );
 }
 
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
   const page = await resolvePage(props);
-  const locale = page.locale === "en" ? "en" : i18n.defaultLanguage;
+  const locale = pageLocale(page);
   const section = siteText[locale].byline;
   const image = absoluteUrl(pageImagePath(page));
   const url = absoluteUrl(pagePath(page.url));

@@ -2,5 +2,5 @@
   "title": "Development",
   "icon": "Code",
   "defaultOpen": true,
-  "pages": ["index", "design"]
+  "pages": ["index"]
 }

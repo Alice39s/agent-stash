@@ -1,4 +1,5 @@
 import { zhCN } from "@fumadocs/language/zh-cn";
+import { gitChangelogTranslations, zhCN as historyZhCN } from "fumadocs-page-history/i18n";
 import { uiTranslations } from "fumadocs-ui/i18n";
 import type { BaseLayoutProps } from "fumadocs-ui/layouts/shared";
 import { i18n, type Locale } from "./i18n";
@@ -6,7 +7,9 @@ import { i18n, type Locale } from "./i18n";
 export const translations = i18n
   .translations()
   .extend(uiTranslations())
+  .extend(gitChangelogTranslations())
   .preset("zh", zhCN())
+  .preset("zh", historyZhCN())
   .add({ zh: { displayName: "简体中文" }, en: { displayName: "English" } });
 
 /** Fumadocs 自带翻译之外，站点外壳需要的文案。 */

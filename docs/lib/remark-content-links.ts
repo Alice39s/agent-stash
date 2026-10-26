@@ -31,8 +31,6 @@ export function localeOf(file: string): string {
 export function remarkContentLinks() {
   return (tree: Root, file: VFile) => {
     const current = relative(contentDir, file.path).split(sep).join("/");
-    // 从内容目录外引入的文件（如 design.md）不链接内容页。
-    if (current.startsWith("..")) return;
     const locale = localeOf(current);
     const rewrite = (href: string): string => {
       const match = CONTENT_LINK.exec(href);
