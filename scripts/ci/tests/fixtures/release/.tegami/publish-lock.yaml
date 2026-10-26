@@ -1,0 +1,16 @@
+core:changelogs:
+  - content: "---\npackages:\n  \"@agent-stash/init\":\n    type: minor\n  \"@agent-stash/dsh-message-edit\":\n    type: minor\n---\n\n## Publish to npm\n"
+    filename: npm-packages.md
+    v: 0.0.0
+core:packages:
+  - changelogIds:
+      - npm-packages.md
+    id: npm:@agent-stash/init
+    updated: true
+  - changelogIds:
+      - npm-packages.md
+    id: npm:@agent-stash/dsh-message-edit
+    updated: true
+npm:packages:
+  - id: npm:@agent-stash/init
+  - id: npm:@agent-stash/dsh-message-edit

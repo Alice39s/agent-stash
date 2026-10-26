@@ -44,6 +44,9 @@ jobs:
         run: pnpm tegami ci
         env:
           GITHUB_TOKEN: ${{ github.token }}
+      # 插件索引等后续工作流在 Release 结束后运行；等 npm 能装到新版本再结束，它们才读得到这次发布。
+      - name: Wait for npm to serve the release
+        run: uv run ci npm wait
 
   placeholder:
     if: github.event_name == 'workflow_dispatch' && inputs.placeholder != 'none'

@@ -10,6 +10,7 @@ from rich.table import Column, Table
 from . import github, registry
 from .placeholder import Auth, check_credentials, publish_placeholder
 from .proc import console, run
+from .publish_lock import read_publish_lock
 from .workspace import WorkspacePackage, publishable_packages, repo_root
 
 
@@ -135,6 +136,24 @@ def status() -> None:
                 trusted,
             )
     stdout.print(table)
+
+
+@npm_app.command()
+def wait() -> None:
+    """Wait until npm serves the current version of every package in the Tegami publish lock.
+
+    npm needs a few minutes before installs can see a new version.
+    Waiting here lets the workflows after Release, such as the plugin index, list the release.
+    Versions released earlier are already on npm, so later runs return at once.
+    """
+    root = repo_root()
+    versions = {
+        package.manifest.name: package.manifest.version for package in publishable_packages(root)
+    }
+    with registry.registry_client() as client:
+        for name in read_publish_lock(root).npm_names():
+            published = registry.wait_for_version(client, name, versions[name])
+            stdout.print(f"npm serves {name}@{published.version}")
 
 
 def _select(packages: list[WorkspacePackage], names: list[str]) -> list[WorkspacePackage]:
