@@ -56,7 +56,6 @@ uv run --project scripts/ci ci npm status     # list each package's npm versions
   <Folder name="docs" defaultOpen>
     <Folder name="content" />
     <Folder name="public" />
-    <File name="design.md" />
   </Folder>
 </Files>
 
@@ -69,7 +68,7 @@ pnpm --filter agent-stash-docs dev    # http://localhost:3883/agent-stash/
 pnpm --filter agent-stash-docs build  # outputs to docs/out/
 ```
 
-Read the [design rules](./design.mdx) before you change the interface of the docs site. Screenshots and screen recordings go in `docs/public/media/`, their sizes are registered in `docs/lib/media.ts`, and pages show them with `<Showcase>`.
+Screenshots and screen recordings go in `docs/public/media/`, their sizes are registered in `docs/lib/media.ts`, and pages show them with `<Showcase>`. The contributors and page history at the end of the plugin and skills pages are read from Git at build time, so the build needs the full commit history. A new page shows them after its first commit.
 
 ## Release
 
