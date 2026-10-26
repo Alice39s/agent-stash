@@ -1,0 +1,111 @@
+---
+title: Contributing
+description: The local development environment, common commands, the CI command line, how the docs site is built and the release process.
+icon: Code
+---
+
+## Requirements
+
+| Tool    | Version        | Declared in                                       |
+| ------- | -------------- | ------------------------------------------------- |
+| Node.js | 24 or later    | `engines` field in `package.json`                 |
+| pnpm    | 11             | `packageManager` field in `package.json`          |
+| uv      | See the config | `required-version` in `scripts/ci/pyproject.toml` |
+
+## Common commands
+
+```bash
+pnpm install
+pnpm check   # oxfmt --check, oxlint type checks and vitest; this is what CI runs
+pnpm bundle  # update dist/ and dsh/*/dist/, which DSH, the Cline plugin and the agent-stash CLI load
+pnpm format
+```
+
+Workspace packages live in `packages/`. Each one has a `bundle` script whose `dist/` output is committed. Every CI and release step runs through the Python command line in `scripts/ci` (uv + Typer), and you can run the same commands locally:
+
+```bash
+uv run --project scripts/ci ci --help
+uv run --project scripts/ci ci bundle --check # rebuild dist/ of every workspace package, fail on differences
+uv run --project scripts/ci ci npm status     # list each package's npm versions and trusted publishing state
+```
+
+## Repository layout
+
+<Files>
+  <Folder name="src" defaultOpen>
+    <Folder name="init" />
+    <Folder name="code-styleguide" />
+  </Folder>
+  <Folder name="dsh" defaultOpen>
+    <Folder name="init" />
+    <Folder name="recall" />
+    <Folder name="autosuggest" />
+    <Folder name="kit" />
+    <Folder name="shared" />
+  </Folder>
+  <Folder name="packages" defaultOpen>
+    <Folder name="dsh-message-edit" />
+  </Folder>
+  <Folder name="pi" />
+  <Folder name="cline" />
+  <Folder name="cli" />
+  <Folder name="skills" />
+  <Folder name="scripts" defaultOpen>
+    <Folder name="ci" />
+  </Folder>
+  <Folder name="docs" defaultOpen>
+    <Folder name="content" />
+    <Folder name="public" />
+    <File name="design.md" />
+  </Folder>
+</Files>
+
+## Docs site
+
+The docs site is in `docs/`. It is a statically exported [Fumadocs](https://fumadocs.dev) site. `.github/workflows/pages.yml` builds it with `ci docs`, generates the plugin index with `ci plugin-index`, and puts both into one GitHub Pages artifact. Pull requests that change `docs/` only build a preview artifact; runs on `main` deploy it. The pages are in `docs/content/docs/`. Chinese pages are `*.mdx` files, and English pages are `*.en.mdx` files with the same names.
+
+```bash
+pnpm --filter agent-stash-docs dev    # http://localhost:3883/agent-stash/
+pnpm --filter agent-stash-docs build  # outputs to docs/out/
+```
+
+Read the [design rules](./design.mdx) before you change the interface of the docs site. Screenshots and screen recordings go in `docs/public/media/`, their sizes are registered in `docs/lib/media.ts`, and pages show them with `<Showcase>`.
+
+## Release
+
+Version numbers follow semantic versioning. [Tegami](https://tegami.fuma-nama.dev) manages them, with its configuration in `scripts/tegami.ts`.
+
+<Steps>
+<Step>
+
+### Write a changeset
+
+Create a Markdown file in `.tegami/`. In the frontmatter, list each changed package with its bump type (`major`, `minor` or `patch`). The body holds the release notes, written in Chinese. The body needs at least one Markdown heading, because Tegami does not read files without a heading:
+
+```md title=".tegami/xxx.md"
+---
+packages:
+  "@agent-stash/init": minor
+---
+
+## 新增 xxx 预设
+
+- xxx 预设从上游每天同步。
+```
+
+</Step>
+<Step>
+
+### Merge the Version Packages PR
+
+After a push to `main`, `.github/workflows/release.yml` opens a Version Packages PR that updates the version of each package and its `CHANGELOG.md`.
+
+</Step>
+<Step>
+
+### Publish to npm
+
+After you merge this PR, the same workflow publishes the bumped packages to npm through npm trusted publishing (OIDC) with provenance, then creates the tags and GitHub releases: `v<version>` for `@agent-stash/init` and `<name>@<version>` for the other packages. The workflow waits until npm serves the new versions; the Pages workflow that runs next regenerates the plugin index and the docs site.
+
+</Step>
+</Steps>

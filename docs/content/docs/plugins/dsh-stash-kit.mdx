@@ -1,0 +1,64 @@
+---
+title: dsh-stash-kit
+description: Agent Stash 系列 DSH 插件共用的面板、补全灰字、动画与外观配置，在一个配置页里统一修改。
+icon: SwatchBook
+---
+
+<Showcase
+  name="kit-settings"
+  alt="Agent Stash 框架配置页：指针悬停预览面板的各行，关闭再打开毛玻璃，补全灰字切到淡入再切回波浪，行高切到紧凑再切回舒适，最后点重播"
+  caption="配置页顶部的预览随设置实时变化，点重播再看一遍动画"
+/>
+
+Agent Stash 框架（`dsh-stash-kit`）的浏览器半部提供 `stashKit` 服务，[dsh-recall](./dsh-recall.mdx) 与 [dsh-autosuggest](./dsh-autosuggest.mdx) 用它渲染面板和灰字；Host 半部持有外观配置，修改一次，所有插件同时生效。
+
+面板与 DSH 自带的 `/` 菜单使用同一套几何：离输入框 4px，圆角与内边距一致，内容左边线对齐输入框的文字列。底色完全不透明，默认再加一层背景模糊。
+
+## 配置项
+
+在「插件」页打开「Agent Stash 框架」，点它的条目进入配置页。改动点「保存」后立即生效。
+
+<Showcase
+  name="kit-settings-page"
+  alt="Agent Stash 框架配置页全貌：顶部是预览，下面依次是毛玻璃效果、动画、补全灰字、高亮移动、行高和按键提示，最后是保存按钮"
+  caption="配置页全貌：预览、六个设置项与保存按钮"
+/>
+
+| 配置项     | 字段        | 可选值                                             | 默认 |
+| ---------- | ----------- | -------------------------------------------------- | ---- |
+| 毛玻璃效果 | `glass`     | 开（不透明底色加背景模糊）/ 关（不透明底色）       | 开   |
+| 动画       | `motion`    | `lively` 灵动、`subtle` 轻柔、`off` 关闭           | 灵动 |
+| 补全灰字   | `ghost`     | `wave` 波浪、`fade` 淡入、`none` 直接显示          | 波浪 |
+| 高亮移动   | `highlight` | `glide` 滑动、`instant` 即时                       | 滑动 |
+| 行高       | `density`   | `comfortable` 舒适（34px）、`compact` 紧凑（28px） | 舒适 |
+| 按键提示   | `hints`     | 开 / 关                                            | 开   |
+
+## 动画
+
+- 灵动：面板从输入框方向浮起，由模糊变清晰，各行从贴近输入框的一行起依次出现；关闭时向下淡出。用 <Kbd>↑</Kbd> 回溯时，新草稿从翻看的方向滑入输入框。
+- 轻柔：面板只做短淡入淡出，草稿切换不播放动画。
+- 关闭：面板和灰字都直接出现、直接消失。
+- 补全灰字的「波浪」用一道渐隐遮罩从左向右扫出剩余文字；「淡入」让剩余文字整体淡入。
+- 系统开启「减少动态效果」时，所有位移和模糊都会去掉，只保留淡入淡出。
+
+## 在 profile 里配置
+
+也可以在 profile 的 patch 里写：
+
+```yaml title="cordis.patch.yml"
+- id: dsh-stash-kit
+  name: "@agent-stash/dsh-stash-kit"
+  config:
+    glass: false
+    motion: subtle
+```
+
+## 单独安装
+
+```bash
+dsh plugin --profile web add @agent-stash/dsh-stash-kit
+```
+
+<Callout type="info" title="停用框架">
+  停用框架后，依赖它的插件会停在「等待依赖」；再次启用这些插件时，框架会被重新启用。
+</Callout>

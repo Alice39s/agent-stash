@@ -1,0 +1,59 @@
+---
+title: Overview
+description: The plugins and skills in Agent Stash, and the coding agents that each one supports.
+icon: BookOpen
+---
+
+Agent Stash is a set of Agent Skills and plugins for personal use. It adds prompt history and autocompletion to the input box of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) and gives Pi, DSH, Cline, Grok Build, goose and Aider the same `/init` command. It also includes style guides and skills that delegate tasks to subagents.
+
+<Showcase
+  name="autosuggest"
+  alt="The pointer clicks the DSH input box and types The. Three past prompts that start with The appear above the input box, and gray text after the cursor completes the rest of the first one. Pressing ↓ twice and then Tab fills in the third one."
+  caption="dsh-autosuggest: type The, ↓ switches the suggestion, Tab fills it in"
+/>
+
+## Plugins
+
+| Name                                             | Install source                  | Supported agents                         | What it does                                                                                              |
+| ------------------------------------------------ | ------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [dsh-recall](./plugins/dsh-recall.mdx)           | `@agent-stash/dsh-recall`       | DSH                                      | Press ↑↓ in the input box to browse the prompts sent in the current session                               |
+| [dsh-autosuggest](./plugins/dsh-autosuggest.mdx) | `@agent-stash/dsh-autosuggest`  | DSH                                      | Type the start of a past prompt and gray text completes the rest. Press Tab or → to fill it in            |
+| [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)     | `@agent-stash/dsh-stash-kit`    | DSH                                      | The panel, motion and appearance settings that the two plugins above share. They install it automatically |
+| [Message edit](./plugins/dsh-message-edit.mdx)   | `@agent-stash/dsh-message-edit` | DSH                                      | Edit messages, regenerate replies or retry turns. Each change opens a new session version                 |
+| [/init](./plugins/init.mdx)                      | `@agent-stash/init`             | Pi, DSH, Cline, Grok Build, goose, Aider | Analyzes the project with the `/init` prompt of another coding agent and writes `AGENTS.md`               |
+
+## Skills
+
+| Name                                                                | What it does                                                                |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [`code-styleguide`](./skills.mdx#code-styleguide)                   | Google, Angular and Android Kotlin style guides, synced daily from upstream |
+| [`self-use-<model>-subagent`](./skills.mdx#self-use-model-subagent) | Delegates tasks in DSH to a subagent that runs a given model                |
+
+## Next steps
+
+<Cards>
+  <Card
+    title="Install"
+    description="How to install for Pi, DSH, Cline and the agent-stash CLI, and the URL of the DSH plugin index."
+    href="./install.mdx"
+    icon={<Download />}
+  />
+  <Card
+    title="dsh-recall"
+    description="↑ opens the prompt history of the current session, ↑↓ switches entries, Esc returns to the draft."
+    href="./plugins/dsh-recall.mdx"
+    icon={<History />}
+  />
+  <Card
+    title="dsh-autosuggest"
+    description="Prefix completion across sessions. Gray text shows the rest."
+    href="./plugins/dsh-autosuggest.mdx"
+    icon={<Sparkles />}
+  />
+  <Card
+    title="dsh-stash-kit"
+    description="Appearance settings for frosted glass, motion, ghost text, row height and key hints."
+    href="./plugins/dsh-stash-kit.mdx"
+    icon={<SwatchBook />}
+  />
+</Cards>

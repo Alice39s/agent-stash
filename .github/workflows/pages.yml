@@ -1,0 +1,85 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/**"
+      - "dsh/plugin-index.txt"
+      - "pnpm-lock.yaml"
+      - "scripts/ci/**"
+      - ".github/workflows/pages.yml"
+  pull_request:
+    paths:
+      - "docs/**"
+      - "dsh/plugin-index.txt"
+      - "pnpm-lock.yaml"
+      - "scripts/ci/**"
+      - ".github/workflows/pages.yml"
+  # 发布流程把新版本发到 npm 之后重新生成，新版本随即出现在插件索引里。
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+    branches: [main]
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # 参考生成器 apps/plugin-market-generator 所在的 DeepSeek Harness 版本。
+  DSH_REF: dsh-v0.2.1-rc.3
+  # `uv run ci ...` 调用 scripts/ci 里的 Typer 命令，并要求 uv.lock 与依赖一致。
+  UV_PROJECT: ${{ github.workspace }}/scripts/ci
+  UV_LOCKED: "1"
+
+jobs:
+  build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # 每页的最后更新时间取自 Git 历史。
+          fetch-depth: 0
+      - uses: actions/checkout@v7
+        with:
+          repository: deepseek-ai/deepseek-harness
+          ref: ${{ env.DSH_REF }}
+          path: .dsh
+      - uses: ./.github/actions/setup
+      - id: pages
+        uses: actions/configure-pages@v6
+      - name: Build the docs
+        run: uv run ci docs
+        env:
+          DOCS_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          SITE_ORIGIN: ${{ steps.pages.outputs.origin }}
+      # 插件索引与文档站发布在同一个 Pages 站点，地址固定为站点根目录下的 index.json。
+      - name: Generate index.json
+        run: uv run ci plugin-index --dsh .dsh --output docs/out/index.json --cache "${{ runner.temp }}/plugin-index-cache"
+      # Pull request 只保留产物作为预览，main 上的运行才部署。
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: docs/out
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

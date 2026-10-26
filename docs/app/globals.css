@@ -1,0 +1,109 @@
+@import "tailwindcss";
+@import "./tokens.css";
+@import "fumadocs-ui/css/shadcn.css";
+@import "fumadocs-ui/css/preset.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans:
+    -apple-system, system-ui, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei",
+    "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+}
+
+:root {
+  --sidebar: var(--background);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-border: var(--border);
+  --sidebar-accent: var(--accent);
+  --sidebar-accent-foreground: var(--accent-foreground);
+  --sidebar-ring: var(--ring);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --fd-layout-width: 1280px;
+  --as-header-height: 4rem;
+}
+
+/* 提示框与徽标使用状态色：说明用 primary，其余依次为 warning、destructive 与 success。 */
+:root,
+.dark {
+  --color-fd-info: var(--primary);
+  --color-fd-idea: var(--primary);
+  --color-fd-warning: var(--warning);
+  --color-fd-success: var(--success);
+  --color-fd-error: var(--destructive);
+}
+
+html {
+  scrollbar-gutter: stable;
+  font-variant-numeric: tabular-nums;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Fumadocs 锁定滚动时会加右侧内边距；全局预留的滚动条空间已经让页面不动。 */
+html > body[data-scroll-locked] {
+  margin-right: 0 !important;
+  --removed-body-scroll-bar-size: 0px !important;
+}
+
+/*
+ * 键盘焦点统一为 2px outline、偏移 2px。规则不放进层，压过 Fumadocs 控件上的 outline-none；同时清掉它们用
+ * box-shadow 画的焦点环，焦点只有一种样式。
+ */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  --tw-ring-shadow: 0 0 #0000;
+  --tw-inset-ring-shadow: 0 0 #0000;
+}
+
+/* 代码块与表格的滚动区域在裁剪溢出的容器里，outline 向内偏移才看得见。 */
+[role="region"]:focus-visible,
+.prose-no-margin[tabindex="0"]:focus-visible {
+  outline-offset: -2px;
+}
+
+/* 文档布局在顶栏下方的 1280px 框架里。 */
+#nd-docs-layout {
+  --fd-banner-height: var(--as-header-height);
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  min-height: calc(100dvh - var(--as-header-height));
+}
+
+/*
+ * 长文：正文角色配长文行高；标题取 section 与 card 两个标题角色。本页目录的链接也带 `prose` 类，
+ * 用 `:not(a)` 把它们排除，目录保持 Fumadocs 自带的字号。
+ */
+.prose:not(a) {
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+.prose:not(a) :where(h2):not(:where(.not-prose, .not-prose *)) {
+  @apply text-section-title;
+}
+.prose:not(a) :where(h3):not(:where(.not-prose, .not-prose *)) {
+  @apply text-card-title;
+}
+.prose:not(a) :where(table):not(:where(.not-prose, .not-prose *)) {
+  @apply text-body;
+  width: 100%;
+}
+
+/* 代码块是控件尺寸的表面：小圆角、细边框、无阴影。 */
+#nd-page figure.shiki {
+  border-radius: var(--radius);
+  box-shadow: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

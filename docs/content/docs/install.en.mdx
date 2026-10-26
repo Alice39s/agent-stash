@@ -1,0 +1,80 @@
+---
+title: Install
+description: Install Agent Stash in Pi, DeepSeek Harness, Cline and the agent-stash CLI.
+icon: Download
+---
+
+The repository commits `dist/` together with the code, so installation needs no build step.
+
+<Tabs items={['DeepSeek Harness', 'Pi', 'Cline', 'agent-stash CLI']}>
+<Tab value="DeepSeek Harness">
+
+Desktop app: on the Plugins page, click Add plugin, enter an npm package name from the list below and install it:
+
+```text
+@agent-stash/init
+@agent-stash/dsh-message-edit
+@agent-stash/dsh-recall
+@agent-stash/dsh-autosuggest
+```
+
+Command line: add the bundles to a profile, for example `web`, which the web interface uses:
+
+```bash
+dsh plugin --profile web add @agent-stash/init
+dsh plugin --profile web add @agent-stash/dsh-message-edit
+dsh plugin --profile web add @agent-stash/dsh-recall
+dsh plugin --profile web add @agent-stash/dsh-autosuggest
+```
+
+GitHub Actions publishes the npm packages through npm trusted publishing, with provenance. You can also install the latest version on `main` with `github:Alice39s/agent-stash` (it contains only `/init`).
+
+On first start, `dsh-recall` and `dsh-autosuggest` automatically install [dsh-stash-kit](./plugins/dsh-stash-kit.mdx) from npm and enable it. The three plugins need DSH 0.2.1-alpha.4 or later. DSH slash commands currently work only in the web interface and the desktop app.
+
+</Tab>
+<Tab value="Pi">
+
+```bash
+pi install git:github.com/Alice39s/agent-stash
+```
+
+Pi loads both the `/init` extension and the skills under `skills/`. To try it in the current session only:
+
+```bash
+pi -e git:github.com/Alice39s/agent-stash
+```
+
+</Tab>
+<Tab value="Cline">
+
+```bash
+cline plugin install --git github.com/Alice39s/agent-stash
+```
+
+The plugin registers the `/init` slash command. Use it in the TUI (`cline -i`). A single run with `cline "<prompt>"` does not process slash commands.
+
+</Tab>
+<Tab value="agent-stash CLI">
+
+Grok Build, goose and Aider connect through the `agent-stash` CLI:
+
+```bash
+npm install -g github:Alice39s/agent-stash
+agent-stash init install grok
+agent-stash init install goose
+```
+
+For Aider, see the Aider tab under [/init usage](./plugins/init.mdx#usage).
+
+</Tab>
+</Tabs>
+
+## DSH plugin index
+
+From DSH 0.2.1-alpha.4, you can browse a JSON plugin index on the Discover page and install plugins from it. On the Plugins page, under Experimental plugins, turn on Custom plugin market (newer DSH versions call it Custom plugin index). Switch to Discover, click Add index source and enter:
+
+```text
+https://alice39s.github.io/agent-stash/index.json
+```
+
+GitHub Actions generates the index with the DSH reference generator. The index updates after each release and on a daily schedule. It lists every released version of these npm packages. The index and these docs are published to the same GitHub Pages site.

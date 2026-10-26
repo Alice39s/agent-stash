@@ -1,0 +1,36 @@
+---
+title: dsh-autosuggest
+description: 参照 zsh-autosuggestions，输入历史 Prompt 的开头时以灰字补出剩余部分，历史跨会话。
+icon: Sparkles
+---
+
+<Showcase
+  name="autosuggest"
+  alt="指针点击输入框后输入 The，上方列出三条来自 Test Session 2 的匹配，光标后出现灰字；按两次 ↓ 后按 Tab，第三条的完整文本填入输入框"
+  caption="输入 The 出现三条建议，↓ 切换，Tab 填入高亮的那条"
+/>
+
+## 按键
+
+| 按键                         | 作用                       |
+| ---------------------------- | -------------------------- |
+| <Keys keys={['Tab', '→']} /> | 填入高亮的那条             |
+| <Keys keys={['↑', '↓']} />   | 有多条匹配时切换           |
+| <Kbd>Esc</Kbd>               | 收起建议，改动草稿后再出现 |
+
+## 匹配规则
+
+- 输入的内容是某条历史 Prompt 的开头（区分大小写）时，光标后以灰字显示剩余部分，输入框上方列出最多五条匹配，标出来源会话与日期。
+- 历史来自所有会话里最近发过 Prompt 的 50 个，按时间倒序，相同文本只保留最新一条。
+- 只有亲手输入才会出现建议，[dsh-recall](./dsh-recall.mdx) 放进输入框的内容不会触发。
+- 沿着建议继续输入时灰字不重播；换成另一条建议时，灰字按 [补全灰字](./dsh-stash-kit.mdx#配置项) 的设置重新出现。
+
+插件的 Host 半部注册只读路由 `/dsh-autosuggest/prompts`，从会话日志里取出用户亲手发送的 Prompt，经 DSH 的连接校验后返回。
+
+## 安装
+
+```bash
+dsh plugin --profile web add @agent-stash/dsh-autosuggest
+```
+
+桌面版在「插件」页点「添加插件」，填入 `@agent-stash/dsh-autosuggest`。需要 DSH 0.2.1-alpha.4 或更新的版本。和 dsh-recall 一样，第一次启动时会从 npm 自动安装并启用 [dsh-stash-kit](./dsh-stash-kit.mdx)。
