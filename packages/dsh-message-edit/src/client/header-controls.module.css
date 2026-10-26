@@ -1,0 +1,30 @@
+/* 标题栏控件组，排在宿主 .headerActions 里：版本步进（gap 2px）与重新生成（与步进相隔 8px）。 */
+.root {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.position {
+  padding: 0 2px;
+  color: var(--dsw-alias-label-tertiary);
+  font: var(--dsw-font-xxs-12);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* 标题行变窄时只留图形，无障碍名称保留。0.1.0-rc.3 的标题行没有 container-type，这条规则不生效。 */
+@container (max-width: 540px) {
+  .position,
+  .label {
+    display: none;
+  }
+}

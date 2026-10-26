@@ -1,0 +1,4 @@
+- insert:
+    - id: agent-stash-message-edit
+      name: "@agent-stash/dsh-message-edit"
+      config: {}
