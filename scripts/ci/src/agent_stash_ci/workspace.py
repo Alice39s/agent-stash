@@ -51,3 +51,14 @@ def workspace_packages(root: Path) -> list[WorkspacePackage]:
 
 def publishable_packages(root: Path) -> list[WorkspacePackage]:
     return [package for package in workspace_packages(root) if not package.manifest.private]
+
+
+def read_at(root: Path, ref: str, path: Path) -> str:
+    """读取提交 `ref` 里的文件，`path` 相对仓库根目录；工作区里的改动不影响结果。"""
+    return run(["git", "show", f"{ref}:{path.as_posix()}"], cwd=root, capture=True)
+
+
+def manifest_at(root: Path, package: WorkspacePackage, ref: str) -> Manifest:
+    """工作区包在提交 `ref` 里的 package.json。"""
+    relative = package.path.resolve().relative_to(root.resolve())
+    return Manifest.model_validate_json(read_at(root, ref, relative / "package.json"))

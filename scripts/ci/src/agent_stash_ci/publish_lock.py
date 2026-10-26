@@ -28,5 +28,5 @@ class PublishLock(BaseModel):
         return names
 
 
-def read_publish_lock(root: Path) -> PublishLock:
-    return PublishLock.model_validate(yaml.safe_load((root / LOCK_PATH).read_text()))
+def parse_publish_lock(text: str) -> PublishLock:
+    return PublishLock.model_validate(yaml.safe_load(text))
