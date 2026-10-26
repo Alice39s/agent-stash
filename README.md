@@ -275,7 +275,7 @@ pnpm format
    ```md
    ---
    packages:
-     agent-stash: minor
+     "@agent-stash/init": minor
    ---
 
    ## 新增 xxx 预设

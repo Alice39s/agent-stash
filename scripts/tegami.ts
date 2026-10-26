@@ -3,7 +3,7 @@ import { runCli } from "tegami/cli";
 import { github } from "tegami/plugins/github";
 
 const REPO = "Alice39s/agent-stash";
-const ROOT_PACKAGE = "agent-stash";
+const ROOT_PACKAGE = "@agent-stash/init";
 const CO_AUTHOR_TRAILER = "Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>";
 
 /**

@@ -1,6 +1,6 @@
 ---
 packages:
-  agent-stash: minor
+  "@agent-stash/init": minor
 ---
 
 ## 新增子代理委托技能
