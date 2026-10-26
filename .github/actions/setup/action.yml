@@ -9,9 +9,10 @@ runs:
       with:
         node-version: 24
         cache: pnpm
-    # setup-uv 只发布完整版本号的 tag。
+    # setup-uv 只发布完整版本号的 tag；uv 版本取 scripts/ci/pyproject.toml 的 required-version。
     - uses: astral-sh/setup-uv@v10.3.2
       with:
+        version-file: scripts/ci/pyproject.toml
         cache-dependency-glob: scripts/ci/uv.lock
     - run: pnpm install --frozen-lockfile
       shell: bash

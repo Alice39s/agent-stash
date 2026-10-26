@@ -32,6 +32,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v10.3.2
         with:
+          version-file: scripts/ci/pyproject.toml
           cache-dependency-glob: scripts/ci/uv.lock
       - run: uv run ruff format --check
       - run: uv run ruff check
