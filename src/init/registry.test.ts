@@ -24,19 +24,26 @@ describe("loadInitRegistry", () => {
       "claude-code-init-new",
     ]);
     expect(registry.presets.get("codex")?.file).toBe(join(VENDOR_DIR, "codex/prompt.md"));
-    expect(registry.presets.get("kimi-code")?.description).toMatch(
-      /^Use the `Kimi Code CLI` prompt preset \(MoonshotAI\/kimi-code@[0-9a-f]{7}, MIT\)\.$/,
-    );
+    expect(registry.presets.get("kimi-code")).toMatchObject({
+      title: "Kimi Code CLI",
+      description: expect.stringMatching(
+        /^Use the `Kimi Code CLI` prompt preset \(MoonshotAI\/kimi-code@[0-9a-f]{7}, MIT\)\.$/,
+      ),
+      custom: false,
+    });
   });
 
   test("describes manual presets from their frontmatter", async () => {
     const registry = await loadInitRegistry([configFile("no-config")]);
     expect(registry.presets.get("claude-code")).toEqual({
       name: "claude-code",
+      title: "Claude Code (classic)",
       description:
         "Use the `Claude Code builtin slash command /init (classic prompt variant)` prompt preset (v2.1.306).",
       file: join(MANUAL_DIR, "claude-code.md"),
+      custom: false,
     });
+    expect(registry.presets.get("claude-code-init-new")?.title).toBe("Claude Code (multi-phase)");
   });
 
   test("adds personal presets and default", async () => {
@@ -44,8 +51,10 @@ describe("loadInitRegistry", () => {
     expect(registry.defaultPreset).toBe("kimi-code");
     expect(registry.presets.get("team")).toEqual({
       name: "team",
+      title: "team",
       description: "Team AGENTS.md preset",
       file: join(fixture("agent"), "agent-stash/team.md"),
+      custom: true,
     });
   });
 
@@ -57,8 +66,10 @@ describe("loadInitRegistry", () => {
     expect(registry.defaultPreset).toBe("team");
     expect(registry.presets.get("codex")).toEqual({
       name: "codex",
+      title: "codex",
       description: "Use the custom prompt preset `./codex-local.md`.",
       file: join(fixture("project"), ".pi/agent-stash/codex-local.md"),
+      custom: true,
     });
   });
 

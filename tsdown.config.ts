@@ -83,6 +83,8 @@ function clientEntry(packageName: string, source: string, outDir: string): UserC
 
 export default defineConfig([
   ...Object.entries(ENTRIES).map(([name, source]) => nodeEntry(name, source, "dist", BUNDLED)),
+  // 仓库根包 `@agent-stash/init` 的浏览器半部：`/` 菜单里的 `/init`。
+  clientEntry("@agent-stash/init", "dsh/init/client.ts", "dist/dsh"),
   ...Object.entries(DSH_PACKAGES).flatMap(([dir, packageName]) => [
     nodeEntry("index", `dsh/${dir}/src/index.ts`, `dsh/${dir}/dist`, DSH_HOST_BUNDLED),
     clientEntry(packageName, `dsh/${dir}/src/client.tsx`, `dsh/${dir}/dist`),

@@ -396,20 +396,23 @@ window.__ModuleLoader__.load({
 			sessionId: /* @__PURE__ */ string(),
 			title: /* @__PURE__ */ optional(/* @__PURE__ */ string())
 		})) });
-		async function readJson(url, signal) {
-			const response = await fetch(url, {
-				signal,
-				headers: { accept: "application/json" }
-			});
+		async function requestJson(url, init) {
+			const response = await fetch(url, init);
 			const body = await response.json();
 			if (!response.ok) {
 				const message = typeof body === "object" && body !== null && "message" in body ? String(body.message) : response.statusText;
-				throw new Error(`GET ${url} answered ${response.status}: ${message}`);
+				throw new Error(`${init.method ?? "GET"} ${url} answered ${response.status}: ${message}`);
 			}
 			return body;
 		}
+		function getJson(url, signal) {
+			return requestJson(url, {
+				signal,
+				headers: { accept: "application/json" }
+			});
+		}
 		async function fetchGlobalPrompts(route, signal) {
-			return parse(GlobalItemsSchema, await readJson(route, signal)).items;
+			return parse(GlobalItemsSchema, await getJson(route, signal)).items;
 		}
 		//#endregion
 		//#region dsh/shared/prompts.ts

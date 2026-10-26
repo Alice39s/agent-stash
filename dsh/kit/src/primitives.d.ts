@@ -1,6 +1,9 @@
-/** DSH 浏览器模块表提供的 UI 基础组件里框架用到的部分。 */
+/** DSH 浏览器模块表提供的 UI 基础组件里 Agent Stash 插件用到的部分。 */
 declare module "@deepseek-ai/dsh-client-ui-primitives" {
   import type { ButtonHTMLAttributes, ReactNode } from "react";
+
+  /** 列表加笔的线性图标，`size` 为边长（像素）。 */
+  export function IconListPenOutlineRegular(props: { size?: number }): ReactNode;
 
   /** 两态开关；完全受控，`label` 是无障碍名称。 */
   export function Switch(props: {

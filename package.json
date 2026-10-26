@@ -32,9 +32,8 @@
   ],
   "type": "module",
   "exports": {
-    "./dsh/init": "./dist/dsh/init.js",
-    "./dsh/init/locale/*.json": "./dsh/init/locale/*.json",
-    "./dsh/init/icon": "./dsh/init/icon.svg",
+    ".": "./dist/dsh/init.js",
+    "./client": "./dist/dsh/client.js",
     "./locale/*.json": "./dsh/locale/*.json",
     "./package.json": "./package.json"
   },
@@ -125,6 +124,15 @@
     "manifestVersion": 1,
     "bundle": {
       "patch": "./dsh/cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-commands",
+        "@deepseek-ai/dsh-client-ui-input-trigger"
+      ]
     }
   },
   "pi": {

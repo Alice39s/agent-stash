@@ -339,21 +339,24 @@ window.__ModuleLoader__.load({
 			text: /* @__PURE__ */ string(),
 			time: /* @__PURE__ */ number()
 		})) });
-		async function readJson(url, signal) {
-			const response = await fetch(url, {
-				signal,
-				headers: { accept: "application/json" }
-			});
+		async function requestJson(url, init) {
+			const response = await fetch(url, init);
 			const body = await response.json();
 			if (!response.ok) {
 				const message = typeof body === "object" && body !== null && "message" in body ? String(body.message) : response.statusText;
-				throw new Error(`GET ${url} answered ${response.status}: ${message}`);
+				throw new Error(`${init.method ?? "GET"} ${url} answered ${response.status}: ${message}`);
 			}
 			return body;
 		}
+		function getJson(url, signal) {
+			return requestJson(url, {
+				signal,
+				headers: { accept: "application/json" }
+			});
+		}
 		async function fetchSessionPrompts(route, sessionId, signal) {
 			const url = `${route}?session=${encodeURIComponent(sessionId)}`;
-			return parse(SessionItemsSchema, await readJson(url, signal)).items;
+			return parse(SessionItemsSchema, await getJson(url, signal)).items;
 		}
 		//#endregion
 		//#region dsh/shared/prompts.ts

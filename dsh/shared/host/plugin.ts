@@ -1,4 +1,4 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
+import type { IncomingMessage } from "node:http";
 import { sessionPrompts, type PromptEvent } from "../prompts.ts";
 import {
   createPromptHistory,
@@ -6,6 +6,7 @@ import {
   type PromptHistory,
   type SessionInfo,
 } from "./history.ts";
+import { sendJson, type DshWebRoute } from "./http.ts";
 
 /** 会话头里本插件读取的字段。 */
 export interface DshSessionHeader {
@@ -26,12 +27,6 @@ export interface DshProjectionSnapshot {
 
 /** 进程内的活跃会话，只作为投影服务的句柄使用。 */
 export type DshLiveSession = object;
-
-export interface DshWebRoute {
-  readonly kind: "exact";
-  readonly path: string;
-  readonly handler: (req: IncomingMessage, res: ServerResponse) => Promise<void>;
-}
 
 /** DSH Host 上下文里本插件用到的服务。 */
 export interface DshHostContext {
@@ -125,13 +120,6 @@ export function dshHistorySource(ctx: DshHostContext): HistorySource {
       return sessionPrompts((await ctx.sessionQuery.readSession(id)).events);
     },
   };
-}
-
-function sendJson(res: ServerResponse, status: number, payload: unknown): void {
-  res.statusCode = status;
-  res.setHeader("content-type", "application/json; charset=utf-8");
-  res.setHeader("cache-control", "no-store");
-  res.end(JSON.stringify(payload));
 }
 
 /**

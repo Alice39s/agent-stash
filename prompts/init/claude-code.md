@@ -1,5 +1,6 @@
 ---
 name: claude-code-init-classic
+title: Claude Code (classic)
 source: Claude Code builtin slash command /init (classic prompt variant)
 version: v2.1.306
 command: "/init"

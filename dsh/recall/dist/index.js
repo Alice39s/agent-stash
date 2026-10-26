@@ -363,6 +363,14 @@ function createPromptHistory(source, limits) {
 	};
 }
 //#endregion
+//#region dsh/shared/host/http.ts
+function sendJson(res, status, payload) {
+	res.statusCode = status;
+	res.setHeader("content-type", "application/json; charset=utf-8");
+	res.setHeader("cache-control", "no-store");
+	res.end(JSON.stringify(payload));
+}
+//#endregion
 //#region dsh/shared/host/plugin.ts
 const HOST_INJECT = [
 	"webServer",
@@ -406,12 +414,6 @@ function dshHistorySource(ctx) {
 			return sessionPrompts((await ctx.sessionQuery.readSession(id)).events);
 		}
 	};
-}
-function sendJson(res, status, payload) {
-	res.statusCode = status;
-	res.setHeader("content-type", "application/json; charset=utf-8");
-	res.setHeader("cache-control", "no-store");
-	res.end(JSON.stringify(payload));
 }
 function promptRouteHandler(history, rejection) {
 	return async (req, res) => {

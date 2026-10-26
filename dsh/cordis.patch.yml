@@ -1,4 +1,4 @@
 - insert:
     - id: agent-stash-init
-      name: "@agent-stash/init/dsh/init"
+      name: "@agent-stash/init"
       config: {}
