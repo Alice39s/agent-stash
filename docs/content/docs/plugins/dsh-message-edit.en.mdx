@@ -4,6 +4,12 @@ description: Edit a user message or an assistant reply, regenerate the last repl
 icon: Pencil
 ---
 
+<Showcase
+  name="message-edit-en"
+  alt="The pointer moves to the last reply, 1, in Test Session 2 and clicks the Edit button below it. A dialog lists the message and the reply of that turn. The pointer picks the reply, appends '. That sentence names five animals.' after 1, and saves. The title bar shows 2 / 2. Previous version switches back to the original version, whose reply is only 1, and Next version returns to the edited version."
+  caption="Edit a reply and save to open a new version, then switch between versions in the title bar"
+/>
+
 `@agent-stash/dsh-message-edit` is a DeepSeek Harness plugin. Each change opens a new session version from the point before that turn. The original version stays as it is, and you can switch back at any time. The same build supports DSH 0.1.0-rc.3 and DSH Desktop 0.2.1-rc.3. It is based on [Moeblack/dsh-message-edit](https://github.com/Moeblack/dsh-message-edit) 0.2.3.
 
 ## Usage
@@ -11,6 +17,12 @@ icon: Pencil
 - Timeline view: the view tabs below the session title get a Timeline tab. The left side lists the editable messages, thoughts and replies by turn, and you can retry every turn. The right side is the version tree; click a version to switch to it. In the toolbar, choose whether the later turns are dropped or replayed with their original input when you change an earlier turn.
 - Title bar: switch between the previous and the next version, or regenerate the last reply.
 - Message actions: each finished assistant message has Edit and Retry buttons below it. Edit changes the user message of that turn, or the thoughts or reply of that message.
+
+<Showcase
+  name="message-edit-timeline-en"
+  alt="The Timeline view. The left side lists the messages and replies of turns 6 to 9, and the reply of turn 9 is the edited text. The version tree on the right has two entries, Original and Edited reply in turn 9. The second one is marked Current and shows the text before and after the edit."
+  caption="The Timeline view: edit and retry by turn on the left, and see which change produced each version in the tree on the right"
+/>
 
 Changing a user message or retrying makes the model generate the turn again. Changing only the assistant's thoughts or reply does not call the model; the new version uses the edited text as it is.
 

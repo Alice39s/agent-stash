@@ -49,6 +49,30 @@ export const media = {
     width: 758,
     height: 945,
   },
+  "message-edit": {
+    image: "/media/message-edit.png",
+    video: "/media/message-edit.mp4",
+    width: 960,
+    height: 720,
+  },
+  "message-edit-en": {
+    image: "/media/message-edit-en.png",
+    video: "/media/message-edit-en.mp4",
+    width: 960,
+    height: 720,
+  },
+  "message-edit-timeline": {
+    image: "/media/message-edit-timeline.png",
+    video: undefined,
+    width: 1000,
+    height: 800,
+  },
+  "message-edit-timeline-en": {
+    image: "/media/message-edit-timeline-en.png",
+    video: undefined,
+    width: 1000,
+    height: 800,
+  },
 } as const satisfies Record<
   string,
   { image: string; video: string | undefined; width: number; height: number }
