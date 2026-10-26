@@ -11,7 +11,14 @@ from . import github, registry
 from .placeholder import Auth, check_credentials, publish_placeholder
 from .proc import console, run
 from .publish_lock import LOCK_PATH, parse_publish_lock
-from .workspace import WorkspacePackage, manifest_at, publishable_packages, read_at, repo_root
+from .workspace import (
+    WorkspacePackage,
+    publishable_packages,
+    read_at,
+    released_manifests,
+    repo_root,
+    workspace_packages,
+)
 
 
 def _typer(summary: str) -> typer.Typer:
@@ -166,7 +173,7 @@ def wait(
         typer.Option(envvar="GITHUB_SHA", help="Commit whose publish lock and versions to read."),
     ] = "HEAD",
 ) -> None:
-    """Wait until npm serves the version of every package in the Tegami publish lock of a commit.
+    """Wait until npm serves the version of every public package in a commit's publish lock.
 
     npm needs a few minutes before installs can see a new version.
     Waiting here lets the workflows after Release, such as the plugin index, list the release.
@@ -175,12 +182,11 @@ def wait(
     root = repo_root()
     # 开 Version Packages PR 时 `tegami ci` 把 HEAD 留在升过版本的提交上，所以读触发工作流的提交。
     lock = parse_publish_lock(read_at(root, ref, LOCK_PATH))
-    packages = {package.manifest.name: package for package in publishable_packages(root)}
+    manifests = released_manifests(root, workspace_packages(root), lock.npm_names(), ref)
     with registry.registry_client() as client:
-        for name in lock.npm_names():
-            version = manifest_at(root, packages[name], ref).version
-            published = registry.wait_for_version(client, name, version)
-            stdout.print(f"npm serves {name}@{published.version}")
+        for manifest in manifests:
+            published = registry.wait_for_version(client, manifest.name, manifest.version)
+            stdout.print(f"npm serves {manifest.name}@{published.version}")
 
 
 def _select(packages: list[WorkspacePackage], names: list[str]) -> list[WorkspacePackage]:

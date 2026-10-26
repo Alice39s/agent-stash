@@ -62,3 +62,16 @@ def manifest_at(root: Path, package: WorkspacePackage, ref: str) -> Manifest:
     """工作区包在提交 `ref` 里的 package.json。"""
     relative = package.path.resolve().relative_to(root.resolve())
     return Manifest.model_validate_json(read_at(root, ref, relative / "package.json"))
+
+
+def released_manifests(
+    root: Path, packages: list[WorkspacePackage], names: list[str], ref: str
+) -> list[Manifest]:
+    """发布锁列出的包在提交 `ref` 里的 package.json，按锁里的顺序。
+
+    Tegami 的发布锁列出全部工作区包，文档站 `agent-stash-docs` 这类私有包也在其中。
+    私有包不发到 npm，跳过。
+    """
+    by_name = {package.manifest.name: package for package in packages}
+    manifests = [manifest_at(root, by_name[name], ref) for name in names]
+    return [manifest for manifest in manifests if not manifest.private]
