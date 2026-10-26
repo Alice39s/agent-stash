@@ -92,25 +92,45 @@ export interface InitClientContext {
 type Translate = (key: InitKey) => string;
 type Availability = (session: CommandSession) => boolean;
 
-async function fetchPresets(signal: AbortSignal): Promise<PresetList> {
-  return v.parse(PresetListSchema, await getJson(PRESETS_PATH, signal));
+/** 请求失败时换成带本地化前缀的错误：弹层与输入框的出错提示直接显示 message。 */
+async function explained<T>(prefix: string, task: () => Promise<T>): Promise<T> {
+  try {
+    return await task();
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`${prefix}${reason}`, { cause: error });
+  }
+}
+
+function fetchPresets(t: Translate, signal: AbortSignal): Promise<PresetList> {
+  return explained(t("presetsFailed"), async () =>
+    v.parse(PresetListSchema, await getJson(PRESETS_PATH, signal)),
+  );
 }
 
 /** 在会话里执行 `/init [预设] [额外指令]`，返回 Host 选中的预设名。 */
-async function runInit(sessionId: string, input: string): Promise<string> {
-  const result = await postJson(RUN_PATH, { session: sessionId, input });
-  return v.parse(RunResultSchema, result).preset;
+function runInit(t: Translate, sessionId: string, input: string): Promise<string> {
+  return explained(t("runFailed"), async () => {
+    const result = await postJson(RUN_PATH, { session: sessionId, input });
+    return v.parse(RunResultSchema, result).preset;
+  });
 }
 
-/** 弹层的行：标题为预设的显示名，预设名作补充；默认预设打勾，自定义预设归入单独一组。 */
+/**
+ * 弹层的行：标题为预设的显示名。内置预设以预设名作补充，方便记住后直接输入；
+ * 自定义预设以 `init.json` 里的说明作补充。默认预设打勾，自定义预设归入单独一组。
+ */
 export function presetOptions(list: PresetList, customGroup: string): PresetOption[] {
-  return list.presets.map((preset) => ({
-    id: preset.name,
-    label: preset.title,
-    ...(preset.title === preset.name ? {} : { detail: preset.name }),
-    ...(preset.name === list.defaultPreset ? { active: true } : {}),
-    ...(preset.custom ? { group: { name: "custom", label: customGroup } } : {}),
-  }));
+  return list.presets.map((preset) => {
+    const detail = preset.custom ? preset.description : preset.name;
+    return {
+      id: preset.name,
+      label: preset.title,
+      ...(detail === undefined || detail === preset.title ? {} : { detail }),
+      ...(preset.name === list.defaultPreset ? { active: true } : {}),
+      ...(preset.custom ? { group: { name: "custom", label: customGroup } } : {}),
+    };
+  });
 }
 
 /** `/` 菜单里的「初始化」：选中后打开预设弹层，选一个预设即执行。 */
@@ -129,9 +149,9 @@ export function initContribution(t: Translate, available: Availability): InitCon
         noResults: t("searchNoResults"),
       }),
       options: async (_session, signal) =>
-        presetOptions(await fetchPresets(signal), t("customGroup")),
+        presetOptions(await fetchPresets(t, signal), t("customGroup")),
       onSelect: async (option, session) => {
-        await runInit(session.sessionId, option.id);
+        await runInit(t, session.sessionId, option.id);
       },
     },
   };
@@ -141,15 +161,15 @@ export function initContribution(t: Translate, available: Availability): InitCon
  * 带参数的 `/init`：在 `/init` 后按空格会认领成指令块，粘贴整行后回车也会认领；参数交给 Host 解析。
  * 不带参数的 `/init` 由指令界面打开预设弹层，这里不认领。
  */
-export function initSource(available: Availability, hint: () => string): InitTriggerSource {
+export function initSource(available: Availability, t: Translate): InitTriggerSource {
   const claimFor = (session: CommandSession): InitClaim | undefined =>
     available(session)
       ? {
           name: COMMAND,
           token: `${TOKEN} `,
-          hint: hint(),
+          hint: t("hint"),
           submit: async (args) => {
-            await runInit(session.sessionId, args);
+            await runInit(t, session.sessionId, args);
             return { kind: "success" };
           },
         }
@@ -182,7 +202,7 @@ export function apply(ctx: InitClientContext): void {
     ctx.sessions.subagentAddress(session.sessionId) === undefined;
   ctx.effect(() => ctx.commandUi.register(initContribution(t, available)), `${NS}: /init command`);
   ctx.effect(
-    () => ctx.inputTriggers.registerSource(initSource(available, () => t("hint"))),
+    () => ctx.inputTriggers.registerSource(initSource(available, t)),
     `${NS}: /init arguments`,
   );
 }

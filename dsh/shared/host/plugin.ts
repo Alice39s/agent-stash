@@ -6,7 +6,7 @@ import {
   type PromptHistory,
   type SessionInfo,
 } from "./history.ts";
-import { sendJson, type DshWebRoute } from "./http.ts";
+import { guardRoute, sendJson, type DshWebRoute } from "./http.ts";
 
 /** 会话头里本插件读取的字段。 */
 export interface DshSessionHeader {
@@ -130,18 +130,7 @@ export function promptRouteHandler(
   history: PromptHistory,
   rejection: (req: IncomingMessage) => number | undefined,
 ): DshWebRoute["handler"] {
-  return async (req, res) => {
-    const rejected = rejection(req);
-    if (rejected !== undefined) {
-      res.statusCode = rejected;
-      res.end();
-      return;
-    }
-    if (req.method !== "GET") {
-      res.setHeader("allow", "GET");
-      sendJson(res, 405, { message: "only GET is allowed" });
-      return;
-    }
+  return guardRoute(rejection, "GET", async (req, res) => {
     const sessionId = new URL(req.url ?? "/", "http://localhost").searchParams.get("session");
     try {
       const items =
@@ -153,7 +142,7 @@ export function promptRouteHandler(
       const scope = sessionId === null ? "global history" : `session "${sessionId}"`;
       sendJson(res, 500, { message: `reading prompts of ${scope} failed: ${String(error)}` });
     }
-  };
+  });
 }
 
 /** 在 `path` 上注册 Prompt 历史路由，插件卸载时一并移除。 */

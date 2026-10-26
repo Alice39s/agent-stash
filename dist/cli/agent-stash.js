@@ -7186,7 +7186,7 @@ async function loadConfigLayer(configFile) {
 		presets: Object.entries(config.presets ?? {}).map(([name, preset]) => ({
 			name,
 			title: name,
-			description: preset.description ?? `Use the custom prompt preset \`${preset.file}\`.`,
+			description: preset.description ?? preset.file,
 			file: resolve(baseDir, preset.file),
 			custom: true
 		}))

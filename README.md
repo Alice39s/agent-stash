@@ -238,7 +238,7 @@ Cline：
 
 - `defaultPreset`：不写预设名时使用的预设，默认为 `codex`。
 - `presets`：自定义预设。`file` 是相对配置文件所在目录的路径，同名预设覆盖内置预设。
-- `description` 显示在补全菜单里，不写时显示文件路径。
+- `description` 显示在补全菜单和 DSH 的预设列表里，不写时显示 `file` 的路径。
 
 ### 上游同步
 

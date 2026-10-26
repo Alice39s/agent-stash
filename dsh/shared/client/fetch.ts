@@ -18,15 +18,22 @@ const GlobalItemsSchema = v.object({
 export type SessionItem = v.InferOutput<typeof SessionItemsSchema>["items"][number];
 export type GlobalItem = v.InferOutput<typeof GlobalItemsSchema>["items"][number];
 
+/**
+ * 请求一个 JSON 路由。非 2xx 时抛出的错误以响应里的 `message`（没有时为状态文字）为 message，
+ * 请求方法、地址与状态码记在 `cause` 里，界面可以直接显示 message。
+ */
 async function requestJson(url: string, init: RequestInit): Promise<unknown> {
   const response = await fetch(url, init);
-  const body: unknown = await response.json();
+  const json = /^application\/json\b/iu.test(response.headers.get("content-type") ?? "");
+  const body: unknown = json ? await response.json() : undefined;
   if (!response.ok) {
     const message =
       typeof body === "object" && body !== null && "message" in body
         ? String(body.message)
         : response.statusText;
-    throw new Error(`${init.method ?? "GET"} ${url} answered ${response.status}: ${message}`);
+    throw new Error(message, {
+      cause: { request: `${init.method ?? "GET"} ${url}`, status: response.status },
+    });
   }
   return body;
 }

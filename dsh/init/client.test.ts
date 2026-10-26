@@ -15,7 +15,7 @@ const LIST: PresetList = {
   presets: [
     { name: "codex", title: "Codex CLI", custom: false },
     { name: "kimi-code", title: "Kimi Code CLI", custom: false },
-    { name: "team", title: "team", custom: true },
+    { name: "team", title: "team", custom: true, description: "Team AGENTS.md preset" },
   ],
 };
 
@@ -163,12 +163,23 @@ describe("the /init command in the / menu", () => {
     ]);
   });
 
-  test("keeps the popup open with the Host message when a run fails", async () => {
+  test("keeps the popup open with a localized prefix before the Host reason when a run fails", async () => {
     stubHost(() => json(404, { message: 'session "session-1" not found' }));
+    const { contribution, setLocale } = mount();
+    const pick = () => contribution.ui.onSelect({ id: "codex", label: "Codex CLI" }, session);
+    await expect(pick()).rejects.toThrow('/init 执行失败：session "session-1" not found');
+    setLocale("en");
+    await expect(pick()).rejects.toThrow(`Couldn't run /init: session "session-1" not found`);
+  });
+
+  test("shows the status text when the Host answers without a JSON reason", async () => {
+    vi.stubGlobal("fetch", () =>
+      Promise.resolve(new Response(null, { status: 403, statusText: "Forbidden" })),
+    );
     const { contribution } = mount();
-    await expect(
-      contribution.ui.onSelect({ id: "codex", label: "Codex CLI" }, session),
-    ).rejects.toThrow('POST agent-stash-init/run answered 404: session "session-1" not found');
+    await expect(contribution.ui.options(session, new AbortController().signal)).rejects.toThrow(
+      "读取 /init 预设失败：Forbidden",
+    );
   });
 
   test("unregisters the command, the argument source and the dictionaries on unload", () => {
@@ -184,15 +195,34 @@ describe("presetOptions", () => {
     expect(presetOptions(LIST, "自定义")).toEqual([
       { id: "codex", label: "Codex CLI", detail: "codex" },
       { id: "kimi-code", label: "Kimi Code CLI", detail: "kimi-code", active: true },
-      { id: "team", label: "team", group: { name: "custom", label: "自定义" } },
+      {
+        id: "team",
+        label: "team",
+        detail: "Team AGENTS.md preset",
+        group: { name: "custom", label: "自定义" },
+      },
+    ]);
+  });
+
+  test("leaves a custom preset without a description to its title alone", () => {
+    const list: PresetList = {
+      defaultPreset: "codex",
+      presets: [{ name: "solo", title: "solo", custom: true }],
+    };
+    expect(presetOptions(list, "Custom")).toEqual([
+      { id: "solo", label: "solo", group: { name: "custom", label: "Custom" } },
     ]);
   });
 });
 
 describe("/init arguments", () => {
+  const dictionary: Record<string, string> = {
+    hint: "[预设] [额外指令]",
+    runFailed: "/init 执行失败：",
+  };
   const source = initSource(
     (candidate) => candidate.sessionId !== "subagent",
-    () => "[预设] [额外指令]",
+    (key) => dictionary[key] ?? key,
   );
 
   test("adds no rows to the / menu", async () => {
@@ -232,5 +262,13 @@ describe("/init arguments", () => {
         body: { session: "session-1", input: "kimi-code focus on tests" },
       },
     ]);
+  });
+
+  test("rejects the submission with the Host reason so the composer keeps the draft", async () => {
+    stubHost(() => json(500, { message: "/init needs a session working directory" }));
+    const claim = source.matchSpace(session, "/init")?.claim;
+    await expect(claim?.submit("")).rejects.toThrow(
+      "/init 执行失败：/init needs a session working directory",
+    );
   });
 });

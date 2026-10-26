@@ -7099,7 +7099,7 @@ async function loadConfigLayer(configFile) {
 		presets: Object.entries(config.presets ?? {}).map(([name, preset]) => ({
 			name,
 			title: name,
-			description: preset.description ?? `Use the custom prompt preset \`${preset.file}\`.`,
+			description: preset.description ?? preset.file,
 			file: resolve(baseDir, preset.file),
 			custom: true
 		}))
@@ -7131,6 +7131,21 @@ function sendJson(res, status, payload) {
 	res.setHeader("content-type", "application/json; charset=utf-8");
 	res.setHeader("cache-control", "no-store");
 	res.end(JSON.stringify(payload));
+}
+function guardRoute(rejection, method, handle) {
+	return async (req, res) => {
+		const rejected = rejection(req);
+		if (rejected !== void 0) {
+			sendJson(res, rejected, { message: "the DSH connection check rejected this request" });
+			return;
+		}
+		if (req.method !== method) {
+			res.setHeader("allow", method);
+			sendJson(res, 405, { message: `only ${method} is allowed` });
+			return;
+		}
+		await handle(req, res);
+	};
 }
 async function readJsonBody(req, schema) {
 	const type = req.headers["content-type"] ?? "";
@@ -7172,13 +7187,20 @@ function dshConfigFile(env = process.env) {
 }
 function presetList(registry) {
 	const presets = [...registry.presets.values()];
+	const builtIn = presets.filter((preset) => !preset.custom).map((preset) => ({
+		name: preset.name,
+		title: preset.title,
+		custom: false
+	}));
+	const custom = presets.filter((preset) => preset.custom).map((preset) => ({
+		name: preset.name,
+		title: preset.title,
+		custom: true,
+		description: preset.description
+	}));
 	return {
 		defaultPreset: registry.defaultPreset,
-		presets: [...presets.filter((preset) => !preset.custom), ...presets.filter((preset) => preset.custom)].map((preset) => ({
-			name: preset.name,
-			title: preset.title,
-			custom: preset.custom
-		}))
+		presets: [...builtIn, ...custom]
 	};
 }
 function sessionDirectory(ctx, session) {
@@ -7199,38 +7221,24 @@ function userMessage(text) {
 }
 async function runInit(ctx, agent, input) {
 	const { preset, extra } = parseInitArgs(input, await loadInitRegistry([dshConfigFile()]));
-	const prompt = renderInitPrompt(await readFile(preset.file, "utf8"), extra, sessionDirectory(ctx, agent.session));
+	const prompt = renderInitPrompt(await readFile(preset.file, "utf8").catch((error) => {
+		throw new Error(`reading the template of preset "${preset.name}" failed: ${reason(error)}`, { cause: error });
+	}), extra, sessionDirectory(ctx, agent.session));
 	agent.followup(userMessage(prompt));
 	return preset.name;
 }
 function reason(error) {
 	return error instanceof Error ? error.message : String(error);
 }
-function guarded(ctx, method, handle) {
-	return async (req, res) => {
-		const rejected = ctx.connection.requestRejection(req);
-		if (rejected !== void 0) {
-			res.statusCode = rejected;
-			res.end();
-			return;
-		}
-		if (req.method !== method) {
-			res.setHeader("allow", method);
-			sendJson(res, 405, { message: `only ${method} is allowed` });
-			return;
-		}
-		await handle(req, res);
-	};
-}
 function presetsRoute(ctx) {
 	return {
 		kind: "exact",
 		path: `/${PRESETS_PATH}`,
-		handler: guarded(ctx, "GET", async (_req, res) => {
+		handler: guardRoute(rejection(ctx), "GET", async (_req, res) => {
 			try {
 				sendJson(res, 200, presetList(await loadInitRegistry([dshConfigFile()])));
 			} catch (error) {
-				sendJson(res, 500, { message: `reading the /init presets failed: ${reason(error)}` });
+				sendJson(res, 500, { message: reason(error) });
 			}
 		})
 	};
@@ -7239,7 +7247,7 @@ function runRoute(ctx) {
 	return {
 		kind: "exact",
 		path: `/${RUN_PATH}`,
-		handler: guarded(ctx, "POST", async (req, res) => {
+		handler: guardRoute(rejection(ctx), "POST", async (req, res) => {
 			const body = await readJsonBody(req, RunRequestSchema);
 			if (!body.ok) {
 				sendJson(res, body.status, { message: body.message });
@@ -7253,10 +7261,13 @@ function runRoute(ctx) {
 				}
 				sendJson(res, 200, { preset: await runInit(ctx, found.agent, body.value.input) });
 			} catch (error) {
-				sendJson(res, 500, { message: `/init failed: ${reason(error)}` });
+				sendJson(res, 500, { message: reason(error) });
 			}
 		})
 	};
+}
+function rejection(ctx) {
+	return (req) => ctx.connection.requestRejection(req);
 }
 function apply(ctx) {
 	for (const route of [presetsRoute(ctx), runRoute(ctx)]) ctx.effect(() => ctx.webServer.register(route), `${name}: ${route.path}`);

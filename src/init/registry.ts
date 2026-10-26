@@ -108,7 +108,8 @@ async function loadConfigLayer(configFile: string): Promise<ConfigLayer | undefi
     presets: Object.entries(config.presets ?? {}).map(([name, preset]) => ({
       name,
       title: name,
-      description: preset.description ?? `Use the custom prompt preset \`${preset.file}\`.`,
+      // 没写说明时以配置里写的模板路径作说明，补全菜单与 DSH 的预设列表都显示它。
+      description: preset.description ?? preset.file,
       file: resolve(baseDir, preset.file),
       custom: true,
     })),
