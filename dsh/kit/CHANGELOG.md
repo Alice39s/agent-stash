@@ -1,11 +1,6 @@
----
-packages:
-  "@agent-stash/dsh-recall": minor
-  "@agent-stash/dsh-autosuggest": minor
-  "@agent-stash/dsh-stash-kit": minor
----
+## @agent-stash/dsh-stash-kit@0.1.0
 
-## 新增 DSH 插件 Prompt 回溯、Prompt 补全与 Agent Stash 框架
+### 新增 DSH 插件 Prompt 回溯、Prompt 补全与 Agent Stash 框架
 
 - `@agent-stash/dsh-recall`（Prompt 回溯）：在 DSH 输入框开头按 ↑ 打开历史面板，用 ↑↓ 翻看当前会话发过的 Prompt；越过最新一条或按 Esc 回到原来的草稿，Tab 留下当前这条继续编辑，Enter 直接发送。
 - `@agent-stash/dsh-autosuggest`（Prompt 补全）：输入的内容是某条历史 Prompt 的开头时，光标后以灰字补出剩余部分，按 Tab 或 → 填入，多条匹配时用 ↑↓ 切换。历史来自所有会话，区分大小写。

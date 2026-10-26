@@ -1,6 +1,6 @@
 {
   "name": "@agent-stash/dsh-stash-kit",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Shared panels, ghost text, motion, and appearance settings for the Agent Stash DeepSeek Harness plugins",
   "keywords": [
     "agent-stash",
