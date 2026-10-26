@@ -1,21 +1,21 @@
 ---
 title: /init
-description: Analyze the current project with the /init prompt of another coding agent and write AGENTS.md. Usage is the same in Pi, DSH, Cline, Grok Build, goose and Aider.
+description: Analyze the current project with the /init prompt of another coding agent and write AGENTS.md. Works in Pi, DSH, Cline, Grok Build, goose and Aider.
 icon: FileText
 ---
 
 ## Usage
 
-Usage is the same in Pi, DSH and Cline:
+Pi, DSH and Cline take the same arguments:
 
 ```text
-/init                                      # use the default preset
+/init                                      # use the default preset (DSH opens the preset list first)
 /init kimi-code                            # use the kimi-code preset
 /init opencode focus on the test workflow  # use the opencode preset and append an extra prompt
 /init write in Chinese                     # if the first word is not a preset name, the whole line is the extra prompt and the default preset is used
 ```
 
-In the `/` menu of DSH, `/init` is in the Commands section with the title Init. Pick it in the menu, or type only `/init` and press Enter, to open the preset list. The default preset has a check mark and is already highlighted, so Enter runs it. Type to filter the presets. Custom presets are listed in their own Custom group. To give a preset name or an extra prompt, type a space after `/init` and continue. The rules are the same as above.
+In the `/` menu of DSH, `/init` is in the Commands section with the title Init. Pick it in the menu, or type only `/init` and press Enter, to open the preset list. The default preset has a check mark and is already highlighted, so Enter runs it. Type to filter the presets. Custom presets are listed in their own Custom group. To give a preset name or an extra prompt, type a space after `/init` and continue. The rules are the same as above. Subagent sessions have no `/init`.
 
 <Tabs items={['Grok Build and goose', 'Aider']}>
 <Tab value="Grok Build and goose">
@@ -68,9 +68,12 @@ Presets maintained by hand:
 | Preset                 | Source                                          |
 | ---------------------- | ----------------------------------------------- |
 | `claude-code`          | `/init` from Claude Code v2.1.306 (classic)     |
-| `claude-code-init-new` | `/init` from Claude Code v2.1.306 (multi-stage) |
+| `claude-code-init-new` | `/init` from Claude Code v2.1.306 (multi-phase) |
 
-All presets write `AGENTS.md`.
+All presets except `copilot` and `claude-code-init-new` write `AGENTS.md`.
+
+- `copilot` keeps the upstream VS Code behavior: it prefers `AGENTS.md`, updates an existing `AGENTS.md` or `.github/copilot-instructions.md` instead of creating a new file, and can also create skills and custom agents.
+- `claude-code-init-new` first asks what to set up. It can write the project `AGENTS.md`, a personal `CLAUDE.local.md`, or both. It can also create skills under `.claude/skills/` and add hooks to `.claude/settings.json`.
 
 ## Extra instructions and placeholders
 

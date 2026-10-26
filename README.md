@@ -26,7 +26,7 @@
     - [DeepSeek Harness (DSH)](#deepseek-harness-dsh)
     - [Cline](#cline)
     - [`agent-stash` 命令行](#agent-stash-命令行)
-  - [Plugin: `/init <preset> [extra prompt]`](#plugin-init-preset-extra-prompt)
+  - [Plugin: `/init [preset] [extra prompt]`](#plugin-init-preset-extra-prompt)
     - [Grok Build 与 goose](#grok-build-与-goose)
     - [Aider](#aider)
     - [上游同步的预设](#上游同步的预设)
@@ -130,20 +130,20 @@ agent-stash init install grok
 agent-stash init install goose
 ```
 
-## Plugin: `/init <preset> [extra prompt]`
+## Plugin: `/init [preset] [extra prompt]`
 
 [![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest) [![Pi Plugin](https://img.shields.io/badge/Pi-Plugin-111111)](https://pi.dev) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness) [![Cline Plugin](https://img.shields.io/badge/Cline-Plugin-222222)](https://github.com/cline/cline) [![Grok Build Skills](https://img.shields.io/badge/Grok%20Build-Skills-000000)](https://docs.x.ai/build/overview) [![goose Recipes](https://img.shields.io/badge/goose-Recipes-2f2f2f)](https://github.com/aaif-goose/goose) [![Aider](https://img.shields.io/badge/Aider-CLI-14b014)](https://github.com/Aider-AI/aider)
 
-让 agent 分析当前项目并写出 AGENTS.md，完整说明见[文档站](https://alice39s.github.io/agent-stash/zh/plugins/init/)。pi、DSH 与 Cline 的用法相同：
+让 agent 分析当前项目并写出 AGENTS.md，完整说明见[文档站](https://alice39s.github.io/agent-stash/zh/plugins/init/)。pi、DSH 与 Cline 的参数写法相同：
 
 ```text
-/init                         # 使用默认预设
+/init                         # 使用默认预设（DSH 里先打开预设列表）
 /init kimi-code               # 使用 kimi-code 预设
 /init opencode 重点写测试流程   # 使用 opencode 预设并附加额外 Prompt
 /init 用中文写                 # 第一个词不是预设名时，整句作为额外 Prompt，使用默认预设
 ```
 
-DSH 的 `/` 菜单里，`/init` 排在「指令」区，标题是「初始化」。在菜单里选中它，或者只输入 `/init` 就回车，会打开预设列表：默认预设打勾并已高亮，再按回车就用它，输入文字可以筛选预设，自定义预设单独列在「自定义」组里。要写预设名或额外 Prompt，在 `/init` 后面打空格接着输入，规则和上面一样。
+DSH 的 `/` 菜单里，`/init` 排在「指令」区，标题是「初始化」。在菜单里选中它，或者只输入 `/init` 就回车，会打开预设列表：默认预设打勾并已高亮，再按回车就用它，输入文字可以筛选预设，自定义预设单独列在「自定义」组里。要写预设名或额外 Prompt，在 `/init` 后面打空格接着输入，规则和上面一样。子代理会话里没有 `/init`。
 
 ### Grok Build 与 goose
 
@@ -191,7 +191,7 @@ agent-stash init aider crush -- --model sonnet       # 指定 aider 的模型
 | `claude-code`          | Claude Code v2.1.306 的 `/init`（经典版）   |
 | `claude-code-init-new` | Claude Code v2.1.306 的 `/init`（多阶段版） |
 
-这两份 prompt 也都统一输出 `AGENTS.md`。
+除 `copilot` 与 `claude-code-init-new` 外，所有预设都输出 `AGENTS.md`。`copilot` 沿用 VS Code 上游的做法，项目里已有 `.github/copilot-instructions.md` 时更新它；`claude-code-init-new` 先询问要设置什么，可能写个人的 `CLAUDE.local.md`、`.claude/skills/` 下的技能和 `.claude/settings.json` 里的 hook。
 
 ### 额外指令与占位符
 
@@ -313,7 +313,7 @@ Agent Stash 框架（`dsh/kit`）为 Agent Stash 系列的 DSH 插件提供共�
 - 轻柔：面板只做短淡入淡出，草稿切换不播放动画。
 - 关闭：面板和灰字都直接出现、直接消失。
 - 补全灰字的「波浪」用一道渐隐遮罩从左向右扫出剩余文字；沿着建议继续输入时灰字不重播，换成另一条建议时才重新出现。
-- 系统开启「减少动态效果」时，所有位移和模糊都会去掉，只保留淡入淡出。
+- 系统开启「减少动态效果」时，面板只保留淡入淡出；各行依次出现、高亮滑动和草稿切换的动画都去掉，补全灰字直接显示。
 
 也可以在 profile 的 patch 里写：
 
@@ -365,7 +365,7 @@ pnpm bundle # 更新 dist/ 与 dsh/*/dist/：DSH、Cline 插件与 agent-stash �
 pnpm format
 ```
 
-工作区包放在 `packages/` 下，各自的 `bundle` 脚本产出随仓库提交的 `dist/`；`dsh/recall`、`dsh/autosuggest` 与 `dsh/kit` 也是工作区包，由根目录的 `pnpm bundle` 构建。CI 与发布流程的步骤都由 `scripts/ci` 里的 Python 命令行执行（uv + Typer），本地可以用同一条命令复现：
+工作区包放在 `packages/` 下，各自的 `bundle` 脚本产出随仓库提交的 `dist/`；`dsh/recall`、`dsh/autosuggest` 与 `dsh/kit` 也是工作区包，由根目录的 `pnpm bundle` 构建。构建、上游同步、插件索引、文档站和 npm 相关的 CI 步骤由 `scripts/ci` 里的 Python 命令行执行（uv + Typer），`pnpm check` 与发布用的 `pnpm tegami ci` 由 workflow 直接调用。本地可以用同样的命令复现：
 
 ```bash
 uv run --project scripts/ci ci --help
