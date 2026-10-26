@@ -370,6 +370,21 @@ function sendJson(res, status, payload) {
 	res.setHeader("cache-control", "no-store");
 	res.end(JSON.stringify(payload));
 }
+function guardRoute(rejection, method, handle) {
+	return async (req, res) => {
+		const rejected = rejection(req);
+		if (rejected !== void 0) {
+			sendJson(res, rejected, { message: "the DSH connection check rejected this request" });
+			return;
+		}
+		if (req.method !== method) {
+			res.setHeader("allow", method);
+			sendJson(res, 405, { message: `only ${method} is allowed` });
+			return;
+		}
+		await handle(req, res);
+	};
+}
 //#endregion
 //#region dsh/shared/host/plugin.ts
 const HOST_INJECT = [
@@ -416,18 +431,7 @@ function dshHistorySource(ctx) {
 	};
 }
 function promptRouteHandler(history, rejection) {
-	return async (req, res) => {
-		const rejected = rejection(req);
-		if (rejected !== void 0) {
-			res.statusCode = rejected;
-			res.end();
-			return;
-		}
-		if (req.method !== "GET") {
-			res.setHeader("allow", "GET");
-			sendJson(res, 405, { message: "only GET is allowed" });
-			return;
-		}
+	return guardRoute(rejection, "GET", async (req, res) => {
 		const sessionId = new URL(req.url ?? "/", "http://localhost").searchParams.get("session");
 		try {
 			sendJson(res, 200, { items: sessionId === null ? await history.global() : (await history.session(sessionId)).map(({ text, time }) => ({
@@ -437,7 +441,7 @@ function promptRouteHandler(history, rejection) {
 		} catch (error) {
 			sendJson(res, 500, { message: `reading prompts of ${sessionId === null ? "global history" : `session "${sessionId}"`} failed: ${String(error)}` });
 		}
-	};
+	});
 }
 function registerPromptRoute(ctx, path, label) {
 	const handler = promptRouteHandler(createPromptHistory(dshHistorySource(ctx), {

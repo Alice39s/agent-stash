@@ -17,6 +17,32 @@ export function sendJson(res: ServerResponse, status: number, payload: unknown):
   res.end(JSON.stringify(payload));
 }
 
+type Handler = DshWebRoute["handler"];
+
+/**
+ * 先过 DSH 的连接鉴权（`connection.requestRejection`：Host/Origin 检查与浏览器认证），再限定请求方法。
+ * 两者不通过时都以 `{ message }` 回应，浏览器半部能读出原因。
+ */
+export function guardRoute(
+  rejection: (req: IncomingMessage) => number | undefined,
+  method: "GET" | "POST",
+  handle: Handler,
+): Handler {
+  return async (req, res) => {
+    const rejected = rejection(req);
+    if (rejected !== undefined) {
+      sendJson(res, rejected, { message: "the DSH connection check rejected this request" });
+      return;
+    }
+    if (req.method !== method) {
+      res.setHeader("allow", method);
+      sendJson(res, 405, { message: `only ${method} is allowed` });
+      return;
+    }
+    await handle(req, res);
+  };
+}
+
 /** 请求体的解析结果：失败时带上应回的状态码与原因。 */
 export type JsonBody<T> =
   | { readonly ok: true; readonly value: T }

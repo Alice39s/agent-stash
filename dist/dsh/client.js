@@ -200,6 +200,28 @@ window.__ModuleLoader__.load({
 			});
 		}
 		/* @__NO_SIDE_EFFECTS__ */
+		function optional(wrapped, default_) {
+			return _standardSchema({
+				kind: "schema",
+				type: "optional",
+				reference: optional,
+				expects: `(${wrapped.expects} | undefined)`,
+				async: false,
+				wrapped,
+				default: default_,
+				"~run"(dataset, config$1) {
+					if (dataset.value === void 0) {
+						if (this.default !== void 0) dataset.value = /* @__PURE__ */ getDefault(this, dataset, config$1);
+						if (dataset.value === void 0) {
+							dataset.typed = true;
+							return dataset;
+						}
+					}
+					return this.wrapped["~run"](dataset, config$1);
+				}
+			});
+		}
+		/* @__NO_SIDE_EFFECTS__ */
 		function string(message$1) {
 			return _standardSchema({
 				kind: "schema",
@@ -222,10 +244,13 @@ window.__ModuleLoader__.load({
 		}
 		async function requestJson(url, init) {
 			const response = await fetch(url, init);
-			const body = await response.json();
+			const body = /^application\/json\b/iu.test(response.headers.get("content-type") ?? "") ? await response.json() : void 0;
 			if (!response.ok) {
 				const message = typeof body === "object" && body !== null && "message" in body ? String(body.message) : response.statusText;
-				throw new Error(`${init.method ?? "GET"} ${url} answered ${response.status}: ${message}`);
+				throw new Error(message, { cause: {
+					request: `${init.method ?? "GET"} ${url}`,
+					status: response.status
+				} });
 			}
 			return body;
 		}
@@ -259,7 +284,9 @@ window.__ModuleLoader__.load({
 			searchPlaceholder: "Search presets…",
 			searchEmpty: "No presets available",
 			searchNoResults: "No matching presets",
-			customGroup: "Custom"
+			customGroup: "Custom",
+			presetsFailed: "Couldn't load the /init presets: ",
+			runFailed: "Couldn't run /init: "
 		};
 		const zh = {
 			label: "初始化",
@@ -268,7 +295,9 @@ window.__ModuleLoader__.load({
 			searchPlaceholder: "搜索预设…",
 			searchEmpty: "没有可用的预设",
 			searchNoResults: "没有匹配的预设",
-			customGroup: "自定义"
+			customGroup: "自定义",
+			presetsFailed: "读取 /init 预设失败：",
+			runFailed: "/init 执行失败："
 		};
 		//#endregion
 		//#region dsh/init/wire.ts
@@ -280,7 +309,8 @@ window.__ModuleLoader__.load({
 			presets: /* @__PURE__ */ array(/* @__PURE__ */ object({
 				name: /* @__PURE__ */ string(),
 				title: /* @__PURE__ */ string(),
-				custom: /* @__PURE__ */ boolean()
+				custom: /* @__PURE__ */ boolean(),
+				description: /* @__PURE__ */ optional(/* @__PURE__ */ string())
 			}))
 		});
 		const RunResultSchema = /* @__PURE__ */ object({ preset: /* @__PURE__ */ string() });
@@ -290,27 +320,40 @@ window.__ModuleLoader__.load({
 		const COMMAND = "init";
 		const TOKEN = `/${COMMAND}`;
 		const WITH_ARGUMENTS = /^\/init\s/u;
-		async function fetchPresets(signal) {
-			return parse(PresetListSchema, await getJson(PRESETS_PATH, signal));
+		async function explained(prefix, task) {
+			try {
+				return await task();
+			} catch (error) {
+				const reason = error instanceof Error ? error.message : String(error);
+				throw new Error(`${prefix}${reason}`, { cause: error });
+			}
 		}
-		async function runInit(sessionId, input) {
-			const result = await postJson(RUN_PATH, {
-				session: sessionId,
-				input
+		function fetchPresets(t, signal) {
+			return explained(t("presetsFailed"), async () => parse(PresetListSchema, await getJson(PRESETS_PATH, signal)));
+		}
+		function runInit(t, sessionId, input) {
+			return explained(t("runFailed"), async () => {
+				const result = await postJson(RUN_PATH, {
+					session: sessionId,
+					input
+				});
+				return parse(RunResultSchema, result).preset;
 			});
-			return parse(RunResultSchema, result).preset;
 		}
 		function presetOptions(list, customGroup) {
-			return list.presets.map((preset) => ({
-				id: preset.name,
-				label: preset.title,
-				...preset.title === preset.name ? {} : { detail: preset.name },
-				...preset.name === list.defaultPreset ? { active: true } : {},
-				...preset.custom ? { group: {
-					name: "custom",
-					label: customGroup
-				} } : {}
-			}));
+			return list.presets.map((preset) => {
+				const detail = preset.custom ? preset.description : preset.name;
+				return {
+					id: preset.name,
+					label: preset.title,
+					...detail === void 0 || detail === preset.title ? {} : { detail },
+					...preset.name === list.defaultPreset ? { active: true } : {},
+					...preset.custom ? { group: {
+						name: "custom",
+						label: customGroup
+					} } : {}
+				};
+			});
 		}
 		function initContribution(t, available) {
 			return {
@@ -326,20 +369,20 @@ window.__ModuleLoader__.load({
 						empty: t("searchEmpty"),
 						noResults: t("searchNoResults")
 					}),
-					options: async (_session, signal) => presetOptions(await fetchPresets(signal), t("customGroup")),
+					options: async (_session, signal) => presetOptions(await fetchPresets(t, signal), t("customGroup")),
 					onSelect: async (option, session) => {
-						await runInit(session.sessionId, option.id);
+						await runInit(t, session.sessionId, option.id);
 					}
 				}
 			};
 		}
-		function initSource(available, hint) {
+		function initSource(available, t) {
 			const claimFor = (session) => available(session) ? {
 				name: COMMAND,
 				token: `${TOKEN} `,
-				hint: hint(),
+				hint: t("hint"),
 				submit: async (args) => {
-					await runInit(session.sessionId, args);
+					await runInit(t, session.sessionId, args);
 					return { kind: "success" };
 				}
 			} : void 0;
@@ -372,7 +415,7 @@ window.__ModuleLoader__.load({
 			const t = ctx.locale.bind(NS);
 			const available = (session) => ctx.sessions.subagentAddress(session.sessionId) === void 0;
 			ctx.effect(() => ctx.commandUi.register(initContribution(t, available)), `${NS}: /init command`);
-			ctx.effect(() => ctx.inputTriggers.registerSource(initSource(available, () => t("hint"))), `${NS}: /init arguments`);
+			ctx.effect(() => ctx.inputTriggers.registerSource(initSource(available, t)), `${NS}: /init arguments`);
 		}
 		//#endregion
 		exports.apply = apply;

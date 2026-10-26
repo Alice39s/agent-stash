@@ -341,10 +341,13 @@ window.__ModuleLoader__.load({
 		})) });
 		async function requestJson(url, init) {
 			const response = await fetch(url, init);
-			const body = await response.json();
+			const body = /^application\/json\b/iu.test(response.headers.get("content-type") ?? "") ? await response.json() : void 0;
 			if (!response.ok) {
 				const message = typeof body === "object" && body !== null && "message" in body ? String(body.message) : response.statusText;
-				throw new Error(`${init.method ?? "GET"} ${url} answered ${response.status}: ${message}`);
+				throw new Error(message, { cause: {
+					request: `${init.method ?? "GET"} ${url}`,
+					status: response.status
+				} });
 			}
 			return body;
 		}

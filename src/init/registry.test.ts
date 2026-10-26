@@ -67,7 +67,7 @@ describe("loadInitRegistry", () => {
     expect(registry.presets.get("codex")).toEqual({
       name: "codex",
       title: "codex",
-      description: "Use the custom prompt preset `./codex-local.md`.",
+      description: "./codex-local.md",
       file: join(fixture("project"), ".pi/agent-stash/codex-local.md"),
       custom: true,
     });

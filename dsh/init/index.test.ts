@@ -151,7 +151,7 @@ describe("GET /agent-stash-init/presets", () => {
         { name: "kilo-code", title: "Kilo Code", custom: false },
         { name: "claude-code", title: "Claude Code (classic)", custom: false },
         { name: "claude-code-init-new", title: "Claude Code (multi-phase)", custom: false },
-        { name: "team", title: "team", custom: true },
+        { name: "team", title: "team", custom: true, description: "Team AGENTS.md preset" },
       ],
     });
   });
@@ -162,6 +162,9 @@ describe("GET /agent-stash-init/presets", () => {
       headers: { "x-test-trust": "no" },
     });
     expect(rejected.status).toBe(403);
+    expect(await rejected.json()).toEqual({
+      message: "the DSH connection check rejected this request",
+    });
     const posted = await fetch(`${base}/agent-stash-init/presets`, { method: "POST" });
     expect(posted.status).toBe(405);
     expect(posted.headers.get("allow")).toBe("GET");
@@ -235,8 +238,22 @@ describe("POST /agent-stash-init/run", () => {
     const harness = mount({ session: { header: {} } });
     const response = await run(await serve(harness), { session: SESSION, input: "" });
     expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ message: "/init needs a session working directory" });
+    expect(harness.sent).toEqual([]);
+  });
+
+  test("names the preset whose template file cannot be read", async () => {
+    vi.stubEnv(
+      "DSH_HOME",
+      fileURLToPath(new URL("../../src/init/fixtures/missing-template", import.meta.url)),
+    );
+    const harness = mount({});
+    const response = await run(await serve(harness), { session: SESSION, input: "broken" });
+    expect(response.status).toBe(500);
     expect(await response.json()).toEqual({
-      message: "/init failed: /init needs a session working directory",
+      message: expect.stringMatching(
+        /^reading the template of preset "broken" failed: ENOENT: .*\/missing-template\/agent-stash\/missing\.md'$/u,
+      ),
     });
     expect(harness.sent).toEqual([]);
   });

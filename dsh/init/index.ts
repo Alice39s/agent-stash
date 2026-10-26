@@ -5,7 +5,7 @@ import { homedir } from "node:os";
 import { join } from "pathe";
 import { parseInitArgs, renderInitPrompt } from "../../src/init/prompt.ts";
 import { CONFIG_PATH, loadInitRegistry, type InitRegistry } from "../../src/init/registry.ts";
-import { readJsonBody, sendJson, type DshWebRoute } from "../shared/host/http.ts";
+import { guardRoute, readJsonBody, sendJson, type DshWebRoute } from "../shared/host/http.ts";
 import { PRESETS_PATH, RUN_PATH, RunRequestSchema, type PresetList } from "./wire.ts";
 
 /** DSH 会话里本插件用到的部分。 */
@@ -47,16 +47,21 @@ export function dshConfigFile(env: NodeJS.ProcessEnv = process.env): string {
   return join(env["DSH_HOME"] ?? join(homedir(), ".dsh"), CONFIG_PATH);
 }
 
-/** 列给浏览器的预设：内置预设在前，自定义预设在后，各自保持注册顺序。 */
+/** 列给浏览器的预设：内置预设在前，自定义预设在后，各自保持注册顺序；自定义预设带上说明。 */
 export function presetList(registry: InitRegistry): PresetList {
   const presets = [...registry.presets.values()];
-  return {
-    defaultPreset: registry.defaultPreset,
-    presets: [
-      ...presets.filter((preset) => !preset.custom),
-      ...presets.filter((preset) => preset.custom),
-    ].map((preset) => ({ name: preset.name, title: preset.title, custom: preset.custom })),
-  };
+  const builtIn = presets
+    .filter((preset) => !preset.custom)
+    .map((preset) => ({ name: preset.name, title: preset.title, custom: false }));
+  const custom = presets
+    .filter((preset) => preset.custom)
+    .map((preset) => ({
+      name: preset.name,
+      title: preset.title,
+      custom: true,
+      description: preset.description,
+    }));
+  return { defaultPreset: registry.defaultPreset, presets: [...builtIn, ...custom] };
 }
 
 /** 会话当前目录：优先 working-directory 服务，旧版 DSH 退回会话创建时的 cwd。 */
@@ -84,34 +89,18 @@ function userMessage(text: string): DshUserMessage {
 export async function runInit(ctx: DshContext, agent: DshAgent, input: string): Promise<string> {
   const registry = await loadInitRegistry([dshConfigFile()]);
   const { preset, extra } = parseInitArgs(input, registry);
-  const template = await readFile(preset.file, "utf8");
+  const template = await readFile(preset.file, "utf8").catch((error: unknown) => {
+    throw new Error(`reading the template of preset "${preset.name}" failed: ${reason(error)}`, {
+      cause: error,
+    });
+  });
   const prompt = renderInitPrompt(template, extra, sessionDirectory(ctx, agent.session));
   agent.followup(userMessage(prompt));
   return preset.name;
 }
 
-type Handler = DshWebRoute["handler"];
-
 function reason(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
-}
-
-/** 先过 DSH 的连接鉴权（Host/Origin 检查与浏览器认证），再限定请求方法。 */
-function guarded(ctx: DshContext, method: "GET" | "POST", handle: Handler): Handler {
-  return async (req, res) => {
-    const rejected = ctx.connection.requestRejection(req);
-    if (rejected !== undefined) {
-      res.statusCode = rejected;
-      res.end();
-      return;
-    }
-    if (req.method !== method) {
-      res.setHeader("allow", method);
-      sendJson(res, 405, { message: `only ${method} is allowed` });
-      return;
-    }
-    await handle(req, res);
-  };
 }
 
 /** `GET /agent-stash-init/presets`：预设列表与默认预设。 */
@@ -119,11 +108,11 @@ export function presetsRoute(ctx: DshContext): DshWebRoute {
   return {
     kind: "exact",
     path: `/${PRESETS_PATH}`,
-    handler: guarded(ctx, "GET", async (_req, res) => {
+    handler: guardRoute(rejection(ctx), "GET", async (_req, res) => {
       try {
         sendJson(res, 200, presetList(await loadInitRegistry([dshConfigFile()])));
       } catch (error) {
-        sendJson(res, 500, { message: `reading the /init presets failed: ${reason(error)}` });
+        sendJson(res, 500, { message: reason(error) });
       }
     }),
   };
@@ -131,13 +120,14 @@ export function presetsRoute(ctx: DshContext): DshWebRoute {
 
 /**
  * `POST /agent-stash-init/run`，请求体 `{ session, input }`：恢复会话的 Agent 后执行 `/init`。
- * 会话不存在返回 404，会话归属其他 Agent 等会话域错误返回 409。
+ * 会话不存在返回 404，会话归属其他 Agent 等会话域错误返回 409，读取配置或模板失败返回 500。
+ * 出错时 `message` 只写原因，浏览器半部加上本地化的前缀后显示。
  */
 export function runRoute(ctx: DshContext): DshWebRoute {
   return {
     kind: "exact",
     path: `/${RUN_PATH}`,
-    handler: guarded(ctx, "POST", async (req, res) => {
+    handler: guardRoute(rejection(ctx), "POST", async (req, res) => {
       const body = await readJsonBody(req, RunRequestSchema);
       if (!body.ok) {
         sendJson(res, body.status, { message: body.message });
@@ -152,10 +142,14 @@ export function runRoute(ctx: DshContext): DshWebRoute {
         }
         sendJson(res, 200, { preset: await runInit(ctx, found.agent, body.value.input) });
       } catch (error) {
-        sendJson(res, 500, { message: `/init failed: ${reason(error)}` });
+        sendJson(res, 500, { message: reason(error) });
       }
     }),
   };
+}
+
+function rejection(ctx: DshContext): (req: IncomingMessage) => number | undefined {
+  return (req) => ctx.connection.requestRejection(req);
 }
 
 /** 注册预设列表与执行两条路由；输入框里的 `/init` 指令由浏览器半部提供。 */

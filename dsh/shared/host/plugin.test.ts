@@ -172,11 +172,15 @@ describe("prompt route", () => {
     });
   });
 
-  test("rejects untrusted requests and other methods", async () => {
+  test("rejects untrusted requests and other methods with a JSON reason", async () => {
     const ctx = fakeContext(routeSessions());
     registerPromptRoute(ctx, "/dsh-test/prompts", "test route");
     const base = await serve(ctx.routes[0]!.handler);
-    expect((await fetch(base, { headers: { "x-test-trust": "no" } })).status).toBe(403);
+    const rejected = await fetch(base, { headers: { "x-test-trust": "no" } });
+    expect(rejected.status).toBe(403);
+    expect(await rejected.json()).toEqual({
+      message: "the DSH connection check rejected this request",
+    });
     const post = await fetch(base, { method: "POST" });
     expect(post.status).toBe(405);
     expect(post.headers.get("allow")).toBe("GET");

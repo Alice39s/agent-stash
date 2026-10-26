@@ -10,7 +10,15 @@ export const RUN_PATH = `${ROUTE_PREFIX}/run`;
 export const PresetListSchema = v.object({
   defaultPreset: v.string(),
   /** 内置预设在前，自定义预设在后。 */
-  presets: v.array(v.object({ name: v.string(), title: v.string(), custom: v.boolean() })),
+  presets: v.array(
+    v.object({
+      name: v.string(),
+      title: v.string(),
+      custom: v.boolean(),
+      /** 只有自定义预设带：`init.json` 里写的说明，没写时是配置里写的模板路径。 */
+      description: v.optional(v.string()),
+    }),
+  ),
 });
 export type PresetList = v.InferOutput<typeof PresetListSchema>;
 
