@@ -1,0 +1,24 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g mask="url(#agent-stash-autosuggest-key-cutout)">
+    <rect x="6.5" y="9" width="20" height="14" rx="3.5" fill="url(#agent-stash-autosuggest-composer)" />
+    <path d="M10 16H14.5" stroke="#FFFFFF" stroke-width="1.6" />
+    <path d="M16.5 12.5V19.5" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" />
+    <path d="M18.5 16H23.5" stroke="#FFFFFF" stroke-width="1.6" stroke-opacity="0.5" />
+  </g>
+  <rect x="19" y="19" width="11" height="9" rx="2.5" fill="url(#agent-stash-autosuggest-key)" />
+  <path d="M21.8 23.5H26.2M24.3 21.6L26.2 23.5L24.3 25.4M27.7 21.3V25.7" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+  <defs>
+    <mask id="agent-stash-autosuggest-key-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF" />
+      <rect x="17.75" y="17.75" width="13.5" height="11.5" rx="3.75" fill="#000000" />
+    </mask>
+    <linearGradient id="agent-stash-autosuggest-composer" x1="7.5" y1="9" x2="25.5" y2="23" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB" />
+      <stop offset="1" stop-color="#3650DE" />
+    </linearGradient>
+    <linearGradient id="agent-stash-autosuggest-key" x1="19" y1="19" x2="30" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB" />
+      <stop offset="1" stop-color="#108792" />
+    </linearGradient>
+  </defs>
+</svg>

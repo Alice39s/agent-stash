@@ -1,0 +1,4 @@
+- insert:
+    - id: dsh-stash-kit
+      name: "@agent-stash/dsh-stash-kit"
+      config: {}

@@ -32,6 +32,10 @@
     - [额外指令与占位符](#额外指令与占位符)
     - [配置](#配置)
     - [上游同步](#上游同步)
+  - [Plugin: `dsh-recall`](#plugin-dsh-recall)
+  - [Plugin: `dsh-autosuggest`](#plugin-dsh-autosuggest)
+    - [安装](#安装-1)
+  - [Plugin: `dsh-stash-kit`](#plugin-dsh-stash-kit)
   - [Skills: `code-styleguide`](#skills-code-styleguide)
   - [Skills: `self-use-<model>-subagent`](#skills-self-use-model-subagent)
   - [开发](#开发)
@@ -50,6 +54,9 @@
 | ----------------------------------------------- | ---------------------------------------------------------------------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------- |
 | [/init](#plugin-init-preset-extra-prompt)       | [`@agent-stash/init`](https://www.npmjs.com/package/@agent-stash/init)                         | pi、DSH、Cline、Grok Build、goose、Aider | 用其他 Coding Agent 的 `/init` prompt 分析项目，写出 `AGENTS.md` 等说明文件 |
 | [消息编辑](packages/dsh-message-edit/README.md) | [`@agent-stash/dsh-message-edit`](https://www.npmjs.com/package/@agent-stash/dsh-message-edit) | DSH                                      | 编辑消息、重新生成回复或重试回合，每次改动另开一个会话版本，可随时切换回去  |
+| [Prompt 回溯](#plugin-dsh-recall)               | [`@agent-stash/dsh-recall`](https://www.npmjs.com/package/@agent-stash/dsh-recall)             | DSH                                      | 在输入框里按 ↑↓ 翻看当前会话发过的 Prompt                                   |
+| [Prompt 补全](#plugin-dsh-autosuggest)          | [`@agent-stash/dsh-autosuggest`](https://www.npmjs.com/package/@agent-stash/dsh-autosuggest)   | DSH                                      | 输入历史 Prompt 的开头时以灰字补出剩余部分，按 Tab 或 → 填入                |
+| [Agent Stash 框架](#plugin-dsh-stash-kit)       | [`@agent-stash/dsh-stash-kit`](https://www.npmjs.com/package/@agent-stash/dsh-stash-kit)       | DSH                                      | 上面两个插件共用的面板、动画与外观配置，随它们自动安装                      |
 
 ### Agent Skills
 
@@ -81,13 +88,15 @@ pi -e git:github.com/Alice39s/agent-stash
 
 ### DeepSeek Harness (DSH)
 
-DeepSeek Harness 桌面版：在「插件」页点「添加插件」，填入 npm 包名后安装：`@agent-stash/init`（`/init`）或 `@agent-stash/dsh-message-edit`（消息编辑）。
+DeepSeek Harness 桌面版：在「插件」页点「添加插件」，填入 npm 包名后安装：`@agent-stash/init`（`/init`）、`@agent-stash/dsh-message-edit`（消息编辑）、`@agent-stash/dsh-recall`（Prompt 回溯）或 `@agent-stash/dsh-autosuggest`（Prompt 补全）。
 
 命令行：把包作为 bundle 装进某个 profile，例如 Web 界面使用的 `web`：
 
 ```bash
 dsh plugin --profile web add @agent-stash/init
 dsh plugin --profile web add @agent-stash/dsh-message-edit
+dsh plugin --profile web add @agent-stash/dsh-recall
+dsh plugin --profile web add @agent-stash/dsh-autosuggest
 ```
 
 npm 包由 GitHub Actions 经 npm trusted publishing 发布，带 provenance。也可以装 `main` 上的最新版本：`github:Alice39s/agent-stash`（只含 `/init`）。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
@@ -98,7 +107,7 @@ npm 包由 GitHub Actions 经 npm trusted publishing 发布，带 provenance。�
 https://alice39s.github.io/agent-stash/index.json
 ```
 
-索引由 GitHub Actions 用 DSH 的参考生成器生成，每次发布后更新，列出两个 npm 包的每个发布版本。
+索引由 GitHub Actions 用 DSH 的参考生成器生成，每次发布后更新，列出这些 npm 包的每个发布版本。
 
 ### Cline
 
@@ -230,6 +239,89 @@ Cline：
 
 `.github/workflows/sync-init-prompts.yml` 每天运行一次。
 
+## Plugin: `dsh-recall`
+
+[![npm](https://img.shields.io/npm/v/@agent-stash/dsh-recall)](https://www.npmjs.com/package/@agent-stash/dsh-recall) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
+
+Prompt 回溯：在 DSH 的输入框里翻看当前会话发过的 Prompt。
+
+| 按键            | 作用                                       |
+| --------------- | ------------------------------------------ |
+| ↑（光标在开头） | 打开历史面板，把最近一条 Prompt 放进输入框 |
+| ↑ / ↓           | 在更早与更新的 Prompt 之间切换             |
+| ↓（最新一条）   | 回到打开面板前的草稿                       |
+| Esc             | 回到打开面板前的草稿                       |
+| Tab             | 保留当前这条，关闭面板继续编辑             |
+| Enter           | 直接发送当前这条                           |
+
+面板按日期分组，点任意一行也能把它放进输入框。`/`、`@` 菜单打开时方向键仍归菜单使用。
+
+## Plugin: `dsh-autosuggest`
+
+[![npm](https://img.shields.io/npm/v/@agent-stash/dsh-autosuggest)](https://www.npmjs.com/package/@agent-stash/dsh-autosuggest) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
+
+Prompt 补全，参照 zsh-autosuggestions：输入的内容是某条历史 Prompt 的开头（区分大小写）时，光标后以灰字显示剩余部分，输入框上方列出最多五条匹配，标出来源会话与日期。
+
+| 按键    | 作用                       |
+| ------- | -------------------------- |
+| Tab / → | 填入高亮的那条             |
+| ↑ / ↓   | 有多条匹配时切换           |
+| Esc     | 收起建议，改动草稿后再出现 |
+
+历史来自所有会话里最近发过 Prompt 的 50 个，按时间倒序，相同文本只保留最新一条。只有亲手输入才会出现建议，`dsh-recall` 放进输入框的内容不会触发。
+
+### 安装
+
+两个插件各是一个 DSH bundle，需要 DSH 0.2.1-alpha.4 或更新的版本。桌面版在「插件」页点「添加插件」，分别填入 `@agent-stash/dsh-recall` 与 `@agent-stash/dsh-autosuggest`；也可以从[插件索引](#deepseek-harness-dsh)安装。命令行：
+
+```bash
+dsh plugin --profile web add @agent-stash/dsh-recall
+dsh plugin --profile web add @agent-stash/dsh-autosuggest
+```
+
+两个插件的界面都建立在 [Agent Stash 框架](#plugin-dsh-stash-kit)上。插件第一次启动时会通过插件管理器从 npm 自动安装并启用框架；profile 里已经装了框架但没有启用时，插件会把它启用。框架就绪之前，「插件」页里两个插件的浏览器半部显示「等待依赖」，Prompt 历史路由照常工作。
+
+本地开发时可以直接装工作区里的目录，例如 `dsh plugin --profile web add "$PWD/dsh/recall"`，插件会从同一个仓库的 `dsh/kit` 安装框架。两个插件共用 `dsh/shared/` 下的历史读取与按键处理，Host 半部各注册一个只读路由（`/dsh-recall/prompts`、`/dsh-autosuggest/prompts`），从会话日志里取出用户亲手发送的 Prompt，经 DSH 的连接校验后返回。
+
+## Plugin: `dsh-stash-kit`
+
+[![npm](https://img.shields.io/npm/v/@agent-stash/dsh-stash-kit)](https://www.npmjs.com/package/@agent-stash/dsh-stash-kit) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
+
+Agent Stash 框架（`dsh/kit`）为 Agent Stash 系列的 DSH 插件提供共用的面板、补全灰字、动画和外观配置。浏览器半部提供 `stashKit` 服务，`dsh-recall` 与 `dsh-autosuggest` 依赖这个服务渲染界面；Host 半部持有外观配置，在「插件」页统一修改，所有插件同时生效。
+
+面板与宿主 `/` 菜单使用同一套几何：离输入框 4px，圆角与内边距一致，内容左边线对齐输入框的文字列。底色完全不透明，默认再加一层背景模糊。
+
+在「插件」页打开「Agent Stash 框架」，点它的条目进入配置页。页面顶部有实时预览，可以重播动画；改动点保存后立即生效。
+
+| 配置项     | 字段        | 可选值                                             | 默认 |
+| ---------- | ----------- | -------------------------------------------------- | ---- |
+| 毛玻璃效果 | `glass`     | 开（不透明底色加背景模糊）/ 关（不透明底色）       | 开   |
+| 动画       | `motion`    | `lively` 灵动、`subtle` 轻柔、`off` 关闭           | 灵动 |
+| 补全灰字   | `ghost`     | `wave` 波浪、`fade` 淡入、`none` 直接显示          | 波浪 |
+| 高亮移动   | `highlight` | `glide` 滑动、`instant` 即时                       | 滑动 |
+| 行高       | `density`   | `comfortable` 舒适（34px）、`compact` 紧凑（28px） | 舒适 |
+| 按键提示   | `hints`     | 开 / 关                                            | 开   |
+
+各档动画：
+
+- 灵动：面板从输入框方向浮起，由模糊变清晰，各行从贴近输入框的一行起依次出现；关闭时向下淡出。用 ↑ 回溯时，新草稿从翻看的方向滑入输入框。
+- 轻柔：面板只做短淡入淡出，草稿切换不播放动画。
+- 关闭：面板和灰字都直接出现、直接消失。
+- 补全灰字的「波浪」用一道渐隐遮罩从左向右扫出剩余文字；沿着建议继续输入时灰字不重播，换成另一条建议时才重新出现。
+- 系统开启「减少动态效果」时，所有位移和模糊都会去掉，只保留淡入淡出。
+
+也可以在 profile 的 patch 里写：
+
+```yaml
+- id: dsh-stash-kit
+  name: "@agent-stash/dsh-stash-kit"
+  config:
+    glass: false
+    motion: subtle
+```
+
+单独安装框架：`@agent-stash/dsh-stash-kit`。停用框架后，依赖它的插件会停在「等待依赖」，再次启用这些插件时框架会被重新启用。
+
 ## Skills: `code-styleguide`
 
 [![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest)
@@ -264,11 +356,11 @@ uv run skills/self-use-haiku-subagent/scripts/render.py
 ```bash
 pnpm install
 pnpm check
-pnpm bundle # 更新 dist/：DSH、Cline 插件与 agent-stash 命令行都从这里加载
+pnpm bundle # 更新 dist/ 与 dsh/*/dist/：DSH、Cline 插件与 agent-stash 命令行都从这里加载
 pnpm format
 ```
 
-工作区包放在 `packages/` 下，各自的 `bundle` 脚本产出随仓库提交的 `dist/`。CI 与发布流程的步骤都由 `scripts/ci` 里的 Python 命令行执行（uv + Typer），本地可以用同一条命令复现：
+工作区包放在 `packages/` 下，各自的 `bundle` 脚本产出随仓库提交的 `dist/`；`dsh/recall`、`dsh/autosuggest` 与 `dsh/kit` 也是工作区包，由根目录的 `pnpm bundle` 构建。CI 与发布流程的步骤都由 `scripts/ci` 里的 Python 命令行执行（uv + Typer），本地可以用同一条命令复现：
 
 ```bash
 uv run --project scripts/ci ci --help

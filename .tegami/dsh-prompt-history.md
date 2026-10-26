@@ -1,0 +1,14 @@
+---
+packages:
+  "@agent-stash/dsh-recall": minor
+  "@agent-stash/dsh-autosuggest": minor
+  "@agent-stash/dsh-stash-kit": minor
+---
+
+## 新增 DSH 插件 Prompt 回溯、Prompt 补全与 Agent Stash 框架
+
+- `@agent-stash/dsh-recall`（Prompt 回溯）：在 DSH 输入框开头按 ↑ 打开历史面板，用 ↑↓ 翻看当前会话发过的 Prompt；越过最新一条或按 Esc 回到原来的草稿，Tab 留下当前这条继续编辑，Enter 直接发送。
+- `@agent-stash/dsh-autosuggest`（Prompt 补全）：输入的内容是某条历史 Prompt 的开头时，光标后以灰字补出剩余部分，按 Tab 或 → 填入，多条匹配时用 ↑↓ 切换。历史来自所有会话，区分大小写。
+- `@agent-stash/dsh-stash-kit`（Agent Stash 框架）：两个插件共用的面板、补全灰字与动画。面板与 `/` 菜单同一套几何和间距，底色不透明，默认加背景模糊；在「插件」页的框架配置页统一设置毛玻璃、动画强度（灵动 / 轻柔 / 关闭）、补全灰字的出现方式、高亮移动方式、行高与按键提示，页面带实时预览。
+- 安装 `@agent-stash/dsh-recall` 或 `@agent-stash/dsh-autosuggest` 后，插件第一次启动时会从 npm 自动安装并启用框架。
+- 三个插件都需要 DSH 0.2.1-alpha.4 或更新的版本，在「插件」页填入 npm 包名即可安装，也列在插件索引 `https://alice39s.github.io/agent-stash/index.json` 里。图标与 `/init`、消息编辑同一套画法。

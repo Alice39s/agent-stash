@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Prompt Autosuggest",
+    "description": "Suggests the rest of a prompt from the history of every session while you type a matching prefix; Tab or → fills it in."
+  }
+}
