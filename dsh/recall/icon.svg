@@ -1,0 +1,27 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g mask="url(#agent-stash-recall-badge-cutout)">
+    <rect x="9.5" y="10" width="12" height="7" rx="2" fill="url(#agent-stash-recall-history)" fill-opacity="0.5" />
+    <rect x="6.5" y="15" width="18" height="14" rx="3.5" fill="url(#agent-stash-recall-composer)" />
+    <path d="M10 20.5H18M10 24H14.5" stroke="#FFFFFF" stroke-width="1.5" />
+  </g>
+  <circle cx="25" cy="11" r="5" fill="url(#agent-stash-recall-badge)" />
+  <path d="M25 13.7V8.4M22.8 10.6L25 8.4L27.2 10.6" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+  <defs>
+    <mask id="agent-stash-recall-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF" />
+      <circle cx="25" cy="11" r="6.25" fill="#000000" />
+    </mask>
+    <linearGradient id="agent-stash-recall-history" x1="9.5" y1="10" x2="21.5" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB" />
+      <stop offset="1" stop-color="#3650DE" />
+    </linearGradient>
+    <linearGradient id="agent-stash-recall-composer" x1="7.5" y1="15" x2="23.5" y2="29" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB" />
+      <stop offset="1" stop-color="#3650DE" />
+    </linearGradient>
+    <linearGradient id="agent-stash-recall-badge" x1="20" y1="6" x2="30" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB" />
+      <stop offset="1" stop-color="#108792" />
+    </linearGradient>
+  </defs>
+</svg>

@@ -6,6 +6,8 @@
     "dist/**",
     "packages/*/dist/**",
     "packages/*/CHANGELOG.md",
+    "dsh/*/dist/**",
+    "dsh/*/CHANGELOG.md",
     "skills/code-styleguide/**",
     "prompts/**",
     ".tegami/**",

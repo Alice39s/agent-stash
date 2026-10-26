@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Prompt 回溯",
+    "description": "在输入框开头按 ↑ 浏览当前会话发过的 Prompt，按 ↓ 越过最新一条即回到原来的草稿。"
+  }
+}

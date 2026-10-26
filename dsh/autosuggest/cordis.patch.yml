@@ -1,0 +1,4 @@
+- insert:
+    - id: dsh-autosuggest
+      name: "@agent-stash/dsh-autosuggest"
+      config: {}

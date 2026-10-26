@@ -17,5 +17,11 @@
     "import/no-default-export": "off",
     "react/react-in-jsx-scope": "off"
   },
-  "ignorePatterns": ["vendor/**", "dist/**", "packages/*/dist/**", "node_modules/**"]
+  "ignorePatterns": [
+    "vendor/**",
+    "dist/**",
+    "packages/*/dist/**",
+    "dsh/*/dist/**",
+    "node_modules/**"
+  ]
 }
