@@ -4,13 +4,28 @@ description: The Agent Skills in this collection and how to install them. They a
 icon: Wand
 ---
 
-The skills are in the `skills/` directory of the repository. Install them with the `skills` CLI from [skills.sh](https://skills.sh/Alice39s/agent-stash).
+The skills are in the `skills/` directory of the repository. Install them with the `skills` CLI from [skills.sh](https://skills.sh/Alice39s/agent-stash); it needs Node.js 22.20 or later.
 
 ## Install
 
-Run this in your project directory. It needs Node.js 22.20 or later:
+<Tabs items={['All skills', 'Pick skills', 'One skill', 'DeepSeek Harness']}>
+<Tab value="All skills">
 
-<Tabs items={['Pick skills', 'One skill', 'DeepSeek Harness']}>
+Install every skill in the repository, targeting the coding agents detected on your machine. The skills go into the agent directories in the current project and are committed with it:
+
+```bash
+npx -y skills add Alice39s/agent-stash -s '*' -y
+```
+
+Add `-g` to install into `~/<agent>/skills/` in your user directory instead, so that every project can use the skills:
+
+```bash
+npx -y skills add Alice39s/agent-stash -s '*' -y -g
+```
+
+`-s '*' selects every skill and `-y` skips the prompts.
+
+</Tab>
 <Tab value="Pick skills">
 
 ```bash
@@ -71,9 +86,3 @@ Four skills for dispatching subagents in DSH, one for each model:
 | `self-use-dpsk-subagent`   | DeepSeek V4.1 Flash | 200k                        |
 
 Each skill describes the call parameters, how to estimate from the budget how much one subagent can do, how to write the prompt and how to take over after a subagent fills its context and is terminated.
-
-The four `SKILL.md` files are generated from one template. The template, the model parameters and the render script are all under `skills/self-use-haiku-subagent/scripts/`. To change the body text, edit the template under `templates/`. To change the model parameters, edit `models.yaml`. Then render the files again:
-
-```bash
-uv run skills/self-use-haiku-subagent/scripts/render.py
-```

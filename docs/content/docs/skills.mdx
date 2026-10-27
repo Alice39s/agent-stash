@@ -4,13 +4,28 @@ description: 收录的 Agent Skills 与安装方法：上游同步的风格指�
 icon: Wand
 ---
 
-技能在仓库的 `skills/` 目录下，用 [skills.sh](https://skills.sh/Alice39s/agent-stash) 的 `skills` 命令行安装。
+技能在仓库的 `skills/` 目录下，用 [skills.sh](https://skills.sh/Alice39s/agent-stash) 的 `skills` 命令行安装，需要 Node.js 22.20 或更新的版本。
 
 ## 安装
 
-在项目目录下运行，需要 Node.js 22.20 或更新的版本：
+<Tabs items={['安装所有技能', '选择安装', '单个技能', 'DeepSeek Harness']}>
+<Tab value="安装所有技能">
 
-<Tabs items={['选择安装', '单个技能', 'DeepSeek Harness']}>
+一次装上仓库里的全部技能，Agent 用本机检测到的那些。技能写进当前项目里的 Agent 目录，随项目提交：
+
+```bash
+npx -y skills add Alice39s/agent-stash -s '*' -y
+```
+
+加 `-g` 装进用户目录的 `~/<agent>/skills/`，所有项目都能用：
+
+```bash
+npx -y skills add Alice39s/agent-stash -s '*' -y -g
+```
+
+`-s '*'` 指定全部技能，`-y` 跳过确认。
+
+</Tab>
 <Tab value="选择安装">
 
 ```bash
@@ -71,9 +86,3 @@ npx -y skills add Alice39s/agent-stash -g -a codex -y \
 | `self-use-dpsk-subagent`   | DeepSeek V4.1 Flash | 200k                   |
 
 每个技能写了调用参数、按预算估算一个子代理能做多少、提示词怎么写，以及子代理用满上下文被终止后怎么接手。
-
-四份 `SKILL.md` 由同一份模板生成，模板、模型参数和生成脚本都在 `skills/self-use-haiku-subagent/scripts/` 下。改正文就改 `templates/` 下的模板，改模型参数就改 `models.yaml`，然后重新生成：
-
-```bash
-uv run skills/self-use-haiku-subagent/scripts/render.py
-```
