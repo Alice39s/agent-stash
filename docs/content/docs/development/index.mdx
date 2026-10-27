@@ -1,6 +1,6 @@
 ---
 title: 参与开发
-description: 本地开发环境、常用命令、CI 命令行、文档站的构建方式和发布流程。
+description: 本地开发环境、常用命令、CI 命令行、文档站的构建方式、发布流程和新增 npm 包的步骤。
 icon: Code
 ---
 
@@ -108,3 +108,15 @@ packages:
 
 </Step>
 </Steps>
+
+npm 上的包禁止用可以绕过 2FA 的令牌发布，CI 只通过 trusted publishing 发布。README 里的版本 badge 自动读取最新的 GitHub release。
+
+## 新增 npm 包
+
+npm 只能给已经存在的包配置 Trusted Publisher，新包要先用一次性的令牌占个名字：
+
+1. 在 npmjs.com 生成一个只用于这一步的发布令牌，复制到剪贴板后运行 `uv run --project scripts/ci ci bootstrap store-token`，它把剪贴板内容存成仓库的 `NPM_TOKEN` secret 并清空剪贴板。
+2. 运行 `uv run --project scripts/ci ci bootstrap publish --auth token`：release workflow 用令牌给还没有正式版本的包发布一个空的 `0.0.0-placeholder.<n>`（dist-tag `placeholder`）。
+3. 在包的 npm 设置页添加 Trusted Publisher：仓库 `Alice39s/agent-stash`，workflow `release.yml`。
+4. 运行 `uv run --project scripts/ci ci bootstrap publish --auth oidc`，确认 `ci npm status` 显示 trusted publishing 为 yes。
+5. 运行 `uv run --project scripts/ci ci bootstrap remove-token`，在 npmjs.com 吊销令牌，并把包的发布权限设为禁止绕过 2FA 的令牌。
