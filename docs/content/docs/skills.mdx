@@ -8,23 +8,34 @@ icon: Wand
 
 ## 安装
 
-在项目目录下运行：
+在项目目录下运行，需要 Node.js 22.20 或更新的版本：
+
+<Tabs items={['选择安装', '指定技能']}>
+<Tab value="选择安装">
 
 ```bash
 npx skills add Alice39s/agent-stash
 ```
 
-命令列出仓库里的技能和本机检测到的 Coding Agent，选好后装进当前项目；加 `-g` 则装到用户目录，所有项目都能用。需要 Node.js 22.20 或更新的版本。
+命令列出仓库里的技能和本机检测到的 Coding Agent，选好后装进当前项目；加 `-g` 则装到用户目录，所有项目都能用。
 
-只装其中一个技能时，用 `--skill` 指定技能、`-a` 指定 Agent，`-y` 跳过确认：
+</Tab>
+<Tab value="指定技能">
 
 ```bash
 npx skills add Alice39s/agent-stash --skill code-styleguide -a claude-code -y
 ```
 
+`--skill` 指定技能，`-a` 指定 Agent，`-y` 跳过确认。
+
+</Tab>
+</Tabs>
+
 加 `--list` 只列出仓库里的技能，不安装。装好以后用 `npx skills update` 更新，`npx skills remove` 卸载，其余参数见 [skills 命令行文档](https://www.skills.sh/docs/cli)。命令行默认上报匿名的安装统计，设置 `DISABLE_TELEMETRY=1` 可以关闭。
 
-用 `pi install` 安装 Agent Stash 的 Pi 已经加载了这些技能，不用再装。
+<Callout type="info" title="Pi 不用再装">
+  用 `pi install` 安装 Agent Stash 的 Pi 已经加载了这些技能。
+</Callout>
 
 ## `code-styleguide`
 

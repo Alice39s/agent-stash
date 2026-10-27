@@ -29,12 +29,34 @@ The history contains only the prompts that you typed and sent in the current ses
 
 ## Install
 
+The plugin needs DSH 0.2.1-alpha.4 or later.
+
+<Tabs items={['Desktop app', 'Command line', 'Plugin index']}>
+<Tab value="Desktop app">
+
+On the Plugins page, click Add plugin and enter `@agent-stash/dsh-recall`.
+
+</Tab>
+<Tab value="Command line">
+
 ```bash
 dsh plugin --profile web add @agent-stash/dsh-recall
 ```
 
-In the desktop app, click Add plugin on the Plugins page and enter `@agent-stash/dsh-recall`. The plugin needs DSH 0.2.1-alpha.4 or later.
+</Tab>
+<Tab value="Plugin index">
 
-The plugin interface builds on [dsh-stash-kit](./dsh-stash-kit.mdx). On first start, the plugin installs the kit from npm through the plugin manager and enables it. If the profile already has the kit installed but not enabled, the plugin enables it. Until the kit is ready, the Plugins page shows Waiting for dependencies for the browser half of the plugin, and the prompt history route works as usual.
+Add the Agent Stash index source as described on the [Install](../install.mdx#dsh-plugin-index) page, then install `@agent-stash/dsh-recall` from the Discover page.
+
+</Tab>
+</Tabs>
+
+<Callout type="info" title="dsh-stash-kit installs automatically">
+  The plugin interface builds on [dsh-stash-kit](./dsh-stash-kit.mdx). On first start, the plugin
+  installs the kit from npm through the plugin manager and enables it. If the profile already has
+  the kit installed but not enabled, the plugin enables it. Until the kit is ready, the Plugins page
+  shows Waiting for dependencies for the browser half of the plugin, and the prompt history route
+  works as usual.
+</Callout>
 
 Change the frosted glass, motion, row height and key hints of the panel in one place on the [dsh-stash-kit settings page](./dsh-stash-kit.mdx#settings).

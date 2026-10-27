@@ -29,8 +29,29 @@ icon: Sparkles
 
 ## 安装
 
+需要 DSH 0.2.1-alpha.4 或更新的版本。
+
+<Tabs items={['桌面版', '命令行', '插件索引']}>
+<Tab value="桌面版">
+
+在「插件」页点「添加插件」，填入 `@agent-stash/dsh-autosuggest`。
+
+</Tab>
+<Tab value="命令行">
+
 ```bash
 dsh plugin --profile web add @agent-stash/dsh-autosuggest
 ```
 
-桌面版在「插件」页点「添加插件」，填入 `@agent-stash/dsh-autosuggest`。需要 DSH 0.2.1-alpha.4 或更新的版本。和 dsh-recall 一样，第一次启动时会从 npm 自动安装并启用 [dsh-stash-kit](./dsh-stash-kit.mdx)。
+</Tab>
+<Tab value="插件索引">
+
+按[安装页](../install.mdx#dsh-插件索引)的步骤添加 Agent Stash 的索引源，然后在「发现」页安装 `@agent-stash/dsh-autosuggest`。
+
+</Tab>
+</Tabs>
+
+<Callout type="info" title="自动安装 dsh-stash-kit">
+  和 [dsh-recall](./dsh-recall.mdx) 一样，第一次启动时会从 npm 自动安装并启用
+  [dsh-stash-kit](./dsh-stash-kit.mdx)。
+</Callout>

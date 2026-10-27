@@ -109,14 +109,51 @@ After you merge this PR, the same workflow publishes the bumped packages to npm 
 </Step>
 </Steps>
 
-The npm packages do not accept publishing with tokens that bypass 2FA. CI publishes only through trusted publishing. The version badge in the README reads the latest GitHub release automatically.
+<Callout type="warn" title="Trusted publishing only">
+  The npm packages do not accept publishing with tokens that bypass 2FA. CI publishes only through
+  trusted publishing.
+</Callout>
+
+The version badge in the README reads the latest GitHub release automatically.
 
 ## Add an npm package
 
 npm can configure a Trusted Publisher only for a package that already exists, so a new package first reserves its name with a one-time token:
 
-1. On npmjs.com, generate a publish token for this step only and copy it to the clipboard. Then run `uv run --project scripts/ci ci bootstrap store-token`. It saves the clipboard content as the repository secret `NPM_TOKEN` and clears the clipboard.
-2. Run `uv run --project scripts/ci ci bootstrap publish --auth token`. The release workflow uses the token to publish an empty `0.0.0-placeholder.<n>` (dist-tag `placeholder`) for each package that has no regular version yet.
-3. On the npm settings page of the package, add a Trusted Publisher: repository `Alice39s/agent-stash`, workflow `release.yml`.
-4. Run `uv run --project scripts/ci ci bootstrap publish --auth oidc` and check that `ci npm status` shows yes for trusted publishing.
-5. Run `uv run --project scripts/ci ci bootstrap remove-token`. Revoke the token on npmjs.com and set the publishing access of the package to disallow tokens that bypass 2FA.
+<Steps>
+<Step>
+
+### Store a one-time token
+
+On npmjs.com, generate a publish token for this step only and copy it to the clipboard. Then run `uv run --project scripts/ci ci bootstrap store-token`. It saves the clipboard content as the repository secret `NPM_TOKEN` and clears the clipboard.
+
+</Step>
+<Step>
+
+### Publish a placeholder version
+
+Run `uv run --project scripts/ci ci bootstrap publish --auth token`. The release workflow uses the token to publish an empty `0.0.0-placeholder.<n>` (dist-tag `placeholder`) for each package that has no regular version yet.
+
+</Step>
+<Step>
+
+### Add the Trusted Publisher
+
+On the npm settings page of the package, add a Trusted Publisher: repository `Alice39s/agent-stash`, workflow `release.yml`.
+
+</Step>
+<Step>
+
+### Publish through OIDC
+
+Run `uv run --project scripts/ci ci bootstrap publish --auth oidc` and check that `ci npm status` shows yes for trusted publishing.
+
+</Step>
+<Step>
+
+### Remove the token
+
+Run `uv run --project scripts/ci ci bootstrap remove-token`. Revoke the token on npmjs.com and set the publishing access of the package to disallow tokens that bypass 2FA.
+
+</Step>
+</Steps>

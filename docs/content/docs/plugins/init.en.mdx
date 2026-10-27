@@ -6,7 +6,10 @@ icon: FileText
 
 ## Usage
 
-Pi, DSH and Cline take the same arguments:
+<Tabs items={['Pi, DSH and Cline', 'Grok Build and goose', 'Aider']}>
+<Tab value="Pi, DSH and Cline">
+
+The three agents take the same arguments:
 
 ```text
 /init                                      # use the default preset (DSH opens the preset list first)
@@ -15,15 +18,7 @@ Pi, DSH and Cline take the same arguments:
 /init write in Chinese                     # if the first word is not a preset name, the whole line is the extra prompt and the default preset is used
 ```
 
-In the `/` menu of DSH, `/init` is in the Commands section with the title Init. Pick it in the menu, or type only `/init` and press Enter, to open the preset list. The default preset has a check mark and is already highlighted, so Enter runs it. Type to filter the presets. Custom presets are listed in their own Custom group. To give a preset name or an extra prompt, type a space after `/init` and continue. The rules are the same as above. Subagent sessions have no `/init`.
-
-<Showcase
-  name="init-en"
-  alt="The pointer clicks the input box of a new session. Typing / opens the command menu, and typing init leaves only the Init row. Enter opens the preset list with Codex CLI checked and highlighted. Typing kimi leaves only Kimi Code CLI, and Enter runs it."
-  caption="In DSH, pick Init in the / menu to open the preset list, type to filter, and press Enter to run"
-/>
-
-<Tabs items={['Grok Build and goose', 'Aider']}>
+</Tab>
 <Tab value="Grok Build and goose">
 
 Each preset has its own `/init-<preset>` command, and `/init` uses the default preset. All text after the command is the extra prompt:
@@ -54,6 +49,36 @@ agent-stash init aider crush -- --model sonnet              # set the Aider mode
 
 </Tab>
 </Tabs>
+
+### Pick a preset in DSH
+
+In the `/` menu of DSH, `/init` is in the Commands section with the title Init.
+
+<Steps>
+<Step>
+
+Pick Init in the menu, or type only `/init` and press Enter, to open the preset list.
+
+</Step>
+<Step>
+
+The default preset has a check mark and is already highlighted. Type to filter the presets. Custom presets are listed in their own Custom group.
+
+</Step>
+<Step>
+
+Press Enter to run the highlighted preset.
+
+</Step>
+</Steps>
+
+<Showcase
+  name="init-en"
+  alt="The pointer clicks the input box of a new session. Typing / opens the command menu, and typing init leaves only the Init row. Enter opens the preset list with Codex CLI checked and highlighted. Typing kimi leaves only Kimi Code CLI, and Enter runs it."
+  caption="In DSH, pick Init in the / menu to open the preset list, type to filter, and press Enter to run"
+/>
+
+To give a preset name or an extra prompt, type a space after `/init` and continue, as shown in the Pi, DSH and Cline tab. Subagent sessions have no `/init`.
 
 ## Presets
 
@@ -114,6 +139,31 @@ When `PI_CODING_AGENT_DIR` is set for Pi, the first file is `$PI_CODING_AGENT_DI
 }
 ```
 
-- `defaultPreset`: the preset to use when no preset name is given. The default is `codex`.
-- `presets`: custom presets. `file` is a path relative to the directory of the config file. A preset with the same name as a built-in preset overrides the built-in one.
-- `description` shows in the completion menu and in the DSH preset list. Without it, they show the `file` path.
+<TypeTable
+  type={{
+    defaultPreset: {
+      type: "string",
+      default: '"codex"',
+      description: "The preset to use when no preset name is given.",
+    },
+    presets: {
+      type: "Record<string, object>",
+      description:
+        "Custom presets, keyed by preset name. Names cannot contain whitespace. A preset with the same name as a built-in preset overrides the built-in one.",
+    },
+    "presets.<name>.file": {
+      type: "string",
+      required: true,
+      description: "The preset file, as a path relative to the directory of the config file.",
+    },
+    "presets.<name>.description": {
+      type: "string",
+      description: (
+        <>
+          Shows in the completion menu and in the DSH preset list. Without it, they show the{" "}
+          <code>file</code> path.
+        </>
+      ),
+    },
+  }}
+/>

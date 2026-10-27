@@ -6,7 +6,10 @@ icon: FileText
 
 ## 用法
 
-Pi、DSH 与 Cline 的参数写法相同：
+<Tabs items={['Pi、DSH 与 Cline', 'Grok Build 与 goose', 'Aider']}>
+<Tab value="Pi、DSH 与 Cline">
+
+三者的参数写法相同：
 
 ```text
 /init                         # 使用默认预设（DSH 里先打开预设列表）
@@ -15,15 +18,7 @@ Pi、DSH 与 Cline 的参数写法相同：
 /init 用中文写                 # 第一个词不是预设名时，整句作为额外 Prompt，使用默认预设
 ```
 
-DSH 的 `/` 菜单里，`/init` 排在「指令」区，标题是「初始化」。在菜单里选中它，或者只输入 `/init` 就回车，会打开预设列表：默认预设打勾并已高亮，再按回车就用它，输入文字可以筛选预设，自定义预设单独列在「自定义」组里。要写预设名或额外 Prompt，在 `/init` 后面打空格接着输入，规则和上面一样。子代理会话里没有 `/init`。
-
-<Showcase
-  name="init"
-  alt="指针点击新会话的输入框，输入 / 打开指令菜单，接着输入 init，菜单只剩「初始化」一行；回车打开预设列表，Codex CLI 打勾并高亮；输入 kimi 后只剩 Kimi Code CLI，按回车执行"
-  caption="DSH 里在 / 菜单选「初始化」打开预设列表，输入文字筛选，回车执行"
-/>
-
-<Tabs items={['Grok Build 与 goose', 'Aider']}>
+</Tab>
 <Tab value="Grok Build 与 goose">
 
 每个预设对应一个 `/init-<预设名>` 命令，`/init` 使用默认预设。命令后面的文字都是额外 Prompt：
@@ -54,6 +49,36 @@ agent-stash init aider crush -- --model sonnet       # 指定 Aider 的模型
 
 </Tab>
 </Tabs>
+
+### 在 DSH 里选预设
+
+DSH 的 `/` 菜单里，`/init` 排在「指令」区，标题是「初始化」。
+
+<Steps>
+<Step>
+
+在菜单里选「初始化」，或者只输入 `/init` 后回车，打开预设列表。
+
+</Step>
+<Step>
+
+默认预设打勾并已高亮。输入文字可以筛选预设，自定义预设单独列在「自定义」组里。
+
+</Step>
+<Step>
+
+按回车，用高亮的预设执行。
+
+</Step>
+</Steps>
+
+<Showcase
+  name="init"
+  alt="指针点击新会话的输入框，输入 / 打开指令菜单，接着输入 init，菜单只剩「初始化」一行；回车打开预设列表，Codex CLI 打勾并高亮；输入 kimi 后只剩 Kimi Code CLI，按回车执行"
+  caption="DSH 里在 / 菜单选「初始化」打开预设列表，输入文字筛选，回车执行"
+/>
+
+要写预设名或额外 Prompt，在 `/init` 后面打空格接着输入，写法与「Pi、DSH 与 Cline」标签页相同。子代理会话里没有 `/init`。
 
 ## 预设
 
@@ -114,6 +139,29 @@ Pi 设置了 `PI_CODING_AGENT_DIR` 时，第一个文件改为 `$PI_CODING_AGENT
 }
 ```
 
-- `defaultPreset`：不写预设名时使用的预设，默认为 `codex`。
-- `presets`：自定义预设。`file` 是相对配置文件所在目录的路径，同名预设覆盖内置预设。
-- `description` 显示在补全菜单和 DSH 的预设列表里，不写时显示 `file` 的路径。
+<TypeTable
+  type={{
+    defaultPreset: {
+      type: "string",
+      default: '"codex"',
+      description: "不写预设名时使用的预设。",
+    },
+    presets: {
+      type: "Record<string, object>",
+      description: "自定义预设，键是预设名，不能含空白字符。同名预设覆盖内置预设。",
+    },
+    "presets.<name>.file": {
+      type: "string",
+      required: true,
+      description: "预设文件，相对配置文件所在目录的路径。",
+    },
+    "presets.<name>.description": {
+      type: "string",
+      description: (
+        <>
+          显示在补全菜单和 DSH 的预设列表里，不写时显示 <code>file</code> 的路径。
+        </>
+      ),
+    },
+  }}
+/>

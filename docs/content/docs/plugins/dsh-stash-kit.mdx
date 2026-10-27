@@ -16,7 +16,23 @@ Agent Stash 框架（`dsh-stash-kit`）的浏览器半部提供 `stashKit` 服�
 
 ## 配置项
 
-在「插件」页打开「Agent Stash 框架」，点它的条目进入配置页。改动点「保存」后立即生效。
+<Steps>
+<Step>
+
+在「插件」页打开「Agent Stash 框架」，点它的条目进入配置页。
+
+</Step>
+<Step>
+
+修改下面的设置项，配置页顶部的预览随之变化。
+
+</Step>
+<Step>
+
+点「保存」，改动立即生效。
+
+</Step>
+</Steps>
 
 <Showcase
   name="kit-settings-page"
@@ -55,9 +71,25 @@ Agent Stash 框架（`dsh-stash-kit`）的浏览器半部提供 `stashKit` 服�
 
 ## 单独安装
 
+<Tabs items={['桌面版', '命令行', '插件索引']}>
+<Tab value="桌面版">
+
+在「插件」页点「添加插件」，填入 `@agent-stash/dsh-stash-kit`。
+
+</Tab>
+<Tab value="命令行">
+
 ```bash
 dsh plugin --profile web add @agent-stash/dsh-stash-kit
 ```
+
+</Tab>
+<Tab value="插件索引">
+
+按[安装页](../install.mdx#dsh-插件索引)的步骤添加 Agent Stash 的索引源，然后在「发现」页安装 `@agent-stash/dsh-stash-kit`。
+
+</Tab>
+</Tabs>
 
 <Callout type="info" title="停用框架">
   停用框架后，依赖它的插件会停在「等待依赖」；再次启用这些插件时，框架会被重新启用。

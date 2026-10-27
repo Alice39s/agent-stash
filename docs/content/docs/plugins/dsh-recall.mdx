@@ -29,12 +29,33 @@ icon: History
 
 ## 安装
 
+需要 DSH 0.2.1-alpha.4 或更新的版本。
+
+<Tabs items={['桌面版', '命令行', '插件索引']}>
+<Tab value="桌面版">
+
+在「插件」页点「添加插件」，填入 `@agent-stash/dsh-recall`。
+
+</Tab>
+<Tab value="命令行">
+
 ```bash
 dsh plugin --profile web add @agent-stash/dsh-recall
 ```
 
-桌面版在「插件」页点「添加插件」，填入 `@agent-stash/dsh-recall`。需要 DSH 0.2.1-alpha.4 或更新的版本。
+</Tab>
+<Tab value="插件索引">
 
-插件的界面建立在 [dsh-stash-kit](./dsh-stash-kit.mdx) 上，第一次启动时通过插件管理器从 npm 自动安装并启用它；profile 里已经装了框架但没有启用时，插件会把它启用。框架就绪之前，「插件」页里插件的浏览器半部显示「等待依赖」，Prompt 历史路由照常工作。
+按[安装页](../install.mdx#dsh-插件索引)的步骤添加 Agent Stash 的索引源，然后在「发现」页安装 `@agent-stash/dsh-recall`。
+
+</Tab>
+</Tabs>
+
+<Callout type="info" title="自动安装 dsh-stash-kit">
+  插件的界面建立在 [dsh-stash-kit](./dsh-stash-kit.mdx) 上，第一次启动时通过插件管理器从 npm
+  自动安装并启用它；profile
+  里已经装了框架但没有启用时，插件会把它启用。框架就绪之前，「插件」页里插件的浏览器半部显示「等待依赖」，Prompt
+  历史路由照常工作。
+</Callout>
 
 面板的毛玻璃、动画、行高与按键提示在 [dsh-stash-kit 的配置页](./dsh-stash-kit.mdx#配置项)统一修改。

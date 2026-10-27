@@ -16,7 +16,23 @@ The panel uses the same geometry as the built-in DSH `/` menu. It sits 4px from 
 
 ## Settings
 
-On the Plugins page, open Agent Stash Kit and click its entry to go to the settings page. Changes take effect as soon as you click Save.
+<Steps>
+<Step>
+
+On the Plugins page, open Agent Stash Kit and click its entry to go to the settings page.
+
+</Step>
+<Step>
+
+Change the settings listed below. The preview at the top of the page follows them.
+
+</Step>
+<Step>
+
+Click Save. The changes take effect at once.
+
+</Step>
+</Steps>
 
 <Showcase
   name="kit-settings-page-en"
@@ -55,9 +71,25 @@ You can also set the values in the profile patch:
 
 ## Install separately
 
+<Tabs items={['Desktop app', 'Command line', 'Plugin index']}>
+<Tab value="Desktop app">
+
+On the Plugins page, click Add plugin and enter `@agent-stash/dsh-stash-kit`.
+
+</Tab>
+<Tab value="Command line">
+
 ```bash
 dsh plugin --profile web add @agent-stash/dsh-stash-kit
 ```
+
+</Tab>
+<Tab value="Plugin index">
+
+Add the Agent Stash index source as described on the [Install](../install.mdx#dsh-plugin-index) page, then install `@agent-stash/dsh-stash-kit` from the Discover page.
+
+</Tab>
+</Tabs>
 
 <Callout type="info" title="Disabling the kit">
   After you disable the kit, the plugins that depend on it stop at Waiting for dependencies. When

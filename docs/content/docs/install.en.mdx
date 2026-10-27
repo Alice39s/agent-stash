@@ -9,7 +9,17 @@ The repository commits `dist/` together with the code, so installation needs no 
 <Tabs items={['DeepSeek Harness', 'Pi', 'Cline', 'agent-stash CLI']}>
 <Tab value="DeepSeek Harness">
 
-Desktop app: on the Plugins page, click Add plugin, enter an npm package name from the list below and install it:
+Desktop app:
+
+<Steps>
+<Step>
+
+On the Plugins page, click Add plugin.
+
+</Step>
+<Step>
+
+Enter an npm package name from the list below and install it:
 
 ```text
 @agent-stash/init
@@ -17,6 +27,9 @@ Desktop app: on the Plugins page, click Add plugin, enter an npm package name fr
 @agent-stash/dsh-recall
 @agent-stash/dsh-autosuggest
 ```
+
+</Step>
+</Steps>
 
 Command line: add the bundles to a profile, for example `web`, which the web interface uses:
 
@@ -81,10 +94,28 @@ For other uses, such as installing one skill only, see the [Skills](./skills.mdx
 
 ## DSH plugin index
 
-From DSH 0.2.1-alpha.4, you can browse a JSON plugin index on the Discover page and install plugins from it. On the Plugins page, under Experimental plugins, turn on Custom plugin market (newer DSH versions call it Custom plugin index). Switch to Discover, click Add index source and enter:
+From DSH 0.2.1-alpha.4, you can browse a JSON plugin index on the Discover page and install plugins from it:
+
+<Steps>
+<Step>
+
+On the Plugins page, under Experimental plugins, turn on Custom plugin market. Newer DSH versions call it Custom plugin index.
+
+</Step>
+<Step>
+
+Switch to Discover and click Add index source.
+
+</Step>
+<Step>
+
+Enter the URL of the Agent Stash index:
 
 ```text
 https://alice39s.github.io/agent-stash/index.json
 ```
+
+</Step>
+</Steps>
 
 GitHub Actions generates the index with the DSH reference generator. The index updates after each release and on a daily schedule. It lists every released version of these npm packages. The index and these docs are published to the same GitHub Pages site.

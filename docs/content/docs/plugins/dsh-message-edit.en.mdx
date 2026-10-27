@@ -33,8 +33,24 @@ Changing a user message or retrying makes the model generate the turn again. Cha
 
 ## Install
 
+<Tabs items={['Desktop app', 'Command line', 'Plugin index']}>
+<Tab value="Desktop app">
+
+On the Plugins page, click Add plugin and enter `@agent-stash/dsh-message-edit`.
+
+</Tab>
+<Tab value="Command line">
+
 ```bash
 dsh plugin --profile web add @agent-stash/dsh-message-edit
 ```
 
-In the desktop app, click Add plugin on the Plugins page and enter `@agent-stash/dsh-message-edit`. The plugin source and its interface rules are in `packages/dsh-message-edit/` in the repository.
+</Tab>
+<Tab value="Plugin index">
+
+Add the Agent Stash index source as described on the [Install](../install.mdx#dsh-plugin-index) page, then install `@agent-stash/dsh-message-edit` from the Discover page.
+
+</Tab>
+</Tabs>
+
+The plugin source and its interface rules are in `packages/dsh-message-edit/` in the repository.
