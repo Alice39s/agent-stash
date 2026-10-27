@@ -71,7 +71,12 @@ You can also set the values in the profile patch:
 
 ## Install separately
 
-<Tabs items={['Desktop app', 'Command line', 'Plugin index']}>
+<Tabs items={['Plugin market', 'Desktop app', 'Command line']}>
+<Tab value="Plugin market">
+
+Add the index source as described in [Import the Agent Stash plugin market](../install.mdx#import-the-agent-stash-plugin-market), then install `@agent-stash/dsh-stash-kit` from the Discover page.
+
+</Tab>
 <Tab value="Desktop app">
 
 On the Plugins page, click Add plugin and enter `@agent-stash/dsh-stash-kit`.
@@ -82,11 +87,6 @@ On the Plugins page, click Add plugin and enter `@agent-stash/dsh-stash-kit`.
 ```bash
 dsh plugin --profile web add @agent-stash/dsh-stash-kit
 ```
-
-</Tab>
-<Tab value="Plugin index">
-
-Add the Agent Stash index source as described on the [Install](../install.mdx#dsh-plugin-index) page, then install `@agent-stash/dsh-stash-kit` from the Discover page.
 
 </Tab>
 </Tabs>

@@ -39,12 +39,12 @@ goose run -t "/init-crush 重点写测试流程"
 </Tab>
 <Tab value="Aider">
 
-`agent-stash init aider` 渲染预设后交给 `aider --message`，Aider 处理完这一轮就退出。参数与 `/init` 相同，`--` 之后的参数原样传给 Aider：
+用 `npx -y @agent-stash/init init aider` 运行，不需要全局安装。它渲染预设后交给 `aider --message`，Aider 处理完这一轮就退出。参数与 `/init` 相同，`--` 之后的参数原样传给 Aider：
 
 ```bash
-agent-stash init aider                               # 使用默认预设
-agent-stash init aider opencode 重点写测试流程         # 使用 opencode 预设并附加额外 Prompt
-agent-stash init aider crush -- --model sonnet       # 指定 Aider 的模型
+npx -y @agent-stash/init init aider                               # 使用默认预设
+npx -y @agent-stash/init init aider opencode 重点写测试流程         # 使用 opencode 预设并附加额外 Prompt
+npx -y @agent-stash/init init aider crush -- --model sonnet       # 指定 Aider 的模型
 ```
 
 </Tab>

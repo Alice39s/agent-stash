@@ -29,7 +29,7 @@
 npx skills add Alice39s/agent-stash
 ```
 
-插件在各个 Agent 里的安装方法见文档站的[安装](https://alice39s.github.io/agent-stash/zh/install/)页。
+DSH 插件推荐导入 Agent Stash 插件市场后按需安装，步骤和其他 Agent 的接入方法见文档站的[安装](https://alice39s.github.io/agent-stash/zh/install/)页。
 
 ## 开发
 

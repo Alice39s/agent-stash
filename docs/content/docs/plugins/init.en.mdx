@@ -39,12 +39,12 @@ goose run -t "/init-crush focus on the test workflow"
 </Tab>
 <Tab value="Aider">
 
-`agent-stash init aider` renders the preset and passes it to `aider --message`. Aider exits after it finishes this turn. The arguments are the same as for `/init`. Arguments after `--` go to Aider unchanged:
+Run `npx -y @agent-stash/init init aider`. No global install is needed. It renders the preset and passes it to `aider --message`. Aider exits after it finishes this turn. The arguments are the same as for `/init`. Arguments after `--` go to Aider unchanged:
 
 ```bash
-agent-stash init aider                                      # use the default preset
-agent-stash init aider opencode focus on the test workflow  # use the opencode preset and append an extra prompt
-agent-stash init aider crush -- --model sonnet              # set the Aider model
+npx -y @agent-stash/init init aider                                      # use the default preset
+npx -y @agent-stash/init init aider opencode focus on the test workflow  # use the opencode preset and append an extra prompt
+npx -y @agent-stash/init init aider crush -- --model sonnet              # set the Aider model
 ```
 
 </Tab>

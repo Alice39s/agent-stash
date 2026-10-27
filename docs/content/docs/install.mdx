@@ -1,15 +1,52 @@
 ---
 title: 安装
-description: 在 Pi、DeepSeek Harness、Cline 与 agent-stash 命令行里安装 Agent Stash，以及用 skills.sh 安装技能。
+description: 在 DeepSeek Harness 里导入 Agent Stash 插件市场或手动安装插件，在 Pi、Cline、Grok Build、goose 与 Aider 里接入 /init，以及用 skills.sh 安装技能。
 icon: Download
 ---
 
 仓库的 `dist/` 随代码提交，安装时不需要构建。
 
-<Tabs items={['DeepSeek Harness', 'Pi', 'Cline', 'agent-stash 命令行']}>
-<Tab value="DeepSeek Harness">
+## DeepSeek Harness
 
-桌面版：
+推荐导入 Agent Stash 插件市场：添加一次索引源，之后在「发现」页按需挑选要装的插件。需要 DSH 0.2.1-alpha.4 或更新的版本。
+
+### 导入 Agent Stash 插件市场
+
+<Steps>
+<Step>
+
+在「插件」页的「实验性插件」里打开「自定义插件市场」。较新的 DSH 叫「自定义插件索引」。
+
+</Step>
+<Step>
+
+切到「发现」，点「添加索引源」。
+
+</Step>
+<Step>
+
+填入 Agent Stash 的索引地址：
+
+```text
+https://alice39s.github.io/agent-stash/index.json
+```
+
+</Step>
+<Step>
+
+在「发现」页浏览 Agent Stash 的插件，选需要的安装。[dsh-stash-kit](./plugins/dsh-stash-kit.mdx) 会随 dsh-recall 与 dsh-autosuggest 自动安装，不用单独选。
+
+</Step>
+</Steps>
+
+索引由 GitHub Actions 用 DSH 的参考生成器生成，每次发布后和每天定时更新，列出这些 npm 包的每个发布版本。它和这个文档站发布在同一个 GitHub Pages 站点上。
+
+### 手动安装
+
+不想添加索引源，或者所用的 DSH 没有「发现」页时，按 npm 包名手动安装：
+
+<Tabs items={['桌面版', '命令行']}>
+<Tab value="桌面版">
 
 <Steps>
 <Step>
@@ -31,7 +68,10 @@ icon: Download
 </Step>
 </Steps>
 
-命令行：把 bundle 装进某个 profile，例如 Web 界面使用的 `web`：
+</Tab>
+<Tab value="命令行">
+
+把 bundle 装进某个 profile，例如 Web 界面使用的 `web`：
 
 ```bash
 dsh plugin --profile web add @agent-stash/init
@@ -40,11 +80,16 @@ dsh plugin --profile web add @agent-stash/dsh-recall
 dsh plugin --profile web add @agent-stash/dsh-autosuggest
 ```
 
+</Tab>
+</Tabs>
+
 npm 包由 GitHub Actions 经 npm trusted publishing 发布，带 provenance。也可以装 `main` 上的最新版本 `github:Alice39s/agent-stash`（只含 `/init`）。
 
 `dsh-recall` 与 `dsh-autosuggest` 第一次启动时会从 npm 自动安装并启用 [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)。三个插件都需要 DSH 0.2.1-alpha.4 或更新的版本。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
 
-</Tab>
+## 其他 Agent
+
+<Tabs items={['Pi', 'Cline', 'Grok Build 与 goose', 'Aider']}>
 <Tab value="Pi">
 
 ```bash
@@ -67,17 +112,27 @@ cline plugin install --git github.com/Alice39s/agent-stash
 插件注册 `/init` 斜杠命令，在 TUI（`cline -i`）里使用。`cline "<prompt>"` 单次运行时不处理斜杠命令。
 
 </Tab>
-<Tab value="agent-stash 命令行">
+<Tab value="Grok Build 与 goose">
 
-Grok Build、goose 与 Aider 通过 `agent-stash` 命令行接入：
+用 `npx` 运行 `@agent-stash/init` 自带的 `agent-stash` 命令行，写入 `/init` 命令，不需要全局安装：
 
 ```bash
-npm install -g github:Alice39s/agent-stash
-agent-stash init install grok
-agent-stash init install goose
+npx -y @agent-stash/init init install grok
+npx -y @agent-stash/init init install goose
 ```
 
-Aider 的用法见 [/init 的用法](./plugins/init.mdx#用法)里的 Aider 标签页。
+写入的是静态文件，使用时不再调用这个命令行。上游预设更新或改了配置后，重新运行一次来刷新。
+
+</Tab>
+<Tab value="Aider">
+
+每次用 `npx` 运行，不需要全局安装：
+
+```bash
+npx -y @agent-stash/init init aider
+```
+
+参数写法见 [/init 的用法](./plugins/init.mdx#用法)里的 Aider 标签页。
 
 </Tab>
 </Tabs>
@@ -91,31 +146,3 @@ npx skills add Alice39s/agent-stash
 ```
 
 只装其中一个技能等用法见[技能](./skills.mdx#安装)页。
-
-## DSH 插件索引
-
-DSH 0.2.1-alpha.4 起可以在「发现」页浏览 JSON 插件索引并从中安装插件：
-
-<Steps>
-<Step>
-
-在「插件」页的「实验性插件」里打开「自定义插件市场」。较新的 DSH 叫「自定义插件索引」。
-
-</Step>
-<Step>
-
-切到「发现」，点「添加索引源」。
-
-</Step>
-<Step>
-
-填入 Agent Stash 的索引地址：
-
-```text
-https://alice39s.github.io/agent-stash/index.json
-```
-
-</Step>
-</Steps>
-
-索引由 GitHub Actions 用 DSH 的参考生成器生成，每次发布后和每天定时更新，列出这些 npm 包的每个发布版本。它和这个文档站发布在同一个 GitHub Pages 站点上。

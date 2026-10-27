@@ -31,7 +31,12 @@ The Host half of the plugin registers the read-only route `/dsh-autosuggest/prom
 
 The plugin needs DSH 0.2.1-alpha.4 or later.
 
-<Tabs items={['Desktop app', 'Command line', 'Plugin index']}>
+<Tabs items={['Plugin market', 'Desktop app', 'Command line']}>
+<Tab value="Plugin market">
+
+Add the index source as described in [Import the Agent Stash plugin market](../install.mdx#import-the-agent-stash-plugin-market), then install `@agent-stash/dsh-autosuggest` from the Discover page.
+
+</Tab>
 <Tab value="Desktop app">
 
 On the Plugins page, click Add plugin and enter `@agent-stash/dsh-autosuggest`.
@@ -42,11 +47,6 @@ On the Plugins page, click Add plugin and enter `@agent-stash/dsh-autosuggest`.
 ```bash
 dsh plugin --profile web add @agent-stash/dsh-autosuggest
 ```
-
-</Tab>
-<Tab value="Plugin index">
-
-Add the Agent Stash index source as described on the [Install](../install.mdx#dsh-plugin-index) page, then install `@agent-stash/dsh-autosuggest` from the Discover page.
 
 </Tab>
 </Tabs>
