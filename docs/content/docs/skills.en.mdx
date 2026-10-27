@@ -1,10 +1,30 @@
 ---
 title: Skills
-description: The Agent Skills in this collection. They are style guides synced from upstream and skills that delegate tasks to subagents by model in DSH.
+description: The Agent Skills in this collection and how to install them. They are style guides synced from upstream and skills that delegate tasks to subagents by model in DSH.
 icon: Wand
 ---
 
-The skills are in the `skills/` directory of the repository. Pi loads them when it installs Agent Stash.
+The skills are in the `skills/` directory of the repository. Install them with the `skills` CLI from [skills.sh](https://skills.sh/Alice39s/agent-stash).
+
+## Install
+
+Run this in your project directory:
+
+```bash
+npx skills add Alice39s/agent-stash
+```
+
+The command lists the skills in the repository and the coding agents it detects on your machine. It installs your selection into the current project. Add `-g` to install into your user directory, so that every project can use the skills. It needs Node.js 22.20 or later.
+
+To install one skill only, name it with `--skill`, name the agent with `-a` and skip the prompts with `-y`:
+
+```bash
+npx skills add Alice39s/agent-stash --skill code-styleguide -a claude-code -y
+```
+
+Add `--list` to list the skills in the repository without installing them. After installation, `npx skills update` updates the skills and `npx skills remove` removes them. For the other options, see the [skills CLI reference](https://www.skills.sh/docs/cli). The CLI sends anonymous install statistics by default. Set `DISABLE_TELEMETRY=1` to turn this off.
+
+If you installed Agent Stash in Pi with `pi install`, Pi already loads these skills, so you do not need to install them again.
 
 ## `code-styleguide`
 

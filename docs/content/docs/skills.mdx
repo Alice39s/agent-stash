@@ -1,10 +1,30 @@
 ---
 title: 技能
-description: 收录的 Agent Skills：上游同步的风格指南，以及在 DSH 里按模型委托子代理的技能。
+description: 收录的 Agent Skills 与安装方法：上游同步的风格指南，以及在 DSH 里按模型委托子代理的技能。
 icon: Wand
 ---
 
-技能在仓库的 `skills/` 目录下，Pi 安装 Agent Stash 时会一并加载。
+技能在仓库的 `skills/` 目录下，用 [skills.sh](https://skills.sh/Alice39s/agent-stash) 的 `skills` 命令行安装。
+
+## 安装
+
+在项目目录下运行：
+
+```bash
+npx skills add Alice39s/agent-stash
+```
+
+命令列出仓库里的技能和本机检测到的 Coding Agent，选好后装进当前项目；加 `-g` 则装到用户目录，所有项目都能用。需要 Node.js 22.20 或更新的版本。
+
+只装其中一个技能时，用 `--skill` 指定技能、`-a` 指定 Agent，`-y` 跳过确认：
+
+```bash
+npx skills add Alice39s/agent-stash --skill code-styleguide -a claude-code -y
+```
+
+加 `--list` 只列出仓库里的技能，不安装。装好以后用 `npx skills update` 更新，`npx skills remove` 卸载，其余参数见 [skills 命令行文档](https://www.skills.sh/docs/cli)。命令行默认上报匿名的安装统计，设置 `DISABLE_TELEMETRY=1` 可以关闭。
+
+用 `pi install` 安装 Agent Stash 的 Pi 已经加载了这些技能，不用再装。
 
 ## `code-styleguide`
 
