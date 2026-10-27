@@ -10,28 +10,42 @@ The skills are in the `skills/` directory of the repository. Install them with t
 
 Run this in your project directory. It needs Node.js 22.20 or later:
 
-<Tabs items={['Pick skills', 'Name a skill']}>
+<Tabs items={['Pick skills', 'One skill', 'DeepSeek Harness']}>
 <Tab value="Pick skills">
 
 ```bash
-npx skills add Alice39s/agent-stash
+npx -y skills add Alice39s/agent-stash
 ```
 
 The command lists the skills in the repository and the coding agents it detects on your machine. It installs your selection into the current project. Add `-g` to install into your user directory, so that every project can use the skills.
 
 </Tab>
-<Tab value="Name a skill">
+<Tab value="One skill">
+
+Append `@` and the skill name to the repository name:
 
 ```bash
-npx skills add Alice39s/agent-stash --skill code-styleguide -a claude-code -y
+npx -y skills add Alice39s/agent-stash@code-styleguide -a claude-code -y
 ```
 
-`--skill` names the skill, `-a` names the agent and `-y` skips the prompts.
+`-a` names the agent; see the [agents that the skills CLI supports](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) for the names. `-y` skips the prompts.
+
+</Tab>
+<Tab value="DeepSeek Harness">
+
+DSH reads `~/.agents/skills` and `.agents/skills` in the project. The skills CLI has no DSH option, but `-a codex` installs into these same directories. Add `-g` to install into your user directory:
+
+```bash
+npx -y skills add Alice39s/agent-stash -g -a codex -y \
+  -s self-use-haiku-subagent self-use-sonnet-subagent self-use-luna-subagent self-use-dpsk-subagent
+```
+
+This command installs the four subagent skills. Remove the names after `-s` that you do not need.
 
 </Tab>
 </Tabs>
 
-Add `--list` to list the skills in the repository without installing them. After installation, `npx skills update` updates the skills and `npx skills remove` removes them. For the other options, see the [skills CLI reference](https://www.skills.sh/docs/cli). The CLI sends anonymous install statistics by default. Set `DISABLE_TELEMETRY=1` to turn this off.
+Add `--list` to list the skills in the repository without installing them. After installation, `npx -y skills update` updates the skills and `npx -y skills remove` removes them. For the other options, see the [skills CLI reference](https://www.skills.sh/docs/cli). The CLI sends anonymous install statistics by default. Set `DISABLE_TELEMETRY=1` to turn this off.
 
 <Callout type="info" title="Pi needs no extra install">
   If you installed Agent Stash in Pi with `pi install`, Pi already loads these skills.

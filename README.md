@@ -26,7 +26,7 @@
 技能用 [skills.sh](https://skills.sh/Alice39s/agent-stash) 的命令行安装：
 
 ```bash
-npx skills add Alice39s/agent-stash
+npx -y skills add Alice39s/agent-stash
 ```
 
 DSH 插件推荐导入 Agent Stash 插件市场后按需安装，步骤和其他 Agent 的接入方法见文档站的[安装](https://alice39s.github.io/agent-stash/zh/install/)页。
