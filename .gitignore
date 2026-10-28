@@ -7,3 +7,7 @@ docs/out/
 docs/.source/
 docs/next-env.d.ts
 docs/tsconfig.tsbuildinfo
+
+.DS_Store
+.ruff
+.turbo
