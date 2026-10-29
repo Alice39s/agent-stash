@@ -68,6 +68,7 @@ https://alice39s.github.io/agent-stash/index.json
 @agent-stash/dsh-message-edit
 @agent-stash/dsh-recall
 @agent-stash/dsh-autosuggest
+@agent-stash/dsh-skill-scout
 ```
 
 </Step>
@@ -83,6 +84,7 @@ dsh plugin --profile web add @agent-stash/init
 dsh plugin --profile web add @agent-stash/dsh-message-edit
 dsh plugin --profile web add @agent-stash/dsh-recall
 dsh plugin --profile web add @agent-stash/dsh-autosuggest
+dsh plugin --profile web add @agent-stash/dsh-skill-scout
 ```
 
 </Tab>
@@ -90,7 +92,7 @@ dsh plugin --profile web add @agent-stash/dsh-autosuggest
 
 npm 包由 GitHub Actions 经 npm trusted publishing 发布，带 provenance。也可以装 `main` 上的最新版本 `github:Alice39s/agent-stash`（只含 `/init`）。
 
-`dsh-recall` 与 `dsh-autosuggest` 第一次启动时会从 npm 自动安装并启用 [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)。三个插件都需要 DSH 0.2.1-alpha.4 或更新的版本。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
+`dsh-recall` 与 `dsh-autosuggest` 第一次启动时会从 npm 自动安装并启用 [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)。三个插件都需要 DSH 0.2.1-alpha.4 或更新的版本，[dsh-skill-scout](./plugins/dsh-skill-scout.mdx) 需要 0.2.1-rc.3 或更新的版本。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
 
 ## 其他 Agent
 

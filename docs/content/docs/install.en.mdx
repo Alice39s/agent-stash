@@ -65,6 +65,7 @@ Enter an npm package name from the list below and install it:
 @agent-stash/dsh-message-edit
 @agent-stash/dsh-recall
 @agent-stash/dsh-autosuggest
+@agent-stash/dsh-skill-scout
 ```
 
 </Step>
@@ -80,6 +81,7 @@ dsh plugin --profile web add @agent-stash/init
 dsh plugin --profile web add @agent-stash/dsh-message-edit
 dsh plugin --profile web add @agent-stash/dsh-recall
 dsh plugin --profile web add @agent-stash/dsh-autosuggest
+dsh plugin --profile web add @agent-stash/dsh-skill-scout
 ```
 
 </Tab>
@@ -87,7 +89,7 @@ dsh plugin --profile web add @agent-stash/dsh-autosuggest
 
 GitHub Actions publishes the npm packages through npm trusted publishing, with provenance. You can also install the latest version on `main` with `github:Alice39s/agent-stash` (it contains only `/init`).
 
-On first start, `dsh-recall` and `dsh-autosuggest` automatically install [dsh-stash-kit](./plugins/dsh-stash-kit.mdx) from npm and enable it. The three plugins need DSH 0.2.1-alpha.4 or later. DSH slash commands currently work only in the web interface and the desktop app.
+On first start, `dsh-recall` and `dsh-autosuggest` automatically install [dsh-stash-kit](./plugins/dsh-stash-kit.mdx) from npm and enable it. The three plugins need DSH 0.2.1-alpha.4 or later, and [dsh-skill-scout](./plugins/dsh-skill-scout.mdx) needs 0.2.1-rc.3 or later. DSH slash commands currently work only in the web interface and the desktop app.
 
 ## Other agents
 

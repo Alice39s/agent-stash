@@ -5,6 +5,7 @@
 @agent-stash/dsh-recall
 @agent-stash/dsh-autosuggest
 @agent-stash/dsh-stash-kit
+@agent-stash/dsh-skill-scout
 
 # 推荐的第三方插件
 dsh-context
