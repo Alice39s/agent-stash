@@ -103,7 +103,7 @@ def plugin_index(
             "--output", str(output.resolve()),
             "--cache", str(cache.resolve()),
             "--title", "Agent Stash",
-            "--description", "DeepSeek Harness bundles from Alice39s/agent-stash",
+            "--description", "Agent Stash bundles plus recommended third-party DSH plugins",
         ],
         cwd=dsh,
     )  # fmt: skip
