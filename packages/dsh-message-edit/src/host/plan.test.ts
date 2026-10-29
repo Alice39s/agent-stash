@@ -4,7 +4,16 @@ import { parseLogEvents } from "./dsh-read.ts";
 import { isConflictError } from "./errors.ts";
 import { closedTurns, type ClosedTurn } from "./history.ts";
 import { planOperation } from "./plan.ts";
-import { image, reasoning, ROUTE, text, turnsLog } from "./testing.ts";
+import {
+  image,
+  numbered,
+  reasoning,
+  ROUTE,
+  text,
+  turnDrafts,
+  turnsLog,
+  unansweredTurnDrafts,
+} from "./testing.ts";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const SESSION = "session-source";
@@ -21,6 +30,20 @@ const TURNS = closedTurns(
       { turn: 0, prompt: [text("问一"), image("img")], reply: [reasoning("想一"), text("答一")] },
       { turn: 1, reply: [text("提醒")] },
       { turn: 2, prompt: [text("问三")], reply: [text("答三")] },
+    ]),
+  ),
+);
+
+/** 回合 0（seq 0–6）正常结束；回合 1（seq 7–11）报错，只留下用户消息 seq 8。 */
+const FAILED_TURNS = closedTurns(
+  parseLogEvents(
+    SESSION,
+    numbered([
+      ...turnDrafts(4, { turn: 0, prompt: [text("问一")], reply: [text("答一")] }),
+      ...unansweredTurnDrafts(1, [text("问二"), image("img")], {
+        kind: "error",
+        error: { message: "400", code: "INVALID_REQUEST" },
+      }),
     ]),
   ),
 );
@@ -118,6 +141,32 @@ describe("edit plans", () => {
     expect(result.queuedPrompts).toEqual([[text("问三")]]);
   });
 
+  test("replay the edited prompt of a turn that ended without a reply", () => {
+    const result = planOperation(
+      {
+        action: "edit",
+        sessionId: SESSION,
+        eventSeq: 8,
+        blockIndex: 0,
+        text: "改二",
+        cascade: "truncate",
+      },
+      FAILED_TURNS,
+    );
+    expect(result).toMatchObject({
+      boundary: 6,
+      effect: {
+        targetTurn: 1,
+        targetEventSeq: 8,
+        blockKind: "user",
+        before: "问二",
+        after: "改二",
+      },
+      queuedPrompts: [[text("改二"), image("img")]],
+    });
+    expect(result.manualTurn).toBeUndefined();
+  });
+
   test("branch right after the previous turn for later turns", () => {
     const result = plan({
       action: "edit",
@@ -165,7 +214,7 @@ describe("reroll plans", () => {
     });
   });
 
-  test("skip trailing turns whose reply has no text", () => {
+  test("regenerate a trailing turn whose reply has no text and target its prompt", () => {
     const turns = closedTurns(
       parseLogEvents(
         SESSION,
@@ -175,16 +224,30 @@ describe("reroll plans", () => {
         ]),
       ),
     );
-    expect(planOperation({ action: "reroll", sessionId: SESSION }, turns).effect).toMatchObject({
-      targetTurn: 0,
-      targetEventSeq: 4,
+    expect(planOperation({ action: "reroll", sessionId: SESSION }, turns)).toMatchObject({
+      boundary: 6,
+      effect: { targetTurn: 1, targetEventSeq: 8 },
+      queuedPrompts: [[text("跑工具")]],
     });
   });
 
-  test("reject a session without a closed text reply", () => {
-    const error = conflictOf({ action: "reroll", sessionId: SESSION }, []);
-    expect(isConflictError(error)).toBe(true);
-    expect(error.message).toContain("没有可以重新生成");
+  test("regenerate a trailing turn that failed before replying", () => {
+    expect(planOperation({ action: "reroll", sessionId: SESSION }, FAILED_TURNS)).toMatchObject({
+      boundary: 6,
+      effect: { operation: "reroll", targetTurn: 1, targetEventSeq: 8 },
+      queuedPrompts: [[text("问二"), image("img")]],
+    });
+  });
+
+  test("reject a session without a closed user turn", () => {
+    const injectedOnly = closedTurns(
+      parseLogEvents(SESSION, turnsLog(4, [{ turn: 0, reply: [text("提醒")] }])),
+    );
+    for (const turns of [[], injectedOnly]) {
+      const error = conflictOf({ action: "reroll", sessionId: SESSION }, turns);
+      expect(isConflictError(error)).toBe(true);
+      expect(error.message).toContain("无法重新生成");
+    }
   });
 });
 
@@ -206,6 +269,18 @@ describe("retry plans", () => {
   test("replay the retried prompt and every later user prompt on preserve", () => {
     const result = plan({ action: "retry", sessionId: SESSION, turn: 0, cascade: "preserve" });
     expect(result.queuedPrompts).toEqual([[text("问一"), image("img")], [text("问三")]]);
+  });
+
+  test("replay the prompt of a turn that ended without a reply", () => {
+    const result = planOperation(
+      { action: "retry", sessionId: SESSION, turn: 1, cascade: "truncate" },
+      FAILED_TURNS,
+    );
+    expect(result).toMatchObject({
+      boundary: 6,
+      effect: { targetTurn: 1, targetEventSeq: 8 },
+      queuedPrompts: [[text("问二"), image("img")]],
+    });
   });
 
   test.each([1, 9])("reject turn %i that has no user input", (turn) => {

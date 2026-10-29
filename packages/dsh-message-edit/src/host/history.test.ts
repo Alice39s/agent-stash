@@ -8,7 +8,16 @@ import {
   retryableTurns,
   sessionPreset,
 } from "./history.ts";
-import { image, numbered, reasoning, ROUTE, text, turnDrafts, turnsLog } from "./testing.ts";
+import {
+  image,
+  numbered,
+  reasoning,
+  ROUTE,
+  text,
+  turnDrafts,
+  turnsLog,
+  unansweredTurnDrafts,
+} from "./testing.ts";
 
 function view(events: readonly DshSessionEvent[]) {
   return parseLogEvents("session-test", events);
@@ -113,6 +122,33 @@ describe("retryableTurns", () => {
     ]);
     expect(retryableTurns(closedTurns(view(events)))).toEqual([
       { turn: 0, userEventSeq: 1, preview: "第一行\n第二行", time: 1_001 },
+    ]);
+  });
+
+  test("keeps a stopped turn without a reply editable and retryable", () => {
+    const turns = closedTurns(
+      view(
+        numbered(
+          unansweredTurnDrafts(1, [text("写个例子")], {
+            kind: "aborted",
+            reason: { kind: "user" },
+          }),
+        ),
+      ),
+    );
+    expect(retryableTurns(turns)).toEqual([
+      { turn: 1, userEventSeq: 1, preview: "写个例子", time: 1_001 },
+    ]);
+    expect(editableMessages(turns)).toEqual([
+      {
+        key: "1:0",
+        turn: 1,
+        eventSeq: 1,
+        blockIndex: 0,
+        kind: "user",
+        text: "写个例子",
+        time: 1_001,
+      },
     ]);
   });
 });

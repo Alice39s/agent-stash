@@ -139,6 +139,19 @@ export const TIMELINE: MessageEditTimeline = {
   redoSessionIds: ["older-child", "newer-child"],
 };
 
+/** 在 `TIMELINE` 后面加上回合 4：用户发了消息，回合报错或被停止，没有回复。 */
+export const UNANSWERED_TIMELINE: MessageEditTimeline = {
+  ...TIMELINE,
+  messages: [
+    ...TIMELINE.messages,
+    block({ turn: 4, eventSeq: 31, blockIndex: 0, kind: "user", text: "Show an example" }),
+  ],
+  retryableTurns: [
+    ...TIMELINE.retryableTurns,
+    { turn: 4, userEventSeq: 31, preview: "Show an example", time: 1_031 },
+  ],
+};
+
 export const READY: MessageEditState = {
   status: "ready",
   error: null,

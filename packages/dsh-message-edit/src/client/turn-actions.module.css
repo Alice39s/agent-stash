@@ -1,0 +1,9 @@
+/* 回合末尾的动作行：行高与间距取自宿主 MessageIconActions `.actions`，
+   与上方内容的间距和左缩进取自 TurnTailNodeView `.actions`。 */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  margin: 4px 0 0 -6px;
+}

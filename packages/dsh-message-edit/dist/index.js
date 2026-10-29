@@ -1452,24 +1452,24 @@ function editPlan(operation, turns) {
 	if (assistant === void 0) throw conflictError(`会话 ${operation.sessionId} 的事件 ${String(operation.eventSeq)} 不是可编辑的消息`);
 	return editAssistantPlan(operation, turns, turnIndex, turn, assistant);
 }
-/** 重新生成最后一个带文本回复的已结束用户回合。 */
+/**
+* 按原输入重新生成最后一个由用户输入触发的已结束回合。回合报错或被停止、没有文本回复时也是它；
+* 效果指向回合里最后一条带文本或思考的助手消息，没有这样的消息时指向用户消息。
+*/
 function rerollPlan(operation, turns) {
-	for (const turn of turns.toReversed()) {
-		if (turn.user === void 0) continue;
-		const target = turn.assistants.findLast((event) => event.message.content.some(isTextualBlock));
-		if (target === void 0) continue;
-		return {
-			boundary: turn.startSeq - 1,
-			effect: newEffect({
-				operation: "reroll",
-				cascade: "truncate",
-				targetTurn: turn.turn,
-				targetEventSeq: target.seq
-			}),
-			queuedPrompts: [turn.user.message.content]
-		};
-	}
-	throw conflictError(`会话 ${operation.sessionId} 没有可以重新生成的已结束助手回复`);
+	const turn = turns.findLast((candidate) => candidate.user !== void 0);
+	if (turn?.user === void 0) throw conflictError(`会话 ${operation.sessionId} 没有由用户输入触发的已结束回合，无法重新生成`);
+	const reply = turn.assistants.findLast((event) => event.message.content.some(isTextualBlock));
+	return {
+		boundary: turn.startSeq - 1,
+		effect: newEffect({
+			operation: "reroll",
+			cascade: "truncate",
+			targetTurn: turn.turn,
+			targetEventSeq: (reply ?? turn.user).seq
+		}),
+		queuedPrompts: [turn.user.message.content]
+	};
 }
 /** 重试一个历史回合：截断时只重放它，保留时连同后续回合的用户输入一起重放。 */
 function retryPlan(operation, turns) {

@@ -1,4 +1,4 @@
-/* 消息动作行里的失败提示，取自宿主 MessageFeedbackActions `.failure`；单行，过长时省略，完整文字在 tooltip 里。 */
+/* 动作行里的失败提示，取自宿主 MessageFeedbackActions `.failure`；单行，过长时省略，完整文字在 tooltip 里。 */
 .failure {
   flex: 0 1 auto;
   min-width: 0;
