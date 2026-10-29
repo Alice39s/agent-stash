@@ -11,19 +11,19 @@ icon: Wand
 <Tabs items={['安装所有技能', '选择安装', '单个技能', 'DeepSeek Harness']}>
 <Tab value="安装所有技能">
 
-一次装上仓库里的全部技能，Agent 用本机检测到的那些。技能写进当前项目里的 Agent 目录，随项目提交：
+一次装上仓库里的全部技能。命令列出本机检测到的 Coding Agent，选好后把技能写进当前项目里对应的 Agent 目录，随项目提交：
 
 ```bash
-npx -y skills add Alice39s/agent-stash -s '*' -y
+npx -y skills add Alice39s/agent-stash -s '*'
 ```
 
 加 `-g` 装进用户目录的 `~/<agent>/skills/`，所有项目都能用：
 
 ```bash
-npx -y skills add Alice39s/agent-stash -s '*' -y -g
+npx -y skills add Alice39s/agent-stash -s '*' -g
 ```
 
-`-s '*'` 指定全部技能，`-y` 跳过确认。
+`-s '*'` 指定全部技能。
 
 </Tab>
 <Tab value="选择安装">
@@ -40,10 +40,10 @@ npx -y skills add Alice39s/agent-stash
 在仓库名后面用 `@` 接技能名：
 
 ```bash
-npx -y skills add Alice39s/agent-stash@code-styleguide -a claude-code -y
+npx -y skills add Alice39s/agent-stash@code-styleguide -a claude-code
 ```
 
-`-a` 指定 Agent，可选的名字见 [skills 命令行支持的 Agent](https://github.com/vercel-labs/skills/blob/main/docs/agents.md)；`-y` 跳过确认。
+`-a` 指定 Agent，可选的名字见 [skills 命令行支持的 Agent](https://github.com/vercel-labs/skills/blob/main/docs/agents.md)。
 
 </Tab>
 <Tab value="DeepSeek Harness">
@@ -51,7 +51,7 @@ npx -y skills add Alice39s/agent-stash@code-styleguide -a claude-code -y
 DSH 读取 `~/.agents/skills` 和项目里的 `.agents/skills`。skills 命令行没有单独的 DSH 选项，`-a codex` 装到的正是这两个目录，加 `-g` 装到用户目录：
 
 ```bash
-npx -y skills add Alice39s/agent-stash -g -a codex -y \
+npx -y skills add Alice39s/agent-stash -g -a codex \
   -s self-use-haiku-subagent self-use-sonnet-subagent self-use-luna-subagent self-use-dpsk-subagent
 ```
 

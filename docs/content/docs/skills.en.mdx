@@ -11,19 +11,19 @@ The skills are in the `skills/` directory of the repository. Install them with t
 <Tabs items={['All skills', 'Pick skills', 'One skill', 'DeepSeek Harness']}>
 <Tab value="All skills">
 
-Install every skill in the repository, targeting the coding agents detected on your machine. The skills go into the agent directories in the current project and are committed with it:
+Install every skill in the repository. The command lists the coding agents it detects on your machine and writes the skills into the directories of the agents you select in the current project, where they are committed with it:
 
 ```bash
-npx -y skills add Alice39s/agent-stash -s '*' -y
+npx -y skills add Alice39s/agent-stash -s '*'
 ```
 
 Add `-g` to install into `~/<agent>/skills/` in your user directory instead, so that every project can use the skills:
 
 ```bash
-npx -y skills add Alice39s/agent-stash -s '*' -y -g
+npx -y skills add Alice39s/agent-stash -s '*' -g
 ```
 
-`-s '*' selects every skill and `-y` skips the prompts.
+`-s '*'` selects every skill.
 
 </Tab>
 <Tab value="Pick skills">
@@ -40,10 +40,10 @@ The command lists the skills in the repository and the coding agents it detects 
 Append `@` and the skill name to the repository name:
 
 ```bash
-npx -y skills add Alice39s/agent-stash@code-styleguide -a claude-code -y
+npx -y skills add Alice39s/agent-stash@code-styleguide -a claude-code
 ```
 
-`-a` names the agent; see the [agents that the skills CLI supports](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) for the names. `-y` skips the prompts.
+`-a` names the agent; see the [agents that the skills CLI supports](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) for the names.
 
 </Tab>
 <Tab value="DeepSeek Harness">
@@ -51,7 +51,7 @@ npx -y skills add Alice39s/agent-stash@code-styleguide -a claude-code -y
 DSH reads `~/.agents/skills` and `.agents/skills` in the project. The skills CLI has no DSH option, but `-a codex` installs into these same directories. Add `-g` to install into your user directory:
 
 ```bash
-npx -y skills add Alice39s/agent-stash -g -a codex -y \
+npx -y skills add Alice39s/agent-stash -g -a codex \
   -s self-use-haiku-subagent self-use-sonnet-subagent self-use-luna-subagent self-use-dpsk-subagent
 ```
 
