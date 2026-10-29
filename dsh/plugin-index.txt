@@ -4,6 +4,7 @@
 @agent-stash/dsh-message-edit
 @agent-stash/dsh-recall
 @agent-stash/dsh-autosuggest
+@agent-stash/dsh-enhance
 @agent-stash/dsh-stash-kit
 @agent-stash/dsh-skill-scout
 
