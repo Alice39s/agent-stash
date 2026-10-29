@@ -1,0 +1,77 @@
+{
+  "name": "@agent-stash/dsh-skill-scout",
+  "version": "0.0.0",
+  "description": "Find reusable workflows in finished DeepSeek Harness sessions and suggest Agent Skills to review, save, and undo",
+  "keywords": [
+    "agent-skills",
+    "deepseek-harness",
+    "dsh-plugin",
+    "skill-suggestions"
+  ],
+  "homepage": "https://github.com/Alice39s/agent-stash/tree/main/packages/dsh-skill-scout#readme",
+  "bugs": "https://github.com/Alice39s/agent-stash/issues",
+  "license": "Apache-2.0",
+  "author": "Alice39s",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alice39s/agent-stash.git",
+    "directory": "packages/dsh-skill-scout"
+  },
+  "files": [
+    "dist",
+    "cordis.patch.yml",
+    "locale",
+    "icon.svg",
+    "LICENSE"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./client": "./dist/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "bundle": "tsdown"
+  },
+  "devDependencies": {
+    "@deepseek-ai/schemastery": "3.18.5",
+    "@types/react": "~18.3.31",
+    "@types/react-dom": "~18.3.7",
+    "@types/shell-quote": "^1.7.5",
+    "lightningcss": "^1.32.0",
+    "pathe": "^2.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "shell-quote": "^1.12.0",
+    "tsdown": "^0.23.1",
+    "valibot": "^1.5.0",
+    "vfile": "^6.0.3",
+    "vfile-matter": "^5.0.1",
+    "yaml": "^2.9.1"
+  },
+  "icon": "./icon.svg",
+  "engines": {
+    "dsh": ">=0.2.1-rc.3"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-api-remotes",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-plugin-manager",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  }
+}

@@ -1,0 +1,346 @@
+/* 详情正文：证据列表、Skill 预览与编辑、文件改动。只用宿主主题变量。 */
+.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0 0 12px;
+  background: var(--dsw-alias-bg-layer-2);
+}
+
+.panel {
+  min-width: 0;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.heading {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.why p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary);
+}
+
+.callout {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: var(--dsw-radius-lg);
+  background: var(--dsw-alias-interactive-bg-hover);
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.callout p {
+  margin: 0;
+}
+
+.note {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.caution {
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: var(--dsw-radius-md);
+  background: var(--dsw-alias-state-warn-tertiary);
+  color: var(--dsw-alias-state-warn-label);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.failure {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  color: var(--dsw-alias-state-error-label, var(--dsw-alias-state-warn-label));
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.failureDetail {
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 12px;
+  line-height: 18px;
+  overflow-wrap: anywhere;
+}
+
+/* 一个证据任务：编号、用户请求、结果与操作列表。 */
+.episode {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 0 0;
+  border-top: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.episodeHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.ref {
+  flex: none;
+  min-width: 24px;
+  padding: 1px 6px;
+  border-radius: var(--dsw-radius-xs);
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.episodeText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.goal {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--dsw-alias-label-primary);
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.path {
+  font-family: var(--dsw-font-family-mono, ui-monospace, monospace);
+  font-size: 11px;
+}
+
+.ops {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0 0 0 34px;
+  list-style: none;
+}
+
+.op {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: var(--dsw-radius-md);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.op[data-cited] {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.opGlyph {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.op[data-ok="false"] .opGlyph {
+  color: var(--dsw-alias-state-warn-label);
+}
+
+.opBody {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 0;
+}
+
+.opLabel {
+  min-width: 0;
+  font-family: var(--dsw-font-family-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--dsw-alias-label-primary);
+  overflow-wrap: anywhere;
+}
+
+.opLabel[data-kind="edit"] {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.opTags {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag {
+  padding: 0 6px;
+  border-radius: var(--dsw-radius-xs);
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-secondary);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.tag[data-cited] {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.opError {
+  flex-basis: 100%;
+  color: var(--dsw-alias-label-tertiary);
+  font-family: var(--dsw-font-family-mono, ui-monospace, monospace);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.opRef {
+  flex: none;
+  color: var(--dsw-alias-label-caption, var(--dsw-alias-label-tertiary));
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Skill 预览：frontmatter 的三项与正文。 */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 16px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+.facts dt {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.markdown {
+  padding: 4px 16px;
+  border-radius: var(--dsw-radius-lg);
+  background: var(--dsw-alias-bg-layer-1, var(--dsw-alias-bg-base));
+  box-shadow: 0 0 0 0.5px var(--dsw-alias-border-l2);
+}
+
+.editor {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: var(--dsw-radius-md);
+  background: var(--dsw-alias-bg-layer-1, var(--dsw-alias-bg-base));
+  box-shadow: 0 0 0 0.5px var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 13px;
+  line-height: 20px;
+  resize: vertical;
+}
+
+.input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1.5px var(--dsw-alias-state-business-primary);
+}
+
+.mono {
+  font-family: var(--dsw-font-family-mono, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* 按钮行：左侧次要操作，右侧保存位置与主操作。 */
+.spacer {
+  flex: 1;
+}
+
+.actionError {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--dsw-alias-state-error-label, var(--dsw-alias-state-warn-label));
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.written {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.writtenPath {
+  color: var(--dsw-alias-label-primary);
+  font-family: var(--dsw-font-family-mono, ui-monospace, monospace);
+  overflow-wrap: anywhere;
+}

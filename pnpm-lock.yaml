@@ -253,6 +253,51 @@ importers:
         specifier: ^1.5.0
         version: 1.5.0(typescript@7.0.2)
 
+  packages/dsh-skill-scout:
+    devDependencies:
+      '@deepseek-ai/schemastery':
+        specifier: 3.18.5
+        version: 3.18.5
+      '@types/react':
+        specifier: ~18.3.31
+        version: 18.3.31
+      '@types/react-dom':
+        specifier: ~18.3.7
+        version: 18.3.7(@types/react@18.3.31)
+      '@types/shell-quote':
+        specifier: ^1.7.5
+        version: 1.7.5
+      lightningcss:
+        specifier: ^1.32.0
+        version: 1.33.0
+      pathe:
+        specifier: ^2.0.3
+        version: 2.0.3
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
+      react-dom:
+        specifier: ^18.3.1
+        version: 18.3.1(react@18.3.1)
+      shell-quote:
+        specifier: ^1.12.0
+        version: 1.12.0
+      tsdown:
+        specifier: ^0.23.1
+        version: 0.23.1(typescript@7.0.2)
+      valibot:
+        specifier: ^1.5.0
+        version: 1.5.0(typescript@7.0.2)
+      vfile:
+        specifier: ^6.0.3
+        version: 6.0.3
+      vfile-matter:
+        specifier: ^5.0.1
+        version: 5.0.1
+      yaml:
+        specifier: ^2.9.1
+        version: 2.9.1
+
 packages:
 
   '@alloc/quick-lru@5.3.0':
@@ -1799,6 +1844,9 @@ packages:
 
   '@types/semver@7.8.0':
     resolution: {integrity: sha512-1mAINjtQCXXeLkJ9ehXkwOcBpqtLxiVtKhpUf83DdRNdQKV0iXZpaHYqRr7nj+wvxuJzoAmAwXI+sCNMv1CzLQ==}
+
+  '@types/shell-quote@1.7.5':
+    resolution: {integrity: sha512-+UE8GAGRPbJVQDdxi16dgadcBfQ+KG2vgZhV1+3A1XmHbmwcdwhCUwIdy+d3pAGrbvgRoVSjeI9vOWyq376Yzw==}
 
   '@types/unist@2.0.11':
     resolution: {integrity: sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==}
@@ -3379,6 +3427,10 @@ packages:
   shebang-regex@3.0.0:
     resolution: {integrity: sha512-7++dFhtcx3353uBaq8DDR4NuxBetBzC7ZQOhmTQInHEd6bSrXdiEyzCvG07Z44UYdLShWUyXt5M/yhz8ekcb1A==}
     engines: {node: '>=8'}
+
+  shell-quote@1.12.0:
+    resolution: {integrity: sha512-PcByqNyT/38F2kDNi006HAMRJaULuBzq/FOsw3qdZvX/GA9W/jamDaRskgHjubHiftXK5sIFxLNkvrXUwcof6Q==}
+    engines: {node: '>= 0.4'}
 
   shiki@4.5.0:
     resolution: {integrity: sha512-OcRW72ngQvc+MSVWBRIovC/BTW589iUE/Vxav7VeM4RcY9MUjqB+IR6ILG1k9nuW6LiG/nct9uma4/MBtnZbmQ==}
@@ -5033,6 +5085,8 @@ snapshots:
   '@types/retry@0.12.0': {}
 
   '@types/semver@7.8.0': {}
+
+  '@types/shell-quote@1.7.5': {}
 
   '@types/unist@2.0.11': {}
 
@@ -6939,6 +6993,8 @@ snapshots:
       shebang-regex: 3.0.0
 
   shebang-regex@3.0.0: {}
+
+  shell-quote@1.12.0: {}
 
   shiki@4.5.0:
     dependencies:

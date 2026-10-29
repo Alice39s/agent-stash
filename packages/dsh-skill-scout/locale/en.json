@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Skill Scout",
+    "description": "Watches finished sessions for workflows that repeat or fixes that were verified, and suggests Agent Skills you can review, save, and undo."
+  }
+}

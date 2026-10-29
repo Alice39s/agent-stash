@@ -10,7 +10,7 @@ import { transform } from "lightningcss";
 import { basename, dirname, relative, resolve } from "pathe";
 import type { UserConfig } from "tsdown";
 
-/** DSH 0.1.0-rc.3 与 0.2.1-rc.3 的模块表都提供的平台模块；bundle 只能 require 这些。 */
+/** DSH 0.1.0-rc.3 与 0.2.1-rc.3 的模块表都提供的平台模块；默认 bundle 只能 require 这些。 */
 const PLATFORM_MODULES = ["react", "react/jsx-runtime"];
 
 /** 包一层虚拟 id，避开 tsdown 自带的 CSS 流水线；后缀不能以 `.css` 结尾。 */
@@ -47,8 +47,16 @@ async function cssModule(id: string, file: string): Promise<string> {
   ].join("\n");
 }
 
-/** 一个浏览器插件 bundle 的 tsdown 配置；`id` 是包名，也是模块表里的工厂 id。 */
-export function clientBundle(id: string, entry: string): UserConfig {
+/**
+ * 一个浏览器插件 bundle 的 tsdown 配置；`id` 是包名，也是模块表里的工厂 id。
+ * `platformModules` 是 bundle 从模块表 `require` 的模块：只支持 DSH 0.2.1 及以上的插件可以加上
+ * `react-dom` 与 `@deepseek-ai/dsh-client-ui-primitives`，其余 `@deepseek-ai/*` 一律不得在运行时引用。
+ */
+export function clientBundle(
+  id: string,
+  entry: string,
+  platformModules: readonly string[] = PLATFORM_MODULES,
+): UserConfig {
   return {
     name: `${id}/client`,
     entry: { client: entry },
@@ -61,14 +69,14 @@ export function clientBundle(id: string, entry: string): UserConfig {
     clean: false,
     fixedExtension: false,
     // 除平台模块外一律打包；包的依赖都写在 devDependencies，tsdown 默认就会打包它们。
-    deps: { neverBundle: PLATFORM_MODULES },
+    deps: { neverBundle: [...platformModules] },
     define: { "process.env.NODE_ENV": JSON.stringify("production") },
     plugins: [
       {
         // 跨插件的值导入会内联出第二份运行时实例，或请求模块表里没有的模块；插件之间只通过 Cordis Service 协作。
         name: "dsh-client-purity",
         resolveId(source: string) {
-          if (source.startsWith("@deepseek-ai/")) {
+          if (source.startsWith("@deepseek-ai/") && !platformModules.includes(source)) {
             throw new Error(`${id}: the client bundle must not import ${source} at runtime`);
           }
           return null;
