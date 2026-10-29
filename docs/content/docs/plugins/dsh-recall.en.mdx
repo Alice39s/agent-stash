@@ -21,7 +21,9 @@ icon: History
 | <Kbd>Tab</Kbd>                      | Keeps the current prompt and closes the panel so you can keep editing |
 | <Kbd>Enter</Kbd>                    | Sends the current prompt directly                                     |
 
-The panel groups prompts by date. You can also click any row to put it in the input box. When the `/` or `@` menu is open, the arrow keys still control the menu.
+The panel groups prompts by date. You can also click any row to put it in the input box. When the `/` or `@` menu is open, the arrow keys still control the menu. When the draft contains a reference, <Kbd>↑</Kbd> does not open the panel.
+
+While the panel is open, pressing any other key or clicking outside the input box closes the panel and keeps the current prompt. The key you pressed types as usual.
 
 ## Where the history comes from
 
@@ -52,11 +54,11 @@ dsh plugin --profile web add @agent-stash/dsh-recall
 </Tabs>
 
 <Callout type="info" title="dsh-stash-kit installs automatically">
-  The plugin interface builds on [dsh-stash-kit](./dsh-stash-kit.mdx). On first start, the plugin
-  installs the kit from npm through the plugin manager and enables it. If the profile already has
-  the kit installed but not enabled, the plugin enables it. Until the kit is ready, the Plugins page
-  shows Waiting for dependencies for the browser half of the plugin, and the prompt history route
-  works as usual.
+  The plugin interface builds on [dsh-stash-kit](./dsh-stash-kit.mdx). Each time it starts, the
+  plugin checks the kit through the plugin manager. It installs the kit from npm and enables it when
+  the kit is missing, and enables it again when it is disabled. Until the kit is ready, the Plugins
+  page shows Waiting for dependencies for the browser half of the plugin, and the prompt history
+  route works as usual.
 </Callout>
 
-Change the frosted glass, motion, row height and key hints of the panel in one place on the [dsh-stash-kit settings page](./dsh-stash-kit.mdx#settings).
+Change the frosted glass, motion, highlight, row height and key hints of the panel in one place on the [dsh-stash-kit settings page](./dsh-stash-kit.mdx#settings).

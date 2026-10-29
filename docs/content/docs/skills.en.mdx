@@ -4,7 +4,7 @@ description: Install the style guides and subagent skills into your coding agent
 icon: Wand
 ---
 
-The skills are in the `skills/` directory of the repository. Install them with the `skills` CLI from [skills.sh](https://skills.sh/Alice39s/agent-stash); it needs Node.js 22.20 or later.
+The skills are in the `skills/` directory of the repository. Install them with the `skills` CLI from [skills.sh](https://skills.sh/Alice39s/agent-stash), which needs Node.js 22.20 or later.
 
 ## Install
 
@@ -43,7 +43,7 @@ Append `@` and the skill name to the repository name:
 npx -y skills add Alice39s/agent-stash@code-styleguide -a claude-code
 ```
 
-`-a` names the agent; see the [agents that the skills CLI supports](https://github.com/vercel-labs/skills/blob/main/docs/agents.md) for the names.
+`-a` names the agent. For the names, see the [agents that the skills CLI supports](https://github.com/vercel-labs/skills/blob/main/docs/agents.md).
 
 </Tab>
 <Tab value="DeepSeek Harness">
@@ -68,7 +68,7 @@ Add `--list` to list the skills in the repository without installing them. After
 
 ## `code-styleguide`
 
-The included style guides, synced daily from upstream:
+The included style guides. `.github/workflows/sync-code-styleguide.yml` checks upstream daily and opens a sync PR when they change:
 
 - All guides listed in the [google/styleguide](https://github.com/google/styleguide) README (CC-BY-3.0)
 - [Angular style guide](https://angular.dev/style-guide) (CC-BY-4.0)

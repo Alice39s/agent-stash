@@ -4,7 +4,7 @@ description: See what each plugin and skill does and which agents it supports be
 icon: BookOpen
 ---
 
-Agent Stash is a set of Agent Skills and plugins for personal use. It adds prompt history and autocompletion to the input box of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH) and gives Pi, DSH, Cline, Grok Build, goose and Aider the same `/init` command. It also includes style guides and skills that delegate tasks to subagents.
+Agent Stash is a set of Agent Skills and plugins for personal use. It adds prompt history, autocompletion and draft rewriting to the input box of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH), gives Pi, DSH, Cline, Grok Build and goose the same `/init` command, and runs Aider with the same presets. It also includes style guides and skills that delegate tasks to subagents.
 
 <Showcase
   name="autosuggest-en"
@@ -14,21 +14,22 @@ Agent Stash is a set of Agent Skills and plugins for personal use. It adds promp
 
 ## Plugins
 
-| Name                                             | Install source                  | Supported agents                         | What it does                                                                                              |
-| ------------------------------------------------ | ------------------------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [dsh-recall](./plugins/dsh-recall.mdx)           | `@agent-stash/dsh-recall`       | DSH                                      | Press ↑↓ in the input box to browse the prompts sent in the current session                               |
-| [dsh-autosuggest](./plugins/dsh-autosuggest.mdx) | `@agent-stash/dsh-autosuggest`  | DSH                                      | Type the start of a past prompt and gray text completes the rest. Press Tab or → to fill it in            |
-| [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)     | `@agent-stash/dsh-stash-kit`    | DSH                                      | The panel, motion and appearance settings that the two plugins above share. They install it automatically |
-| [Message edit](./plugins/dsh-message-edit.mdx)   | `@agent-stash/dsh-message-edit` | DSH                                      | Edit messages, regenerate replies or retry turns. Each change opens a new session version                 |
-| [Skill Scout](./plugins/dsh-skill-scout.mdx)     | `@agent-stash/dsh-skill-scout`  | DSH                                      | Finds reusable workflows in finished sessions and saves them as Skills after review                       |
-| [/init](./plugins/init.mdx)                      | `@agent-stash/init`             | Pi, DSH, Cline, Grok Build, goose, Aider | Analyzes the project with the `/init` prompt of another coding agent and writes `AGENTS.md`               |
+| Name                                             | Install source                  | Supported agents                         | What it does                                                                                                                    |
+| ------------------------------------------------ | ------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| [dsh-recall](./plugins/dsh-recall.mdx)           | `@agent-stash/dsh-recall`       | DSH                                      | Press ↑↓ in the input box to browse the prompts sent in the current session                                                     |
+| [dsh-autosuggest](./plugins/dsh-autosuggest.mdx) | `@agent-stash/dsh-autosuggest`  | DSH                                      | Type the start of a past prompt and gray text completes the rest. Press Tab or → to fill it in                                  |
+| [dsh-enhance](./plugins/dsh-enhance.mdx)         | `@agent-stash/dsh-enhance`      | DSH                                      | A button beside the send button rewrites the draft into a clearer prompt. You can undo it                                       |
+| [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)     | `@agent-stash/dsh-stash-kit`    | DSH                                      | The panel, motion and appearance settings that dsh-recall, dsh-autosuggest and dsh-enhance share. They install it automatically |
+| [Message edit](./plugins/dsh-message-edit.mdx)   | `@agent-stash/dsh-message-edit` | DSH                                      | Edit messages, regenerate replies or retry turns. Each change opens a new session version                                       |
+| [Skill Scout](./plugins/dsh-skill-scout.mdx)     | `@agent-stash/dsh-skill-scout`  | DSH                                      | Finds reusable workflows in finished sessions and saves them as Skills after review                                             |
+| [/init](./plugins/init.mdx)                      | `@agent-stash/init`             | Pi, DSH, Cline, Grok Build, goose, Aider | Analyzes the project with the `/init` prompt of another coding agent and writes `AGENTS.md`                                     |
 
 ## Skills
 
-| Name                                                                | What it does                                                                |
-| ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| [`code-styleguide`](./skills.mdx#code-styleguide)                   | Google, Angular and Android Kotlin style guides, synced daily from upstream |
-| [`self-use-<model>-subagent`](./skills.mdx#self-use-model-subagent) | Delegates tasks in DSH to a subagent that runs a given model                |
+| Name                                                                | What it does                                                                                                      |
+| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| [`code-styleguide`](./skills.mdx#code-styleguide)                   | Google, Angular and Android Kotlin style guides. A daily job checks upstream and opens a sync PR when they change |
+| [`self-use-<model>-subagent`](./skills.mdx#self-use-model-subagent) | Delegates tasks in DSH to a subagent that runs a given model                                                      |
 
 Install the skills with `npx -y skills add Alice39s/agent-stash`. See the [Skills](./skills.mdx#install) page for details.
 
@@ -52,6 +53,12 @@ Install the skills with `npx -y skills add Alice39s/agent-stash`. See the [Skill
     description="Prefix completion across sessions. Gray text shows the rest."
     href="./plugins/dsh-autosuggest.mdx"
     icon={<Sparkles />}
+  />
+  <Card
+    title="dsh-enhance"
+    description="Rewrite the draft into a clearer prompt. You can undo it."
+    href="./plugins/dsh-enhance.mdx"
+    icon={<WandSparkles />}
   />
   <Card
     title="dsh-stash-kit"

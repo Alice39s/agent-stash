@@ -21,11 +21,13 @@ icon: History
 | <Kbd>Tab</Kbd>             | 保留当前这条，关闭面板继续编辑             |
 | <Kbd>Enter</Kbd>           | 直接发送当前这条                           |
 
-面板按日期分组，点任意一行也能把它放进输入框。`/`、`@` 菜单打开时方向键仍归菜单使用。
+面板按日期分组，点任意一行也能把它放进输入框。`/`、`@` 菜单打开时方向键仍归菜单使用。草稿里有引用块时 <Kbd>↑</Kbd> 不打开面板。
+
+面板打开时按其他键或点输入框以外的位置，面板关闭，输入框保留当前这条，按下的键照常输入。
 
 ## 历史从哪里来
 
-历史只包含当前会话里亲手发送的 Prompt，按发送时间排列。插件的 Host 半部注册只读路由 `/dsh-recall/prompts`，从会话日志里取出这些 Prompt，经 DSH 的连接校验后返回；切换会话后面板随之换成新会话的历史。
+历史只包含当前会话里亲手发送的 Prompt，按发送时间排列。插件的 Host 半部注册只读路由 `/dsh-recall/prompts`，从会话日志里取出这些 Prompt，经 DSH 的连接校验后返回。切换会话后，面板随之换成新会话的历史。
 
 ## 安装
 
@@ -52,10 +54,10 @@ dsh plugin --profile web add @agent-stash/dsh-recall
 </Tabs>
 
 <Callout type="info" title="自动安装 dsh-stash-kit">
-  插件的界面建立在 [dsh-stash-kit](./dsh-stash-kit.mdx) 上，第一次启动时通过插件管理器从 npm
-  自动安装并启用它；profile
-  里已经装了框架但没有启用时，插件会把它启用。框架就绪之前，「插件」页里插件的浏览器半部显示「等待依赖」，Prompt
+  插件的界面建立在 [dsh-stash-kit](./dsh-stash-kit.mdx)
+  上。每次启动时，插件通过插件管理器检查它：没有安装就从 npm
+  安装并启用，被停用就重新启用。框架就绪之前，「插件」页里插件的浏览器半部显示「等待依赖」，Prompt
   历史路由照常工作。
 </Callout>
 
-面板的毛玻璃、动画、行高与按键提示在 [dsh-stash-kit 的配置页](./dsh-stash-kit.mdx#配置项)统一修改。
+面板的毛玻璃、动画、高亮移动、行高与按键提示在 [dsh-stash-kit 的配置页](./dsh-stash-kit.mdx#配置项)统一修改。

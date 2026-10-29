@@ -74,7 +74,7 @@ DSH 的 `/` 菜单里，`/init` 排在「指令」区，标题是「初始化」
 
 <Showcase
   name="init"
-  alt="指针点击新会话的输入框，输入 / 打开指令菜单，接着输入 init，菜单只剩「初始化」一行；回车打开预设列表，Codex CLI 打勾并高亮；输入 kimi 后只剩 Kimi Code CLI，按回车执行"
+  alt="指针点击新会话的输入框，输入 / 打开指令菜单，接着输入 init，菜单只剩「初始化」一行。回车打开预设列表，Codex CLI 打勾并高亮。输入 kimi 后只剩 Kimi Code CLI，按回车执行"
   caption="DSH 里在 / 菜单选「初始化」打开预设列表，输入文字筛选，回车执行"
 />
 
@@ -104,7 +104,7 @@ DSH 的 `/` 菜单里，`/init` 排在「指令」区，标题是「初始化」
 除 `copilot` 与 `claude-code-init-new` 外，所有预设都输出 `AGENTS.md`。
 
 - `copilot` 沿用 VS Code 上游的做法：优先写 `AGENTS.md`，项目里已有 `AGENTS.md` 或 `.github/copilot-instructions.md` 时更新已有的那个文件，还可能新建技能和自定义 Agent。
-- `claude-code-init-new` 先询问要设置什么：可以写项目的 `AGENTS.md`、个人的 `CLAUDE.local.md` 或两者都写，还可能在 `.claude/skills/` 下新建技能、在 `.claude/settings.json` 里加 hook。
+- `claude-code-init-new` 先询问要设置什么：可以写项目的 `AGENTS.md`、个人的 `CLAUDE.local.md` 或两者都写，还可能在 `.claude/skills/` 下新建技能，在 `.claude/settings.json`（项目）或 `.claude/settings.local.json`（个人）里加 hook。
 
 ## 额外指令与占位符
 
@@ -118,12 +118,12 @@ DSH 的 `/` 菜单里，`/init` 排在「指令」区，标题是「初始化」
 
 ## 配置
 
-| Agent                                            | 配置文件                                                                                                     |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Pi                                               | `~/.pi/agent/agent-stash/init.json`，然后是 `<项目根目录>/.pi/agent-stash/init.json`（仅在项目受信任时读取） |
-| DSH                                              | `$DSH_HOME/agent-stash/init.json`（默认 `~/.dsh/agent-stash/init.json`）                                     |
-| Cline                                            | `$CLINE_DIR/agent-stash/init.json`（默认 `~/.cline/agent-stash/init.json`）                                  |
-| `agent-stash` 命令行（Grok Build、goose、Aider） | `$XDG_CONFIG_HOME/agent-stash/init.json`（默认 `~/.config/agent-stash/init.json`）                           |
+| Agent                                            | 配置文件                                                                                                        |
+| ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------- |
+| Pi                                               | `~/.pi/agent/agent-stash/init.json`，然后是 `<Pi 的当前目录>/.pi/agent-stash/init.json`（仅在项目受信任时读取） |
+| DSH                                              | `$DSH_HOME/agent-stash/init.json`（默认 `~/.dsh/agent-stash/init.json`）                                        |
+| Cline                                            | `$CLINE_DIR/agent-stash/init.json`（默认 `~/.cline/agent-stash/init.json`）                                     |
+| `agent-stash` 命令行（Grok Build、goose、Aider） | `$XDG_CONFIG_HOME/agent-stash/init.json`（默认 `~/.config/agent-stash/init.json`）                              |
 
 Pi 设置了 `PI_CODING_AGENT_DIR` 时，第一个文件改为 `$PI_CODING_AGENT_DIR/agent-stash/init.json`。
 
