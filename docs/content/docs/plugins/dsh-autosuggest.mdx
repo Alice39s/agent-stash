@@ -6,7 +6,7 @@ icon: Sparkles
 
 <Showcase
   name="autosuggest"
-  alt="指针点击输入框后输入 The，上方列出三条来自 Test Session 2 的匹配，光标后出现灰字；按两次 ↓ 后按 Tab，第三条的完整文本填入输入框"
+  alt="指针点击输入框后输入 The，上方列出三条来自 Test Session 2 的匹配，光标后出现灰字。按两次 ↓ 后按 Tab，第三条的完整文本填入输入框"
   caption="输入 The 出现三条建议，↓ 切换，Tab 填入高亮的那条"
 />
 
@@ -18,12 +18,15 @@ icon: Sparkles
 | <Keys keys={['↑', '↓']} />   | 有多条匹配时切换           |
 | <Kbd>Esc</Kbd>               | 收起建议，改动草稿后再出现 |
 
+点任意一行也能把它填入输入框。
+
 ## 匹配规则
 
 - 输入的内容是某条历史 Prompt 的开头（区分大小写）时，光标后以灰字显示剩余部分，输入框上方列出最多五条匹配，标出来源会话与日期。
-- 历史来自所有会话里最近发过 Prompt 的 50 个，按时间倒序，相同文本只保留最新一条。
+- 建议只在光标位于草稿末尾时出现。输入法组字、`/` 或 `@` 菜单打开、草稿里有引用块时不出现。
+- 历史取自最近活跃的 50 个顶层会话（子代理会话不计入），按时间倒序，相同文本只保留最新一条，最多 500 条。
 - 只有亲手输入才会出现建议，[dsh-recall](./dsh-recall.mdx) 放进输入框的内容不会触发。
-- 沿着建议继续输入时灰字不重播；换成另一条建议时，灰字按 [补全灰字](./dsh-stash-kit.mdx#配置项) 的设置重新出现。
+- 沿着建议继续输入时灰字不重播。换成另一条建议时，灰字按 [补全灰字](./dsh-stash-kit.mdx#配置项) 的设置重新出现。
 
 插件的 Host 半部注册只读路由 `/dsh-autosuggest/prompts`，从会话日志里取出用户亲手发送的 Prompt，经 DSH 的连接校验后返回。
 
@@ -52,6 +55,6 @@ dsh plugin --profile web add @agent-stash/dsh-autosuggest
 </Tabs>
 
 <Callout type="info" title="自动安装 dsh-stash-kit">
-  和 [dsh-recall](./dsh-recall.mdx) 一样，第一次启动时会从 npm 自动安装并启用
-  [dsh-stash-kit](./dsh-stash-kit.mdx)。
+  和 [dsh-recall](./dsh-recall.mdx) 一样，每次启动时检查
+  [dsh-stash-kit](./dsh-stash-kit.mdx)：没有安装就从 npm 安装并启用，被停用就重新启用。
 </Callout>

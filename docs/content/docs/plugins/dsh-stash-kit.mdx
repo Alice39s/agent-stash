@@ -1,6 +1,6 @@
 ---
 title: dsh-stash-kit
-description: 调 dsh-recall 和 dsh-autosuggest 的面板、灰字与动画，在配置页里改。
+description: 在一个配置页里设置 dsh-recall、dsh-autosuggest 与 dsh-enhance 共用的面板外观、补全灰字与动画。
 icon: SwatchBook
 ---
 
@@ -10,7 +10,7 @@ icon: SwatchBook
   caption="配置页顶部的预览随设置实时变化，点重播再看一遍动画"
 />
 
-Agent Stash 框架（`dsh-stash-kit`）的浏览器半部提供 `stashKit` 服务，[dsh-recall](./dsh-recall.mdx) 与 [dsh-autosuggest](./dsh-autosuggest.mdx) 用它渲染面板和灰字；Host 半部持有外观配置，修改一次，所有插件同时生效。
+Agent Stash 框架（`dsh-stash-kit`）的浏览器半部提供 `stashKit` 服务。[dsh-recall](./dsh-recall.mdx) 与 [dsh-autosuggest](./dsh-autosuggest.mdx) 用它渲染面板和灰字，[dsh-enhance](./dsh-enhance.mdx) 的按钮动画和改写结果写回输入框的动画跟随它的「动画」设置。Host 半部持有外观配置，修改一次，所有插件同时生效。
 
 面板与 DSH 自带的 `/` 菜单使用同一套几何：离输入框 4px，圆角与内边距一致，内容左边线对齐输入框的文字列。底色完全不透明，默认再加一层背景模糊。
 
@@ -51,11 +51,11 @@ Agent Stash 框架（`dsh-stash-kit`）的浏览器半部提供 `stashKit` 服�
 
 ## 动画
 
-- 灵动：面板从输入框方向浮起，由模糊变清晰，各行从贴近输入框的一行起依次出现；关闭时向下淡出。用 <Kbd>↑</Kbd> 回溯时，新草稿从翻看的方向滑入输入框。
+- 灵动：面板从输入框方向浮起，由模糊变清晰，各行从贴近输入框的一行起依次出现，关闭时向下淡出。用 <Keys keys={['↑', '↓']} /> 翻看历史或点选一行时，新草稿从翻看的方向滑入输入框。还原草稿，或者 dsh-enhance 写回、撤销改写时，新草稿原地由模糊变清晰。
 - 轻柔：面板只做短淡入淡出，草稿切换不播放动画。
-- 关闭：面板和灰字都直接出现、直接消失。
-- 补全灰字的「波浪」用一道渐隐遮罩从左向右扫出剩余文字；「淡入」让剩余文字整体淡入。
-- 系统开启「减少动态效果」时，面板只保留淡入淡出；各行依次出现、高亮滑动和草稿切换的动画都去掉，补全灰字直接显示。
+- 关闭：面板和灰字直接出现、直接消失，高亮移动也不播放滑动。
+- 补全灰字的「波浪」用一道渐隐遮罩从左向右扫出剩余文字，「淡入」让剩余文字整体淡入。
+- 系统开启「减少动态效果」时，面板只保留淡入淡出。各行依次出现、高亮滑动和草稿切换的动画都去掉，补全灰字直接显示。
 
 ## 在 profile 里配置
 
@@ -70,6 +70,8 @@ Agent Stash 框架（`dsh-stash-kit`）的浏览器半部提供 `stashKit` 服�
 ```
 
 ## 单独安装
+
+需要 DSH 0.2.1-alpha.4 或更新的版本。
 
 <Tabs items={['插件市场', '桌面版', '命令行']}>
 <Tab value="插件市场">
@@ -92,5 +94,6 @@ dsh plugin --profile web add @agent-stash/dsh-stash-kit
 </Tabs>
 
 <Callout type="info" title="停用框架">
-  停用框架后，依赖它的插件会停在「等待依赖」；再次启用这些插件时，框架会被重新启用。
+  停用框架后，依赖它的插件的浏览器半部停在「等待依赖」，Host 路由照常工作。DSH
+  下次启动或这些插件被重新启用时，它们会把框架重新启用。
 </Callout>

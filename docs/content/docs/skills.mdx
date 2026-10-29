@@ -32,7 +32,7 @@ npx -y skills add Alice39s/agent-stash -s '*' -g
 npx -y skills add Alice39s/agent-stash
 ```
 
-命令列出仓库里的技能和本机检测到的 Coding Agent，选好后装进当前项目；加 `-g` 则装到用户目录，所有项目都能用。
+命令列出仓库里的技能和本机检测到的 Coding Agent，选好后装进当前项目。加 `-g` 则装到用户目录，所有项目都能用。
 
 </Tab>
 <Tab value="单个技能">
@@ -68,7 +68,7 @@ npx -y skills add Alice39s/agent-stash -g -a codex \
 
 ## `code-styleguide`
 
-收录的风格指南，每天从上游同步：
+收录的风格指南。`.github/workflows/sync-code-styleguide.yml` 每天检查上游，有更新时开一个同步 PR：
 
 - [google/styleguide](https://github.com/google/styleguide) README 列出的全部指南（CC-BY-3.0）
 - [Angular 风格指南](https://angular.dev/style-guide)（CC-BY-4.0）

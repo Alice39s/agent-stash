@@ -104,7 +104,7 @@ Presets maintained by hand:
 All presets except `copilot` and `claude-code-init-new` write `AGENTS.md`.
 
 - `copilot` keeps the upstream VS Code behavior: it prefers `AGENTS.md`, updates an existing `AGENTS.md` or `.github/copilot-instructions.md` instead of creating a new file, and can also create skills and custom agents.
-- `claude-code-init-new` first asks what to set up. It can write the project `AGENTS.md`, a personal `CLAUDE.local.md`, or both. It can also create skills under `.claude/skills/` and add hooks to `.claude/settings.json`.
+- `claude-code-init-new` first asks what to set up. It can write the project `AGENTS.md`, a personal `CLAUDE.local.md`, or both. It can also create skills under `.claude/skills/` and add hooks to `.claude/settings.json` (project) or `.claude/settings.local.json` (personal).
 
 ## Extra instructions and placeholders
 
@@ -118,12 +118,12 @@ If the template has no `$ARGUMENTS`, the extra instructions are appended to a `#
 
 ## Configuration
 
-| Agent                                        | Config file                                                                                                                  |
-| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
-| Pi                                           | `~/.pi/agent/agent-stash/init.json`, then `<project-root>/.pi/agent-stash/init.json` (read only when the project is trusted) |
-| DSH                                          | `$DSH_HOME/agent-stash/init.json` (default `~/.dsh/agent-stash/init.json`)                                                   |
-| Cline                                        | `$CLINE_DIR/agent-stash/init.json` (default `~/.cline/agent-stash/init.json`)                                                |
-| `agent-stash` CLI (Grok Build, goose, Aider) | `$XDG_CONFIG_HOME/agent-stash/init.json` (default `~/.config/agent-stash/init.json`)                                         |
+| Agent                                        | Config file                                                                                                                          |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Pi                                           | `~/.pi/agent/agent-stash/init.json`, then `<Pi working directory>/.pi/agent-stash/init.json` (read only when the project is trusted) |
+| DSH                                          | `$DSH_HOME/agent-stash/init.json` (default `~/.dsh/agent-stash/init.json`)                                                           |
+| Cline                                        | `$CLINE_DIR/agent-stash/init.json` (default `~/.cline/agent-stash/init.json`)                                                        |
+| `agent-stash` CLI (Grok Build, goose, Aider) | `$XDG_CONFIG_HOME/agent-stash/init.json` (default `~/.config/agent-stash/init.json`)                                                 |
 
 When `PI_CODING_AGENT_DIR` is set for Pi, the first file is `$PI_CODING_AGENT_DIR/agent-stash/init.json` instead.
 

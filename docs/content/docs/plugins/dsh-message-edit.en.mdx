@@ -1,6 +1,6 @@
 ---
 title: Message edit
-description: Edit a message or reply, retry a turn, and switch back to the previous version.
+description: Edit a message or reply, or retry a turn. Each change opens a new version, and you can switch back to the original.
 icon: Pencil
 ---
 
@@ -14,9 +14,9 @@ icon: Pencil
 
 ## Usage
 
-- Timeline view: the view tabs below the session title get a Timeline tab. The left side lists the editable messages, thoughts and replies by turn, and you can retry every turn. The right side is the version tree; click a version to switch to it. In the toolbar, choose whether the later turns are dropped or replayed with their original input when you change an earlier turn.
+- Timeline view: the view tabs below the session title get a Timeline tab. The left side lists messages, reasoning and replies by turn, and turns started by a user message can be edited and retried. The right side is the version tree. Click a version to switch to it. In the toolbar, choose whether the later turns are dropped or replayed with their original input when you change an earlier turn.
 - Title bar: switch between the previous and the next version, or regenerate the last reply.
-- Message actions: each finished assistant message has Edit and Retry buttons below it. Edit changes the user message of that turn, or the thoughts or reply of that message.
+- Message actions: in turns started by a user message, each finished assistant message has Edit and Retry turn buttons below it. Edit changes the user message of that turn, or the reasoning or reply of that message. When later turns exist, the dialog lets you drop or replay them (Drop by default). Retry here drops the later turns.
 
 <Showcase
   name="message-edit-timeline-en"
@@ -24,7 +24,7 @@ icon: Pencil
   caption="The Timeline view: edit and retry by turn on the left, and see which change produced each version in the tree on the right"
 />
 
-Changing a user message or retrying makes the model generate the turn again. Changing only the assistant's thoughts or reply does not call the model; the new version uses the edited text as it is.
+Changing a user message or retrying makes the model generate the turn again. Changing only the assistant's reasoning or reply does not call the model. The new version uses the edited text as it is.
 
 ## Data
 

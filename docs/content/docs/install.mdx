@@ -34,7 +34,7 @@ https://alice39s.github.io/agent-stash/index.json
 </Step>
 <Step>
 
-在「发现」页浏览索引里的插件，选需要的安装。[dsh-stash-kit](./plugins/dsh-stash-kit.mdx) 会随 dsh-recall 与 dsh-autosuggest 自动安装，不用单独选。
+在「发现」页浏览索引里的插件，选需要的安装。[dsh-stash-kit](./plugins/dsh-stash-kit.mdx) 会随 dsh-recall、dsh-autosuggest 与 dsh-enhance 自动安装，不用单独选。
 
 </Step>
 </Steps>
@@ -43,7 +43,7 @@ https://alice39s.github.io/agent-stash/index.json
 
 除了 Agent Stash 自己的插件，索引还收录两个推荐的第三方插件：
 
-- [dsh-context](https://github.com/bowenliang123/dsh-context) 用面板和 `/context` 命令展示会话上下文的组成与变化；
+- [dsh-context](https://github.com/bowenliang123/dsh-context) 用面板和 `/context` 命令展示会话上下文的组成与变化。
 - [dsh-whale-widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) 在 Web 界面右下角显示 DeepSeek 余额、今日用量和每轮消耗。
 
 ### 手动安装
@@ -68,6 +68,7 @@ https://alice39s.github.io/agent-stash/index.json
 @agent-stash/dsh-message-edit
 @agent-stash/dsh-recall
 @agent-stash/dsh-autosuggest
+@agent-stash/dsh-enhance
 @agent-stash/dsh-skill-scout
 ```
 
@@ -84,6 +85,7 @@ dsh plugin --profile web add @agent-stash/init
 dsh plugin --profile web add @agent-stash/dsh-message-edit
 dsh plugin --profile web add @agent-stash/dsh-recall
 dsh plugin --profile web add @agent-stash/dsh-autosuggest
+dsh plugin --profile web add @agent-stash/dsh-enhance
 dsh plugin --profile web add @agent-stash/dsh-skill-scout
 ```
 
@@ -92,7 +94,7 @@ dsh plugin --profile web add @agent-stash/dsh-skill-scout
 
 npm 包由 GitHub Actions 经 npm trusted publishing 发布，带 provenance。也可以装 `main` 上的最新版本 `github:Alice39s/agent-stash`（只含 `/init`）。
 
-`dsh-recall` 与 `dsh-autosuggest` 第一次启动时会从 npm 自动安装并启用 [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)。三个插件都需要 DSH 0.2.1-alpha.4 或更新的版本，[dsh-skill-scout](./plugins/dsh-skill-scout.mdx) 需要 0.2.1-rc.3 或更新的版本。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
+`dsh-recall`、`dsh-autosuggest` 与 `dsh-enhance` 启动时会从 npm 自动安装并启用 [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)。dsh-recall、dsh-autosuggest 与 dsh-stash-kit 需要 DSH 0.2.1-alpha.4 或更新的版本，[dsh-enhance](./plugins/dsh-enhance.mdx) 与 [dsh-skill-scout](./plugins/dsh-skill-scout.mdx) 需要 0.2.1-rc.3 或更新的版本。DSH 的斜杠命令目前只能在 Web 界面与桌面版里使用。
 
 ## 其他 Agent
 

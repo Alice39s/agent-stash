@@ -1,6 +1,6 @@
 ---
 title: dsh-stash-kit
-description: Change the panel, ghost text and motion dsh-recall and dsh-autosuggest share, on one settings page.
+description: Set the panel appearance, ghost text and motion that dsh-recall, dsh-autosuggest and dsh-enhance share, on one settings page.
 icon: SwatchBook
 ---
 
@@ -10,7 +10,7 @@ icon: SwatchBook
   caption="The preview at the top of the settings page follows the settings live. Click Replay to watch the animation again"
 />
 
-The browser half of the Agent Stash Kit (`dsh-stash-kit`) provides the `stashKit` service. [dsh-recall](./dsh-recall.mdx) and [dsh-autosuggest](./dsh-autosuggest.mdx) use it to render the panel and the gray text. The Host half holds the appearance settings. When you change them once, the change applies to all plugins at the same time.
+The browser half of the Agent Stash Kit (`dsh-stash-kit`) provides the `stashKit` service. [dsh-recall](./dsh-recall.mdx) and [dsh-autosuggest](./dsh-autosuggest.mdx) use it to render the panel and the gray text, and the button and rewrite animations of [dsh-enhance](./dsh-enhance.mdx) follow its Motion setting. The Host half holds the appearance settings. When you change them once, the change applies to all plugins at the same time.
 
 The panel uses the same geometry as the built-in DSH `/` menu. It sits 4px from the input box and has the same corner radius and padding. The left edge of its content lines up with the text column of the input box. The panel background is fully opaque. By default a backdrop blur is added on top.
 
@@ -51,9 +51,9 @@ Click Save. The changes take effect at once.
 
 ## Motion
 
-- Lively: the panel rises from the direction of the input box and goes from blurred to sharp. The rows appear one by one, starting with the row next to the input box. On close, the panel fades out downward. When you go back with <Kbd>↑</Kbd>, the new draft slides into the input box from the direction you browse in.
+- Lively: the panel rises from the direction of the input box and goes from blurred to sharp. The rows appear one by one, starting with the row next to the input box. On close, the panel fades out downward. When you browse the history with <Keys keys={['↑', '↓']} /> or click a row, the new draft slides into the input box from the direction you browse in. When the draft is restored, or dsh-enhance writes or undoes a rewrite, the new draft sharpens in place.
 - Subtle: the panel only fades in and out briefly. Draft switches play no animation.
-- Off: the panel and the gray text appear and disappear at once.
+- Off: the panel and the gray text appear and disappear at once, and the highlight does not glide.
 - For Ghost text, Wave reveals the rest of the text with a fading mask that sweeps from left to right. Fade fades in the rest of the text as a whole.
 - When the system Reduce motion setting is on, the panel keeps only its fades. The row stagger, the highlight glide and the draft-switch animation are removed, and ghost text appears at once.
 
@@ -70,6 +70,8 @@ You can also set the values in the profile patch:
 ```
 
 ## Install separately
+
+The kit needs DSH 0.2.1-alpha.4 or later.
 
 <Tabs items={['Plugin market', 'Desktop app', 'Command line']}>
 <Tab value="Plugin market">
@@ -92,6 +94,7 @@ dsh plugin --profile web add @agent-stash/dsh-stash-kit
 </Tabs>
 
 <Callout type="info" title="Disabling the kit">
-  After you disable the kit, the plugins that depend on it stop at Waiting for dependencies. When
-  you enable those plugins again, the kit is enabled again.
+  After you disable the kit, the browser halves of the plugins that depend on it stop at Waiting for
+  dependencies, and their Host routes keep working. The next time DSH starts, or when you enable
+  those plugins again, they enable the kit again.
 </Callout>

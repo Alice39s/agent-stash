@@ -4,31 +4,32 @@ description: 看每个插件和技能能做什么、支持哪些 Agent，再决�
 icon: BookOpen
 ---
 
-Agent Stash 是一组自用的 Agent Skills 和插件：给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）的输入框加上 Prompt 历史与自动补全，给 Pi、DSH、Cline、Grok Build、goose 与 Aider 提供同一套 `/init` 命令，另外收录风格指南和子代理委托技能。
+Agent Stash 是一组自用的 Agent Skills 和插件：给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）的输入框加上 Prompt 历史、自动补全与草稿改写，给 Pi、DSH、Cline、Grok Build 与 goose 提供同一套 `/init` 命令，也用同样的预设驱动 Aider，另外收录风格指南和子代理委托技能。
 
 <Showcase
   name="autosuggest"
-  alt="指针点击 DSH 输入框后输入 The，输入框上方列出三条以 The 开头的历史 Prompt，光标后以灰字补出第一条的剩余部分；按两次 ↓ 后按 Tab 填入第三条"
+  alt="指针点击 DSH 输入框后输入 The，输入框上方列出三条以 The 开头的历史 Prompt，光标后以灰字补出第一条的剩余部分。按两次 ↓ 后按 Tab 填入第三条"
   caption="dsh-autosuggest：输入 The，↓ 切换建议，Tab 填入"
 />
 
 ## 插件
 
-| 名称                                             | 安装源                          | 支持的 Agent                             | 作用                                                             |
-| ------------------------------------------------ | ------------------------------- | ---------------------------------------- | ---------------------------------------------------------------- |
-| [dsh-recall](./plugins/dsh-recall.mdx)           | `@agent-stash/dsh-recall`       | DSH                                      | 在输入框里按 ↑↓ 翻看当前会话发过的 Prompt                        |
-| [dsh-autosuggest](./plugins/dsh-autosuggest.mdx) | `@agent-stash/dsh-autosuggest`  | DSH                                      | 输入历史 Prompt 的开头时以灰字补出剩余部分，按 Tab 或 → 填入     |
-| [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)     | `@agent-stash/dsh-stash-kit`    | DSH                                      | 上面两个插件共用的面板、动画与外观配置，随它们自动安装           |
-| [消息编辑](./plugins/dsh-message-edit.mdx)       | `@agent-stash/dsh-message-edit` | DSH                                      | 编辑消息、重新生成回复或重试回合，每次改动另开一个会话版本       |
-| [经验提炼](./plugins/dsh-skill-scout.mdx)        | `@agent-stash/dsh-skill-scout`  | DSH                                      | 从已结束的会话里找出可复用的流程，审核后保存成 Skill             |
-| [/init](./plugins/init.mdx)                      | `@agent-stash/init`             | Pi、DSH、Cline、Grok Build、goose、Aider | 用其他 Coding Agent 的 `/init` Prompt 分析项目，写出 `AGENTS.md` |
+| 名称                                             | 安装源                          | 支持的 Agent                             | 作用                                                                                  |
+| ------------------------------------------------ | ------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------- |
+| [dsh-recall](./plugins/dsh-recall.mdx)           | `@agent-stash/dsh-recall`       | DSH                                      | 在输入框里按 ↑↓ 翻看当前会话发过的 Prompt                                             |
+| [dsh-autosuggest](./plugins/dsh-autosuggest.mdx) | `@agent-stash/dsh-autosuggest`  | DSH                                      | 输入历史 Prompt 的开头时以灰字补出剩余部分，按 Tab 或 → 填入                          |
+| [dsh-enhance](./plugins/dsh-enhance.mdx)         | `@agent-stash/dsh-enhance`      | DSH                                      | 发送按钮旁的按钮把草稿改写成更适合交给 AI 的 Prompt，可以撤销                         |
+| [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)     | `@agent-stash/dsh-stash-kit`    | DSH                                      | dsh-recall、dsh-autosuggest 与 dsh-enhance 共用的面板、动画与外观配置，随它们自动安装 |
+| [消息编辑](./plugins/dsh-message-edit.mdx)       | `@agent-stash/dsh-message-edit` | DSH                                      | 编辑消息、重新生成回复或重试回合，每次改动另开一个会话版本                            |
+| [经验提炼](./plugins/dsh-skill-scout.mdx)        | `@agent-stash/dsh-skill-scout`  | DSH                                      | 从已结束的会话里找出可复用的流程，审核后保存成 Skill                                  |
+| [/init](./plugins/init.mdx)                      | `@agent-stash/init`             | Pi、DSH、Cline、Grok Build、goose、Aider | 用其他 Coding Agent 的 `/init` Prompt 分析项目，写出 `AGENTS.md`                      |
 
 ## 技能
 
-| 名称                                                                | 作用                                                       |
-| ------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [`code-styleguide`](./skills.mdx#code-styleguide)                   | Google、Angular 与 Android Kotlin 风格指南，每天从上游同步 |
-| [`self-use-<model>-subagent`](./skills.mdx#self-use-model-subagent) | 在 DSH 里把任务委托给指定模型的子代理                      |
+| 名称                                                                | 作用                                                                        |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| [`code-styleguide`](./skills.mdx#code-styleguide)                   | Google、Angular 与 Android Kotlin 风格指南，每天检查上游，有更新时开同步 PR |
+| [`self-use-<model>-subagent`](./skills.mdx#self-use-model-subagent) | 在 DSH 里把任务委托给指定模型的子代理                                       |
 
 技能用 `npx -y skills add Alice39s/agent-stash` 安装，详见[技能](./skills.mdx#安装)页。
 
@@ -52,6 +53,12 @@ Agent Stash 是一组自用的 Agent Skills 和插件：给 [DeepSeek Harness](h
     description="跨会话的前缀补全，灰字提示剩余部分。"
     href="./plugins/dsh-autosuggest.mdx"
     icon={<Sparkles />}
+  />
+  <Card
+    title="dsh-enhance"
+    description="把草稿改写成更清楚的 Prompt，可以撤销。"
+    href="./plugins/dsh-enhance.mdx"
+    icon={<WandSparkles />}
   />
   <Card
     title="dsh-stash-kit"

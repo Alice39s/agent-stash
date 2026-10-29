@@ -1,6 +1,6 @@
 ---
 title: dsh-autosuggest
-description: Type the start of a past prompt and Tab fills in the rest in gray.
+description: Type the start of a past prompt to see the rest in gray, and press Tab to fill it in.
 icon: Sparkles
 ---
 
@@ -18,10 +18,13 @@ icon: Sparkles
 | <Keys keys={['↑', '↓']} />   | Switches between suggestions when there are several matches         |
 | <Kbd>Esc</Kbd>               | Hides the suggestions. They appear again after you change the draft |
 
+You can also click a row to fill it in.
+
 ## Matching rules
 
 - When the input is the start of a past prompt (case-sensitive), gray text after the cursor shows the rest. Above the input box, a list shows up to five matches with their source session and date.
-- The history comes from the 50 sessions with the most recent prompts across all sessions, newest first. For identical text, only the newest prompt stays.
+- Suggestions appear only when the cursor is at the end of the draft. They do not appear while an input method is composing, while the `/` or `@` menu is open, or when the draft contains a reference.
+- The history comes from the 50 most recently active top-level sessions (subagent sessions are excluded), newest first. For identical text only the newest prompt stays, up to 500 prompts.
 - Suggestions appear only for text that you type yourself. Text that [dsh-recall](./dsh-recall.mdx) puts in the input box does not trigger them.
 - When you keep typing along the suggestion, the gray text does not replay. When you switch to another suggestion, the gray text appears again with the [Ghost text](./dsh-stash-kit.mdx#settings) setting.
 
@@ -52,6 +55,7 @@ dsh plugin --profile web add @agent-stash/dsh-autosuggest
 </Tabs>
 
 <Callout type="info" title="dsh-stash-kit installs automatically">
-  Like [dsh-recall](./dsh-recall.mdx), the plugin installs [dsh-stash-kit](./dsh-stash-kit.mdx) from
-  npm and enables it on first start.
+  Like [dsh-recall](./dsh-recall.mdx), the plugin checks [dsh-stash-kit](./dsh-stash-kit.mdx) each
+  time it starts. It installs the kit from npm and enables it when the kit is missing, and enables
+  it again when it is disabled.
 </Callout>

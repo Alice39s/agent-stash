@@ -34,14 +34,17 @@ https://alice39s.github.io/agent-stash/index.json
 </Step>
 <Step>
 
-Browse the plugins in the index on the Discover page and install the ones you need. [dsh-stash-kit](./plugins/dsh-stash-kit.mdx) installs automatically with dsh-recall and dsh-autosuggest, so you do not need to pick it.
+Browse the plugins in the index on the Discover page and install the ones you need. [dsh-stash-kit](./plugins/dsh-stash-kit.mdx) installs automatically with dsh-recall, dsh-autosuggest and dsh-enhance, so you do not need to pick it.
 
 </Step>
 </Steps>
 
 GitHub Actions generates the index with the DSH reference generator. The index updates after each release and on a daily schedule. It lists every released version of these npm packages. The index and these docs are published to the same GitHub Pages site.
 
-Besides the Agent Stash plugins, the index lists two recommended third-party plugins: [dsh-context](https://github.com/bowenliang123/dsh-context) shows how the session context is made up and how it changes, in a panel and through the `/context` command; [dsh-whale-widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) adds a widget to the lower-right corner of the Web UI with the DeepSeek balance, today's usage, and the cost of each turn.
+Besides the Agent Stash plugins, the index lists two recommended third-party plugins:
+
+- [dsh-context](https://github.com/bowenliang123/dsh-context) shows how the session context is made up and how it changes, in a panel and through the `/context` command.
+- [dsh-whale-widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) adds a widget to the lower-right corner of the web interface with the DeepSeek balance, today's usage, and the cost of each turn.
 
 ### Install by hand
 
@@ -65,6 +68,7 @@ Enter an npm package name from the list below and install it:
 @agent-stash/dsh-message-edit
 @agent-stash/dsh-recall
 @agent-stash/dsh-autosuggest
+@agent-stash/dsh-enhance
 @agent-stash/dsh-skill-scout
 ```
 
@@ -81,6 +85,7 @@ dsh plugin --profile web add @agent-stash/init
 dsh plugin --profile web add @agent-stash/dsh-message-edit
 dsh plugin --profile web add @agent-stash/dsh-recall
 dsh plugin --profile web add @agent-stash/dsh-autosuggest
+dsh plugin --profile web add @agent-stash/dsh-enhance
 dsh plugin --profile web add @agent-stash/dsh-skill-scout
 ```
 
@@ -89,7 +94,7 @@ dsh plugin --profile web add @agent-stash/dsh-skill-scout
 
 GitHub Actions publishes the npm packages through npm trusted publishing, with provenance. You can also install the latest version on `main` with `github:Alice39s/agent-stash` (it contains only `/init`).
 
-On first start, `dsh-recall` and `dsh-autosuggest` automatically install [dsh-stash-kit](./plugins/dsh-stash-kit.mdx) from npm and enable it. The three plugins need DSH 0.2.1-alpha.4 or later, and [dsh-skill-scout](./plugins/dsh-skill-scout.mdx) needs 0.2.1-rc.3 or later. DSH slash commands currently work only in the web interface and the desktop app.
+When they start, `dsh-recall`, `dsh-autosuggest` and `dsh-enhance` install [dsh-stash-kit](./plugins/dsh-stash-kit.mdx) from npm and enable it. dsh-recall, dsh-autosuggest and dsh-stash-kit need DSH 0.2.1-alpha.4 or later. [dsh-enhance](./plugins/dsh-enhance.mdx) and [dsh-skill-scout](./plugins/dsh-skill-scout.mdx) need 0.2.1-rc.3 or later. DSH slash commands currently work only in the web interface and the desktop app.
 
 ## Other agents
 

@@ -12,45 +12,49 @@ icon: WandSparkles
 
 ## Presets
 
-| Preset          | What it does                                                                                                                                                                                                                |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Polish prompt   | States the goal, scope, expected result, and how to check it; asks the AI to compare a few approaches and recommend one, and to state its assumptions where information is missing. At most 3 times the length of the draft |
-| Structure only  | Puts the main request first, groups the rest into background, requirements, and constraints, and turns parallel items into lists. Keeps the wording and every point                                                         |
-| Make it concise | Removes filler, repeats, and corrected slips, and keeps only the final requests, constraints, and questions. Meant for dictated text; the result is shorter than the draft                                                  |
+| Preset          | What it does                                                                                                                                                                                                                                                                      |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Polish prompt   | States the goal, scope, expected result, and how to check it. Asks the AI to compare a few approaches and recommend one, and to state its assumptions where information is missing. At most 3 times the length of the draft and about 250 English words or 500 Chinese characters |
+| Structure only  | Puts the main request first, groups the rest into background, requirements, and constraints, and turns parallel items into lists. Keeps the wording and every point                                                                                                               |
+| Make it concise | Removes filler, repeats, and corrected slips, and keeps only the final requests, constraints, and questions. Meant for dictated text. The result is shorter than the draft                                                                                                        |
 
-All presets share one set of rules. The result is in the language of the draft. Code, commands, paths, links, and text in backticks are copied unchanged. A question stays a question and is not answered. When the draft is already clear, it stays as it is and the button shows Already clear, nothing changed.
+All presets share one set of rules. The result is in the language of the draft. Code, commands, paths, links, and text in backticks are copied unchanged. A question stays a question and is not answered. When the draft is already clear, it stays as it is, and Already clear, nothing changed appears left of the button for a few seconds.
 
 ## Use
 
 - The button is hidden while the draft is empty. Click it to open the preset menu. Number keys <Kbd>1</Kbd>–<Kbd>9</Kbd> pick a preset directly.
 - While a rewrite runs, the draft is locked and the button turns into a stop button. Click it or press <Kbd>Esc</Kbd> to stop. The draft stays unchanged.
 - When the rewrite finishes, an undo button appears left of the button and brings back the draft. After several rewrites in a row, undo returns to the first draft. Editing or sending the draft removes the undo button.
-- A failure is shown left of the button, and the draft stays unchanged. For model errors and rejected results, hover over the message to see the exact reason.
+- A failure is shown left of the button, and the draft stays unchanged. For model errors, rejected results, a failed session read, and a failed connection to DSH, hover over the message to see the exact reason.
 - The button is unavailable while the draft contains reference chips for files or sessions, because a rewrite would turn them into plain text.
 
-A result goes into the input box only when it passes these checks: it does not open like a reply ("Here is", "Sure", "以下是", "好的"); it uses the same script as the draft (CJK or Latin); and it keeps every code block, inline code span, link, and credential placeholder of the draft.
+A result goes into the input box only when it passes these checks:
+
+- It does not open like a reply ("Here is", "Sure", "以下是", "好的").
+- It uses the same script as the draft (CJK or Latin).
+- It keeps every code block, inline code span, link, and credential placeholder of the draft.
 
 ## Session context
 
 With Include recent turns on (the default), a rewrite request includes the latest turns of the current session (3 by default, up to 10), so the rewriter can tell what words like "this" or "the earlier plan" refer to. When turns are included, the button tooltip and the top of the menu show Linked to the last N turns.
 
 - Only the text of user messages, the text of assistant replies, and compacted session summaries are sent. Tool calls, tool output, reasoning, and injected system messages are not.
-- Code blocks longer than 12 lines keep their first 6 lines. Each user message and assistant reply keeps at most 1,200 characters and a summary at most 1,500. When the total exceeds 4,000 characters, the oldest turns are dropped first.
+- Code blocks longer than 12 lines keep their first 6 lines. Each user message keeps at most 1,200 characters, the assistant replies of a turn together at most 1,200, and a summary at most 1,500. When the total exceeds 4,000 characters, the oldest turns are dropped first.
 - Recognizable API keys, tokens, private keys, and passwords in addresses are replaced with `[redacted]` in the context. In the draft, they go to the model as placeholders such as `⟦secret-1⟧` and are put back before the result reaches the input box.
 
 ## Settings
 
 On the Plugins page, open the details of Prompt enhance and click Configure. Manage presets… at the bottom of the menu opens the same details page. Changes apply after you click Save.
 
-| Setting              | Field               | Values                                                                                                                              | Default            |
-| -------------------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| Model                | `provider`, `model` | Empty follows the session: the model and reasoning effort the conversation's next request will use. Or pick one model from the list | Follow the session |
-| Reasoning effort     | `effort`            | Shown when the chosen model has reasoning efforts. Empty uses the model's default                                                   | Model default      |
-| Timeout (seconds)    | `timeout`           | 5–600. A timeout shows No result within N s left of the button                                                                      | 60                 |
-| Include recent turns | `context`           | See [Session context](#session-context)                                                                                             | On                 |
-| Turns to include     | `contextTurns`      | 1–10                                                                                                                                | 3                  |
-| Keyboard shortcut    | `shortcut`          | When on, opens the menu, stops a running rewrite, or undoes the last one                                                            | Off                |
-| Presets              | `presets`           | Reorder, remove, edit the name, description, and instructions, or add custom presets                                                | Three built-in     |
+| Setting              | Field               | Values                                                                                                                                                                                      | Default            |
+| -------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| Model                | `provider`, `model` | Empty follows the session: the model and reasoning effort the conversation's next request will use, or the DSH default model when the session has none yet. Or pick one model from the list | Follow the session |
+| Reasoning effort     | `effort`            | Shown when the chosen model has reasoning efforts. Empty uses the model's default                                                                                                           | Model default      |
+| Timeout (seconds)    | `timeout`           | 5–600. A timeout shows No result within N s left of the button                                                                                                                              | 60                 |
+| Include recent turns | `context`           | See [Session context](#session-context)                                                                                                                                                     | On                 |
+| Turns to include     | `contextTurns`      | 1–10                                                                                                                                                                                        | 3                  |
+| Keyboard shortcut    | `shortcut`          | When on, opens the menu, stops a running rewrite, or undoes the last one                                                                                                                    | Off                |
+| Presets              | `presets`           | Reorder, remove, edit the name, description, and instructions, or add custom presets                                                                                                        | Three built-in     |
 
 <Showcase
   name="enhance-settings-page-en"
@@ -61,7 +65,7 @@ A built-in preset with empty instructions uses the built-in ones. Restore built-
 
 With the shortcut on, the default keys are <Keys keys={['⇧', '⌘', 'E']} /> on macOS and Ctrl+Shift+E elsewhere. Linux in a browser lets only a few key combinations through, so there are no default keys there. The default keys are also left unbound when they overlap another command. In both cases you can assign keys on the DSH Shortcuts settings page.
 
-You can also set these in a profile patch. `presets` replaces the whole list; a built-in preset needs only its `id` to keep the built-in name, description, and instructions:
+You can also set these in a profile patch. `presets` replaces the whole list. A built-in preset needs only its `id` to keep the built-in name, description, and instructions:
 
 ```yaml title="cordis.patch.yml"
 - id: dsh-enhance
@@ -78,7 +82,7 @@ You can also set these in a profile patch. `presets` replaces the whole list; a 
         prompt: Rewrite the draft as a numbered list of the steps it asks for, in the order they should be done.
 ```
 
-Custom instructions come after the built-in shared rules, and the shared rules win: a custom preset cannot change the language, the unchanged technical text, or the rule to rewrite instead of answering.
+Custom instructions come after the built-in shared rules, and the result still has to pass the checks above.
 
 The Host half of the plugin registers two routes. `GET /dsh-enhance/context` returns how many turns the next rewrite will include. `POST /dsh-enhance/rewrite` reads the session, calls the model, and checks the result. Both routes go through the DSH connection check. A draft can have at most 20,000 characters.
 
@@ -107,7 +111,8 @@ dsh plugin --profile web add @agent-stash/dsh-enhance
 </Tabs>
 
 <Callout type="info" title="dsh-stash-kit installs automatically">
-  Like [dsh-recall](./dsh-recall.mdx), the plugin installs [dsh-stash-kit](./dsh-stash-kit.mdx) from
-  npm and enables it on first start. The animations of the button and of the rewritten draft follow
-  its [Motion](./dsh-stash-kit.mdx#motion) setting.
+  Like [dsh-recall](./dsh-recall.mdx), the plugin checks [dsh-stash-kit](./dsh-stash-kit.mdx) each
+  time it starts. It installs the kit from npm and enables it when the kit is missing, and enables
+  it again when it is disabled. The animations of the button and of the rewritten draft follow its
+  [Motion](./dsh-stash-kit.mdx#motion) setting.
 </Callout>
