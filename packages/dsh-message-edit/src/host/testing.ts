@@ -3,7 +3,7 @@
  * 只被 `*.test.ts` 引用，不进入 Host bundle。
  */
 import { storedSessionLog } from "./dsh-read.ts";
-import type { DshSessionEvent, DshSessionHeader } from "./dsh.ts";
+import type { DshSessionEvent, DshSessionHeader, JsonObject } from "./dsh.ts";
 import type { ContentBlock, SessionFormat, SessionLog } from "./model.ts";
 
 export const ROUTE = { provider: "deepseek", model: "deepseek-chat" } as const;
@@ -67,6 +67,25 @@ export function turnDrafts(format: SessionFormat, spec: TurnSpec): EventDraft[] 
     },
     { type: "step/end", data: { turn, step: 1 } },
     { type: "turn/end", data: { turn, reason: { kind: "completed" } } },
+  ];
+}
+
+/** 没有助手回复就结束的回合（报错或被停止）的 5 个事件：开回合、用户输入、空步骤、按 `reason` 关回合。 */
+export function unansweredTurnDrafts(
+  turn: number,
+  prompt: readonly ContentBlock[],
+  reason: JsonObject,
+): EventDraft[] {
+  return [
+    { type: "turn/start", data: { turn } },
+    {
+      type: "user/message",
+      data: { id: `user-${String(turn)}`, role: "user", content: prompt, source: { kind: "user" } },
+      surfaceOp: "append",
+    },
+    { type: "step/start", data: { turn, step: 1 } },
+    { type: "step/end", data: { turn, step: 1 } },
+    { type: "turn/end", data: { turn, reason } },
   ];
 }
 

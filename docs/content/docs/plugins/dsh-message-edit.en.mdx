@@ -1,13 +1,13 @@
 ---
 title: Message edit
-description: Edit a message or reply, or retry a turn. Each change opens a new version, and you can switch back to the original.
+description: Edit a message or reply, retry a turn, or resend a message that failed or was stopped. Each change opens a new version, and you can switch back to the original.
 icon: Pencil
 ---
 
 <Showcase
   name="message-edit-en"
-  alt="The pointer moves to the last reply, 1, in Test Session 2 and clicks the Edit button below it. A dialog lists the message and the reply of that turn. The pointer picks the reply, appends '. That sentence names five animals.' after 1, and saves. The title bar shows 2 / 2. Previous version switches back to the original version, whose reply is only 1, and Next version returns to the edited version."
-  caption="Edit a reply and save to open a new version, then switch between versions in the title bar"
+  alt="The pointer clicks Stop while 'Show an example in Python' is still generating. The turn shows Stopped, with Edit message and Retry turn buttons below it. Edit message opens a dialog with the original message. The pointer changes it to 'Show an example in JavaScript' and saves. The new version replies with a JavaScript example and the title bar shows 2 / 2. Previous version switches back to the stopped original, and Next version returns to the edited version."
+  caption="Edit and resend a stopped message from the end of its turn, then switch between versions in the title bar"
 />
 
 `@agent-stash/dsh-message-edit` is a DeepSeek Harness plugin. Each change opens a new session version from the point before that turn. The original version stays as it is, and you can switch back at any time. The same build supports DSH 0.1.0-rc.3 and DSH Desktop 0.2.1-rc.3. It is based on [Moeblack/dsh-message-edit](https://github.com/Moeblack/dsh-message-edit) 0.2.3.
@@ -15,12 +15,13 @@ icon: Pencil
 ## Usage
 
 - Timeline view: the view tabs below the session title get a Timeline tab. The left side lists messages, reasoning and replies by turn, and turns started by a user message can be edited and retried. The right side is the version tree. Click a version to switch to it. In the toolbar, choose whether the later turns are dropped or replayed with their original input when you change an earlier turn.
-- Title bar: switch between the previous and the next version, or regenerate the last reply.
+- Title bar: switch between the previous and the next version, or regenerate the last turn started by a user message, from that message.
 - Message actions: in turns started by a user message, each finished assistant message has Edit and Retry turn buttons below it. Edit changes the user message of that turn, or the reasoning or reply of that message. When later turns exist, the dialog lets you drop or replay them (Drop by default). Retry here drops the later turns.
+- End of a turn: when a turn fails, is stopped, or ends without reply text, DSH shows no message actions for it. The plugin puts Edit message and Retry turn at the end of that turn, so you can change the message and send it again, or resend it as it is.
 
 <Showcase
   name="message-edit-timeline-en"
-  alt="The Timeline view. The left side lists the messages and replies of turns 6 to 9, and the reply of turn 9 is the edited text. The version tree on the right has two entries, Original and Edited reply in turn 9. The second one is marked Current and shows the text before and after the edit."
+  alt="The Timeline view. The left side lists the messages and replies of turns 1 and 2, and the message of turn 2 is the edited 'Show an example in JavaScript'. The version tree on the right has two entries, Original and Edited message in turn 2. The second one is marked Current and shows the text before and after the edit."
   caption="The Timeline view: edit and retry by turn on the left, and see which change produced each version in the tree on the right"
 />
 

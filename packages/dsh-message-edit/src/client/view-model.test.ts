@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
 import type { MessageEditTimeline } from "../shared.ts";
-import { block, READY, TIMELINE, translator } from "./testing.ts";
+import { block, READY, TIMELINE, translator, UNANSWERED_TIMELINE } from "./testing.ts";
 import {
   canReroll,
   dialogHintKey,
@@ -10,6 +10,8 @@ import {
   operationsBlocked,
   stepper,
   turnGroups,
+  turnTarget,
+  unansweredTurn,
   versionRows,
   versionTitle,
 } from "./view-model.ts";
@@ -77,14 +79,52 @@ describe("messageTarget", () => {
   });
 });
 
+describe("turnTarget", () => {
+  test("offers only the user message of a turn without a reply", () => {
+    const target = turnTarget(UNANSWERED_TIMELINE, 4);
+    expect(target?.retry.turn).toBe(4);
+    expect(target?.choices.map((item) => item.key)).toEqual(["31:0"]);
+    expect(target?.hasLaterTurns).toBe(false);
+  });
+
+  test("reports later turns for an earlier turn", () => {
+    expect(turnTarget(UNANSWERED_TIMELINE, 2)?.hasLaterTurns).toBe(true);
+  });
+
+  test("finds nothing for turns without user input or outside the timeline", () => {
+    expect(turnTarget(TIMELINE, 3)).toBeUndefined();
+    expect(turnTarget(TIMELINE, 4)).toBeUndefined();
+  });
+});
+
+describe("unansweredTurn", () => {
+  const turn = { turn: 4, end: { seq: 40 } };
+
+  test("claims a turn whose tail anchors at its turn/end", () => {
+    expect(unansweredTurn({ turn, seq: 40 })).toBe(4);
+  });
+
+  test("claims a turn that closes with an unsaved partial reply", () => {
+    expect(unansweredTurn({ turn, seq: 38.1 })).toBe(4);
+  });
+
+  test("leaves a turn with a saved closing reply to the message actions", () => {
+    expect(unansweredTurn({ turn, seq: 37 })).toBeNull();
+  });
+
+  test("ignores a turn without turn/end", () => {
+    expect(unansweredTurn({ turn: { turn: 4, end: undefined }, seq: 40 })).toBeNull();
+  });
+});
+
 describe("canReroll", () => {
-  test("needs a user-triggered turn with an assistant block", () => {
+  test("needs a user-triggered turn, with or without a reply", () => {
     expect(canReroll(TIMELINE)).toBe(true);
     const userOnly: MessageEditTimeline = {
       ...TIMELINE,
       messages: [block({ turn: 1, eventSeq: 1, blockIndex: 0, kind: "user", text: "Hi" })],
     };
-    expect(canReroll(userOnly)).toBe(false);
+    expect(canReroll(userOnly)).toBe(true);
     expect(canReroll(EMPTY)).toBe(false);
   });
 });
