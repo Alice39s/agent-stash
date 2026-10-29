@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@agent-stash/dsh-stash-kit)](https://www.npmjs.com/package/@agent-stash/dsh-stash-kit) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
 
-Agent Stash 框架：为 Agent Stash 系列的 DeepSeek Harness（DSH）插件提供共用的面板、补全灰字、动画和外观配置。[`@agent-stash/dsh-recall`](https://www.npmjs.com/package/@agent-stash/dsh-recall) 与 [`@agent-stash/dsh-autosuggest`](https://www.npmjs.com/package/@agent-stash/dsh-autosuggest) 依赖它渲染界面，第一次启动时会自动安装并启用它，一般不需要单独安装。
+Agent Stash 框架：为 Agent Stash 系列的 DeepSeek Harness（DSH）插件提供共用的面板、补全灰字、动画和外观配置。[`@agent-stash/dsh-recall`](https://www.npmjs.com/package/@agent-stash/dsh-recall)、[`@agent-stash/dsh-autosuggest`](https://www.npmjs.com/package/@agent-stash/dsh-autosuggest) 与 [`@agent-stash/dsh-enhance`](https://www.npmjs.com/package/@agent-stash/dsh-enhance) 依赖它渲染界面，第一次启动时会自动安装并启用它，一般不需要单独安装。
 
 单独安装：
 

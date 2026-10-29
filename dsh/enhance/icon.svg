@@ -1,0 +1,21 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g mask="url(#agent-stash-enhance-sparkle-cutout)">
+    <rect x="6.5" y="12" width="19" height="16" rx="3.5" fill="url(#agent-stash-enhance-composer)" />
+    <path d="M10 17.5H16.5M10 21H21M10 24.5H14.5" stroke="#FFFFFF" stroke-width="1.5" />
+  </g>
+  <path d="M26 6C26.5 9.4 28.1 11 31.5 11.5C28.1 12 26.5 13.6 26 17C25.5 13.6 23.9 12 20.5 11.5C23.9 11 25.5 9.4 26 6Z" fill="url(#agent-stash-enhance-sparkle)" />
+  <defs>
+    <mask id="agent-stash-enhance-sparkle-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF" />
+      <path d="M26 6C26.5 9.4 28.1 11 31.5 11.5C28.1 12 26.5 13.6 26 17C25.5 13.6 23.9 12 20.5 11.5C23.9 11 25.5 9.4 26 6Z" fill="#000000" stroke="#000000" stroke-width="2.5" stroke-linejoin="round" />
+    </mask>
+    <linearGradient id="agent-stash-enhance-composer" x1="7.5" y1="12" x2="25.5" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB" />
+      <stop offset="1" stop-color="#3650DE" />
+    </linearGradient>
+    <linearGradient id="agent-stash-enhance-sparkle" x1="20.5" y1="6" x2="31.5" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB" />
+      <stop offset="1" stop-color="#108792" />
+    </linearGradient>
+  </defs>
+</svg>

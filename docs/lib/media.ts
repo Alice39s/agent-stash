@@ -25,6 +25,25 @@ export const media = {
     width: 760,
     height: 496,
   },
+  enhance: { image: "/media/enhance.png", video: "/media/enhance.mp4", width: 760, height: 496 },
+  "enhance-en": {
+    image: "/media/enhance-en.png",
+    video: "/media/enhance-en.mp4",
+    width: 760,
+    height: 496,
+  },
+  "enhance-settings-page": {
+    image: "/media/enhance-settings-page.png",
+    video: undefined,
+    width: 758,
+    height: 1166,
+  },
+  "enhance-settings-page-en": {
+    image: "/media/enhance-settings-page-en.png",
+    video: undefined,
+    width: 758,
+    height: 1184,
+  },
   "kit-settings": {
     image: "/media/kit-settings.png",
     video: "/media/kit-settings.mp4",

@@ -2,5 +2,12 @@
   "title": "插件",
   "icon": "Puzzle",
   "defaultOpen": true,
-  "pages": ["dsh-recall", "dsh-autosuggest", "dsh-stash-kit", "dsh-message-edit", "init"]
+  "pages": [
+    "dsh-recall",
+    "dsh-autosuggest",
+    "dsh-enhance",
+    "dsh-stash-kit",
+    "dsh-message-edit",
+    "init"
+  ]
 }
