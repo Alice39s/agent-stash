@@ -23,6 +23,7 @@ const DSH_PACKAGES = {
   kit: "@agent-stash/dsh-stash-kit",
   recall: "@agent-stash/dsh-recall",
   autosuggest: "@agent-stash/dsh-autosuggest",
+  enhance: "@agent-stash/dsh-enhance",
 };
 
 /** DSH 插件包 Host 半部打包进去的依赖：插件包不带 node_modules。 */

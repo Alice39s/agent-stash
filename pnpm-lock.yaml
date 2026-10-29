@@ -220,6 +220,8 @@ importers:
 
   dsh/autosuggest: {}
 
+  dsh/enhance: {}
+
   dsh/kit: {}
 
   dsh/recall: {}

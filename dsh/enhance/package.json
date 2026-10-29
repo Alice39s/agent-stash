@@ -1,0 +1,53 @@
+{
+  "name": "@agent-stash/dsh-enhance",
+  "version": "0.0.0",
+  "description": "Rewrite the DeepSeek Harness composer draft into a clearer prompt with one click: polish, structure, or condense",
+  "keywords": [
+    "dsh-plugin",
+    "prompt",
+    "prompt-enhancer"
+  ],
+  "homepage": "https://github.com/Alice39s/agent-stash/tree/main/dsh/enhance#readme",
+  "bugs": "https://github.com/Alice39s/agent-stash/issues",
+  "license": "Apache-2.0",
+  "author": "Alice39s",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Alice39s/agent-stash.git",
+    "directory": "dsh/enhance"
+  },
+  "files": [
+    "dist",
+    "locale",
+    "cordis.patch.yml",
+    "icon.svg"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.js",
+    "./client": "./dist/client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "icon": "./icon.svg",
+  "engines": {
+    "dsh": ">=0.2.1-rc.3"
+  },
+  "dsh": {
+    "manifestVersion": 1,
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@agent-stash/dsh-stash-kit"
+      ]
+    }
+  }
+}
