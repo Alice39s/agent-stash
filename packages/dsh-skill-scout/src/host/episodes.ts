@@ -3,8 +3,23 @@
  * 这里只依据工具证据判定结果；Agent 的自述只保留为背景，不参与判定。
  */
 import { relative } from "pathe";
-import { isVerification, parseCommand } from "./commands.ts";
-import type { CommandFamily, Episode, FixKind, Op, OpKind, Outcome, Recovery } from "./model.ts";
+import {
+  isOpaque,
+  isVerification,
+  optionsOf,
+  parseCommand,
+  type CommandSegment,
+} from "./commands.ts";
+import type {
+  CommandFamily,
+  Episode,
+  FixKind,
+  Op,
+  OpKind,
+  Outcome,
+  Part,
+  Recovery,
+} from "./model.ts";
 import { clip, oneLine } from "./redact.ts";
 import type { DshSessionLog, JsonObject } from "./dsh.ts";
 import { stepsOf, type Step } from "./trajectory.ts";
@@ -23,23 +38,52 @@ export interface EpisodeInput {
   readonly keepOutput: boolean;
 }
 
-const SHELL_TOOLS = new Set(["bash", "pwsh", "shell"]);
-const EDIT_TOOLS = new Set(["write", "edit", "str_replace_editor", "apply_patch", "notebook_edit"]);
-const READ_TOOLS = new Set([
-  "glob",
-  "grep",
-  "lsp",
-  "read",
-  "read_image",
-  "read_mcp_resource",
-  "skill",
-  "web_fetch",
-  "web_search",
-]);
-const DELEGATE_TOOLS = new Set(["ralph", "spawn_teammate", "subagent", "subagent_oar", "workflow"]);
-/** 规划、提问、任务板这类工具不改变工作区，也不是执行证据。 */
+/*
+ * 工具按名称归类。DSH 自带的工具名固定，MCP 与其它 Agent 的同类工具名各不相同（`Edit`、`MultiEdit`、
+ * `mcp__fs__edit_file`、`run_terminal_cmd`），所以先去掉 MCP 前缀、转成小写，再按动词与对象匹配。
+ * 只认动词与文件类对象的组合：`create_file` 是改动，`create_issue` 不是。
+ */
+const SHELL_TOOL =
+  /^(?:bash|pwsh|powershell|shell|sh|zsh|(?:run|exec|execute)_(?:shell_)?(?:command|cmd|terminal_cmd|in_terminal)|shell_(?:command|exec))$/u;
+const EDIT_TOOL =
+  /^(?:(?:multi_?)?edit|write|apply_?patch|str_replace\w*|notebook_?edit|edit_notebook|(?:create|write|edit|replace|patch|insert|update|append|delete|remove|rename|move)_(?:in_)?files?|search_?replace|replace_in_file|insert_(?:code|text|lines?))$/u;
+const READ_TOOL =
+  /^(?:(?:read|view|cat|glob|grep|lsp|skill|fetch|search|ls|tree|find)(?:_(?:file|files|text_file|multiple_files|dir|directory|image|mcp_resource|search|code|symbols?|definition|references|url|page|tree))?|list_(?:dir|directory|files|allowed_directories)|open_file|file_search|grep_search|codebase_search|search_(?:files|code|codebase)|find_(?:files|by_name)|web_(?:fetch|search)|get_file_contents|directory_tree)$/u;
+const DELEGATE_TOOL =
+  /^(?:ralph|spawn_teammate|subagent\w*|workflow|task|agent|spawn_agent|dispatch_agent)$/u;
+/** 规划、提问、任务板这类 DSH 工具不改变工作区，也不是执行证据。 */
 const META_TOOL =
   /^(ask_user_question|create_goal|exit_plan_mode|get_goal|interrupt_agent|job_|list_|load_workspace_dependencies|plugin_|present|propose_action|schedule_|send_message|session_|team_task_|terminal_|todo_write|update_goal|wait_agent|working_directory|cordis_inspect_)/u;
+
+/** 工具名去掉 MCP 前缀并转小写：`mcp__fs__edit_file`、`fs.edit_file` 都是 `edit_file`。 */
+export function bareTool(tool: string): string {
+  const lower = tool.toLowerCase();
+  return lower.split(/__|[.:/]/u).at(-1) ?? lower;
+}
+
+/** 一次工具调用的类别；不改变工作区也不是执行证据的工具为 null。 */
+export function toolKind(tool: string): "shell" | "edit" | "read" | "delegate" | null | "other" {
+  const name = bareTool(tool);
+  if (SHELL_TOOL.test(name)) return "shell";
+  if (EDIT_TOOL.test(name)) return "edit";
+  if (READ_TOOL.test(name)) return "read";
+  if (DELEGATE_TOOL.test(name)) return "delegate";
+  return META_TOOL.test(name) ? null : "other";
+}
+
+/** apply_patch 一类工具把路径写在补丁文本里。 */
+const PATCH_PATH = /^(?:\*\*\* (?:Add|Update|Delete) File: |\+\+\+ (?:b\/)?)(\S.*)$/mu;
+
+/** 有固定角色的文件：改动它们是流程里的一步，例如发布前改 CHANGELOG.md。 */
+const NOTABLE_FILE =
+  /(?:^|\/)(package\.json|CHANGELOG\.md|README\.md|Cargo\.toml|pyproject\.toml|go\.mod|Dockerfile|(?:docker-)?compose\.ya?ml|Makefile|tsconfig\.json|\.npmrc|\.env(?:\.[\w-]+)?|[\w-]+\.config\.[cm]?[jt]s)$/u;
+
+/** 改动的动作：有固定角色的文件带上文件名，工作流文件归为一类，其余只是 `edit`。 */
+export function editKey(target: string): string {
+  if (/(?:^|\/)\.github\/workflows\/[^/]+\.ya?ml$/u.test(target)) return "edit .github/workflows";
+  const notable = NOTABLE_FILE.exec(target)?.[1];
+  return notable === undefined ? "edit" : `edit ${notable}`;
+}
 
 /** 配置类文件：改动它们而让命令恢复，算作可复用的操作经验。 */
 const CONFIG_FILE =
@@ -62,6 +106,8 @@ const SIGNAL_MARKER = /\n?\[killed by signal: [^\]\n]+\]\s*$/u;
 const MAX_OPS = 160;
 const GOAL_CHARS = 600;
 const FOLLOWUP_CHARS = 300;
+/** 回合进行中的用户消息最多保留几条。 */
+const MAX_STEERING = 3;
 const REPLY_CHARS = 400;
 const COMMAND_CHARS = 240;
 const ERROR_CHARS = 200;
@@ -110,11 +156,29 @@ function strongestFamily(families: readonly CommandFamily[], main: CommandFamily
   return main;
 }
 
+/** 按动作去重的非查看类命令段。 */
+function partsOf(segments: readonly CommandSegment[]): Part[] {
+  const byKey = new Map<string, Part>();
+  for (const { sig, key, family } of segments) {
+    if (family !== "inspect" && !byKey.has(key)) byKey.set(key, { sig, key, family });
+  }
+  return [...byKey.values()];
+}
+
+/** 改动工具的目标路径：参数里的路径，或补丁文本里的第一个文件。 */
+function editTarget(args: JsonObject): string | null {
+  const path = stringArg(args, "file_path", "path", "filePath", "target_file", "filename", "file");
+  if (path !== null) return path;
+  const patch = stringArg(args, "patch", "input", "diff");
+  return patch === null ? null : (PATCH_PATH.exec(patch)?.[1]?.trim() ?? null);
+}
+
 function opOf(step: Extract<Step, { kind: "tool" }>, input: EpisodeInput): Op | OpKind | null {
   const { tool, args } = step;
   const base = { seq: step.seq, tool, command: null, target: null, exit: null, error: null };
-  if (SHELL_TOOLS.has(tool)) {
-    const raw = stringArg(args, "command", "cmd", "script");
+  const kind = toolKind(tool);
+  if (kind === "shell") {
+    const raw = stringArg(args, "command", "cmd", "script", "commandLine");
     if (raw === null) return null;
     // 签名也从脱敏后的命令解析：凭据不会因为落在子命令的位置而进入签名。
     const command = input.redact(raw);
@@ -122,16 +186,14 @@ function opOf(step: Extract<Step, { kind: "tool" }>, input: EpisodeInput): Op | 
     if (parsed.main === undefined) return null;
     const exit = exitStatus(step.output, step.ok);
     const ok = step.ok && exit === 0;
-    const parts = [
-      ...new Set(parsed.segments.filter((s) => s.family !== "inspect").map((s) => s.sig)),
-    ];
     const failure =
       ok || !input.keepOutput ? null : errorLine(step.output.replace(EXIT_MARKER, ""));
     return {
       ...base,
       kind: "exec",
       sig: parsed.main.sig,
-      parts,
+      key: parsed.main.key,
+      parts: partsOf(parsed.segments),
       family: strongestFamily(
         parsed.segments.map((segment) => segment.family),
         parsed.main.family,
@@ -146,55 +208,111 @@ function opOf(step: Extract<Step, { kind: "tool" }>, input: EpisodeInput): Op | 
           : clip(input.redact(failure), ERROR_CHARS),
     };
   }
-  if (EDIT_TOOLS.has(tool)) {
-    const path = stringArg(args, "file_path", "path", "filePath", "target_file");
+  if (kind === "edit") {
+    const path = editTarget(args);
     if (path === null) return null;
     const target = clip(input.redact(relativeTarget(path, input.cwd)), 200);
-    return { ...base, kind: "edit", sig: target, parts: [], family: null, target, ok: step.ok };
+    const key = editKey(target);
+    return {
+      ...base,
+      kind: "edit",
+      sig: target,
+      key,
+      parts: [],
+      family: null,
+      target,
+      ok: step.ok,
+    };
   }
-  if (READ_TOOLS.has(tool) || META_TOOL.test(tool)) return READ_TOOLS.has(tool) ? "read" : null;
-  if (DELEGATE_TOOLS.has(tool)) {
-    return { ...base, kind: "delegate", sig: tool, parts: [], family: null, ok: step.ok };
+  if (kind === "read") return "read";
+  if (kind === null) return null;
+  if (kind === "delegate") {
+    const name = bareTool(tool);
+    return {
+      ...base,
+      kind: "delegate",
+      sig: tool,
+      key: name,
+      parts: [],
+      family: null,
+      ok: step.ok,
+    };
   }
-  // MCP 等其它工具按一次动作记录，签名带上前缀以免和 shell 命令混淆。
+  // MCP 等其它工具按一次动作记录，签名带上前缀以免和 shell 命令混淆；动作不带 MCP 服务名。
   const sig = `tool:${tool}`;
+  const key = `tool:${bareTool(tool)}`;
   return {
     ...base,
     kind: "exec",
     sig,
-    parts: [sig],
+    key,
+    parts: [{ sig, key, family: "run" }],
     family: "run",
     ok: step.ok,
     error: step.ok ? null : step.errorCode,
   };
 }
 
-/** 规范化错误签名：抽掉路径、数字与引号内容，跨会话比较同一类错误。 */
-export function errorSignature(op: Op): string {
-  if (op.error === null) return `${op.sig} exit ${String(op.exit ?? "?")}`;
-  const normalized = op.error
-    .replace(/(["'`]).*?\1/gu, "<str>")
-    .replace(/(?<=^|[\s"'(=:])(?:~|\.{1,2})?\/[\w.@~-]+(?:\/[\w.@~-]+)*/gu, "<path>")
-    .replace(/\b[0-9a-f]{7,}\b/giu, "<hex>")
-    .replace(/\b\d+\b/gu, "<n>")
-    .replace(/\s+/gu, " ")
-    .trim();
-  return clip(`${op.sig}: ${normalized}`, 200);
+/**
+ * 规范化一行错误：抽掉会随环境变化的部分（URL、路径、版本号、哈希、行列号、数字、引号内容），
+ * 留下错误的类别与措辞，跨会话比较同一类错误。
+ */
+export function normalizeError(text: string): string {
+  return (
+    text
+      .replace(/\bhttps?:\/\/\S+/gu, "<url>")
+      // 平台与架构：同一个缺失的原生模块在不同机器上名字不同（`rollup-darwin-arm64`、`rollup-linux-x64-gnu`）。
+      .replace(
+        /\b(?:darwin|linux|win32|windows|freebsd|android)[-_](?:arm64|aarch64|x64|x86_64|ia32|arm|riscv64|ppc64|s390x|loong64)(?:[-_](?:gnu|musl|msvc|gnueabihf))?\b/giu,
+        "<platform>",
+      )
+      .replace(/(["'`]).*?\1/gu, "<str>")
+      .replace(
+        /(?<=^|[\s"'(=:])(?:[A-Za-z]:)?(?:~|\.{1,2})?[\\/][\w.@~-]+(?:[\\/][\w.@~-]+)*/gu,
+        "<path>",
+      )
+      .replace(/\bv?\d+\.\d+(?:\.\d+)?(?:[-+][\w.-]+)?\b/gu, "<ver>")
+      .replace(/\b[0-9a-f]{7,}\b/giu, "<hex>")
+      .replace(/(?:<path>|\w)(?::\d+){1,2}\b/gu, (match) =>
+        match.replace(/(?::\d+){1,2}$/u, ":<pos>"),
+      )
+      .replace(/\b\d+\b/gu, "<n>")
+      .replace(/\s+/gu, " ")
+      .trim()
+  );
 }
 
-/** 一次成功的操作算哪一类修复；失败的编辑与命令没有改变任何东西，不算修复。 */
+/** 错误签名：命令动作加规范化的错误行，同一类错误在不同会话里得到相同的签名。 */
+export function errorSignature(op: Op): string {
+  if (op.error === null) return `${op.key} exit ${String(op.exit ?? "?")}`;
+  return clip(`${op.key}: ${normalizeError(op.error)}`, 200);
+}
+
+/**
+ * 一次成功的操作算哪一类修复；失败的编辑与命令没有改变任何东西，不算修复。
+ * 内联代码、HTTP 请求这类说明不了做了什么的命令多半是在查看，也不算修复。
+ */
 function fixKindOf(op: Op): FixKind | null {
   if (!op.ok) return null;
   if (op.kind === "edit")
     return op.target !== null && CONFIG_FILE.test(op.target) ? "config" : "source";
   if (op.kind !== "exec") return null;
   if (op.family === "install") return "install";
-  if (op.family === "run") return "command";
+  if (op.family === "run" && !isOpaque(op.key)) return "command";
   return null;
 }
 
+/** 失败与通过的两次运行换了选项或环境变量：`pnpm test` 改成 `pnpm test --runInBand`。只换文件或参数值不算。 */
+function rewritten(failed: Op, passed: Op): boolean {
+  if (failed.command === null || passed.command === null || isOpaque(passed.key)) return false;
+  const before = optionsOf(failed.command);
+  const after = optionsOf(passed.command);
+  return before.length !== after.length || before.some((option) => !after.includes(option));
+}
+
 /**
- * 找出「失败 → 修复 → 同一命令成功」的因果链。没有任何修复动作的重试不算恢复。
+ * 找出「失败 → 修复 → 同一动作成功」的因果链。动作相同即可，写法可以不同（`npm test` 失败、
+ * `pnpm test` 通过）。没有任何修复动作的重试不算恢复。
  * @param ops - 一个 Episode 的操作，按 seq 排列。
  * @returns 每个最终成功的失败链一条记录。
  */
@@ -204,20 +322,18 @@ export function findRecoveries(ops: readonly Op[]): Recovery[] {
   ops.forEach((op, index) => {
     if (op.kind !== "exec" || op.family === "inspect") return;
     if (!op.ok) {
-      if (!open.has(op.sig)) open.set(op.sig, index);
+      if (!open.has(op.key)) open.set(op.key, index);
       return;
     }
-    const start = open.get(op.sig);
+    const start = open.get(op.key);
     if (start === undefined) return;
-    open.delete(op.sig);
+    open.delete(op.key);
     const failed = ops[start];
     if (failed === undefined) return;
     const between = ops.slice(start + 1, index);
     const fixes = between.filter((candidate) => fixKindOf(candidate) !== null);
     const kinds = new Set(fixes.map((candidate) => fixKindOf(candidate)).filter((k) => k !== null));
-    if (failed.command !== null && op.command !== null && failed.command !== op.command) {
-      kinds.add("command");
-    }
+    if (rewritten(failed, op)) kinds.add("command");
     if (kinds.size === 0) return;
     const fixKinds = [...kinds].toSorted();
     recoveries.push({
@@ -225,6 +341,7 @@ export function findRecoveries(ops: readonly Op[]): Recovery[] {
       okSeq: op.seq,
       fixSeqs: fixes.map((candidate) => candidate.seq),
       sig: op.sig,
+      key: op.key,
       errorSig: errorSignature(failed),
       fixKinds,
       procedural: fixKinds.some((kind) => kind !== "source"),
@@ -233,10 +350,10 @@ export function findRecoveries(ops: readonly Op[]): Recovery[] {
   return recoveries;
 }
 
-/** 每个签名只看最后一次结果。 */
-function lastPerSig(ops: readonly Op[]): Op[] {
+/** 每个动作只看最后一次结果：`npm test` 失败后 `pnpm test` 通过，这个动作算通过。 */
+function lastPerKey(ops: readonly Op[]): Op[] {
   const last = new Map<string, Op>();
-  for (const op of ops) last.set(op.sig, op);
+  for (const op of ops) last.set(op.key, op);
   return [...last.values()];
 }
 
@@ -257,11 +374,11 @@ export function judgeOutcome(
     (op) => op.kind === "edit" && op.ok && !(op.target !== null && DOC_FILE.test(op.target)),
   );
   const after = ops.slice(lastEdit + 1).filter((op) => op.kind === "exec");
-  const verifications = lastPerSig(
+  const verifications = lastPerKey(
     after.filter((op) => op.family !== null && isVerification(op.family)),
   );
   // 最后一次编辑之后的每条命令（只读查看除外）以最后一次结果为准；任何一条停在失败上，任务就没有完成。
-  const actions = lastPerSig(after.filter((op) => op.family !== "inspect"));
+  const actions = lastPerKey(after.filter((op) => op.family !== "inspect"));
   const failures = actions.filter((op) => !op.ok);
   let outcome: Outcome;
   if (reason !== "completed" || failures.length > 0) outcome = "failed";
@@ -308,9 +425,11 @@ function episodeOf(
   if (lastTurnEnd === undefined || lastStep?.kind !== "turn-end") return null;
   const counts: Record<OpKind, number> = { read: 0, edit: 0, exec: 0, delegate: 0 };
   const ops: Op[] = [];
+  const steering: string[] = [];
   let reply: string | null = null;
   for (const step of body) {
     if (step.kind === "reply") reply = step.text;
+    if (step.kind === "human") steering.push(clip(input.redact(step.text), FOLLOWUP_CHARS));
     if (step.kind !== "tool") continue;
     const op = opOf(step, input);
     if (op === null) continue;
@@ -340,6 +459,7 @@ function episodeOf(
     endedAt: lastTurnEnd.time,
     goal: clip(input.redact(human.text), GOAL_CHARS),
     followup: safeFollowup,
+    steering: steering.slice(-MAX_STEERING),
     replay: input.inheritedGoals.has(goalKey(human.text)),
     outcome,
     evidence: [...evidence],

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { episodesOfLog, judgeOutcome } from "./episodes.ts";
+import { editKey, episodesOfLog, judgeOutcome, normalizeError, toolKind } from "./episodes.ts";
 import { compilePatterns, redact } from "./redact.ts";
 import {
   failingSession,
@@ -73,6 +73,7 @@ describe("episodesOfLog", () => {
     const episodes = episodesOfLog(log, OPTIONS);
     expect(episodes).toHaveLength(1);
     expect(episodes[0]?.goal).toBe("bump deps");
+    expect(episodes[0]?.steering).toEqual(["only minor versions please"]);
   });
 
   test("skips a task whose turn is still running", () => {
@@ -104,11 +105,44 @@ describe("episodesOfLog", () => {
   test("finds a recovery that needed a dependency reinstall", () => {
     const [episode] = episodesOfLog(recoverySession("s1", T0), OPTIONS);
     expect(episode?.recoveries).toEqual([
-      expect.objectContaining({ sig: "pnpm build", fixKinds: ["install"], procedural: true }),
+      expect.objectContaining({
+        sig: "pnpm build",
+        key: "pm run build",
+        fixKinds: ["install"],
+        procedural: true,
+      }),
     ]);
     expect(episode?.recoveries[0]?.errorSig).toBe(
-      "pnpm build: Error: Cannot find module @rollup/rollup-darwin-arm64. npm has a bug related to optional dependencies.",
+      "pm run build: Error: Cannot find module @rollup/rollup-<platform>. npm has a bug related to optional dependencies.",
     );
+  });
+
+  test("closes a recovery when the same action passes under another spelling", () => {
+    const log = sessionLog({ id: "s1", cwd: "/w" })
+      .human("tests fail after the upgrade")
+      .sh("npm test", { exit: 1, output: "Error: Cannot find module 'jsdom'" })
+      .sh("pnpm add -D jsdom")
+      .sh("pnpm test")
+      .end()
+      .build();
+    const [episode] = episodesOfLog(log, OPTIONS);
+    expect(episode?.outcome).toBe("verified");
+    expect(episode?.recoveries).toMatchObject([
+      { sig: "pnpm test", key: "pm run test", fixKinds: ["install"] },
+    ]);
+  });
+
+  test("keeps a failure open when a different action passes", () => {
+    const log = sessionLog({ id: "s1", cwd: "/w" })
+      .human("build and test")
+      .sh("pnpm build", { exit: 1, output: "error TS2304: Cannot find name 'x'" })
+      .sh("pnpm add -D @types/node")
+      .sh("pnpm test")
+      .end()
+      .build();
+    const [episode] = episodesOfLog(log, OPTIONS);
+    expect(episode?.recoveries).toEqual([]);
+    expect(episode?.outcome).toBe("failed");
   });
 
   test("counts a restored JSON build config as a procedural fix", () => {
@@ -152,6 +186,63 @@ describe("episodesOfLog", () => {
     expect(JSON.stringify(ops)).not.toMatch(/s3cr3t|k3y-value|hunter2/u);
   });
 
+  test("counts a rerun with changed options as a command fix", () => {
+    const log = sessionLog({ id: "s1", cwd: "/w" })
+      .human("the tests time out in CI mode")
+      .sh("pnpm test", { exit: 1, output: "Error: Test timed out in 5000ms" })
+      .sh("pnpm test --runInBand")
+      .end()
+      .build();
+    expect(episodesOfLog(log, OPTIONS)[0]?.recoveries).toMatchObject([
+      { key: "pm run test", fixKinds: ["command"], procedural: true },
+    ]);
+  });
+
+  test("does not call another inline snippet or another URL a fix", () => {
+    const log = sessionLog({ id: "s1", cwd: "/w" })
+      .human("how many records are in a.json, and is staging up?")
+      .sh("python3 -c 'import json; print(len(json.load(open(\"a.json\"))))'", {
+        exit: 1,
+        output: "KeyError: 'items'",
+      })
+      .sh('python3 -c \'import json; print(len(json.load(open("a.json"))["data"]))\'')
+      .sh("curl -fsS https://staging.example.com/health", { exit: 22, output: "curl: (22) 404" })
+      .sh("curl -fsS https://staging.example.com/api/health")
+      .end()
+      .build();
+    expect(episodesOfLog(log, OPTIONS)[0]?.recoveries).toEqual([]);
+  });
+
+  test("does not count an inline check between a failure and a source fix as a procedural fix", () => {
+    const log = sessionLog({ id: "s1", cwd: "/w" })
+      .human("fix the failing date formatter test")
+      .sh("pnpm test", { exit: 1, output: "FAIL src/date.test.ts > formats ISO dates" })
+      .edit("/w/src/date.ts")
+      .sh("node -e 'console.log(new Date(0).toISOString())'")
+      .sh("pnpm test")
+      .end()
+      .build();
+    expect(episodesOfLog(log, OPTIONS)[0]?.recoveries).toMatchObject([
+      { key: "pm run test", fixKinds: ["source"], procedural: false },
+    ]);
+  });
+
+  test("keeps an inline script recovery that needed a package install", () => {
+    const log = sessionLog({ id: "s1", cwd: "/w" })
+      .human("parse the config with yaml")
+      .sh("python3 -c 'import yaml'", {
+        exit: 1,
+        output: "ModuleNotFoundError: No module named 'yaml'",
+      })
+      .sh("pip install pyyaml")
+      .sh("python3 -c 'import yaml'")
+      .end()
+      .build();
+    expect(episodesOfLog(log, OPTIONS)[0]?.recoveries).toMatchObject([
+      { key: "python -c", fixKinds: ["install"], procedural: true },
+    ]);
+  });
+
   test("does not call a plain retry a recovery", () => {
     const log = sessionLog({ id: "s1", cwd: "/w" })
       .human("run the tests")
@@ -176,7 +267,28 @@ describe("episodesOfLog", () => {
   test("drops tool output when output sharing is off", () => {
     const [episode] = episodesOfLog(recoverySession("s1", T0), { ...OPTIONS, keepOutput: false });
     expect(episode?.ops[0]?.error).toBeNull();
-    expect(episode?.recoveries[0]?.errorSig).toBe("pnpm build exit 1");
+    expect(episode?.recoveries[0]?.errorSig).toBe("pm run build exit 1");
+  });
+
+  test("records edits and shell calls from other agents' and MCP tools", () => {
+    const log = sessionLog({ id: "s1", cwd: "/w" })
+      .human("bump the version")
+      .tool("mcp__fs__edit_file", { path: "/w/package.json" })
+      .tool("MultiEdit", { file_path: "/w/CHANGELOG.md" })
+      .tool("apply_patch", { input: "*** Begin Patch\n*** Update File: src/a.ts\n@@\n-a\n+b" })
+      .tool("run_terminal_cmd", { command: "pnpm test" })
+      .tool("mcp__github__create_issue", { title: "x" })
+      .end()
+      .build();
+    const [episode] = episodesOfLog(log, OPTIONS);
+    expect(episode?.ops.map((op) => [op.kind, op.key])).toEqual([
+      ["edit", "edit package.json"],
+      ["edit", "edit CHANGELOG.md"],
+      ["edit", "edit"],
+      ["exec", "pm run test"],
+      ["exec", "tool:create_issue"],
+    ]);
+    expect(episode?.outcome).toBe("verified");
   });
 
   test("applies user redaction patterns", () => {
@@ -213,6 +325,63 @@ describe("episodesOfLog", () => {
     const [episode] = episodesOfLog(log, OPTIONS);
     expect(episode?.outcome).toBe("failed");
     expect(episode?.evidence).toEqual([episode?.ops[2]?.seq]);
+  });
+});
+
+describe("tool classification", () => {
+  test.each([
+    ["bash", "shell"],
+    ["run_terminal_cmd", "shell"],
+    ["mcp__desktop__execute_command", "shell"],
+    ["edit", "edit"],
+    ["MultiEdit", "edit"],
+    ["mcp__filesystem__write_file", "edit"],
+    ["str_replace_based_edit_tool", "edit"],
+    ["read", "read"],
+    ["mcp__filesystem__read_text_file", "read"],
+    ["codebase_search", "read"],
+    ["mcp__github__create_issue", "other"],
+    ["create_pull_request", "other"],
+    ["todo_write", null],
+  ])("classifies %s as %s", (tool, kind) => {
+    expect(toolKind(tool)).toBe(kind);
+  });
+
+  test("names edits only for files with a fixed role", () => {
+    expect(editKey("package.json")).toBe("edit package.json");
+    expect(editKey("packages/a/package.json")).toBe("edit package.json");
+    expect(editKey(".github/workflows/release.yml")).toBe("edit .github/workflows");
+    expect(editKey("vite.config.ts")).toBe("edit vite.config.ts");
+    expect(editKey("src/index.ts")).toBe("edit");
+  });
+});
+
+describe("normalizeError", () => {
+  test("gives the same error from two machines one signature", () => {
+    expect(
+      normalizeError(
+        "Error: Cannot find module '/Users/a/proj/node_modules/x/index.js' at /Users/a/proj/src/b.ts:12:5",
+      ),
+    ).toBe(
+      normalizeError(
+        "Error: Cannot find module '/home/b/work/node_modules/x/index.js' at /home/b/work/src/c.ts:40:17",
+      ),
+    );
+    expect(
+      normalizeError("ERR_PNPM_FETCH_404 GET https://registry.npmjs.org/x: Not Found - 404"),
+    ).toBe("ERR_PNPM_FETCH_404 GET <url> Not Found - <n>");
+    expect(normalizeError("requires node >=20.11.0, found v18.19.1")).toBe(
+      "requires node >=<ver>, found <ver>",
+    );
+    expect(normalizeError("Cannot find module @rollup/rollup-linux-x64-gnu")).toBe(
+      normalizeError("Cannot find module @rollup/rollup-darwin-arm64"),
+    );
+  });
+
+  test("keeps different errors apart", () => {
+    expect(normalizeError("error TS2304: Cannot find name 'x'")).not.toBe(
+      normalizeError("error TS2345: Argument of type 'x' is not assignable"),
+    );
   });
 });
 

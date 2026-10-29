@@ -1,11 +1,12 @@
 /**
  * 会话标题栏里的经验提炼入口：一个图标按钮，有新建议时带一个小计数；点开是收件箱浮层，
  * 点卡片打开详情对话框。入口在第一次读取完成前不渲染，避免标题栏闪动。
- * 计数只算打开收件箱之后出现的可保存建议，看过即清零。
+ * 计数只算打开收件箱之后出现的、等用户决定的摘要与草稿，看过即清零；详情里正打开的那条在眼前，不计入。
  */
 import {
   IconCloseOutlineRegular,
   IconSkillOutlineRegular,
+  TextShimmer,
   useAnchoredPosition,
   useDismissOnOutsidePointer,
 } from "@deepseek-ai/dsh-client-ui-primitives";
@@ -21,7 +22,7 @@ import { createPortal } from "react-dom";
 import * as v from "valibot";
 import type { DetailView, InboxView, ItemView } from "../shared.ts";
 import { Detail } from "./detail.tsx";
-import { groupItems, metaOf, titleOf } from "./format.ts";
+import { groupItems, inFlight, metaOf, stateLabel, titleOf } from "./format.ts";
 import { useSnapshot } from "./hooks.ts";
 import type { ScoutTranslate } from "./locale.ts";
 import type { InboxStore } from "./store.ts";
@@ -37,7 +38,7 @@ export interface InboxFace {
 
 export type InboxEntryProps = InboxFace & { readonly t: ScoutTranslate };
 
-/** 看过的可保存建议；存在 localStorage 里，跨窗口共享。 */
+/** 看过的待决定建议；存在 localStorage 里，跨窗口共享。 */
 export interface SeenStore {
   has(id: string): boolean;
   add(ids: readonly string[]): void;
@@ -76,10 +77,16 @@ export function createSeenStore(storage: Pick<Storage, "getItem" | "setItem">): 
 
 const MEASURE_STYLE: CSSProperties = { visibility: "hidden", left: 0, top: 0 };
 
-/** 新建议数：可保存且还没看过。 */
-function unseen(inbox: InboxView | null, seen: SeenStore): number {
-  if (inbox === null) return 0;
-  return inbox.items.filter((item) => item.state === "ready" && !seen.has(item.id)).length;
+/** 等用户决定的摘要与草稿。 */
+function awaiting(inbox: InboxView | null): string[] {
+  return (inbox?.items ?? [])
+    .filter((item) => item.state === "proposed" || item.state === "ready")
+    .map((item) => item.id);
+}
+
+/** 新建议数：等用户决定、还没看过，也不是详情里正打开的那条。 */
+function unseen(inbox: InboxView | null, seen: SeenStore, viewing: string | null): number {
+  return awaiting(inbox).filter((id) => id !== viewing && !seen.has(id)).length;
 }
 
 interface CardProps {
@@ -92,9 +99,8 @@ interface CardProps {
 
 function Card({ item, now, t, onOpen, onDismiss }: CardProps): ReactNode {
   const title = titleOf(item);
-  const showState = item.state !== "ready";
   return (
-    <li className={styles.card} data-state={item.state}>
+    <li className={styles.card} data-state={item.state} data-stage={item.failure?.stage}>
       <button
         type="button"
         className={styles.open}
@@ -102,8 +108,13 @@ function Card({ item, now, t, onOpen, onDismiss }: CardProps): ReactNode {
         onClick={() => onOpen(item.id)}
       >
         <span className={styles.cardTitle}>{title}</span>
+        {item.description !== null && item.state !== "written" && (
+          <span className={styles.cardSummary}>{item.description}</span>
+        )}
         <span className={styles.cardMeta}>
-          {showState && <span className={styles.state}>{t(`state.${item.state}`)}</span>}
+          <span className={styles.state}>
+            <TextShimmer active={inFlight(item)}>{stateLabel(t, item)}</TextShimmer>
+          </span>
           <span>{metaOf(t, item, now)}</span>
         </span>
       </button>
@@ -141,7 +152,7 @@ function Banner({
   const pending = inbox.items.some((item) => item.state === "detected" || item.state === "failed");
   let key: "banner.noModel" | "banner.discoveryOff" | "banner.secondary" | null = null;
   if (!status.discovery) key = "banner.discoveryOff";
-  else if (status.model === null && pending) key = "banner.noModel";
+  else if (status.models.summary === null && pending) key = "banner.noModel";
   else if (!status.lead) key = "banner.secondary";
   if (key === null) return null;
   return <p className={styles.banner}>{t(key)}</p>;
@@ -150,7 +161,7 @@ function Banner({
 function PanelBody({ inbox, now, t, onOpen, onDismiss }: PanelBodyProps): ReactNode {
   const [history, setHistory] = useState(false);
   const groups = groupItems(inbox.items);
-  if (groups.ready.length === 0 && groups.found.length === 0 && groups.history.length === 0) {
+  if (groups.review.length === 0 && groups.found.length === 0 && groups.history.length === 0) {
     return (
       <div className={styles.empty}>
         <Banner inbox={inbox} t={t} />
@@ -163,7 +174,7 @@ function PanelBody({ inbox, now, t, onOpen, onDismiss }: PanelBodyProps): ReactN
     );
   }
   const section = (
-    key: "section.ready" | "section.found",
+    key: "section.review" | "section.found",
     items: readonly ItemView[],
   ): ReactNode =>
     items.length === 0 ? null : (
@@ -177,7 +188,7 @@ function PanelBody({ inbox, now, t, onOpen, onDismiss }: PanelBodyProps): ReactN
               now={now}
               t={t}
               onOpen={onOpen}
-              onDismiss={item.state === "reviewing" ? undefined : onDismiss}
+              onDismiss={inFlight(item) ? undefined : onDismiss}
             />
           ))}
         </ul>
@@ -186,7 +197,7 @@ function PanelBody({ inbox, now, t, onOpen, onDismiss }: PanelBodyProps): ReactN
   return (
     <>
       <Banner inbox={inbox} t={t} />
-      {section("section.ready", groups.ready)}
+      {section("section.review", groups.review)}
       {section("section.found", groups.found)}
       {groups.history.length > 0 && (
         <section className={styles.section}>
@@ -247,29 +258,27 @@ export function InboxEntry({
     (card ?? panelElement)?.focus();
   }, [open, returnTo, position]);
 
-  // 收件箱开着时出现的可保存建议也算看过。
+  // 收件箱开着时出现的待决定建议也算看过；详情开着时，用户在里面等到的摘要或草稿同样算看过。
   useEffect(() => {
-    if (!open || state.inbox === null) return;
-    const ready = state.inbox.items.filter((item) => item.state === "ready").map((item) => item.id);
-    if (ready.some((id) => !seen.has(id))) seen.add(ready);
-  }, [open, state.inbox, seen]);
+    if (state.inbox === null) return;
+    const ids = awaiting(state.inbox).filter((id) => open || id === detailId);
+    if (ids.some((id) => !seen.has(id))) seen.add(ids);
+  }, [open, detailId, state.inbox, seen]);
 
   if (state.inbox === null && state.status !== "error") return null;
 
-  const fresh = unseen(state.inbox, seen);
+  const fresh = unseen(state.inbox, seen, detailId);
   const badge = state.inbox?.status.notify === "badge" && fresh > 0;
   const label =
     fresh === 0
       ? t("entry.label")
       : t(fresh === 1 ? "entry.count.one" : "entry.count.other", { count: fresh });
-  const working =
-    state.inbox !== null && (state.inbox.status.scanning || state.inbox.status.reviewing !== null);
+  const asking = (state.inbox?.status.working ?? 0) > 0;
+  const working = asking || state.inbox?.status.scanning === true;
 
-  /** 打开收件箱：刷新状态，并把当前的可保存建议记为看过。 */
+  /** 打开收件箱：刷新状态，并把当前的待决定建议记为看过。 */
   const show = (): void => {
-    const ready =
-      state.inbox?.items.filter((item) => item.state === "ready").map((item) => item.id) ?? [];
-    seen.add(ready);
+    seen.add(awaiting(state.inbox));
     setSeenVersion((version) => version + 1);
     setNow(Date.now());
     setOpen(true);
@@ -321,9 +330,9 @@ export function InboxEntry({
             <h2 className={styles.title}>{t("panel.title")}</h2>
             {working && (
               <span className={styles.working} role="status">
-                {state.inbox?.status.reviewing === null
-                  ? t("panel.analyzing")
-                  : t("panel.reviewing")}
+                <TextShimmer active>
+                  {asking ? t("panel.working") : t("panel.analyzing")}
+                </TextShimmer>
               </span>
             )}
           </div>
@@ -400,7 +409,10 @@ export function InboxEntry({
           item={detailItem}
           inbox={inbox}
           loadDetail={loadDetail}
-          modelName={state.inbox?.status.model?.model ?? null}
+          models={{
+            summary: state.inbox?.status.models.summary?.model ?? null,
+            draft: state.inbox?.status.models.draft?.model ?? null,
+          }}
           defaultScope={state.inbox?.status.scope ?? "project"}
           openSession={openSession}
           t={t}

@@ -17,17 +17,26 @@ const Nullable = <T extends v.GenericSchema>(schema: T) => v.nullable(schema);
 
 export const SignalKindViewSchema = v.picklist(["repeated", "recovery", "complex"]);
 
-/** 建议在界面上的状态；reviewing 只存在于 Host 内存，表示模型正在复核它。 */
+/**
+ * 建议在界面上的状态。summarizing 与 drafting 只存在于 Host 内存，表示发现模型正在写摘要、
+ * 生成模型正在写草稿；其余与存储里的状态一致。
+ */
 export const ItemStateSchema = v.picklist([
   "detected",
-  "reviewing",
-  "ready",
+  "summarizing",
+  "proposed",
   "skipped",
+  "drafting",
+  "ready",
   "failed",
   "dismissed",
   "written",
 ]);
 export type ItemState = v.InferOutput<typeof ItemStateSchema>;
+
+/** 模型调用的两个阶段：摘要与草稿。 */
+export const StageViewSchema = v.picklist(["summary", "draft"]);
+export type StageView = v.InferOutput<typeof StageViewSchema>;
 
 export const DecisionSchema = v.picklist(["skip", "suggest_create", "suggest_improve"]);
 export type Decision = v.InferOutput<typeof DecisionSchema>;
@@ -56,10 +65,18 @@ export const ItemViewSchema = v.object({
   id: v.string(),
   kind: SignalKindViewSchema,
   state: ItemStateSchema,
-  /** 模型给出的标题；未复核时为 null，界面用 goal 代替。 */
+  /** 摘要给出的标题；还没有摘要时为 null，界面用 goal 代替。 */
   title: Nullable(v.string()),
   goal: v.string(),
-  /** 模型给出的理由。 */
+  /** 规则在这组任务里找到的共有步骤，原来的写法。 */
+  steps: v.array(v.string()),
+  /** 摘要：在会话里发现了什么。 */
+  found: Nullable(v.string()),
+  /** 摘要：Skill 做什么、什么时候用；改进时是追加的内容补上了什么。 */
+  description: Nullable(v.string()),
+  /** 摘要：打算写进 Skill 的步骤或追加的内容。 */
+  outline: v.array(v.string()),
+  /** 摘要判为跳过的理由。 */
   reason: Nullable(v.string()),
   occurrences: v.number(),
   sessions: v.array(SessionRefSchema),
@@ -72,6 +89,7 @@ export const ItemViewSchema = v.object({
   cautions: v.array(v.string()),
   failure: Nullable(
     v.object({
+      stage: StageViewSchema,
       kind: FailureKindViewSchema,
       message: v.string(),
       at: v.number(),
@@ -93,29 +111,38 @@ export const ItemViewSchema = v.object({
 });
 export type ItemView = v.InferOutput<typeof ItemViewSchema>;
 
+/** 一个阶段此刻使用的模型；没有可用模型时为 null。 */
+const ModelViewSchema = Nullable(
+  v.object({
+    provider: v.string(),
+    model: v.string(),
+    effort: Nullable(v.string()),
+    source: v.picklist(["config", "default"]),
+  }),
+);
+export type ModelView = v.InferOutput<typeof ModelViewSchema>;
+
 /** 插件此刻的工作状态。 */
 export const StatusViewSchema = v.object({
   discovery: v.boolean(),
-  review: v.boolean(),
+  /** 后台自动写摘要。 */
+  summarize: v.boolean(),
   notify: v.picklist(["badge", "quiet"]),
   scope: v.picklist(["project", "user"]),
-  model: Nullable(
-    v.object({
-      provider: v.string(),
-      model: v.string(),
-      effort: Nullable(v.string()),
-      source: v.picklist(["config", "default"]),
-    }),
-  ),
-  /** 本进程持有工作锁，负责分析与复核。 */
+  models: v.object({ summary: ModelViewSchema, draft: ModelViewSchema }),
+  /** 本进程持有工作锁，负责分析与后台摘要。 */
   lead: v.boolean(),
   scanning: v.boolean(),
   /** 回合已结束、等静默期过去后再分析的会话数。 */
   waiting: v.number(),
-  reviewing: Nullable(v.string()),
+  /** 正在进行的摘要与草稿请求数。 */
+  working: v.number(),
   usage: v.object({
-    reviews: v.number(),
+    /** 今天的后台摘要次数与上限。 */
+    summaries: v.number(),
     limit: v.number(),
+    /** 今天用户发起的摘要与草稿次数。 */
+    requested: v.number(),
     inputTokens: v.number(),
     outputTokens: v.number(),
   }),
@@ -141,7 +168,7 @@ export const EvidenceOpSchema = v.object({
   error: Nullable(v.string()),
   /** 在结果判定或恢复链里的角色。 */
   role: Nullable(v.picklist(["verify", "failure", "fix", "recovered"])),
-  /** 模型的结论引用了它。 */
+  /** 摘要或草稿引用了它。 */
   cited: v.boolean(),
 });
 export type EvidenceOp = v.InferOutput<typeof EvidenceOpSchema>;
@@ -157,6 +184,7 @@ export const EvidenceEpisodeSchema = v.object({
   reads: v.number(),
   ops: v.array(EvidenceOpSchema),
   reply: Nullable(v.string()),
+  steering: v.array(v.string()),
   followup: Nullable(v.string()),
 });
 export type EvidenceEpisode = v.InferOutput<typeof EvidenceEpisodeSchema>;
@@ -170,19 +198,24 @@ export const SkillFieldsSchema = v.object({
 });
 export type SkillFields = v.InferOutput<typeof SkillFieldsSchema>;
 
-/** 一条建议的完整信息：证据、模型结论与草稿。 */
+/** 一次模型调用的来源与用量。 */
+const CallViewSchema = Nullable(
+  v.object({
+    provider: v.string(),
+    model: v.string(),
+    at: v.number(),
+    inputTokens: v.number(),
+    outputTokens: v.number(),
+  }),
+);
+export type CallView = v.InferOutput<typeof CallViewSchema>;
+
+/** 一条建议的完整信息：证据、摘要与草稿。 */
 export const DetailViewSchema = v.object({
   item: ItemViewSchema,
   episodes: v.array(EvidenceEpisodeSchema),
-  review: Nullable(
-    v.object({
-      provider: v.string(),
-      model: v.string(),
-      at: v.number(),
-      inputTokens: v.number(),
-      outputTokens: v.number(),
-    }),
-  ),
+  summary: CallViewSchema,
+  draftCall: CallViewSchema,
   /** suggest_create 的草稿字段。 */
   draft: Nullable(SkillFieldsSchema),
   /** suggest_improve 的追加内容。 */
@@ -217,7 +250,8 @@ const Scope = v.optional(v.picklist(["project", "user"]));
 const Section = v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(8000)));
 
 export const ActionSchema = v.variant("action", [
-  v.object({ action: v.literal("analyze"), id: Id }),
+  v.object({ action: v.literal("summarize"), id: Id }),
+  v.object({ action: v.literal("draft"), id: Id }),
   v.object({ action: v.literal("dismiss"), id: Id, similar: v.boolean() }),
   v.object({ action: v.literal("restore"), id: Id }),
   v.object({

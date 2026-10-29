@@ -1,7 +1,7 @@
 /**
- * Skill Scout 的工作流程：会话空闲后提取 Episode，跨会话检测候选，按限额交给模型复核，
- * 用户确认后写入 Skill 并核对 DSH 能发现它。所有后台工作串行执行，不阻塞 Agent 主循环；
- * 只有持有工作锁的进程做分析与复核。
+ * Skill Scout 的工作流程：会话空闲后提取 Episode，跨会话检测候选；候选先由发现模型写一段摘要
+ * （后台按限额自动进行，或由用户发起），用户同意摘要后再由生成模型写 Skill 草稿，用户审核后写入
+ * Skill 并核对 DSH 能发现它。后台分析串行执行，不阻塞 Agent 主循环；只有持有工作锁的进程做分析与后台摘要。
  */
 import { realpath } from "node:fs/promises";
 import { resolve } from "pathe";
@@ -20,13 +20,18 @@ import type { Candidate, Episode } from "./model.ts";
 import { compilePatterns, containsSecret, redact } from "./redact.ts";
 import {
   buildEvidence,
-  checkReview,
+  checkDraft,
+  checkSummary,
   complete,
-  isReviewError,
-  reviewError,
-  systemPrompt,
+  draftMessage,
+  draftPrompt,
+  isModelError,
+  modelError,
+  summaryPrompt,
+  type EvidencePack,
+  type Proposal,
   type RelatedSkill,
-} from "./review.ts";
+} from "./llm.ts";
 import { detectCandidates, jaccard, tokens } from "./signals.ts";
 import {
   appendSection,
@@ -38,10 +43,13 @@ import {
 import {
   dayKey,
   recordKey,
+  type DraftRecord,
   type FailureRecord,
-  type ReviewRecord,
   type ScoutStore,
+  type Stage,
   type Suggestion,
+  type SuggestionState,
+  type SummaryRecord,
   type WriteRecord,
 } from "./store.ts";
 import {
@@ -59,9 +67,15 @@ import {
 
 const MINUTE = 60_000;
 const DAY = 24 * 60 * MINUTE;
-/** 复核失败后自动重试的等待时间；用完后只能手动重试。 */
+/** 后台摘要失败后自动重试的等待时间；用完后只能手动重试。草稿失败从不自动重试。 */
 const RETRY_DELAYS = [10 * MINUTE, 60 * MINUTE, 6 * 60 * MINUTE] as const;
-const REVIEW_MAX_TOKENS = 8192;
+/** 输出上限按推理模型留足余量：摘要只有几行，草稿是一个完整的 Skill。 */
+const SUMMARY_MAX_TOKENS = 4096;
+const DRAFT_MAX_TOKENS = 8192;
+/** 生成草稿时一并发给模型的写作指南：证据会话能看到的这个 Skill。 */
+const CREATOR_SKILL = "skill-creator";
+/** 写作指南的字符上限；写 SKILL.md 的指导通常在开头，后面是试跑、评测与打包的流程。 */
+const CREATOR_CHARS = 20_000;
 /** 写入后等待 DSH 发现新 Skill 的轮询次数与间隔。 */
 const DISCOVERY_POLLS = 12;
 const DISCOVERY_INTERVAL = 250;
@@ -84,8 +98,11 @@ export interface ScoutDeps {
   readonly signal: AbortSignal;
 }
 
-/** 选中的复核模型与它的来源。 */
-export type ReviewRoute = DshModelSelection & { readonly source: "config" | "default" };
+/** 选中的模型与它的来源：设置里指定，或跟随 Agent 的默认模型。 */
+export type ModelRoute = DshModelSelection & { readonly source: "config" | "default" };
+
+/** 正在进行的模型调用：建议 id 到阶段。 */
+export type Working = ReadonlyMap<string, Stage>;
 
 /** 带类别的操作失败，路由把它转换成响应。 */
 export type ActionError = Error & { readonly kind: ActionErrorKind };
@@ -171,16 +188,36 @@ function refreshed(suggestion: Suggestion, candidate: Candidate, now: number): S
   const next = { ...suggestion, candidate: { ...candidate, id: suggestion.candidate.id } };
   if (
     suggestion.state === "skipped" &&
-    candidate.episodeIds.length >= 2 * Math.max(1, suggestion.reviewedSize)
+    candidate.episodeIds.length >= 2 * Math.max(1, suggestion.summarizedSize)
   ) {
-    return { ...next, state: "detected", updatedAt: now };
+    return { ...next, state: "detected", summary: null, updatedAt: now };
   }
   return next;
 }
 
-function failureOf(error: Error, previous: FailureRecord | null, now: number): FailureRecord {
-  const kind = isReviewError(error) ? error.kind : "model";
-  return { kind, message: error.message, at: now, attempts: (previous?.attempts ?? 0) + 1 };
+/** 由已有的摘要与草稿决定的状态；恢复忽略的建议、撤销写入时使用。 */
+export function settledState(suggestion: Suggestion): SuggestionState {
+  if (suggestion.draft !== null) return "ready";
+  const decision = suggestion.summary?.summary.decision;
+  if (decision === undefined) return "detected";
+  return decision === "skip" ? "skipped" : "proposed";
+}
+
+/** 摘要里值得保存的结论；没有摘要或摘要判为跳过时为 null。 */
+export function proposalOf(suggestion: Suggestion): Proposal | null {
+  const summary = suggestion.summary?.summary;
+  return summary === undefined || summary.decision === "skip" ? null : summary;
+}
+
+function failureOf(
+  error: Error,
+  stage: Stage,
+  previous: FailureRecord | null,
+  now: number,
+): FailureRecord {
+  const kind = isModelError(error) ? error.kind : "model";
+  const attempts = previous?.stage === stage ? previous.attempts + 1 : 1;
+  return { stage, kind, message: error.message, at: now, attempts };
 }
 
 /** 失败的建议何时可以自动重试；次数用完时返回 null。 */
@@ -204,20 +241,27 @@ function checkText(texts: readonly string[]): void {
   }
 }
 
-/** 与候选相关的已有 Skill；最相关的一条附带脱敏后的 SKILL.md 全文。 */
+/**
+ * 与候选相关的已有 Skill；最相关的一条附带脱敏后的 SKILL.md 全文。
+ * @param target - 要改进的 Skill：它排在第一位，附带全文。
+ */
 async function relatedSkills(
   candidate: Candidate,
   episodes: readonly Episode[],
   catalog: readonly DshSkillSummary[],
   redactText: (text: string) => string,
+  target: string | null,
 ): Promise<RelatedSkill[]> {
   const query = tokens(
-    [candidate.goal, ...episodes.map((e) => e.goal), ...candidate.features].join(" "),
+    [candidate.goal, ...episodes.map((e) => e.goal), ...candidate.steps].join(" "),
   );
   const ranked = catalog
     .map((skill) => ({
       skill,
-      score: overlap(query, tokens(`${skill.name.replaceAll("-", " ")} ${skill.description}`)),
+      score:
+        skill.name === target
+          ? Number.POSITIVE_INFINITY
+          : overlap(query, tokens(`${skill.name.replaceAll("-", " ")} ${skill.description}`)),
     }))
     .filter((entry) => entry.score >= 0.2)
     .toSorted((a, b) => b.score - a.score)
@@ -231,6 +275,21 @@ async function relatedSkills(
 }
 
 /**
+ * 证据会话能看到的 skill-creator 技能，脱敏后取开头一段作为草稿的写作指南。
+ * @returns 没有这个 Skill，或它没有可读的文件时为 null，草稿只用内置的写作要求。
+ */
+async function creatorGuide(
+  catalog: readonly DshSkillSummary[],
+  redactText: (text: string) => string,
+): Promise<string | null> {
+  const path = catalog.find((skill) => skill.name === CREATOR_SKILL)?.path;
+  const content = path === undefined ? null : await readOptional(path);
+  if (content === null) return null;
+  const text = redactText(content).trim();
+  return text.length <= CREATOR_CHARS ? text : `${text.slice(0, CREATOR_CHARS)}…`;
+}
+
+/**
  * 创建引擎。
  * @param deps - DSH 服务与插件存储。
  */
@@ -238,8 +297,9 @@ export function createScout(deps: ScoutDeps) {
   const { store } = deps;
   let lead = false;
   let scanning = 0;
-  let reviewing: string | null = null;
-  let active: Promise<void> | null = null;
+  /** 正在进行的模型调用；每条建议同一时间最多一次。 */
+  const working = new Map<string, Stage>();
+  const active = new Set<Promise<void>>();
   let lastError: { kind: string; message: string; at: number } | null = null;
   let chain: Promise<void> = Promise.resolve();
   const timers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -261,18 +321,29 @@ export function createScout(deps: ScoutDeps) {
     return run;
   }
 
-  function route(): ReviewRoute | undefined {
-    const settings = deps.settings();
-    if (settings.provider !== "" && settings.model !== "") {
+  /** 设置里指定的模型；没有指定时跟随 Agent 的默认模型。 */
+  function routeOf(provider: string, model: string, effort: string): ModelRoute | undefined {
+    if (provider !== "" && model !== "") {
       return {
-        provider: settings.provider,
-        model: settings.model,
-        ...(settings.effort === "" ? {} : { reasoningEffort: settings.effort }),
+        provider,
+        model,
+        ...(effort === "" ? {} : { reasoningEffort: effort }),
         source: "config",
       };
     }
     const fallback = deps.defaultModel();
     return fallback === undefined ? undefined : { ...fallback, source: "default" };
+  }
+
+  /** 两个阶段此刻使用的模型。 */
+  function routes(): { readonly summary?: ModelRoute; readonly draft?: ModelRoute } {
+    const s = deps.settings();
+    const summary = routeOf(s.summaryProvider, s.summaryModel, s.summaryEffort);
+    const draft = routeOf(s.draftProvider, s.draftModel, s.draftEffort);
+    return {
+      ...(summary === undefined ? {} : { summary }),
+      ...(draft === undefined ? {} : { draft }),
+    };
   }
 
   function suggestions(): Suggestion[] {
@@ -346,8 +417,8 @@ export function createScout(deps: ScoutDeps) {
   }
 
   /**
-   * 删除历史范围之外的会话记录，以及昨天以前的用量记录（复核间隔要看昨天的最后一次），存储不随时间增长。
-   * 仍待处理（未复核、复核中、可以保存、复核失败）的建议引用的会话保留，证据不会丢失。
+   * 删除历史范围之外的会话记录，以及昨天以前的用量记录（摘要间隔要看昨天的最后一次），存储不随时间增长。
+   * 仍待处理（还没有摘要、等待同意、可以保存、模型调用失败）的建议引用的会话保留，证据不会丢失。
    */
   async function prune(since: number): Promise<void> {
     const cited = new Set(
@@ -404,8 +475,9 @@ export function createScout(deps: ScoutDeps) {
         state: "detected",
         detectedAt: now,
         updatedAt: now,
-        reviewedSize: 0,
-        review: null,
+        summarizedSize: 0,
+        summary: null,
+        draft: null,
         failure: null,
         write: null,
         dismissed: null,
@@ -418,7 +490,7 @@ export function createScout(deps: ScoutDeps) {
     await prune(since);
   }
 
-  /** 分析一个会话并更新建议，然后看是否有到期的复核。 */
+  /** 分析一个会话并更新建议，然后看是否有到期的后台摘要。 */
   function analyze(sessionId: string): Promise<void> {
     return serial(`analyzing session ${sessionId}`, async () => {
       if (!lead || !deps.settings().discovery) return;
@@ -487,15 +559,18 @@ export function createScout(deps: ScoutDeps) {
     timers.set(sessionId, timer);
   }
 
-  function lastReviewAt(now: number): number | null {
+  /** 最近一次后台摘要的时间，看今天与昨天。 */
+  function lastSummaryAt(now: number): number | null {
     const times = [dayKey(now), dayKey(now - DAY)].flatMap((day) => {
       const usage = store.usage.get(day);
-      return usage === undefined ? [] : [usage.lastAt];
+      return usage === undefined || usage.lastSummaryAt === 0 ? [] : [usage.lastSummaryAt];
     });
     return times.length === 0 ? null : Math.max(...times);
   }
 
+  /** 记一次模型调用的用量；后台摘要另外计入每日上限与间隔。 */
   async function recordUsage(
+    background: boolean,
     inputTokens: number,
     outputTokens: number,
     failed: boolean,
@@ -503,99 +578,181 @@ export function createScout(deps: ScoutDeps) {
     const now = deps.now();
     const day = dayKey(now);
     const usage = store.usage.get(day) ?? {
-      reviews: 0,
+      summaries: 0,
+      requested: 0,
       failures: 0,
       inputTokens: 0,
       outputTokens: 0,
-      lastAt: 0,
+      lastSummaryAt: 0,
     };
     await store.usage.put(day, {
-      reviews: usage.reviews + 1,
+      summaries: usage.summaries + (background ? 1 : 0),
+      requested: usage.requested + (background ? 0 : 1),
       failures: usage.failures + (failed ? 1 : 0),
       inputTokens: usage.inputTokens + inputTokens,
       outputTokens: usage.outputTokens + outputTokens,
-      lastAt: now,
+      lastSummaryAt: background ? now : usage.lastSummaryAt,
     });
   }
 
-  /** 复核一条建议：组装证据、请求模型、校验结论。 */
-  async function review(
+  /**
+   * 组装候选的证据包，并读取证据会话可用的 Skill。
+   * @param target - 要改进的 Skill，附带它的全文。
+   */
+  async function evidenceOf(
     suggestion: Suggestion,
-    target: ReviewRoute,
-    onCalled: () => void,
-  ): Promise<{ readonly record: ReviewRecord }> {
+    target: string | null,
+  ): Promise<{
+    readonly pack: EvidencePack;
+    readonly existing: ReadonlySet<string>;
+    readonly catalog: readonly DshSkillSummary[];
+  }> {
     const settings = deps.settings();
     const index = episodeIndex();
     const episodes = suggestion.candidate.episodeIds.flatMap((id) => {
       const episode = index.get(id);
       return episode === undefined ? [] : [episode];
     });
-    if (episodes.length === 0) throw reviewError("evidence", "证据任务已不在分析记录里");
+    if (episodes.length === 0) throw modelError("evidence", "证据任务已不在分析记录里");
     const catalog = await catalogOf(suggestion.candidate);
-    if (catalog === null) throw reviewError("evidence", "证据会话都已删除，读不到它们可用的 Skill");
+    if (catalog === null) throw modelError("evidence", "证据会话都已删除，读不到它们可用的 Skill");
     const related = await relatedSkills(
       suggestion.candidate,
       episodes,
       catalog,
       redactor(settings),
-    );
-    const pack = buildEvidence(suggestion.candidate, episodes, related, settings.evidenceBudget);
-    const signal = AbortSignal.any([deps.signal, AbortSignal.timeout(settings.timeout * 1000)]);
-    onCalled();
-    const completion = await complete(
-      deps.llm,
       target,
-      systemPrompt(settings.prompt),
-      pack.text,
-      REVIEW_MAX_TOKENS,
-      signal,
     );
-    const checked = checkReview(completion.text, pack, new Set(catalog.map((skill) => skill.name)));
     return {
+      pack: buildEvidence(suggestion.candidate, episodes, related, settings.evidenceBudget),
+      existing: new Set(catalog.map((skill) => skill.name)),
+      catalog,
+    };
+  }
+
+  /** 请求一次模型并返回调用记录；超时与插件卸载都会取消请求。 */
+  async function call(
+    target: ModelRoute,
+    system: string,
+    message: string,
+    maxTokens: number,
+    timeout: number,
+    onCalled: () => void,
+  ) {
+    const signal = AbortSignal.any([deps.signal, AbortSignal.timeout(timeout * 1000)]);
+    onCalled();
+    const completion = await complete(deps.llm, target, system, message, maxTokens, signal);
+    return {
+      completion,
       record: {
         at: deps.now(),
         provider: target.provider,
         model: target.model,
         inputTokens: completion.inputTokens,
         outputTokens: completion.outputTokens,
-        cautions: [...checked.cautions],
-        verdict: checked.review,
       },
     };
   }
 
-  /** 运行一次复核并保存结果；失败记录在建议上。从不拒绝。 */
-  async function runReview(id: string, target: ReviewRoute): Promise<void> {
+  /** 给一条建议写摘要：判断值不值得保存，值得时给出标题、发现、描述、名称与提纲。 */
+  async function summarizeOnce(
+    suggestion: Suggestion,
+    target: ModelRoute,
+    onCalled: () => void,
+  ): Promise<SummaryRecord> {
+    const settings = deps.settings();
+    const { pack, existing } = await evidenceOf(suggestion, null);
+    const { completion, record } = await call(
+      target,
+      summaryPrompt(settings.prompt),
+      pack.text,
+      SUMMARY_MAX_TOKENS,
+      settings.summaryTimeout,
+      onCalled,
+    );
+    return { ...record, summary: checkSummary(completion.text, pack, existing) };
+  }
+
+  /** 按用户同意的摘要写草稿；证据会话有 skill-creator 时附上它作为写作指南。 */
+  async function draftOnce(
+    suggestion: Suggestion,
+    target: ModelRoute,
+    onCalled: () => void,
+  ): Promise<DraftRecord> {
+    const settings = deps.settings();
+    const proposal = proposalOf(suggestion);
+    if (proposal === null) throw modelError("evidence", "这条建议没有可以生成草稿的摘要");
+    const improve = proposal.decision === "suggest_improve" ? proposal.skill : null;
+    const { pack, existing, catalog } = await evidenceOf(suggestion, improve);
+    if (improve !== null && !existing.has(improve)) {
+      throw modelError("evidence", `要改进的 Skill 已不存在：${improve}`);
+    }
+    const creator = await creatorGuide(catalog, redactor(settings));
+    const { completion, record } = await call(
+      target,
+      draftPrompt(proposal, creator),
+      draftMessage(proposal, pack),
+      DRAFT_MAX_TOKENS,
+      settings.draftTimeout,
+      onCalled,
+    );
+    const { draft, cautions } = checkDraft(completion.text, pack, proposal);
+    return { ...record, cautions: [...cautions], draft };
+  }
+
+  /** 一次摘要或草稿完成后的建议；调用期间被忽略的建议保持忽略，结果照样记下，恢复时据此回到对应状态。 */
+  function withResult(current: Suggestion, result: SummaryRecord | DraftRecord): Suggestion {
+    const next: Suggestion =
+      "summary" in result
+        ? {
+            ...current,
+            summary: result,
+            // 新的摘要让旧草稿失效：草稿必须按用户同意的那份摘要生成。
+            draft: null,
+            summarizedSize: current.candidate.episodeIds.length,
+          }
+        : { ...current, draft: result };
+    return {
+      ...next,
+      state: current.state === "dismissed" ? "dismissed" : settledState(next),
+      updatedAt: deps.now(),
+      failure: null,
+    };
+  }
+
+  /**
+   * 运行一次摘要或草稿并保存结果；失败记录在建议上。从不拒绝。
+   * @param background - 后台自动发起的摘要，计入每日上限与间隔。
+   */
+  async function runModel(
+    id: string,
+    stage: Stage,
+    target: ModelRoute,
+    background: boolean,
+  ): Promise<void> {
     let called = false;
-    let tokensUsed = { input: 0, output: 0 };
+    const onCalled = (): void => {
+      called = true;
+    };
     try {
       const suggestion = find(id);
       try {
-        const { record } = await review(suggestion, target, () => {
-          called = true;
-        });
-        tokensUsed = { input: record.inputTokens, output: record.outputTokens };
-        const current = find(id);
-        // 复核期间被忽略的建议保持忽略；结论照样记下，恢复时据此回到对应状态。
-        const reviewed = record.verdict.decision === "skip" ? "skipped" : "ready";
-        await save({
-          ...current,
-          state: current.state === "dismissed" ? "dismissed" : reviewed,
-          updatedAt: deps.now(),
-          reviewedSize: current.candidate.episodeIds.length,
-          review: record,
-          failure: null,
-        });
+        const result =
+          stage === "summary"
+            ? await summarizeOnce(suggestion, target, onCalled)
+            : await draftOnce(suggestion, target, onCalled);
+        await save(withResult(find(id), result));
         lastError = null;
-        if (called) await recordUsage(tokensUsed.input, tokensUsed.output, false);
+        await recordUsage(background, result.inputTokens, result.outputTokens, false);
       } catch (error) {
         if (deps.signal.aborted) return;
+        const current = find(id);
         const failure = failureOf(
           error instanceof Error ? error : new Error(String(error)),
-          suggestion.failure,
+          stage,
+          current.failure,
           deps.now(),
         );
-        const current = find(id);
         await save({
           ...current,
           state: current.state === "dismissed" ? "dismissed" : "failed",
@@ -603,66 +760,83 @@ export function createScout(deps: ScoutDeps) {
           failure,
         });
         lastError = { kind: failure.kind, message: failure.message, at: failure.at };
-        deps.logger.warn("skill-scout: review of %s failed: %s", id, failure.message);
-        if (called) await recordUsage(0, 0, true);
+        deps.logger.warn("skill-scout: %s of %s failed: %s", stage, id, failure.message);
+        if (called) await recordUsage(background, 0, 0, true);
       }
     } catch (error) {
-      report(`review of ${id}`, error);
+      report(`${stage} of ${id}`, error);
     } finally {
-      reviewing = null;
+      working.delete(id);
     }
   }
 
-  /** 在后台开始一次复核；同一时间只有一次。 */
-  function startReview(id: string, target: ReviewRoute): void {
-    reviewing = id;
-    active = runReview(id, target).finally(() => {
-      active = null;
+  /** 在后台开始一次模型调用。 */
+  function start(id: string, stage: Stage, target: ModelRoute, background: boolean): void {
+    working.set(id, stage);
+    const run: Promise<void> = runModel(id, stage, target, background).finally(() => {
+      active.delete(run);
     });
+    active.add(run);
   }
 
-  /** 到期可以自动复核的建议，按分数从高到低。 */
+  /** 到期可以自动写摘要的建议，按分数从高到低。只有摘要会自动重试。 */
   function due(now: number): Suggestion[] {
     return suggestions()
       .filter((suggestion) => {
         if (suggestion.state === "detected") return true;
-        if (suggestion.state !== "failed" || suggestion.failure === null) return false;
+        if (suggestion.state !== "failed" || suggestion.failure?.stage !== "summary") return false;
         const at = retryAt(suggestion.failure);
         return at !== null && now >= at;
       })
       .toSorted((a, b) => b.candidate.score - a.candidate.score || a.detectedAt - b.detectedAt);
   }
 
-  /** 在限额内启动下一次后台复核。 */
+  /** 在限额内启动下一次后台摘要；有任何模型调用在进行时不启动。后台从不生成草稿。 */
   function pump(): void {
-    if (!lead || reviewing !== null || deps.signal.aborted) return;
+    if (!lead || working.size > 0 || deps.signal.aborted) return;
     const settings = deps.settings();
-    // 关闭会话分析或后台复核后，不再发出任何后台模型请求。
-    if (!settings.discovery || !settings.review) return;
+    // 关闭会话分析或后台摘要后，不再发出任何后台模型请求。
+    if (!settings.discovery || !settings.summarize) return;
     const now = deps.now();
-    if ((store.usage.get(dayKey(now))?.reviews ?? 0) >= settings.dailyReviews) return;
-    const last = lastReviewAt(now);
-    if (last !== null && now - last < settings.reviewInterval * MINUTE) return;
+    if ((store.usage.get(dayKey(now))?.summaries ?? 0) >= settings.dailySummaries) return;
+    const last = lastSummaryAt(now);
+    if (last !== null && now - last < settings.summaryInterval * MINUTE) return;
     const next = due(now)[0];
     if (next === undefined) return;
-    const target = route();
+    const target = routes().summary;
     if (target === undefined) {
-      lastError = { kind: "no-model", message: "没有可用的复核模型", at: now };
+      lastError = { kind: "no-model", message: "没有可用的发现模型", at: now };
       return;
     }
-    startReview(next.id, target);
+    start(next.id, "summary", target, true);
   }
 
-  /** 用户手动请求复核：不受后台开关与限额约束，但同一时间只复核一条。 */
-  function analyzeNow(id: string): void {
+  /** 用户请求的模型调用共同的前提：建议还没处理完，且这条建议没有正在进行的调用。 */
+  function requestable(id: string): Suggestion {
     const suggestion = find(id);
-    if (reviewing !== null) throw actionError("busy", "正在复核另一条建议");
+    if (working.has(id)) throw actionError("busy", "这条建议正在处理");
     if (suggestion.state === "written" || suggestion.state === "dismissed") {
       throw actionError("invalid", "这条建议已经处理过");
     }
-    const target = route();
-    if (target === undefined) throw actionError("no-model", "没有可用的复核模型");
-    startReview(id, target);
+    return suggestion;
+  }
+
+  /** 用户请求写摘要：不受后台开关与限额约束。 */
+  function summarizeNow(id: string): void {
+    const suggestion = requestable(id);
+    if (suggestion.state === "ready") throw actionError("invalid", "这条建议已经有草稿");
+    const target = routes().summary;
+    if (target === undefined) throw actionError("no-model", "没有可用的发现模型");
+    start(id, "summary", target, false);
+  }
+
+  /** 用户同意摘要，请求生成草稿；已有草稿时重新生成。 */
+  function draftNow(id: string): void {
+    const suggestion = requestable(id);
+    if (proposalOf(suggestion) === null) throw actionError("invalid", "这条建议还没有可同意的摘要");
+    const target = routes().draft;
+    if (target === undefined) throw actionError("no-model", "没有可用的生成模型");
+    start(id, "draft", target, false);
   }
 
   async function dismiss(id: string, similar: boolean): Promise<void> {
@@ -680,18 +854,26 @@ export function createScout(deps: ScoutDeps) {
   async function restore(id: string): Promise<void> {
     const suggestion = find(id);
     if (suggestion.state !== "dismissed") throw actionError("invalid", "这条建议没有被忽略");
-    const verdict = suggestion.review?.verdict.decision;
-    const state = verdict === undefined ? "detected" : verdict === "skip" ? "skipped" : "ready";
-    await save({ ...suggestion, state, updatedAt: deps.now(), dismissed: null });
+    await save({
+      ...suggestion,
+      state: settledState(suggestion),
+      updatedAt: deps.now(),
+      dismissed: null,
+    });
   }
 
   /** 生成写入预览；不触碰文件系统以外的状态。 */
   async function preview(id: string, input: WriteInput): Promise<Preview> {
     const suggestion = find(id);
-    const verdict = suggestion.review?.verdict;
+    const proposal = proposalOf(suggestion);
+    const draft = suggestion.draft?.draft;
     const cwd = suggestion.candidate.cwd;
-    if (verdict?.decision === "suggest_create") {
-      const fields = input.fields ?? fieldsOfDraft(verdict.skill, verdict.title);
+    if (proposal === null || draft === undefined) {
+      throw actionError("invalid", "这条建议还没有可写入的草稿");
+    }
+    if (draft.kind === "create") {
+      const fields =
+        input.fields ?? fieldsOfDraft({ name: proposal.skill, title: proposal.title, draft });
       const scope = input.scope ?? deps.settings().scope;
       const path = await newSkillPath(scope, fields.name, cwd).catch((error: Error) => {
         throw isWriteError(error) ? actionError("invalid", error.message) : error;
@@ -706,25 +888,22 @@ export function createScout(deps: ScoutDeps) {
         fields,
       };
     }
-    if (verdict?.decision === "suggest_improve") {
-      const name = verdict.improve.skill;
-      const skill = (await catalogOf(suggestion.candidate))?.find((entry) => entry.name === name);
-      const section = input.section ?? renderImprovement(verdict.title, verdict.improve.notes);
-      const path = skill?.path ?? null;
-      const before = path === null ? "" : ((await readOptional(path)) ?? "");
-      const writable = path !== null && insideRoots(path, await skillRoots(cwd));
-      return {
-        kind: "improve",
-        skill: name,
-        path,
-        writable,
-        before,
-        after: appendSection(before, section),
-        baseHash: hashOf(before),
-        section,
-      };
-    }
-    throw actionError("invalid", "这条建议还没有可写入的草稿");
+    const name = proposal.skill;
+    const skill = (await catalogOf(suggestion.candidate))?.find((entry) => entry.name === name);
+    const section = input.section ?? renderImprovement(proposal.title, draft.notes);
+    const path = skill?.path ?? null;
+    const before = path === null ? "" : ((await readOptional(path)) ?? "");
+    const writable = path !== null && insideRoots(path, await skillRoots(cwd));
+    return {
+      kind: "improve",
+      skill: name,
+      path,
+      writable,
+      before,
+      after: appendSection(before, section),
+      baseHash: hashOf(before),
+      section,
+    };
   }
 
   /** 证据会话的 Skill 目录此刻是否列出了这个文件。 */
@@ -850,7 +1029,8 @@ export function createScout(deps: ScoutDeps) {
     }
     clearTimeout(rechecks.get(id));
     rechecks.delete(id);
-    await save({ ...find(id), state: "ready", updatedAt: deps.now(), write: null });
+    const current = { ...find(id), write: null };
+    await save({ ...current, state: settledState(current), updatedAt: deps.now() });
   }
 
   return {
@@ -863,17 +1043,18 @@ export function createScout(deps: ScoutDeps) {
     backfill,
     detect: () => serial("detecting candidates", detect),
     pump,
-    analyzeNow,
+    summarizeNow,
+    draftNow,
     dismiss,
     restore,
     preview,
     write,
     undo,
-    route,
-    /** 等待已排队的分析与正在进行的复核结束；测试与卸载时使用。 */
+    routes,
+    /** 等待已排队的分析与正在进行的模型调用结束；测试与卸载时使用。 */
     async idle(): Promise<void> {
       await chain;
-      await active;
+      await Promise.all(active);
     },
     runtime() {
       return {
@@ -881,7 +1062,7 @@ export function createScout(deps: ScoutDeps) {
         scanning: scanning > 0,
         waiting: timers.size,
         checking: [...rechecks.keys()],
-        reviewing,
+        working: new Map(working) as Working,
         lastError,
       };
     },

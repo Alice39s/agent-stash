@@ -112,6 +112,9 @@ declare module "@deepseek-ai/dsh-client-ui-primitives" {
     maxLines?: number;
   }): ReactNode;
 
+  /** 进行中的文字：`active` 时文字上有一道扫光，减少动态效果时静止。 */
+  export function TextShimmer(props: { children: ReactNode; active?: boolean }): ReactNode;
+
   /** 浮层相对锚点的 fixed 坐标；首次测量前为 null。 */
   export function useAnchoredPosition(options: {
     open: boolean;

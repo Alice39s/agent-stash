@@ -1,6 +1,7 @@
 /**
  * 插件配置。所有字段都是 volatile：设置页改动后 Host 下一次读取就生效，不重新挂载插件。
- * 模型复核默认关闭，打开后才会把脱敏后的证据发给所选模型。
+ * 模型分两处使用：「发现」模型给候选写摘要，「生成」模型在用户同意后写 Skill 草稿。
+ * 后台摘要默认关闭，打开后才会在后台把脱敏后的证据发给发现模型；草稿只在用户点击后生成。
  */
 import Schema from "@deepseek-ai/schemastery";
 
@@ -15,41 +16,59 @@ export const Config = Schema.object({
     .default(true)
     .description("Analyze finished sessions on this machine and look for reusable workflows.")
     .volatile(),
-  review: Schema.boolean()
+  summarize: Schema.boolean()
     .default(false)
     .description(
-      "Send redacted evidence of promising candidates to the model in the background for review.",
+      "Send redacted evidence of promising candidates to the discovery model in the background for a short summary.",
     )
     .volatile(),
-  provider: Schema.string()
+  summaryProvider: Schema.string()
     .default("")
-    .description("Provider of the review model. Empty uses the default Agent model.")
+    .description("Provider of the discovery model. Empty uses the default Agent model.")
     .volatile(),
-  model: Schema.string()
+  summaryModel: Schema.string()
     .default("")
-    .description("Review model id. Empty uses the default Agent model.")
+    .description("Discovery model id. Empty uses the default Agent model.")
     .volatile(),
-  effort: Schema.string()
+  summaryEffort: Schema.string()
     .default("")
-    .description("Reasoning effort for the review model. Empty uses the model default.")
+    .description("Reasoning effort for the discovery model. Empty uses the model default.")
     .volatile(),
-  timeout: Schema.natural()
+  summaryTimeout: Schema.natural()
     .min(10)
     .max(600)
-    .default(90)
-    .description("Seconds before a review request is abandoned.")
+    .default(60)
+    .description("Seconds before a summary request is abandoned.")
     .volatile(),
-  dailyReviews: Schema.natural()
+  draftProvider: Schema.string()
+    .default("")
+    .description("Provider of the model that drafts Skills. Empty uses the default Agent model.")
+    .volatile(),
+  draftModel: Schema.string()
+    .default("")
+    .description("Model id that drafts Skills. Empty uses the default Agent model.")
+    .volatile(),
+  draftEffort: Schema.string()
+    .default("")
+    .description("Reasoning effort for the drafting model. Empty uses the model default.")
+    .volatile(),
+  draftTimeout: Schema.natural()
+    .min(10)
+    .max(900)
+    .default(180)
+    .description("Seconds before a draft request is abandoned.")
+    .volatile(),
+  dailySummaries: Schema.natural()
     .min(1)
     .max(100)
     .default(6)
-    .description("Background reviews allowed per day.")
+    .description("Background summaries allowed per day.")
     .volatile(),
-  reviewInterval: Schema.natural()
+  summaryInterval: Schema.natural()
     .min(1)
     .max(1440)
     .default(10)
-    .description("Minutes between two background reviews.")
+    .description("Minutes between two background summaries.")
     .volatile(),
   quietPeriod: Schema.natural()
     .min(0)
@@ -79,7 +98,7 @@ export const Config = Schema.object({
     .min(4000)
     .max(200000)
     .default(24000)
-    .description("Characters of evidence sent with one review.")
+    .description("Characters of evidence sent with one summary or draft request.")
     .volatile(),
   readOutput: Schema.boolean()
     .default(true)
@@ -99,7 +118,7 @@ export const Config = Schema.object({
     .volatile(),
   prompt: Schema.string()
     .default("")
-    .description("Replaces the review guidance. The output format is always appended.")
+    .description("Replaces the summary guidance. The output format is always appended.")
     .volatile(),
 });
 
@@ -109,13 +128,17 @@ export type ConfigValue = ReturnType<typeof Config>;
 /** 某一时刻的配置值。 */
 export interface Settings {
   readonly discovery: boolean;
-  readonly review: boolean;
-  readonly provider: string;
-  readonly model: string;
-  readonly effort: string;
-  readonly timeout: number;
-  readonly dailyReviews: number;
-  readonly reviewInterval: number;
+  readonly summarize: boolean;
+  readonly summaryProvider: string;
+  readonly summaryModel: string;
+  readonly summaryEffort: string;
+  readonly summaryTimeout: number;
+  readonly draftProvider: string;
+  readonly draftModel: string;
+  readonly draftEffort: string;
+  readonly draftTimeout: number;
+  readonly dailySummaries: number;
+  readonly summaryInterval: number;
   readonly quietPeriod: number;
   readonly historyDays: number;
   readonly maxSessions: number;
@@ -132,13 +155,17 @@ export interface Settings {
 export function currentSettings(config: ConfigValue): Settings {
   return {
     discovery: config.discovery.get(),
-    review: config.review.get(),
-    provider: config.provider.get(),
-    model: config.model.get(),
-    effort: config.effort.get(),
-    timeout: config.timeout.get(),
-    dailyReviews: config.dailyReviews.get(),
-    reviewInterval: config.reviewInterval.get(),
+    summarize: config.summarize.get(),
+    summaryProvider: config.summaryProvider.get(),
+    summaryModel: config.summaryModel.get(),
+    summaryEffort: config.summaryEffort.get(),
+    summaryTimeout: config.summaryTimeout.get(),
+    draftProvider: config.draftProvider.get(),
+    draftModel: config.draftModel.get(),
+    draftEffort: config.draftEffort.get(),
+    draftTimeout: config.draftTimeout.get(),
+    dailySummaries: config.dailySummaries.get(),
+    summaryInterval: config.summaryInterval.get(),
     quietPeriod: config.quietPeriod.get(),
     historyDays: config.historyDays.get(),
     maxSessions: config.maxSessions.get(),

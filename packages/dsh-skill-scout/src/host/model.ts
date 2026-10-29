@@ -22,6 +22,16 @@ export type CommandFamily = v.InferOutput<typeof CommandFamilySchema>;
 export const OpKindSchema = v.picklist(["read", "edit", "exec", "delegate"]);
 export type OpKind = v.InferOutput<typeof OpKindSchema>;
 
+/** exec 命令链里的一段非查看类命令。 */
+export const PartSchema = v.object({
+  /** 原来写法的签名，用于展示。 */
+  sig: v.string(),
+  /** 规范动作，等价写法相同，用于比较。 */
+  key: v.string(),
+  family: CommandFamilySchema,
+});
+export type Part = v.InferOutput<typeof PartSchema>;
+
 /** 一次工具调用（含 run_code 里的子调用）的精简记录。 */
 export const OpSchema = v.object({
   /** 结果事件的 seq，作为证据引用。 */
@@ -31,8 +41,13 @@ export const OpSchema = v.object({
   tool: v.string(),
   /** 命令签名（exec）、文件路径（edit）或工具名。 */
   sig: v.string(),
-  /** exec 命令链里各段非查看类命令的签名，去重；其他操作为空。 */
-  parts: v.array(v.string()),
+  /**
+   * 规范动作：exec 是主段命令的动作；edit 是 `edit <文件名>`，只对 package.json、CHANGELOG.md
+   * 这类有固定角色的文件带上文件名，其余为 `edit`；其他操作是工具名。
+   */
+  key: v.string(),
+  /** exec 命令链里各段非查看类命令，按动作去重；其他操作为空。 */
+  parts: v.array(PartSchema),
   /** exec 的命令族；命令链里只要有一段是测试或检查，就取那一族。 */
   family: v.nullable(CommandFamilySchema),
   /** exec 的命令文本，已脱敏、裁剪。 */
@@ -58,6 +73,8 @@ export const RecoverySchema = v.object({
   fixSeqs: v.array(v.number()),
   /** 恢复成功的命令签名。 */
   sig: v.string(),
+  /** 恢复成功的命令动作；失败与成功的命令写法可以不同，动作相同。 */
+  key: v.string(),
   /** 规范化的错误签名，跨会话比较用。 */
   errorSig: v.string(),
   fixKinds: v.array(FixKindSchema),
@@ -106,6 +123,8 @@ export const EpisodeSchema = v.object({
   goal: v.string(),
   /** 下一条人类消息，用于识别用户否定；已脱敏、裁剪。 */
   followup: v.nullable(v.string()),
+  /** 回合进行中用户插入的消息（纠正、补充要求），保留最后几条；已脱敏、裁剪。 */
+  steering: v.array(v.string()),
   /** fork 出的会话重放了继承前缀里的同一请求，不算独立的一次。 */
   replay: v.boolean(),
   outcome: OutcomeSchema,
@@ -131,8 +150,10 @@ export const CandidateSchema = v.object({
   /** 指纹，同一模式在多次检测间保持不变。 */
   id: v.string(),
   kind: SignalKindSchema,
-  /** 用来比较相似候选的特征：命令签名或错误签名的集合。 */
+  /** 用来比较相似候选的特征：命令动作或错误签名的集合。 */
   features: v.array(v.string()),
+  /** 这组任务共有的步骤，按代表任务里的顺序，用原来写法的签名展示。 */
+  steps: v.array(v.string()),
   /** 证据 Episode，最新的在前。 */
   episodeIds: v.array(v.string()),
   /** 独立会话数。 */

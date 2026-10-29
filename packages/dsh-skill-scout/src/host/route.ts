@@ -2,7 +2,7 @@
  * 浏览器使用的三个路由：
  * - GET `INBOX_PATH`：收件箱与工作状态；
  * - GET `DETAIL_PATH?id=`：一条建议的证据与草稿；
- * - POST `ACTION_PATH`：复核、忽略、恢复、预览、写入、撤销与重新扫描。
+ * - POST `ACTION_PATH`：写摘要、生成草稿、忽略、恢复、预览、写入、撤销与重新扫描。
  * 每个请求先经过 `ctx.connection.requestRejection` 的 Host/Origin 检查与浏览器认证。
  * 请求不合法返回 400，建议不存在返回 404，其余已知的操作失败返回 409 并附带新的收件箱。
  */
@@ -73,7 +73,8 @@ function previewView(preview: Preview): PreviewView {
 /** 执行一个操作；只有 preview 返回内容。 */
 async function perform(scout: Scout, action: Action): Promise<PreviewView | undefined> {
   if (action.action === "preview") return previewView(await scout.preview(action.id, action));
-  if (action.action === "analyze") scout.analyzeNow(action.id);
+  if (action.action === "summarize") scout.summarizeNow(action.id);
+  else if (action.action === "draft") scout.draftNow(action.id);
   else if (action.action === "dismiss") await scout.dismiss(action.id, action.similar);
   else if (action.action === "restore") await scout.restore(action.id);
   else if (action.action === "write") await scout.write(action.id, action);

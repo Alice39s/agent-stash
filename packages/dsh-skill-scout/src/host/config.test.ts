@@ -1,13 +1,16 @@
 import { expect, test } from "vitest";
 import { Config, currentSettings } from "./config.ts";
 
-test("keeps model review off and suggestions in the project by default", () => {
+test("keeps background summaries off and suggestions in the project by default", () => {
   const settings = currentSettings(Config({}));
   expect(settings).toMatchObject({
     discovery: true,
-    review: false,
+    summarize: false,
+    summaryModel: "",
+    draftModel: "",
     scope: "project",
     notify: "badge",
   });
+  expect(settings.draftTimeout).toBeGreaterThan(settings.summaryTimeout);
   expect(settings.redactPatterns).toEqual([]);
 });

@@ -28,20 +28,34 @@ export const NOW = Date.UTC(2026, 9, 30, 9);
 
 export const STATUS: StatusView = {
   discovery: true,
-  review: false,
+  summarize: false,
   notify: "badge",
   scope: "project",
-  model: { provider: "deepseek", model: "deepseek-flash", effort: null, source: "default" },
+  models: {
+    summary: { provider: "deepseek", model: "deepseek-flash", effort: null, source: "config" },
+    draft: { provider: "deepseek", model: "deepseek-pro", effort: null, source: "default" },
+  },
   lead: true,
   scanning: false,
   waiting: 0,
-  reviewing: null,
-  usage: { reviews: 1, limit: 6, inputTokens: 1200, outputTokens: 300 },
+  working: 0,
+  usage: { summaries: 1, limit: 6, requested: 1, inputTokens: 1200, outputTokens: 300 },
   lastError: null,
   analyzed: { sessions: 4, episodes: 4 },
 };
 
-/** 一条建议；默认是复核过、可以保存的重复流程。 */
+/** 摘要与草稿都还没有的建议应有的字段。 */
+export const UNSUMMARIZED: Partial<ItemView> = {
+  state: "detected",
+  title: null,
+  found: null,
+  description: null,
+  outline: [],
+  decision: null,
+  skill: null,
+};
+
+/** 一条建议；默认是草稿已生成、可以保存的重复流程。 */
 export function item(fields: Partial<ItemView> = {}): ItemView {
   return {
     id: "repeated:1",
@@ -49,7 +63,12 @@ export function item(fields: Partial<ItemView> = {}): ItemView {
     state: "ready",
     title: "Cut a local patch release",
     goal: "Release a patch version",
-    reason: "The same release steps ran in 2 sessions, with tests passing first each time.",
+    steps: ["npm test", "npm version", "git push"],
+    found:
+      "Two sessions ran the tests, bumped the patch version, and pushed the tag; every step passed.",
+    description: "Release a patch version of an npm package after the tests pass.",
+    outline: ["Run the tests", "Bump the patch version", "Push the tag"],
+    reason: null,
     occurrences: 2,
     sessions: [
       {
@@ -91,8 +110,16 @@ export const DRAFT = {
   body: "# Cut a local patch release\n\n## Steps\n\n1. Run the tests.\n\n   ```bash\n   npm test\n   ```\n",
 };
 
+const CALL = {
+  provider: "deepseek",
+  at: NOW - 60_000,
+  inputTokens: 1200,
+  outputTokens: 300,
+};
+
 /** 一条建议的详情：两个任务的证据，第一个任务的检查被模型引用。 */
 export function detailOf(view: ItemView): DetailView {
+  const drafted = view.state === "ready" || view.state === "written";
   return {
     item: view,
     episodes: [
@@ -128,6 +155,7 @@ export function detailOf(view: ItemView): DetailView {
           },
         ],
         reply: "Released.",
+        steering: ["Use a patch bump, not minor"],
         followup: null,
       },
       {
@@ -152,21 +180,17 @@ export function detailOf(view: ItemView): DetailView {
           },
         ],
         reply: null,
+        steering: [],
         followup: null,
       },
     ],
-    review:
-      view.decision === null
-        ? null
-        : {
-            provider: "deepseek",
-            model: "deepseek-flash",
-            at: NOW - 60_000,
-            inputTokens: 1200,
-            outputTokens: 300,
-          },
-    draft: view.decision === "suggest_create" ? DRAFT : null,
-    section: view.decision === "suggest_improve" ? "## Pitfalls\n\n- Run npm test first." : null,
+    summary: view.decision === null ? null : { ...CALL, model: "deepseek-flash" },
+    draftCall: drafted ? { ...CALL, model: "deepseek-pro" } : null,
+    draft: drafted && view.decision === "suggest_create" ? DRAFT : null,
+    section:
+      drafted && view.decision === "suggest_improve"
+        ? "## Pitfalls\n\n- Run npm test first."
+        : null,
   };
 }
 

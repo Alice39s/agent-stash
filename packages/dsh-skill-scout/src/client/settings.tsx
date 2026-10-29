@@ -1,7 +1,7 @@
 /**
  * 插件页里经验提炼条目的配置页。改动先暂存，点保存才按读到的版本号写回 profile；
- * 写入被拒绝或传输失败时保留暂存值并提示。复核模型从 Host 的模型目录里选，
- * 留空时跟随 Agent 的默认模型。
+ * 写入被拒绝或传输失败时保留暂存值并提示。发现模型（写摘要）与生成模型（写 Skill 草稿）
+ * 分别从 Host 的模型目录里选，留空时跟随 Agent 的默认模型。
  */
 import { SegmentedControl, SettingsForm, Switch } from "@deepseek-ai/dsh-client-ui-primitives";
 import { useId, useState, type ReactNode } from "react";
@@ -14,13 +14,17 @@ import styles from "./settings.module.css";
 /** 设置页的值；与 Host 的 `Config` 字段一一对应。 */
 export interface SettingsValue {
   readonly discovery: boolean;
-  readonly review: boolean;
-  readonly provider: string;
-  readonly model: string;
-  readonly effort: string;
-  readonly timeout: number;
-  readonly dailyReviews: number;
-  readonly reviewInterval: number;
+  readonly summarize: boolean;
+  readonly summaryProvider: string;
+  readonly summaryModel: string;
+  readonly summaryEffort: string;
+  readonly summaryTimeout: number;
+  readonly draftProvider: string;
+  readonly draftModel: string;
+  readonly draftEffort: string;
+  readonly draftTimeout: number;
+  readonly dailySummaries: number;
+  readonly summaryInterval: number;
   readonly quietPeriod: number;
   readonly historyDays: number;
   readonly maxSessions: number;
@@ -36,13 +40,17 @@ export interface SettingsValue {
 /** 与 Host `Config` 相同的默认值。 */
 export const DEFAULT_SETTINGS: SettingsValue = {
   discovery: true,
-  review: false,
-  provider: "",
-  model: "",
-  effort: "",
-  timeout: 90,
-  dailyReviews: 6,
-  reviewInterval: 10,
+  summarize: false,
+  summaryProvider: "",
+  summaryModel: "",
+  summaryEffort: "",
+  summaryTimeout: 60,
+  draftProvider: "",
+  draftModel: "",
+  draftEffort: "",
+  draftTimeout: 180,
+  dailySummaries: 6,
+  summaryInterval: 10,
   quietPeriod: 2,
   historyDays: 30,
   maxSessions: 200,
@@ -56,9 +64,10 @@ export const DEFAULT_SETTINGS: SettingsValue = {
 };
 
 type NumberKey =
-  | "timeout"
-  | "dailyReviews"
-  | "reviewInterval"
+  | "summaryTimeout"
+  | "draftTimeout"
+  | "dailySummaries"
+  | "summaryInterval"
   | "quietPeriod"
   | "historyDays"
   | "maxSessions"
@@ -67,9 +76,10 @@ type NumberKey =
 
 /** 数值字段的范围与单位，与 Host `Config` 一致。 */
 const NUMBERS: Readonly<Record<NumberKey, { min: number; max: number; unit: ScoutKey }>> = {
-  timeout: { min: 10, max: 600, unit: "unit.seconds" },
-  dailyReviews: { min: 1, max: 100, unit: "unit.sessions" },
-  reviewInterval: { min: 1, max: 1440, unit: "unit.minutes" },
+  summaryTimeout: { min: 10, max: 600, unit: "unit.seconds" },
+  draftTimeout: { min: 10, max: 900, unit: "unit.seconds" },
+  dailySummaries: { min: 1, max: 100, unit: "unit.requests" },
+  summaryInterval: { min: 1, max: 1440, unit: "unit.minutes" },
   quietPeriod: { min: 0, max: 120, unit: "unit.minutes" },
   historyDays: { min: 1, max: 365, unit: "unit.days" },
   maxSessions: { min: 1, max: 2000, unit: "unit.sessions" },
@@ -80,13 +90,17 @@ const NUMBERS: Readonly<Record<NumberKey, { min: number; max: number; unit: Scou
 /** 设置服务快照值的结构；缺失或类型不符的字段取默认值。 */
 const SettingsSchema = v.object({
   discovery: v.fallback(v.boolean(), DEFAULT_SETTINGS.discovery),
-  review: v.fallback(v.boolean(), DEFAULT_SETTINGS.review),
-  provider: v.fallback(v.string(), DEFAULT_SETTINGS.provider),
-  model: v.fallback(v.string(), DEFAULT_SETTINGS.model),
-  effort: v.fallback(v.string(), DEFAULT_SETTINGS.effort),
-  timeout: v.fallback(v.number(), DEFAULT_SETTINGS.timeout),
-  dailyReviews: v.fallback(v.number(), DEFAULT_SETTINGS.dailyReviews),
-  reviewInterval: v.fallback(v.number(), DEFAULT_SETTINGS.reviewInterval),
+  summarize: v.fallback(v.boolean(), DEFAULT_SETTINGS.summarize),
+  summaryProvider: v.fallback(v.string(), DEFAULT_SETTINGS.summaryProvider),
+  summaryModel: v.fallback(v.string(), DEFAULT_SETTINGS.summaryModel),
+  summaryEffort: v.fallback(v.string(), DEFAULT_SETTINGS.summaryEffort),
+  summaryTimeout: v.fallback(v.number(), DEFAULT_SETTINGS.summaryTimeout),
+  draftProvider: v.fallback(v.string(), DEFAULT_SETTINGS.draftProvider),
+  draftModel: v.fallback(v.string(), DEFAULT_SETTINGS.draftModel),
+  draftEffort: v.fallback(v.string(), DEFAULT_SETTINGS.draftEffort),
+  draftTimeout: v.fallback(v.number(), DEFAULT_SETTINGS.draftTimeout),
+  dailySummaries: v.fallback(v.number(), DEFAULT_SETTINGS.dailySummaries),
+  summaryInterval: v.fallback(v.number(), DEFAULT_SETTINGS.summaryInterval),
   quietPeriod: v.fallback(v.number(), DEFAULT_SETTINGS.quietPeriod),
   historyDays: v.fallback(v.number(), DEFAULT_SETTINGS.historyDays),
   maxSessions: v.fallback(v.number(), DEFAULT_SETTINGS.maxSessions),
@@ -106,13 +120,17 @@ export function parseSettings(value: unknown): SettingsValue {
 
 const SETTING_KEYS: readonly (keyof SettingsValue)[] = [
   "discovery",
-  "review",
-  "provider",
-  "model",
-  "effort",
-  "timeout",
-  "dailyReviews",
-  "reviewInterval",
+  "summarize",
+  "summaryProvider",
+  "summaryModel",
+  "summaryEffort",
+  "summaryTimeout",
+  "draftProvider",
+  "draftModel",
+  "draftEffort",
+  "draftTimeout",
+  "dailySummaries",
+  "summaryInterval",
   "quietPeriod",
   "historyDays",
   "maxSessions",
@@ -126,9 +144,10 @@ const SETTING_KEYS: readonly (keyof SettingsValue)[] = [
 ];
 
 const NUMBER_KEYS: readonly NumberKey[] = [
-  "timeout",
-  "dailyReviews",
-  "reviewInterval",
+  "summaryTimeout",
+  "draftTimeout",
+  "dailySummaries",
+  "summaryInterval",
   "quietPeriod",
   "historyDays",
   "maxSessions",
@@ -202,7 +221,17 @@ function modelValue(provider: string, model: string): string {
   return provider === "" || model === "" ? "" : `${provider}${SEPARATOR}${model}`;
 }
 
+/** 一个阶段的模型设置：发现模型写摘要，生成模型写 Skill 草稿。 */
+type Stage = "summary" | "draft";
+
+/** 每个阶段的 provider、模型与推理强度对应的设置字段。 */
+const MODEL_KEYS = {
+  summary: { provider: "summaryProvider", model: "summaryModel", effort: "summaryEffort" },
+  draft: { provider: "draftProvider", model: "draftModel", effort: "draftEffort" },
+} as const satisfies Record<Stage, Record<"provider" | "model" | "effort", keyof SettingsValue>>;
+
 interface ModelFieldsProps {
+  readonly stage: Stage;
   readonly staged: SettingsValue;
   readonly catalog: CatalogState;
   readonly disabled: boolean;
@@ -210,8 +239,21 @@ interface ModelFieldsProps {
   readonly t: ScoutTranslate;
 }
 
-function ModelFields({ staged, catalog, disabled, onChange, t }: ModelFieldsProps): ReactNode {
+function ModelFields({
+  stage,
+  staged: values,
+  catalog,
+  disabled,
+  onChange,
+  t,
+}: ModelFieldsProps): ReactNode {
   const id = useId();
+  const keys = MODEL_KEYS[stage];
+  const staged = {
+    provider: values[keys.provider],
+    model: values[keys.model],
+    effort: values[keys.effort],
+  };
   const groups = catalog.status === "ready" ? catalog.catalog.groups : [];
   const current = modelValue(staged.provider, staged.model);
   const fallback = catalog.status === "ready" ? catalog.catalog.default : null;
@@ -232,7 +274,11 @@ function ModelFields({ staged, catalog, disabled, onChange, t }: ModelFieldsProp
   );
   return (
     <>
-      <Field id={`${id}-model`} label={t("settings.model")} hint={t("settings.modelHint")}>
+      <Field
+        id={`${id}-model`}
+        label={t(stage === "summary" ? "settings.summaryModel" : "settings.draftModel")}
+        hint={t(stage === "summary" ? "settings.summaryModelHint" : "settings.draftModelHint")}
+      >
         <select
           id={`${id}-model`}
           className={styles.select}
@@ -240,7 +286,7 @@ function ModelFields({ staged, catalog, disabled, onChange, t }: ModelFieldsProp
           disabled={disabled}
           onChange={(event) => {
             const [provider = "", model = ""] = event.target.value.split(SEPARATOR);
-            onChange({ provider, model, effort: "" });
+            onChange({ [keys.provider]: provider, [keys.model]: model, [keys.effort]: "" });
           }}
         >
           <option value="">
@@ -277,7 +323,7 @@ function ModelFields({ staged, catalog, disabled, onChange, t }: ModelFieldsProp
             className={styles.select}
             value={staged.effort}
             disabled={disabled}
-            onChange={(event) => onChange({ effort: event.target.value })}
+            onChange={(event) => onChange({ [keys.effort]: event.target.value })}
           >
             <option value="">{t("settings.effortDefault")}</option>
             {efforts.map((effort) => (
@@ -349,7 +395,7 @@ export function createSettingsPage(catalog: Observable<CatalogState>) {
       }
     };
     const toggle = (
-      key: "discovery" | "review" | "readOutput",
+      key: "discovery" | "summarize" | "readOutput",
       label: ScoutKey,
       hint: ScoutKey,
     ): ReactNode => (
@@ -421,16 +467,17 @@ export function createSettingsPage(catalog: Observable<CatalogState>) {
             {number("minOccurrences")}
           </section>
           <section className={styles.section}>
-            <h3 className={styles.title}>{translate("settings.section.review")}</h3>
-            {toggle("review", "settings.review", "settings.reviewHint")}
+            <h3 className={styles.title}>{translate("settings.section.summary")}</h3>
+            {toggle("summarize", "settings.summarize", "settings.summarizeHint")}
             <ModelFields
+              stage="summary"
               staged={staged}
               catalog={models}
               disabled={!writable}
               onChange={update}
               t={translate}
             />
-            {number("timeout")}
+            {number("summaryTimeout")}
             <Field
               id={`${id}-prompt`}
               label={translate("settings.prompt")}
@@ -449,9 +496,21 @@ export function createSettingsPage(catalog: Observable<CatalogState>) {
             </Field>
           </section>
           <section className={styles.section}>
+            <h3 className={styles.title}>{translate("settings.section.draft")}</h3>
+            <ModelFields
+              stage="draft"
+              staged={staged}
+              catalog={models}
+              disabled={!writable}
+              onChange={update}
+              t={translate}
+            />
+            {number("draftTimeout")}
+          </section>
+          <section className={styles.section}>
             <h3 className={styles.title}>{translate("settings.section.limits")}</h3>
-            {number("dailyReviews")}
-            {number("reviewInterval")}
+            {number("dailySummaries")}
+            {number("summaryInterval")}
             {number("evidenceBudget")}
           </section>
           <section className={styles.section}>

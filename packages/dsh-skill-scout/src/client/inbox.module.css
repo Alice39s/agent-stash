@@ -202,9 +202,21 @@
 }
 
 .card[data-state="detected"] .cardTitle,
-.card[data-state="failed"] .cardTitle,
-.card[data-state="reviewing"] .cardTitle {
+.card[data-state="summarizing"] .cardTitle,
+.card[data-state="failed"]:not([data-stage="draft"]) .cardTitle {
   color: var(--dsw-alias-label-secondary);
+}
+
+/* 摘要里的一句用途说明，最多两行。 */
+.cardSummary {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font-size: 12px;
+  line-height: 17px;
+  color: var(--dsw-alias-label-secondary);
+  overflow-wrap: anywhere;
 }
 
 .cardMeta {
