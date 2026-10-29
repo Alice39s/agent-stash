@@ -1,0 +1,72 @@
+---
+title: Skill Scout
+description: Find workflows that repeated successfully and fixes that were verified in finished sessions, and save them as Skills after review.
+icon: Lightbulb
+---
+
+<Showcase
+  name="skill-scout-en"
+  alt="The pointer moves to the Skill icon with the number 1 on the right of the session title bar and clicks it. The inbox lists 'Ready to save: Cut a local patch release, Repeated workflow · 2 sessions' and 'Found locally: The build is broken, please fix it, Not reviewed'. The first card opens a detail dialog that lists npm test, npm version, git commit, and git tag from the two source tasks. The Skill tab shows the draft, and the Changes tab shows the new file local-patch-release/SKILL.md. After Save Skill, the dialog shows the saved path and 'DSH lists the Skill.' Done returns to the inbox, which shows 'Saved local-patch-release' with an Undo button."
+  caption="Open the inbox from the title bar, check the evidence and the draft, and save; DSH lists the Skill right away"
+/>
+
+`@agent-stash/dsh-skill-scout` is a DeepSeek Harness plugin. It reads finished sessions on your machine, judges whether a task succeeded only from tool results, and turns workflows that succeeded in several sessions, and fixes that passed a check after a failure, into Skill suggestions. Nothing is written until you have looked at the evidence and previewed the draft, and every write can be undone. It supports DSH Desktop 0.2.1-rc.3 and DSH 0.2.2-alpha.2.
+
+## Usage
+
+- Title bar icon: shows a count when new suggestions are ready to save, and the count clears when you open the inbox. Without new suggestions it is only an icon; the plugin shows no notifications.
+- Inbox: Ready to save holds reviewed suggestions with a draft. Found locally holds candidates that the rules found and no model has reviewed. Saved, dismissed, and not-worth-saving suggestions move to History.
+- Detail tabs: Evidence lists each source task's request, commands, exit codes, and one error line per failure, and Open session goes back to the session. Skill is the draft, which you can edit. Changes shows the target path and the file diff.
+- Save: a new Skill goes to the project's `.agents/skills/<name>/SKILL.md` by default, or to `~/.agents/skills` for your user. When the review finds that an existing Skill covers the task, the suggestion only appends a section to the end of that file.
+- Undo, dismiss, and restore: you can undo a save. Dismiss moves a suggestion to History, and Dismiss similar also stops close variants from coming back. Dismissed suggestions can be restored.
+
+## Rules
+
+- Success comes only from tool results: after the last edit, the last run of every command succeeded. The agent saying it is done does not count, and neither does a task the user says is wrong in the next message.
+- A repeated workflow must appear in at least 2 independent sessions (configurable). History inherited by a fork counts once, and retries inside one session do not count as repeats.
+- A recovery needs the whole chain: a command fails, then dependencies are installed, configuration changes, or arguments change, and then the same command succeeds. A fix that only edits application code is suggested only when the same error shows up in several sessions.
+- The review sees the most related existing Skill and can call the candidate a duplicate or propose an improvement. After the review says a candidate is not worth saving, it is reviewed again only when the evidence doubles.
+
+## Model review
+
+<Showcase
+  name="skill-scout-settings-en"
+  alt="The Discovery and Model review groups of the plugin settings page. Analyze finished sessions is on, History is 30 days, Startup scan is 200 sessions, Quiet period is 0 minutes, and Repeats needed is 2. Review in the background is on, Review model is DeepSeek-V4.1-Flash, Reasoning effort is the model default, Timeout is 90 seconds, and Review guidance is empty."
+  caption="Turn on background review and choose a review model in the plugin settings"
+/>
+
+Background review is off by default. With it off, you can still click Review with model on a single finding in its detail. With it on, reviews are limited by a daily count, a minimum interval, and a timeout, and only one runs at a time. Without a chosen review model, the review uses the agent's default model.
+
+The model receives redacted evidence: user requests, command lines, exit codes, one error line per failure, and the most related existing Skill. Full tool output, file contents, and the agent's reasoning are not sent. The review request has no tools and runs outside any session. The answer must match the expected structure, and every cited piece of evidence must exist. Every command in a step, including each part of a command chain, must appear in a successful run that the step cites. A draft that contains a credential, signs of prompt injection, or a download piped into a shell is rejected. Commands such as force pushes and recursive deletes are shown as cautions in the detail.
+
+## Data
+
+- Session text is redacted on your machine before it is stored, sent, or shown: common API keys, tokens, private keys, auth headers, password assignments, credentials in URLs, and email addresses become placeholders, and your home directory becomes `~`. You can add regular expressions in the settings.
+- The plugin stores only episode summaries and suggestions, in the DSH storage domain `skill_scout`. Summaries of sessions past the history range are deleted unless a pending suggestion cites them.
+- The plugin does no analysis while the agent runs: it reads a session after a turn ends and the session stays idle for a while (2 minutes by default).
+- When several DSH instances run at once, one of them analyzes and reviews, and the others only show the inbox.
+- Writes happen only after you click Save, only to `<name>/SKILL.md` under a project or user Skill directory, and never over an existing file.
+
+## Install
+
+<Tabs items={['Plugin market', 'Desktop app', 'Command line']}>
+<Tab value="Plugin market">
+
+Add the index source as described in [Import the Agent Stash plugin market](../install.mdx#import-the-agent-stash-plugin-market), then install `@agent-stash/dsh-skill-scout` from the Discover page.
+
+</Tab>
+<Tab value="Desktop app">
+
+On the Plugins page, click Add plugin and enter `@agent-stash/dsh-skill-scout`.
+
+</Tab>
+<Tab value="Command line">
+
+```bash
+dsh plugin --profile web add @agent-stash/dsh-skill-scout
+```
+
+</Tab>
+</Tabs>
+
+The plugin source, its design decisions, and how it is tested are in `packages/dsh-skill-scout/` in the repository.

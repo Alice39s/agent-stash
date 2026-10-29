@@ -16,6 +16,7 @@
 | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | [/init](https://alice39s.github.io/agent-stash/zh/plugins/init/)                                         | 插件，用其他 Coding Agent 的 `/init` prompt 分析项目，写出 `AGENTS.md` |
 | [消息编辑](https://alice39s.github.io/agent-stash/zh/plugins/dsh-message-edit/)                          | DSH 插件，编辑消息、重新生成回复或重试回合，每次改动另开一个会话版本   |
+| [经验提炼](https://alice39s.github.io/agent-stash/zh/plugins/dsh-skill-scout/)                           | DSH 插件，从已结束的会话里找出可复用的流程，审核后保存成 Skill         |
 | [Prompt 回溯](https://alice39s.github.io/agent-stash/zh/plugins/dsh-recall/)                             | DSH 插件，在输入框里按 ↑↓ 翻看当前会话发过的 Prompt                    |
 | [Prompt 补全](https://alice39s.github.io/agent-stash/zh/plugins/dsh-autosuggest/)                        | DSH 插件，输入历史 Prompt 的开头时以灰字补出剩余部分                   |
 | [增强提示词](https://alice39s.github.io/agent-stash/zh/plugins/dsh-enhance/)                             | DSH 插件，把草稿改写成更适合交给 AI 的提示词，一键可撤销               |
