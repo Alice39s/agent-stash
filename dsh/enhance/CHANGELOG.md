@@ -1,9 +1,6 @@
----
-packages:
-  "@agent-stash/dsh-enhance": minor
----
+## @agent-stash/dsh-enhance@0.1.0
 
-## 新增 DSH 插件「增强提示词」
+### 新增 DSH 插件「增强提示词」
 
 - `@agent-stash/dsh-enhance`：输入框右下角、发送按钮左侧的按钮把草稿改写成更适合交给 AI 的提示词。草稿为空时按钮不显示；菜单里有「润色 Prompt」「仅结构化整理」「使 Prompt 更精炼」三个预设，数字键 1–9 直接选择。
 - 改写进行中草稿锁定，点按钮或按 Esc 停止；完成后按钮左侧出现撤销按钮，回到改写前的草稿。失败原因显示在按钮左侧，草稿不变。
