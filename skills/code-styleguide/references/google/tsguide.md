@@ -1,6 +1,6 @@
-# Google TypeScript Style Guide
+# TS/JS Style Guide
 
-Source: <https://google.github.io/styleguide/tsguide.html> · google/styleguide@e4d272eb151a (2026-09-15) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/tsguide.html> · google/styleguide@5ec857768df3 (2026-10-29) · CC-BY-3.0
 
 ## Index
 
@@ -15,53 +15,53 @@ Source: <https://google.github.io/styleguide/tsguide.html> · google/styleguide@
   - L144 Imports
   - L252 Exports
   - L376 Import and export type
-- L437 Language features
-  - L443 Local variable declarations
-  - L466 Array literals
-  - L560 Object literals
-  - L663 Classes
-  - L1091 Functions
-  - L1395 this
-  - L1405 Interfaces
-  - L1407 Primitive literals
-  - L1602 Control structures
-  - L2014 Decorators
-  - L2040 Disallowed features
-- L2110 Naming
-  - L2112 Identifiers
-  - L2162 Rules by identifier type
-- L2251 Type system
-  - L2253 Type inference
-  - L2301 Undefined and null
-  - L2356 Use structural types
-  - L2447 Prefer interfaces over type literal aliases
-  - L2471 Array<T> Type
-  - L2507 Indexable types / index signatures ({[key: string]: T})
-  - L2530 Mapped and conditional types
-  - L2582 any Type
-  - L2653 {} Type
-  - L2682 Tuple types
-  - L2724 Wrapper types
-  - L2733 Return type only generics
-- L2737 Toolchain requirements
-  - L2741 TypeScript compiler
-  - L2760 Conformance
-- L2768 Comments and documentation
-  - L2800 JSDoc general form
-  - L2824 Markdown
-  - L2857 JSDoc tags
-  - L2878 Line wrapping
-  - L2897 Document all top-level exports of modules
-  - L2903 Class comments
-  - L2907 Method and function comments
-  - L2913 Parameter property comments
-  - L2944 JSDoc type annotations
-  - L2948 Make comments that actually add information
-  - L2988 Place documentation prior to decorators
-- L3014 Policies
-  - L3016 Consistency
-  - L3031 Deprecation
-  - L3035 Generated code: mostly exempt
+- L451 Language features
+  - L457 Local variable declarations
+  - L480 Array literals
+  - L532 Object literals
+  - L632 Classes
+  - L1134 Functions
+  - L1454 this
+  - L1464 Primitive literals
+  - L1638 Control structures
+  - L2104 Decorators
+  - L2130 Disallowed features
+- L2200 Naming
+  - L2202 Identifiers
+  - L2252 Rules by identifier type
+- L2365 Type system
+  - L2367 Type inference
+  - L2426 Undefined and null
+  - L2456 Use structural types
+  - L2547 Prefer interfaces over type literal aliases
+  - L2571 Array<T> Type
+  - L2607 Indexable types / index signatures ({[key: string]: T})
+  - L2630 Mapped and conditional types
+  - L2681 any Type
+  - L2752 {} Type
+  - L2781 Tuple types
+  - L2823 Wrapper types
+  - L2832 Return type only generics
+- L2836 Toolchain requirements
+  - L2840 TypeScript compiler
+  - L2859 Conformance
+- L2867 Comments and documentation
+  - L2899 JSDoc general form
+  - L2923 Markdown
+  - L2956 JSDoc tags
+  - L2977 Line wrapping
+  - L2996 Document all top-level exports of modules
+  - L3002 Class comments
+  - L3006 Method and function comments
+  - L3012 Parameter property comments
+  - L3043 JSDoc type annotations
+  - L3047 Make comments that actually add information
+  - L3087 Place documentation prior to decorators
+- L3113 Policies
+  - L3115 Consistency
+  - L3130 Deprecation
+  - L3134 Generated code: mostly exempt
+- L3173 Footnotes
 
 ---
 
@@ -91,13 +91,13 @@ Aside from the line terminator sequence, the ASCII horizontal space character (0
 
 #### Special escape sequences
 
-For any character that has a special escape sequence (`\'`, `\"`, `\\`, `\b`, `\f`, `\n`, `\r`, `\t`, `\v`), that sequence is used rather than the corresponding numeric escape (e.g `\x0a`, `\u000a`, or `\u{a}`). Legacy octal escapes are never used.
+For any character that has a special escape sequence (`\'`, `\"`, `\\ `, `\b`, `\f`, `\n`, `\r`, `\t`, `\v`), that sequence is used rather than the corresponding numeric escape (e.g `\x0a`, `\u000a`, or `\u{a}`). Legacy octal escapes are never used.
 
 #### Non-ASCII characters
 
 For the remaining non-ASCII characters, use the actual Unicode character (e.g. `∞`). For non-printable characters, the equivalent hex or Unicode escapes (e.g. `\u221e`) can be used along with an explanatory comment.
 
-```ts good
+```ts
 // Perfectly clear, even without a comment.
 const units = 'μs';
 
@@ -105,7 +105,7 @@ const units = 'μs';
 const output = '\ufeff' + content;  // byte order mark
 ```
 
-```ts bad
+```ts
 // Hard to read and prone to mistakes, even with the comment.
 const units = '\u03bcs'; // Greek letter mu, 's'
 
@@ -118,7 +118,7 @@ const output = '\ufeff' + content;
 Files consist of the following, **in order**:
 
 1. Copyright information, if present
-2. JSDoc with `@fileoverview`, if present
+2. JSDoc with `@fileoverview` and/or other file-level JSDoc tags if present.
 3. Imports, if present
 4. The file’s implementation
 
@@ -134,7 +134,7 @@ A file may have a top-level `@fileoverview` JSDoc. If present, it may provide a 
 
 Example:
 
-```ts good
+```ts
 /**
  * @fileoverview Description of file. Lorem ipsum dolor sit amet, consectetur
  * adipiscing elit, sed do eiusmod tempor incididunt.
@@ -147,12 +147,12 @@ There are four variants of import statements in ES6 and TypeScript:
 
 | Import type | Example | Use for |
 | - | - | - |
-| module\[module_import] | `import * as foo from '...';` | TypeScript imports |
-| named\[destructuring_import] | `import {SomeThing} from '...';` | TypeScript imports |
+| module[1](#user-content-fn-module_import) | `import * as foo from '...';` | TypeScript imports |
+| named[2](#user-content-fn-destructuring_import) | `import {SomeThing} from '...';` | TypeScript imports |
 | default | `import SomeThing from '...';` | Only for other external code that requires them |
 | side-effect | `import '...';` | Only to import libraries for their side-effects on load (such as custom elements) |
 
-```ts good
+```ts
 // Good: choose between two options as appropriate (see below).
 import * as ng from '@angular/core';
 import {Foo} from './foo';
@@ -173,7 +173,7 @@ Code _should_ use relative imports (`./foo`) rather than absolute imports `path/
 
 Consider limiting the number of parent steps (`../../../`) as those can make module and path structures hard to understand.
 
-```ts good
+```ts
 import {Symbol1} from 'path/from/root';
 import {Symbol2} from '../parent/file';
 import {Symbol3} from './sibling';
@@ -187,7 +187,7 @@ Prefer named imports for symbols used frequently in a file or for symbols that h
 
 Prefer namespace imports when using many different symbols from large APIs. A namespace import, despite using the `*` character, is not comparable to a "wildcard" import as seen in other languages. Instead, namespace imports give a name to all the exports of a module, and each exported symbol from the module becomes a property on the module name. Namespace imports can aid readability for exported symbols that have common names like `Model` or `Controller` without the need to declare aliases.
 
-```ts bad
+```ts
 // Bad: overlong import statement of needlessly namespaced names.
 import {Item as TableviewItem, Header as TableviewHeader, Row as TableviewRow,
   Model as TableviewModel, Renderer as TableviewRenderer} from './tableview';
@@ -195,14 +195,14 @@ import {Item as TableviewItem, Header as TableviewHeader, Row as TableviewRow,
 let item: TableviewItem|undefined;
 ```
 
-```ts good
+```ts
 // Better: use the module for namespacing.
 import * as tableview from './tableview';
 
 let item: tableview.Item|undefined;
 ```
 
-```ts bad
+```ts
 import * as testing from './testing';
 
 // Bad: The module name does not improve readability.
@@ -214,7 +214,7 @@ testing.describe('foo', () => {
 });
 ```
 
-```ts good
+```ts
 // Better: give local names for these common functions.
 import {describe, it, expect} from './testing';
 
@@ -232,7 +232,7 @@ Apps JSPB protos must use named imports, even when it leads to long import lines
 
 This rule exists to aid in build performance and dead code elimination since often `.proto` files contain many `message`s that are not all needed together. By leveraging destructured imports the build system can create finer grained dependencies on Apps JSPB messages while preserving the ergonomics of path based imports.
 
-```ts good
+```ts
 // Good: import the exact set of symbols you need from the proto file.
 import {Foo, Bar} from './foo.proto';
 
@@ -253,14 +253,14 @@ Three examples where renaming can be helpful:
 
 Use named exports in all code:
 
-```ts good
+```ts
 // Use named exports:
 export class Foo { ... }
 ```
 
 Do not use default exports. This ensures that all imports follow a uniform pattern.
 
-```ts bad
+```ts
 // Do not use default exports:
 export default class Foo { ... } // BAD!
 ```
@@ -269,27 +269,27 @@ Why?
 
 Default exports provide no canonical name, which makes central maintenance difficult with relatively little benefit to code owners, including potentially decreased readability:
 
-```ts bad
+```ts
 import Foo from './bar';  // Legal.
 import Bar from './bar';  // Also legal.
 ```
 
 Named exports have the benefit of erroring when import statements try to import something that hasn't been declared. In `foo.ts`:
 
-```ts bad
+```ts
 const foo = 'blah';
 export default foo;
 ```
 
 And in `bar.ts`:
 
-```ts bad
+```ts
 import {fizz} from './foo';
 ```
 
 Results in `error TS2614: Module '"./foo"' has no exported member 'fizz'.` While `bar.ts`:
 
-```ts bad
+```ts
 import fizz from './foo';
 ```
 
@@ -297,7 +297,7 @@ Results in `fizz === foo`, which is probably unexpected and difficult to debug.
 
 Additionally, default exports encourage people to put everything into one big object to namespace it all together:
 
-```ts bad
+```ts
 export default class Foo {
   static SOME_CONSTANT = ...
   static someHelpfulFunction() { ... }
@@ -309,7 +309,7 @@ With the above pattern, we have file scope, which can be used as a namespace. We
 
 Instead, prefer use of file scope for namespacing, as well as named exports:
 
-```ts good
+```ts
 export const SOME_CONSTANT = ...
 export function someHelpfulFunction()
 export class Foo {
@@ -325,7 +325,7 @@ TypeScript does not support restricting the visibility for exported symbols. Onl
 
 Regardless of technical support, mutable exports can create hard to understand and debug code, in particular with re-exports across multiple modules. One way to paraphrase this style point is that `export let` is not allowed.
 
-```ts bad
+```ts
 export let foo = 3;
 // In pure ES6, foo is mutable and importers will observe the value change after a second.
 // In TS, if foo is re-exported by a second file, importers will not see the value change.
@@ -336,7 +336,7 @@ window.setTimeout(() => {
 
 If one needs to support externally accessible and mutable bindings, they _should_ instead use explicit getter functions.
 
-```ts good
+```ts
 let foo = 3;
 window.setTimeout(() => {
   foo = 4;
@@ -347,7 +347,7 @@ export function getFoo() { return foo; };
 
 For the common pattern of conditionally exporting either of two values, first do the conditional check, then the export. Make sure that all exports are final after the module's body has executed.
 
-```ts good
+```ts
 function pickApi() {
   if (useOtherApi()) return OtherApi;
   return RegularApi;
@@ -359,7 +359,7 @@ export const SomeApi = pickApi();
 
 Do not create container classes with static methods or properties for the sake of namespacing.
 
-```ts bad
+```ts
 export class Container {
   static FOO = 1;
   static bar() { return 1; }
@@ -368,7 +368,7 @@ export class Container {
 
 Instead, export individual constants and functions:
 
-```ts good
+```ts
 export const FOO = 1;
 export function bar() { return 1; }
 ```
@@ -379,7 +379,7 @@ export function bar() { return 1; }
 
 You may use `import type {...}` when you use the imported symbol only as a type. Use regular imports for values:
 
-```ts good
+```ts
 import type {Foo} from './foo';
 import {Bar} from './foo';
 
@@ -395,13 +395,13 @@ The TypeScript compiler can run in 2 modes:
 - In development mode, we typically want quick iteration loops. The compiler transpiles to JavaScript without full type information. This is much faster, but requires `import type` in certain cases.
 - In production mode, we want correctness. The compiler type checks everything and ensures `import type` is used correctly.
 
-Note: If you need to force a runtime load for side effects, use `import '...';`. See
+Note: If you need to force a runtime load for side effects, use `import '...';`. See [the imports](#imports).
 
 #### Export type
 
 Use `export type` when re-exporting a type, e.g.:
 
-```ts good
+```ts
 export type {AnInterface} from './foo';
 ```
 
@@ -411,6 +411,20 @@ Why?
 
 `export type` might also seem useful to avoid ever exporting a value symbol for an API. However it does not give guarantees, either: downstream code might still import an API through a different path. A better way to split & guarantee type vs value usages of an API is to actually split the symbols into e.g. `UserService` and `AjaxUserService`. This is less error prone and also better communicates intent.
 
+#### Dynamic `import()` type
+
+Do not use the `import()` function inside type annotations.
+
+```ts
+let f: import('./foo').Foo;
+```
+
+If you need to ensure that the import is always elided from the generated JavaScript, use `import type` instead.
+
+```ts
+import type {Foo} from './foo';
+```
+
 #### Use modules not namespaces
 
 TypeScript supports two methods to organize code: _namespaces_ and _modules_, but namespaces are disallowed. That is, your code _must_ refer to code in other files using imports and exports of the form `import {foo} from 'bar';`
@@ -419,7 +433,7 @@ Your code _must not_ use the `namespace Foo { ... }` construct. `namespace`s _ma
 
 Code _must not_ use `require` (as in `import x = require('...');`) for imports. Use ES6 module syntax.
 
-```ts bad
+```ts
 // Bad: do not use namespaces:
 namespace Rocket {
   function launch() { ... }
@@ -446,14 +460,14 @@ Language features which are not discussed in this style guide _may_ be used with
 
 Always use `const` or `let` to declare variables. Use `const` by default, unless a variable needs to be reassigned. Never use `var`.
 
-```ts good
+```ts
 const foo = otherValue;  // Use if "foo" never changes.
 let bar = someValue;     // Use if "bar" is ever assigned into later on.
 ```
 
 `const` and `let` are block scoped, like variables in most other languages. `var` in JavaScript is function scoped, which can cause difficult to understand bugs. Don't use it.
 
-```ts bad
+```ts
 var foo = someValue;     // Don't use - var scoping is complex and causes bugs.
 ```
 
@@ -469,14 +483,14 @@ Every local variable declaration declares only one variable: declarations such a
 
 _Do not_ use the `Array()` constructor, with or without `new`. It has confusing and contradictory usage:
 
-```ts bad
+```ts
 const a = new Array(2); // [undefined, undefined]
 const b = new Array(2, 3); // [2, 3];
 ```
 
 Instead, always use bracket notation to initialize arrays, or `from` to initialize an `Array` with a certain size:
 
-```ts good
+```ts
 const a = [2];
 const b = [2, 3];
 
@@ -492,66 +506,24 @@ Array.from<number>({length: 5}).fill(0);
 
 Do not define or use non-numeric properties on an array (other than `length`). Use a `Map` (or `Object`) instead.
 
-#### Using spread syntax
-
-Using spread syntax `[...foo];` is a convenient shorthand for shallow-copying or concatenating iterables.
-
-```ts good
-const foo = [
-  1,
-];
-
-const foo2 = [
-  ...foo,
-  6,
-  7,
-];
-
-const foo3 = [
-  5,
-  ...foo,
-];
-
-foo2[1] === 6;
-foo3[1] === 1;
-```
-
-When using spread syntax, the value being spread _must_ match what is being created. When creating an array, only spread iterables. Primitives (including `null` and `undefined`) _must not_ be spread.
-
-```ts bad
-const foo = [7];
-const bar = [5, ...(shouldUseFoo && foo)]; // might be undefined
-
-// Creates {0: 'a', 1: 'b', 2: 'c'} but has no length
-const fooStrings = ['a', 'b', 'c'];
-const ids = {...fooStrings};
-```
-
-```ts good
-const foo = shouldUseFoo ? [7] : [];
-const bar = [5, ...foo];
-const fooStrings = ['a', 'b', 'c'];
-const ids = [...fooStrings, 'd', 'e'];
-```
-
 #### Array destructuring
 
 Array literals may be used on the left-hand side of an assignment to perform destructuring (such as when unpacking multiple values from a single array or iterable). A final "rest" element may be included (with no space between the `...` and the variable name). Elements should be omitted if they are unused.
 
-```ts good
+```ts
 const [a, b, c, ...rest] = generateResults();
 let [, b,, d] = someArray;
 ```
 
 Destructuring may also be used for function parameters. Always specify `[]` as the default value if a destructured array parameter is optional, and provide default values on the left hand side:
 
-```ts good
+```ts
 function destructured([a = 4, b = 2] = []) { … }
 ```
 
 Disallowed:
 
-```ts bad
+```ts
 function badDestructuring([a, b] = [4, 2]) { … }
 ```
 
@@ -569,7 +541,7 @@ Iterating objects with `for (... in ...)` is error prone. It will include enumer
 
 Do not use unfiltered `for (... in ...)` statements:
 
-```ts bad
+```ts
 for (const x in someObj) {
   // x could come from some parent prototype!
 }
@@ -577,7 +549,7 @@ for (const x in someObj) {
 
 Either filter values explicitly with an `if` statement, or use `for (... of Object.keys(...))`.
 
-```ts good
+```ts
 for (const x in someObj) {
   if (!someObj.hasOwnProperty(x)) continue;
   // now x was definitely defined on someObj
@@ -594,7 +566,7 @@ for (const [key, value] of Object.entries(someObj)) { // note: for _of_!
 
 Using spread syntax `{...bar}` is a convenient shorthand for creating a shallow copy of an object. When using spread syntax in object initialization, later values replace earlier values at the same key.
 
-```ts good
+```ts
 const foo = {
   num: 1,
 };
@@ -613,20 +585,17 @@ foo2.num === 5;
 foo3.num === 1;
 ```
 
-When using spread syntax, the value being spread _must_ match what is being created. That is, when creating an object, only objects may be spread; arrays and primitives (including `null` and `undefined`) _must not_ be spread. Avoid spreading objects that have prototypes other than the Object prototype (e.g. class definitions, class instances, functions) as the behavior is unintuitive (only enumerable non-prototype properties are shallow-copied).
+Avoid spreading objects that have prototypes other than the Object prototype (e.g. class definitions, class instances, functions) as the behavior is unintuitive (only enumerable non-prototype properties are shallow-copied).
 
-```ts bad
-const foo = {num: 7};
-const bar = {num: 5, ...(shouldUseFoo && foo)}; // might be undefined
-
+```ts
 // Creates {0: 'a', 1: 'b', 2: 'c'} but has no length
 const fooStrings = ['a', 'b', 'c'];
 const ids = {...fooStrings};
 ```
 
-```ts good
-const foo = shouldUseFoo ? {num: 7} : {};
-const bar = {num: 5, ...foo};
+```ts
+const options = {foo: 1, bar: 2};
+const extended = {...options, baz: 3};
 ```
 
 #### Computed property names
@@ -641,7 +610,7 @@ Destructured objects may also be used as function parameters, but should be kept
 
 Example:
 
-```ts good
+```ts
 interface Options {
   /** The number of times to do something. */
   num?: number;
@@ -655,7 +624,7 @@ function destructured({num, str = 'default'}: Options = {}) {}
 
 Disallowed:
 
-```ts bad
+```ts
 function nestedTooDeeply({x: {num, str}}: {x: Options}) {}
 function nontrivialDefault({num, str}: Options = {num: 42, str: 'default'}) {}
 ```
@@ -666,19 +635,19 @@ function nontrivialDefault({num, str}: Options = {num: 42, str: 'default'}) {}
 
 Class declarations _must not_ be terminated with semicolons:
 
-```ts good
+```ts
 class Foo {
 }
 ```
 
-```ts bad
+```ts
 class Foo {
 }; // Unnecessary semicolon
 ```
 
 In contrast, statements that contain class expressions _must_ be terminated with a semicolon:
 
-```ts good
+```ts
 export const Baz = class extends Bar {
   method(): number {
     return this.x;
@@ -686,7 +655,7 @@ export const Baz = class extends Bar {
 }; // Semicolon here as this is a statement, not a declaration
 ```
 
-```ts bad
+```ts
 exports const Baz = class extends Bar {
   method(): number {
     return this.x;
@@ -696,7 +665,7 @@ exports const Baz = class extends Bar {
 
 It is neither encouraged nor discouraged to have blank lines separating class declaration braces from other class content:
 
-```ts good
+```ts
 // No spaces around braces - fine.
 class Baz {
   method(): number {
@@ -714,11 +683,58 @@ class Foo {
 }
 ```
 
+#### Don't create member variables only used in constructors
+
+If a variable is only used in the constructor, then it can be migrated to be a variable scoped to the constructor body, which will make your class more stateless and easier to reason about for future devs.
+
+Some classes have methods that are only called in the constructor and that update bits of class state that are only used during class construction. For the same reasons as above, these bits of class state should also be migrated to be constructor-local variables.
+
+```ts
+class MyClass {
+  // BAD: onlyUsedInCtor is only used in the constructor and nowhere else after
+  // class initialization.
+  private readonly onlyUsedInCtor = ...;
+  private readonly otherDataStructure = ...;
+  constructor(
+    // BAD: Services only used in the constructor but kept after ctor execution.
+    private readonly serviceA: ServiceA,
+    private readonly serviceB: ServiceB,
+    private readonly serviceC: ServiceC,
+  ) {
+    this.computeThing(
+      this.serviceA.getA(), this.serviceB.getB(), this.serviceC.getC(),
+    );
+    this.otherDataStructure = computeOther(this.onlyUsedInCtor);
+  }
+
+  private computeThing(a: A, b: B, c: C) {
+    this.onlyUsedInCtor = someFunctionOf(a, b, c);
+  }
+}
+```
+
+```ts
+class MyClass {
+  private readonly otherDataStructure = ...;
+  constructor(
+    // GOOD: Services only used in constructor and dropped after ctor finishes.
+    serviceA: ServiceA,
+    serviceB: ServiceB,
+    serviceC: ServiceC,
+  ) {
+    // GOOD: onlyUsedInCtor is a constructor-local variable.
+    const onlyUsedInCtor =
+      someFunctionOf(serviceA.getA(), serviceB.getB(), serviceC.getC());
+    this.otherDataStructure = computeOther(onlyUsedInCtor);
+  }
+}
+```
+
 #### Class method declarations
 
 Class method declarations _must not_ use a semicolon to separate individual method declarations:
 
-```ts good
+```ts
 class Foo {
   doThing() {
     console.log("A");
@@ -726,7 +742,7 @@ class Foo {
 }
 ```
 
-```ts bad
+```ts
 class Foo {
   doThing() {
     console.log("A");
@@ -736,7 +752,7 @@ class Foo {
 
 Method declarations should be separated from surrounding code by a single blank line:
 
-```ts good
+```ts
 class Foo {
   doThing() {
     console.log("A");
@@ -748,7 +764,7 @@ class Foo {
 }
 ```
 
-```ts bad
+```ts
 class Foo {
   doThing() {
     console.log("A");
@@ -777,7 +793,7 @@ Code _should not_ rely on dynamic dispatch of static methods. Static methods _sh
 
 Disallowed:
 
-```ts bad
+```ts
 // Context for the examples below (this class is okay by itself)
 class Base {
   /** @nocollapse */ static foo() {}
@@ -807,7 +823,7 @@ Code _must not_ use `this` in a static context.
 
 JavaScript allows accessing static fields through `this`. Different from other languages, static fields are also inherited.
 
-```
+```ts
 class ShoeStore {
   static storage: Storage = ...;
 
@@ -832,30 +848,30 @@ This code also encourages an anti-pattern of having substantial static state, wh
 
 Constructor calls _must_ use parentheses, even when no arguments are passed:
 
-```ts bad
+```ts
 const x = new Foo;
 ```
 
-```ts good
+```ts
 const x = new Foo();
 ```
 
 Omitting parentheses can lead to subtle mistakes. These two lines are not equivalent:
 
-```js good
+```js
 new Foo().Bar();
 new Foo.Bar();
 ```
 
 It is unnecessary to provide an empty constructor or one that simply delegates into its parent class because ES2015 provides a default class constructor if one is not specified. However constructors with parameter properties, visibility modifiers or parameter decorators _should not_ be omitted even if the body of the constructor is empty.
 
-```ts bad
+```ts
 class UnnecessaryConstructor {
   constructor() {}
 }
 ```
 
-```ts bad
+```ts
 class UnnecessaryConstructorOverride extends Base {
     constructor(value: number) {
       super(value);
@@ -863,7 +879,7 @@ class UnnecessaryConstructorOverride extends Base {
 }
 ```
 
-```ts good
+```ts
 class DefaultConstructor {
 }
 
@@ -882,7 +898,7 @@ class NoInstantiation {
 
 The constructor should be separated from surrounding code both above and below by a single blank line:
 
-```ts good
+```ts
 class Foo {
   myField = 10;
 
@@ -894,7 +910,7 @@ class Foo {
 }
 ```
 
-```ts bad
+```ts
 class Foo {
   myField = 10;
   constructor(private readonly ctorParam) {}
@@ -910,7 +926,7 @@ class Foo {
 
 Do not use private fields (also known as private identifiers):
 
-```ts bad
+```ts
 class Clazz {
   #ident = 1;
 }
@@ -918,7 +934,7 @@ class Clazz {
 
 Instead, use TypeScript's visibility annotations:
 
-```ts good
+```ts
 class Clazz {
   private ident = 1;
 }
@@ -936,7 +952,7 @@ Mark properties that are never reassigned outside of the constructor with the `r
 
 Rather than plumbing an obvious initializer through to a class member, use a TypeScript [parameter property](https://www.typescriptlang.org/docs/handbook/2/classes.html#parameter-properties).
 
-```ts bad
+```ts
 class Foo {
   private readonly barService: BarService;
 
@@ -946,7 +962,7 @@ class Foo {
 }
 ```
 
-```ts good
+```ts
 class Foo {
   constructor(private readonly barService: BarService) {}
 }
@@ -956,9 +972,9 @@ If the parameter property needs documentation, [use an `@param` JSDoc tag](#para
 
 ##### Field initializers
 
-If a class member is not a parameter, initialize it where it's declared, which sometimes lets you drop the constructor entirely.
+If initializing a class member does not rely on a constructor parameter or a parameter property, initialize it where it's declared. This sometimes lets you drop the constructor entirely.
 
-```ts bad
+```ts
 class Foo {
   private readonly userList: string[];
 
@@ -968,9 +984,34 @@ class Foo {
 }
 ```
 
-```ts good
+```ts
 class Foo {
   private readonly userList: string[] = [];
+}
+```
+
+It is possible to reference parameter properties from field initializers due to the way TypeScript transpiles this pattern to JavaScript. This transpilation is changing to match JavaScript language semantics, and referencing a parameter property from a field initializer will become a TypeScript compiler error, so this pattern should be avoided.
+
+```ts
+class Foo {
+  // BAD: references a property (`this.state`) that will be
+  // initialized after this field.
+  private readonly userList = initializeUserList(this.state);
+
+  constructor(private readonly state: InitialState) {}
+}
+```
+
+```ts
+class Foo {
+  // GOOD: this must be initialized in the constructor
+  private readonly userList: string[];
+
+  // This might allow converting the parameter property into a normal
+  // constructor parameter.
+  constructor(state: InitialState) {
+    this.userList = initializeUserList(state);
+  }
 }
 ```
 
@@ -978,9 +1019,11 @@ Tip: Properties should never be added to or removed from an instance after the c
 
 ##### Properties used outside of class lexical scope
 
-Properties used from outside the lexical scope of their containing class, such as an Angular component's properties used from a template, _must not_ use `private` visibility, as they are used outside of the lexical scope of their containing class.
+Properties used from outside the lexical scope of their containing class, _must not_ use `private` visibility, as they are used outside of the lexical scope of their containing class.
 
-Use either `protected` or `public` as appropriate to the property in question. Angular and AngularJS template properties should use `protected`, but Polymer should use `public`.
+Exception: Angular component properties used only from a template are allowed to use `private` visibility.
+
+Use either `protected` or `public` as appropriate to the property in question.
 
 TypeScript code _must not_ use `obj['foo']` to bypass the visibility of a property.
 
@@ -994,7 +1037,7 @@ Though it might appear that `obj['foo']` can bypass visibility in the TypeScript
 
 Getters and setters, also known as accessors, for class members _may_ be used. The getter method _must_ be a [pure function](https://en.wikipedia.org/wiki/Pure_function) (i.e., result is consistent and has no side effects: getters _must not_ change observable state). They are also useful as a means of restricting the visibility of internal or verbose implementation details (shown below).
 
-```ts good
+```ts
 class Foo {
   constructor(private readonly someService: SomeService) {}
 
@@ -1008,7 +1051,7 @@ class Foo {
 }
 ```
 
-```ts bad
+```ts
 class Foo {
   nextId = 0;
   get next() {
@@ -1019,7 +1062,7 @@ class Foo {
 
 If an accessor is used to hide a class property, the hidden property _may_ be prefixed or suffixed with any whole word, like `internal` or `wrapped`. When using these private properties, access the value through the accessor whenever possible. At least one accessor for a property _must_ be non-trivial: do not define "pass-through" accessors only for the purpose of hiding a property. Instead, make the property public (or consider making it `readonly` rather than just defining a getter with no setter).
 
-```ts good
+```ts
 class Foo {
   private wrappedBar = '';
   get bar() {
@@ -1032,7 +1075,7 @@ class Foo {
 }
 ```
 
-```ts bad
+```ts
 class Bar {
   private barInternal = '';
   // Neither of these accessors have logic, so just make bar public.
@@ -1050,7 +1093,7 @@ Getters and setters _must not_ be defined using `Object.defineProperty`, since t
 
 ##### Computed properties
 
-Computed properties may only be used in classes when the property is a symbol. Dict-style properties (that is, quoted or computed non-symbol keys) are not allowed (see [rationale for not mixing key types](#features-objects-mixing-keys). A `[Symbol.iterator]` method should be defined for any classes that are logically iterable. Beyond this, `Symbol` should be used sparingly.
+Computed properties may only be used in classes when the property is a symbol. Dict-style properties (that is, quoted or computed non-symbol keys) are not allowed (see [rationale for not mixing key types](#features-objects-mixing-keys)). A `[Symbol.iterator]` method should be defined for any classes that are logically iterable. Beyond this, `Symbol` should be used sparingly.
 
 Tip: be careful of using any other built-in symbols (e.g. `Symbol.isConcatSpreadable`) as they are not polyfilled by the compiler and will therefore not work in older browsers.
 
@@ -1062,7 +1105,7 @@ Restricting visibility of properties, methods, and entire types helps with keepi
 - Consider converting private methods to non-exported functions within the same file but outside of any class, and moving private properties into a separate, non-exported class.
 - TypeScript symbols are public by default. Never use the `public` modifier except when declaring non-readonly public parameter properties (in constructors).
 
-```ts bad
+```ts
 class Foo {
   public bar = new Bar();  // BAD: public modifier not needed
 
@@ -1070,7 +1113,7 @@ class Foo {
 }
 ```
 
-```ts good
+```ts
 class Foo {
   bar = new Bar();  // GOOD: public modifier not needed
 
@@ -1084,7 +1127,7 @@ See also [export visibility](#export-visibility).
 
 ##### Do not manipulate `prototype`s directly
 
-The `class` keyword allows clearer and more readable class definitions than defining `prototype` properties. Ordinary implementation code has no business manipulating these objects. Mixins and modifying the prototypes of builtin objects are explicitly forbidden.
+The `class` keyword allows clearer and more readable class definitions than defining `prototype` properties. Ordinary implementation code has no business manipulating these objects. Mixins and modifying the prototypes of built-in objects are explicitly forbidden.
 
 **Exception**: Framework code (such as Polymer, or Angular) may need to use `prototype`s, and should not resort to even-worse workarounds to avoid doing so.
 
@@ -1106,19 +1149,19 @@ Methods and classes/constructors are not covered in this section.
 
 Prefer function declarations over arrow functions or function expressions when defining named functions.
 
-```ts good
+```ts
 function foo() {
   return 42;
 }
 ```
 
-```ts bad
+```ts
 const foo = () => 42;
 ```
 
 Arrow functions _may_ be used, for example, when an explicit type annotation is required.
 
-```ts good
+```ts
 interface SearchFunction {
   (source: string, subString: string): boolean;
 }
@@ -1134,11 +1177,11 @@ Functions nested within other methods or functions _may_ use function declaratio
 
 Do not use function expressions. Use arrow functions instead.
 
-```ts good
+```ts
 bar(() => { this.doSomething(); })
 ```
 
-```ts bad
+```ts
 bar(function() { ... })
 ```
 
@@ -1148,7 +1191,7 @@ bar(function() { ... })
 
 Use arrow functions with concise bodies (i.e. expressions) or block bodies as appropriate.
 
-```ts good
+```ts
 // Top level functions use function declarations.
 function someFunction() {
   // Block bodies are fine:
@@ -1159,7 +1202,8 @@ function someFunction() {
   });
 
   // Concise bodies are fine, too, if the return value is used:
-  const longThings = myValues.filter(v => v.length > 1000).map(v => String(v));
+  const longThings =
+      myValues.filter((v) => v.length > 1000).map((v) => String(v));
 
   function payMoney(amount: number) {
     // function declarations are fine, but must not access `this`.
@@ -1172,27 +1216,27 @@ function someFunction() {
 
 Only use a concise body if the return value of the function is actually used. The block body makes sure the return type is `void` then and prevents potential side effects.
 
-```ts bad
+```ts
 // BAD: use a block body if the return value of the function is not used.
-myPromise.then(v => console.log(v));
+myPromise.then((v) => console.log(v));
 // BAD: this typechecks, but the return value still leaks.
 let f: () => void;
 f = () => 1;
 ```
 
-```ts good
+```ts
 // GOOD: return value is unused, use a block body.
-myPromise.then(v => {
+myPromise.then((v) => {
   console.log(v);
 });
 // GOOD: code may use blocks for readability.
-const transformed = [1, 2, 3].map(v => {
+const transformed = [1, 2, 3].map((v) => {
   const intermediate = someComplicatedExpr(v);
   const more = acrossManyLines(intermediate);
   return worthWrapping(more);
 });
 // GOOD: explicit `void` ensures no leaked return value
-myPromise.then(v => void console.log(v));
+myPromise.then((v) => void console.log(v));
 ```
 
 Tip: The `void` operator can be used to ensure an arrow function with an expression body returns `undefined` when the result is unused.
@@ -1201,7 +1245,7 @@ Tip: The `void` operator can be used to ensure an arrow function with an express
 
 Function expressions and function declarations _must not_ use `this` unless they specifically exist to rebind the `this` pointer. Rebinding `this` can in most cases be avoided by using arrow functions or explicit parameters.
 
-```ts bad
+```ts
 function clickHandler() {
   // Bad: what's `this` in this context?
   this.textContent = 'Hello';
@@ -1210,7 +1254,7 @@ function clickHandler() {
 document.body.onclick = clickHandler;
 ```
 
-```ts good
+```ts
 // Good: explicitly reference the object from an arrow function.
 document.body.onclick = () => { document.body.textContent = 'hello'; };
 // Alternatively: take an explicit parameter
@@ -1226,19 +1270,19 @@ Callbacks can be invoked with unexpected arguments that can pass a type check bu
 
 Avoid passing a named callback to a higher-order function, unless you are sure of the stability of both functions' call signatures. Beware, in particular, of less-commonly-used optional parameters.
 
-```ts bad
+```ts
 // BAD: Arguments are not explicitly passed, leading to unintended behavior
-// when the optional `radix` argument gets the array indices 0, 1, and 2.
-const numbers = ['11', '5', '10'].map(parseInt);
-// > [11, NaN, 2];
+// when the optional `decimals` argument gets the array indices 0, 1, and 2.
+const strs = [1.23, 4.56, 7.89].map(googFormat.numericValueToString);
+// > ['1', '4.6', '7.89'];
 ```
 
 Instead, prefer passing an arrow-function that explicitly forwards parameters to the named callback.
 
-```ts good
+```ts
 // GOOD: Arguments are explicitly passed to the callback
-const numbers = ['11', '5', '3'].map((n) => parseInt(n));
-// > [11, 5, 3]
+const strs = [1.23, 4.56, 7.89].map((n) => googFormat.numericValueToString(n));
+// > ['1.23', '4.56', '7.89']
 
 // GOOD: Function is locally defined and is designed to be used as a callback
 function dayFilter(element: string|null|undefined) {
@@ -1254,7 +1298,7 @@ Classes usually _should not_ contain properties initialized to arrow functions. 
 
 > Note: in some specific situations, e.g. when binding functions in a template, arrow functions as properties are useful and create much more readable code. Use judgement with this rule. Also, see the [`Event Handlers`](#event-handlers) section below.
 
-```ts bad
+```ts
 class DelayHandler {
   constructor() {
     // Problem: `this` is not preserved in the callback. `this` in the callback
@@ -1267,7 +1311,7 @@ class DelayHandler {
 }
 ```
 
-```ts bad
+```ts
 // Arrow functions usually should not be properties.
 class DelayHandler {
   constructor() {
@@ -1280,7 +1324,7 @@ class DelayHandler {
 }
 ```
 
-```ts good
+```ts
 // Explicitly manage `this` at call time.
 class DelayHandler {
   constructor() {
@@ -1299,7 +1343,7 @@ class DelayHandler {
 
 Event handlers _may_ use arrow functions when there is no need to uninstall the handler (for example, if the event is emitted by the class itself). If the handler requires uninstallation, arrow function properties are the right approach, because they automatically capture `this` and provide a stable reference to uninstall.
 
-```ts good
+```ts
 // Event handlers may be anonymous functions or arrow function properties.
 class Component {
   onAttached() {
@@ -1324,7 +1368,7 @@ class Component {
 
 Do not use `bind` in the expression that installs an event handler, because it creates a temporary reference that can't be uninstalled.
 
-```ts bad
+```ts
 // Binding listeners creates a temporary reference that prevents uninstalling.
 class Component {
   onAttached() {
@@ -1345,12 +1389,12 @@ class Component {
 
 Optional function parameters _may_ be given a default initializer to use when the argument is omitted. Initializers _must not_ have any observable side effects. Initializers _should_ be kept as simple as possible.
 
-```ts good
+```ts
 function process(name: string, extraContext: string[] = []) {}
 function activate(index = 0) {}
 ```
 
-```ts bad
+```ts
 // BAD: side effect of incrementing the counter
 let globalCounter = 0;
 function newId(index = globalCounter++) {}
@@ -1369,7 +1413,7 @@ Use default parameters sparingly. Prefer [destructuring](#features-objects-destr
 
 Use a _rest_ parameter instead of accessing `arguments`. Never name a local variable or parameter `arguments`, which confusingly shadows the built-in name.
 
-```ts good
+```ts
 function variadic(array: string[], ...numbers: number[]) {}
 ```
 
@@ -1387,10 +1431,25 @@ Parentheses around the left-hand side of a single-argument arrow function are re
 
 Do not put a space after the `...` in rest or spread syntax.
 
-```ts good
+```ts
 function myFunction(...elements: number[]) {}
 myFunction(...array, ...iterable, ...generator());
 ```
+
+#### Function Length
+
+Write small and focused functions and class methods.
+
+Even though no hard limit is placed on function and method length, if it exceeds about 40 lines, think about whether it can be broken up without harming the structure of the program.
+
+This is not an exact science, but here are some examples of signs that your method might be too complex:
+
+- It has several levels of nesting.
+- It consists of several separate blocks of code, that each require a comment to explain what it does.
+- It has to handle different types of exceptions in different places.
+- It can't all fit on your screen at once.
+
+If working with such a function proves to be difficult, you find that errors are hard to debug, or you want to use a piece of it in several different contexts, consider breaking up the function into smaller and more manageable pieces. Note that there is nothing wrong with a private helper method or class that is used only once; these can be a useful tool for making code more readable.
 
 ### this
 
@@ -1398,11 +1457,9 @@ Only use `this` in class constructors and methods, functions that have an explic
 
 Never use `this` to refer to the global object, the context of an `eval`, the target of an event, or unnecessarily `call()`ed or `apply()`ed functions.
 
-```ts bad
+```ts
 this.alert('Hello');
 ```
-
-### Interfaces
 
 ### Primitive literals
 
@@ -1412,7 +1469,7 @@ this.alert('Hello');
 
 Ordinary string literals are delimited with single quotes (`'`), rather than double quotes (`"`).
 
-Tip: if a string contains a single quote character, consider using a template string to avoid having to escape the quote.
+Exception: if a string contains a single quote character, it may be delimited with double quotes to avoid having to escape the quote.
 
 ##### No line continuations
 
@@ -1420,7 +1477,7 @@ Do not use _line continuations_ (that is, ending a line inside a string literal 
 
 Disallowed:
 
-```ts bad
+```ts
 const LONG_STRING = 'This is a very very very very very very very long string. \
     It inadvertently contains long stretches of spaces due to how the \
     continued lines are indented.';
@@ -1428,7 +1485,7 @@ const LONG_STRING = 'This is a very very very very very very very long string. \
 
 Instead, write
 
-```ts good
+```ts
 const LONG_STRING = 'This is a very very very very very very long string. ' +
     'It does not contain long stretches of spaces because it uses ' +
     'concatenated strings.';
@@ -1444,7 +1501,7 @@ If a template literal spans multiple lines, it does not need to follow the inden
 
 Example:
 
-```ts good
+```ts
 function arithmetic(a: number, b: number) {
   return `Here is a table of arithmetic operations:
 ${a} + ${b} = ${a + b}
@@ -1462,8 +1519,8 @@ Numbers may be specified in decimal, hex, octal, or binary. Use exactly `0x`, `0
 
 TypeScript code _may_ use the `String()` and `Boolean()` (note: no `new`!) functions, string template literals, or `!!` to coerce types.
 
-```ts good
-const bool = Boolean(false);
+```ts
+const bool = Boolean(0);
 const str = String(aNumber);
 const bool2 = !!str;
 const str2 = `result: ${bool2}`;
@@ -1471,7 +1528,7 @@ const str2 = `result: ${bool2}`;
 
 Values of enum types (including unions of enum types and other types) _must not_ be converted to booleans with `Boolean()` or `!!`, and must instead be compared explicitly with comparison operators.
 
-```ts bad
+```ts
 enum SupportLevel {
   NONE,
   BASIC,
@@ -1485,7 +1542,7 @@ const maybeLevel: SupportLevel|undefined = ...;
 enabled = !!maybeLevel;
 ```
 
-```ts good
+```ts
 enum SupportLevel {
   NONE,
   BASIC,
@@ -1496,7 +1553,7 @@ const level: SupportLevel = ...;
 let enabled = level !== SupportLevel.NONE;
 
 const maybeLevel: SupportLevel|undefined = ...;
-enabled = level !== undefined && level !== SupportLevel.NONE;
+enabled = maybeLevel !== undefined && maybeLevel !== SupportLevel.NONE;
 ```
 
 Why?
@@ -1505,56 +1562,35 @@ For most purposes, it doesn't matter what number or string value an enum name is
 
 Using string concatenation to cast to string is discouraged, as we check that operands to the plus operator are of matching types.
 
-Code _must_ use `Number()` to parse numeric values, and _must_ check its return for `NaN` values explicitly, unless failing to parse is impossible from context.
+##### Coercing to numbers
 
-Note: `Number('')`, `Number(' ')`, and `Number('\t')` would return `0` instead of `NaN`. `Number('Infinity')` and `Number('-Infinity')` would return `Infinity` and `-Infinity` respectively. Additionally, exponential notation such as `Number('1e+309')` and `Number('-1e+309')` can overflow into `Infinity`. These cases may require special handling.
+Number parsing can fail in a wide variety of ways, with many surprising corner cases, and the different methods to parse numbers each have different and sometimes inconsistent behavior (e.g. whitespace, empty strings, scientific notation, overflow to infinity, radix prefixes, etc). Further, parsing at the wrong layer can often be a code smell. Code _must_ check the output of any numeric coercion and explicitly handle any possible non-throwing failure cases (e.g. handling any `NaN` results).
 
-```ts good
-const aNumber = Number('123');
-if (!isFinite(aNumber)) throw new Error(...);
-```
+Code _must not_ use unary plus (e.g. `+str`) or `parseFloat` to coerce strings to numbers. The former is too easy to miss in a code review, and the latter silently ignores trailing garbage in the input string. In both cases, prefer `Number` instead.
 
-Code _must not_ use unary plus (`+`) to coerce strings to numbers. Parsing numbers can fail, has surprising corner cases, and can be a code smell (parsing at the wrong layer). A unary plus is too easy to miss in code reviews given this.
+Code _must not_ use `parseInt` unless a non-decimal radix is required. In this case, the input string _must_ be checked for validity (i.e. all characters are valid digits) before parsing to ensure trailing garbage is not silently ignored. The output _must_ also be checked against `NaN`.
 
-```ts bad
+```ts
 const x = +y;
+const x1 = parseFloat(y1);
 ```
 
-Code also _must not_ use `parseInt` or `parseFloat` to parse numbers, except for non-base-10 strings (see below). Both of those functions ignore trailing characters in the string, which can shadow error conditions (e.g. parsing `12 dwarves` as `12`).
-
-```ts bad
-const n = parseInt(someString, 10);  // Error prone,
-const f = parseFloat(someString);    // regardless of passing a radix.
-```
-
-Code that requires parsing with a radix _must_ check that its input contains only appropriate digits for that radix before calling into `parseInt`;
-
-```ts good
-if (!/^[a-fA-F0-9]+$/.test(someString)) throw new Error(...);
-// Needed to parse hexadecimal.
-// tslint:disable-next-line:ban
-const n = parseInt(someString, 16);  // Only allowed for radix != 10
-```
-
-Use `Number()` followed by `Math.floor` or `Math.trunc` (where available) to parse integer numbers:
-
-```ts good
-let f = Number(someString);
-if (isNaN(f)) handleError();
-f = Math.floor(f);
+```ts
+const x = Number(y);
+if (!isFinite(x)) throw new Error(...);
 ```
 
 ##### Implicit coercion
 
-Do not use explicit boolean coercions in conditional clauses that have implicit boolean coercion. Those are the conditions in an `if`, `for` and `while` statements.
+Do not use explicit boolean coercions in conditional clauses that have implicit boolean coercion (specifically, the conditions in `if`, `for`, and `while` statements).
 
-```ts bad
+```ts
 const foo: MyInterface|null = ...;
 if (!!foo) {...}
 while (!!foo) {...}
 ```
 
-```ts good
+```ts
 const foo: MyInterface|null = ...;
 if (foo) {...}
 while (foo) {...}
@@ -1562,7 +1598,7 @@ while (foo) {...}
 
 [As with explicit conversions](#type-coercion), values of enum types (including unions of enum types and other types) _must not_ be implicitly coerced to booleans, and must instead be compared explicitly with comparison operators.
 
-```ts bad
+```ts
 enum SupportLevel {
   NONE,
   BASIC,
@@ -1573,10 +1609,10 @@ const level: SupportLevel = ...;
 if (level) {...}
 
 const maybeLevel: SupportLevel|undefined = ...;
-if (level) {...}
+if (maybeLevel) {...}
 ```
 
-```ts good
+```ts
 enum SupportLevel {
   NONE,
   BASIC,
@@ -1587,12 +1623,12 @@ const level: SupportLevel = ...;
 if (level !== SupportLevel.NONE) {...}
 
 const maybeLevel: SupportLevel|undefined = ...;
-if (level !== undefined && level !== SupportLevel.NONE) {...}
+if (maybeLevel !== undefined && maybeLevel !== SupportLevel.NONE) {...}
 ```
 
 Other types of values may be either implicitly coerced to booleans or compared explicitly with comparison operators:
 
-```ts good
+```ts
 // Explicitly comparing > 0 is OK:
 if (arr.length > 0) {...}
 // so is relying on boolean coercion:
@@ -1605,7 +1641,7 @@ if (arr.length) {...}
 
 Control flow statements (`if`, `else`, `for`, `do`, `while`, etc) always use braced blocks for the containing code, even if the body contains only a single statement. The first statement of a non-empty block must begin on its own line.
 
-```ts good
+```ts
 for (let i = 0; i < x; i++) {
   doSomethingWith(i);
 }
@@ -1615,7 +1651,7 @@ if (x) {
 }
 ```
 
-```ts bad
+```ts
 if (x)
   doSomethingWithALongMethodNameThatForcesANewLine(x);
 
@@ -1624,7 +1660,7 @@ for (let i = 0; i < x; i++) doSomethingWith(i);
 
 **Exception:** `if` statements fitting on one line _may_ elide the block.
 
-```ts good
+```ts
 if (x) x.doFoo();
 ```
 
@@ -1632,14 +1668,14 @@ if (x) x.doFoo();
 
 Prefer to avoid assignment of variables inside control statements. Assignment can be easily mistaken for equality checks inside control statements.
 
-```ts bad
+```ts
 if (x = someFunction()) {
   // Assignment easily mistaken with equality check
   // ...
 }
 ```
 
-```ts good
+```ts
 x = someFunction();
 if (x) {
   // ...
@@ -1659,7 +1695,7 @@ while ((x = someFunction())) {
 
 Prefer `for (... of someArr)` to iterate over arrays. `Array.prototype.forEach` and vanilla `for` loops are also allowed:
 
-```ts good
+```ts
 for (const x of someArr) {
   // x is a value of someArr.
 }
@@ -1676,7 +1712,7 @@ for (const [i, x] of someArr.entries()) {
 
 `for`-`in` loops may only be used on dict-style objects (see [below](#optimization-compatibility-for-property-access) for more info). Do not use `for (... in ...)` to iterate over arrays as it will counterintuitively give the array's indices (as strings!), not values:
 
-```ts bad
+```ts
 for (const x in someArray) {
   // x is the index!
 }
@@ -1684,7 +1720,7 @@ for (const x in someArray) {
 
 `Object.prototype.hasOwnProperty` should be used in `for`-`in` loops to exclude unwanted prototype properties. Prefer `for`-`of` with `Object.keys`, `Object.values`, or `Object.entries` over `for`-`in` when possible.
 
-```ts good
+```ts
 for (const key in obj) {
   if (!obj.hasOwnProperty(key)) continue;
   doWork(key, obj[key]);
@@ -1718,30 +1754,33 @@ Prefer throwing exceptions over ad-hoc error-handling approaches (such as passin
 
 Always use `new Error()` when instantiating exceptions, instead of just calling `Error()`. Both forms create a new `Error` instance, but using `new` is more consistent with how other objects are instantiated.
 
-```ts good
+```ts
 throw new Error('Foo is not a valid bar.');
 ```
 
-```ts bad
+```ts
 throw Error('Foo is not a valid bar.');
 ```
 
 ##### Only throw errors
 
-JavaScript (and thus TypeScript) allow throwing or rejecting a Promise with arbitrary values. However if the thrown or rejected value is not an `Error`, it does not populate stack trace information, making debugging hard. This treatment extends to `Promise` rejection values as `Promise.reject(obj)` is equivalent to `throw obj;` in async functions.
+Although JavaScript allows throwing arbitrary values, stack traces are only populated if the thrown value is an `Error`. **Do not** throw primitives (including strings, numbers, null or undefined) or objects that are not instances of `Error` or a subclass. This restriction also extends to all APIs that may throw their arguments, including `Promise.reject` or `AbortSignal`'s various `abort` methods.
 
-```ts bad
+```ts
 // bad: does not get a stack trace.
 throw 'oh noes!';
 // For promises
 new Promise((resolve, reject) => void reject('oh noes!'));
 Promise.reject();
 Promise.reject('oh noes!');
+// For abort signals
+new AbortController().abort('my custom abort error');
+AbortSignal.abort('my other custom abort error');
 ```
 
 Instead, only throw (subclasses of) `Error`:
 
-```ts good
+```ts
 // Throw only Errors
 throw new Error('oh noes!');
 // ... or subtypes of Error.
@@ -1751,13 +1790,20 @@ throw new MyError('my oh noes!');
 new Promise((resolve) => resolve()); // No reject is OK.
 new Promise((resolve, reject) => void reject(new Error('oh noes!')));
 Promise.reject(new Error('oh noes!'));
+// For abort signals
+new AbortController().abort();  // No reason is OK.
+AbortSignal.abort();
+new AbortController().abort(new Error('my custom abort error'));
+AbortSignal.abort(new Error('my other custom abort error'));
 ```
+
+Note: Calling `AbortController#abort` or `AbortSignal.abort` with no arguments is valid because a new "AbortError" `DOMException` will be created by default and assigned as the `AbortSignal#reason` (see [MDN](https://developer.mozilla.org/en-US/docs/Web/API/AbortController/abort#reason)).
 
 ##### Catching and rethrowing
 
 When catching errors, code _should_ assume that all thrown errors are instances of `Error`.
 
-```ts good
+```ts
 function assertIsError(e: unknown): asserts e is Error {
   if (!(e instanceof Error)) throw new Error("e is not an Error");
 }
@@ -1776,7 +1822,7 @@ try {
 
 Exception handlers _must not_ defensively handle non-`Error` types unless the called API is conclusively known to throw non-`Error`s in violation of the above rule. In that case, a comment should be included to specifically identify where the non-`Error`s originate.
 
-```ts good
+```ts
 try {
   badApiThrowingStrings();
 } catch (e: unknown) {
@@ -1793,7 +1839,7 @@ Avoid [overly defensive programming](https://en.wikipedia.org/wiki/Defensive_pro
 
 It is very rarely correct to do nothing in response to a caught exception. When it truly is appropriate to take no action whatsoever in a catch block, the reason this is justified is explained in a comment.
 
-```ts good
+```ts
   try {
     return handleNumericResponse(response);
   } catch (e: unknown) {
@@ -1804,7 +1850,7 @@ It is very rarely correct to do nothing in response to a caught exception. When 
 
 Disallowed:
 
-```ts bad
+```ts
   try {
     shouldFail();
     fail('expected an error');
@@ -1814,11 +1860,55 @@ Disallowed:
 
 Tip: Unlike in some other languages, patterns like the above simply don’t work since this will catch the error thrown by `fail`. Use `assertThrows()` instead.
 
+##### ErrorOptions cause must be an Error object
+
+When passing an argument for the ErrorOptions parameter, the `cause` property must be initialized with a subtype of error. This effectively creates a chain of error objects with useful stack traces.
+
+```ts
+try {
+  ...
+} catch (e: unknown) {
+  if (e instanceof Error) {
+    throw new Error('Something went wrong', {cause: e});
+  }
+}
+```
+
+```ts
+const status = doSomething();
+if (status !== success) {
+  throw new Error('doSomething failed', {cause: status});
+}
+```
+
+If the `cause` initializer refers to the catch clause variable of type unknown, it's ok to omit a type check, since our codebase assumes you cannot throw anything other than an `Error` object.
+
+```ts
+try {
+  ...
+} catch (e: unknown) {
+  // No need to check the type of e.
+  throw new Error('Something went wrong', {cause: e});
+}
+```
+
+In TypeScript, type `Error` happens to be assignable to `ErrorOptions`. Thus it is possible to pass an error object accidentally as the ErrorOptions parameter, which is very likely a bug in the code.
+
+```ts
+try {
+  ...
+} catch (e: unknown) {
+  if (e instanceof Error) {
+    throw new Error('Something went wrong', e);
+  }
+}
+```
+
 #### Switch statements
 
 All `switch` statements _must_ contain a `default` statement group, even if it contains no code. The `default` statement group must be last.
 
-```ts good
+```ts
 switch (x) {
   case Y:
     doSomethingElse();
@@ -1830,7 +1920,7 @@ switch (x) {
 
 Within a switch block, each statement group either terminates abruptly with a `break`, a `return` statement, or by throwing an exception. Non-empty statement groups (`case ...`) _must not_ fall through (enforced by the compiler):
 
-```ts bad
+```ts
 switch (x) {
   case X:
     doSomething();
@@ -1842,7 +1932,7 @@ switch (x) {
 
 Empty statement groups are allowed to fall through:
 
-```ts good
+```ts
 switch (x) {
   case X:
   case Y:
@@ -1856,13 +1946,13 @@ switch (x) {
 
 Always use triple equals (`===`) and not equals (`!==`). The double equality operators cause error prone type coercions that are hard to understand and slower to implement for JavaScript Virtual Machines. See also the [JavaScript equality table](https://dorey.github.io/JavaScript-Equality-Table/).
 
-```ts bad
+```ts
 if (foo == 'bar' || baz != bam) {
   // Hard to understand behaviour due to type coercion.
 }
 ```
 
-```ts good
+```ts
 if (foo === 'bar' || baz !== bam) {
   // All good here.
 }
@@ -1870,7 +1960,7 @@ if (foo === 'bar' || baz !== bam) {
 
 **Exception:** Comparisons to the literal `null` value _may_ use the `==` and `!=` operators to cover both `null` and `undefined` values.
 
-```ts good
+```ts
 if (foo == null) {
   // Will trigger when foo is null or undefined.
 }
@@ -1884,7 +1974,7 @@ Because of this, you _should not_ use type and non-nullability assertions withou
 
 Instead of the following:
 
-```ts bad
+```ts
 (x as Foo).foo();
 
 y!.bar();
@@ -1892,7 +1982,7 @@ y!.bar();
 
 When you want to assert a type or non-nullability the best answer is to explicitly write a runtime check that performs that check.
 
-```ts good
+```ts
 // assuming Foo is a class.
 if (x instanceof Foo) {
   x.foo();
@@ -1905,7 +1995,7 @@ if (y) {
 
 Sometimes due to some local property of your code you can be sure that the assertion form is safe. In those situations, you _should_ add clarification to explain why you are ok with the unsafe behavior:
 
-```ts good
+```ts
 // x is a Foo, because ...
 (x as Foo).foo();
 
@@ -1919,12 +2009,12 @@ If the reasoning behind a type or non-nullability assertion is obvious, the comm
 
 Type assertions _must_ use the `as` syntax (as opposed to the angle brackets syntax). This enforces parentheses around the assertion when accessing a member.
 
-```ts bad
+```ts
 const x = (<Foo>z).length;
 const y = <Foo>z.length;
 ```
 
-```ts good
+```ts
 // z must be Foo because ...
 const x = (z as Foo).length;
 ```
@@ -1935,7 +2025,7 @@ From the [TypeScript handbook](https://www.typescriptlang.org/docs/handbook/2/ev
 
 If you are sure an assertion is safe, you can perform a _double assertion_. This involves casting through `unknown` since it is less specific than all types.
 
-```ts good
+```ts
 // x is a Foo here, because...
 (x as unknown as Foo).fooMethod();
 ```
@@ -1946,7 +2036,7 @@ Use `unknown` (instead of `any` or `{}`) as the intermediate type.
 
 Use type annotations (`: Foo`) instead of type assertions (`as Foo`) to specify the type of an object literal. This allows detecting refactoring bugs when the fields of an interface change over time.
 
-```ts bad
+```ts
 interface Foo {
   bar: number;
   baz?: string;  // was "bam", but later renamed to "baz".
@@ -1965,7 +2055,7 @@ function func() {
 }
 ```
 
-```ts good
+```ts
 interface Foo {
   bar: number;
   baz?: string;
@@ -1988,7 +2078,7 @@ function func(): Foo {
 
 Limit the amount of code inside a try block, if this can be done without hurting readability.
 
-```ts bad
+```ts
 try {
   const result = methodThatMayThrow();
   use(result);
@@ -1997,7 +2087,7 @@ try {
 }
 ```
 
-```ts good
+```ts
 let result;
 try {
   result = methodThatMayThrow();
@@ -2043,7 +2133,7 @@ class MyComp {
 
 TypeScript code _must not_ instantiate the wrapper classes for the primitive types `String`, `Boolean`, and `Number`. Wrapper classes have surprising behavior, such as `new Boolean(false)` evaluating to `true`.
 
-```ts bad
+```ts
 const s = new String('hello');
 const b = new Boolean(false);
 const n = new Number(5);
@@ -2053,7 +2143,7 @@ The wrappers may be called as functions for coercing (which is preferred over us
 
 #### Automatic Semicolon Insertion
 
-Do not rely on Automatic Semicolon Insertion (ASI). Explicitly end all statements using a semicolon. This prevents bugs due to incorrect semicolon insertions and ensures compatibility with tools with limited ASI support (e.g. clang-format).
+Do not rely on Automatic Semicolon Insertion (ASI). Explicitly end all statements using a semicolon. This prevents bugs due to incorrect semicolon insertions.
 
 #### Const enums
 
@@ -2067,7 +2157,7 @@ TypeScript enums already cannot be mutated; `const enum` is a separate language 
 
 Debugger statements _must not_ be included in production code.
 
-```ts bad
+```ts
 function debugMe() {
   debugger;
 }
@@ -2101,9 +2191,9 @@ This includes:
 
 Projects targeting specific JavaScript runtimes, such as latest-Chrome-only, Chrome extensions, Node.JS, Electron, can obviously use those APIs. Use caution when considering an API surface that is proprietary and only implemented in some browsers; consider whether there is a common library that can abstract this API surface away for you.
 
-#### Modifying builtin objects
+#### Modifying built-in objects
 
-Never modify builtin types, either by adding methods to their constructors or to their prototypes. Avoid depending on libraries that do this.
+Never modify built-in types, either by adding methods to their constructors or to their prototypes. Avoid depending on libraries that do this.
 
 Do not add symbols to the global object unless absolutely necessary (e.g. required by a third-party API).
 
@@ -2121,7 +2211,7 @@ Some concrete examples of this rule:
 
 - Do not use trailing or leading underscores for private properties or methods.
 - Do not use the `opt_` prefix for optional parameters.
-  - For accessors, see [accessor rules](#getters-and-setters-accessors) below.
+  - For accessors, see [accessor rules](#classes-getters-and-setters) below.
 - Do not mark interfaces specially (~~`IMyInterface`~~ or ~~`MyFooInterface`~~) unless it's idiomatic in its environment. When introducing an interface for a class, give it a name that expresses why the interface exists in the first place (e.g. `class TodoItem` and `interface TodoItemStorage` if the interface expresses the format used for storage/serialization in JSON).
 - Suffixing `Observable`s with `$` is a common external convention and can help resolve confusion regarding observable values vs concrete values. Judgement on whether this is a useful convention is left up to individual teams, but _should_ be consistent within projects.
 
@@ -2131,7 +2221,7 @@ Names _must_ be descriptive and clear to a new reader. Do not use abbreviations 
 
 - **Exception:** Variables that are in scope for 10 lines or fewer, including arguments that are _not_ part of an exported API, _may_ use short (e.g. single letter) variable names.
 
-```ts good
+```ts
 // Good identifiers:
 errorCount          // No abbreviation.
 dnsConnectionIndex  // Most people know what "DNS" stands for.
@@ -2139,7 +2229,7 @@ referrerUrl         // Ditto for "URL".
 customerId          // "Id" is both ubiquitous and unlikely to be misunderstood.
 ```
 
-```ts bad
+```ts
 // Disallowed identifiers:
 n                   // Meaningless.
 nErr                // Ambiguous abbreviation.
@@ -2178,11 +2268,35 @@ Type parameters, like in `Array<T>`, _may_ use a single upper case character (`T
 
 Test method names inxUnit-style test frameworks _may_ be structured with `_` separators, e.g. `testX_whenY_doesZ()`.
 
-#### `_` prefix/suffix
+#### Underscore (`_`) prefix/suffix
 
-Identifiers must not use `_` as a prefix or suffix.
+An underscore prefix indicates a syntactically-required identifier will not be used. It is encouraged to provide a meaningful name after the underscore, but a standalone `_` is allowed.
 
-This also means that `_` _must not_ be used as an identifier by itself (e.g. to indicate a parameter is unused).
+```ts
+(_projectId, api) => of(!params.disabledApis.includes(api));
+
+[].filter((_, i) => i % 2 === 0);
+
+for await (const _item of getAllTheThings()) {
+  count++;
+}
+
+using _cleanupFoo = foo();
+```
+
+Do not use this style for trailing unused parameters, those should be omitted.
+
+Trailing unused parameters are allowed on methods that are specifically intended to be overridden.
+
+```ts
+[].filter((element, _index) => !element.hasSomeProperty());
+```
+
+```ts
+[].filter(element => !element.hasSomeProperty());
+```
+
+Identifiers must not use `_` as a suffix.
 
 > Tip: If you only need some of the elements from an array (or TypeScript tuple), you can insert extra commas in a destructuring statement to ignore in-between elements:
 >
@@ -2194,7 +2308,7 @@ This also means that `_` _must not_ be used as an identifier by itself (e.g. to 
 
 Module namespace imports are `lowerCamelCase` while files are `snake_case`, which means that imports correctly will not match in casing style, such as
 
-```ts good
+```ts
 import * as fooBar from './foo_bar';
 ```
 
@@ -2207,7 +2321,7 @@ Some libraries might commonly use a namespace import prefix that violates this n
 
 **Immutable**: `CONSTANT_CASE` indicates that a value is _intended_ to not be changed, and _may_ be used for values that can technically be modified (i.e. values that are not deeply frozen) to indicate to users that they must not be modified.
 
-```ts good
+```ts
 const UNIT_SUFFIXES = {
   'milliseconds': 'ms',
   'seconds': 's',
@@ -2218,7 +2332,7 @@ const UNIT_SUFFIXES = {
 
 A constant can also be a `static readonly` property of a class.
 
-```ts good
+```ts
 class Foo {
   private static readonly MY_SPECIAL_NUMBER = 5;
 
@@ -2228,7 +2342,7 @@ class Foo {
 }
 ```
 
-**Global**: Only symbols declared on the module level, static fields of module level classes, and values of module level enums, _may_ use `CONST_CASE`. If a value can be instantiated more than once over the lifetime of the program (e.g. a local variable declared within a function, or a static field on a class nested in a function) then it _must_ use `lowerCamelCase`.
+**Global**: Only symbols declared on the module level, static fields of module level classes, and values of module level enums, _may_ use `CONST_CASE`. If a value can be instantiated more than once over the lifetime of the program (e.g. a local variable declared within a function, or a static field on a class nested in a function) then it _must_ use `lowerCamelCase`. [Local-scope aliases](#aliases) are excepted and should use the format of the existing identifier.
 
 If a value is an arrow function that implements an interface, then it _may_ be declared `lowerCamelCase`.
 
@@ -2238,7 +2352,7 @@ When creating a local-scope alias of an existing symbol, use the format of the e
 
 > Note: If you're creating an alias just to expose it to a template in your framework of choice, remember to also apply the proper [access modifiers](#properties-used-outside-of-class-lexical-scope).
 
-```ts good
+```ts
 const {BrewStateEnum} = SomeType;
 const CAPACITY = 5;
 
@@ -2254,35 +2368,46 @@ class Teapot {
 
 Code _may_ rely on type inference as implemented by the TypeScript compiler for all type expressions (variables, fields, return types, etc).
 
-```ts good
+```ts
 const x = 15;  // Type inferred.
 ```
 
-Leave out type annotations for trivially inferred types: variables or parameters initialized to a `string`, `number`, `boolean`, `RegExp` literal or `new` expression.
+Leave out type annotations when types are trivially inferred: unexported variables or parameters initialized to a `string`, `number`, or `boolean` literal. Type annotations are not considered trivial on exported symbols where required to be compatible with `isolatedDeclarations`.
 
-```ts bad
-const x: boolean = true;  // Bad: 'boolean' here does not aid readability
+```ts
+let count: number = 0;  // Bad: type annotation here is redundant
+
+// Bad: Exported interpolation fails isolatedDeclarations.
+export const PATH = `/users/${id}`;
 ```
 
-```ts bad
-// Bad: 'Set' is trivially inferred from the initialization
-const x: Set<string> = new Set();
+```ts
+let count = 0;
+
+// Good: Explicit type for isolatedDeclarations.
+export const PATH: string = `/users/${id}`;
 ```
 
-Explicitly specifying types may be required to prevent generic type parameters from being inferred as `unknown`. For example, initializing generic types with no values (e.g. empty arrays, objects, `Map`s, or `Set`s).
+Also leave out explicit generic types where they are redundant with the type annotation.
 
-```ts good
-const x = new Set<string>();
+```ts
+// Bad: Specifying '<string>' twice is unnecessary.
+const x: Set<string> = new Set<string>();
+```
+
+```ts
+const x = new Set<string>();             // Preferred when local
+export const y: Set<string> = new Set(); // Annotation required for exports
 ```
 
 For more complex expressions, type annotations can help with readability of the program:
 
-```ts bad
+```ts
 // Hard to reason about the type of 'value' without an annotation.
 const value = await rpc.getSomeValue().transform();
 ```
 
-```ts good
+```ts
 // Can tell the type of 'value' at a glance.
 const value: string[] = await rpc.getSomeValue().transform();
 ```
@@ -2308,9 +2433,9 @@ TypeScript code can use either `undefined` or `null` to denote absence of a valu
 
 Type aliases _must not_ include `|null` or `|undefined` in a union type. Nullable aliases typically indicate that null values are being passed around through too many layers of an application, and this clouds the source of the original issue that resulted in `null`. They also make it unclear when specific values on a class or interface might be absent.
 
-Instead, code _must_ only add `|null` or `|undefined` when the alias is actually used. Code _should_ deal with null values close to where they arise, using the above techniques.
+Instead, code _must_ only add `|null` or `|undefined` when the alias is actually used. Code _should_ deal with null values close to where they arise, using the below techniques.
 
-```ts bad
+```ts
 // Bad
 type CoffeeResponse = Latte|Americano|undefined;
 
@@ -2319,37 +2444,12 @@ class CoffeeService {
 }
 ```
 
-```ts good
+```ts
 // Better
 type CoffeeResponse = Latte|Americano;
 
 class CoffeeService {
   getLatte(): CoffeeResponse|undefined { ... };
-}
-```
-
-#### Prefer optional over `|undefined`
-
-In addition, TypeScript supports a special construct for optional parameters and fields, using `?`:
-
-```ts good
-interface CoffeeOrder {
-  sugarCubes: number;
-  milk?: Whole|LowFat|HalfHalf;
-}
-
-function pourCoffee(volume?: Milliliter) { ... }
-```
-
-Optional parameters implicitly include `|undefined` in their type. However, they are different in that they can be left out when constructing a value or calling a method. For example, `{sugarCubes: 1}` is a valid `CoffeeOrder` because `milk` is optional.
-
-Use optional fields (on interfaces or classes) and parameters rather than a `|undefined` type.
-
-For classes preferably avoid this pattern altogether and initialize as many fields as possible.
-
-```ts good
-class MyClass {
-  field = '';
 }
 ```
 
@@ -2359,14 +2459,14 @@ TypeScript's type system is structural, not nominal. That is, a value matches a 
 
 When providing a structural-based implementation, explicitly include the type at the declaration of the symbol (this allows more precise type checking and error reporting).
 
-```ts good
+```ts
 const foo: Foo = {
   a: 123,
   b: 'abc',
 }
 ```
 
-```ts bad
+```ts
 const badFoo = {
   a: 123,
   b: 'abc',
@@ -2375,7 +2475,7 @@ const badFoo = {
 
 Use interfaces to define structural types, not classes
 
-```ts good
+```ts
 interface Foo {
   a: number;
   b: string;
@@ -2387,7 +2487,7 @@ const foo: Foo = {
 }
 ```
 
-```ts bad
+```ts
 class Foo {
   readonly a: number;
   readonly b: number;
@@ -2450,14 +2550,14 @@ TypeScript supports [type aliases](https://www.typescriptlang.org/docs/handbook/
 
 However, when declaring types for objects, use interfaces instead of a type alias for the object literal expression.
 
-```ts good
+```ts
 interface User {
   firstName: string;
   lastName: string;
 }
 ```
 
-```ts bad
+```ts
 type User = {
   firstName: string,
   lastName: string,
@@ -2478,7 +2578,7 @@ For anything more complex, use the longer form `Array<T>`.
 
 These rules apply at each level of nesting, i.e. a simple `T[]` nested in a more complex type would still be spelled as `T[]`, using the syntax sugar.
 
-```ts good
+```ts
 let a: string[];
 let b: readonly string[];
 let c: ns.MyObj[];
@@ -2491,7 +2591,7 @@ let i: ReadonlyArray<string[]>;
 let j: Array<readonly string[]>;
 ```
 
-```ts bad
+```ts
 let a: Array<string>;  // The syntax sugar is shorter.
 let b: ReadonlyArray<string>;
 let c: Array<ns.MyObj>;
@@ -2515,17 +2615,17 @@ fileSizes['readme.txt'] = 541;
 
 In TypeScript, provide a meaningful label for the key. (The label only exists for documentation; it's unused otherwise.)
 
-```ts bad
+```ts
 const users: {[key: string]: number} = ...;
 ```
 
-```ts good
+```ts
 const users: {[userName: string]: number} = ...;
 ```
 
 > Rather than using one of these, consider using the ES6 `Map` and `Set` types instead. JavaScript objects have [surprising undesirable behaviors](http://2ality.com/2012/01/objects-as-maps.html) and the ES6 types more explicitly convey your intent. Also, `Map`s can be keyed by—and `Set`s can contain—types other than `string`.
 
-TypeScript's builtin `Record<Keys, ValueType>` type allows constructing types with a defined set of keys. This is distinct from associative arrays in that the keys are statically known. See advice on that [below](#mapped-conditional-types).
+TypeScript's built-in `Record<Keys, ValueType>` type allows constructing types with a defined set of keys. This is distinct from associative arrays in that the keys are statically known. See advice on that [below](#mapped-conditional-types).
 
 ### Mapped and conditional types
 
@@ -2536,8 +2636,7 @@ These type system features allow succinctly specifying types and constructing po
 - Compared to explicitly specifying properties and type relations (e.g. using interfaces and extension, see below for an example), type operators require the reader to mentally evaluate the type expression. This can make programs substantially harder to read, in particular combined with type inference and expressions crossing file boundaries.
 - Mapped & conditional types' evaluation model, in particular when combined with type inference, is underspecified, not always well understood, and often subject to change in TypeScript compiler versions. Code can "accidentally" compile or seem to give the right results. This increases future support cost of code using type operators.
 - Mapped & conditional types are most powerful when deriving types from complex and/or inferred types. On the flip side, this is also when they are most prone to create hard to understand and maintain programs.
-- Some language tooling does not work well with these type system features. E.g. your IDE's find references (and thus rename property refactoring) will not find properties in a `Pick<T, Keys>` type, and Code Search won't hyperlink them.
--
+- Some language tooling does not work well with these type system features. E.g. your IDE's find references (and thus rename property refactoring) will not find properties in a `Pick<T, Keys>` type, and Code Search won't hyperlink them. \*
 
 The style recommendation is:
 
@@ -2545,7 +2644,7 @@ The style recommendation is:
 - A little bit of repetition or verbosity is often much cheaper than the long term cost of complex type expressions.
 - Mapped & conditional types may be used, subject to these considerations.
 
-For example, TypeScript's builtin `Pick<T, Keys>` type allows creating a new type by subsetting another type `T`, but simple interface extension can often be easier to understand.
+For example, TypeScript's built-in `Pick<T, Keys>` type allows creating a new type by subsetting another type `T`, but simple interface extension can often be easier to understand.
 
 ```ts
 interface User {
@@ -2569,7 +2668,7 @@ interface FoodPreferences {
 
 To reduce duplication, `User` could extend `FoodPreferences`, or (possibly better) nest a field for food preferences:
 
-```ts good
+```ts
 interface FoodPreferences { /* as above */ }
 interface User extends FoodPreferences {
   shoeSize: number;
@@ -2593,7 +2692,7 @@ TypeScript's `any` type is a super and subtype of all other types, and allows de
 
 Use interfaces , an inline object type, or a type alias:
 
-```ts good
+```ts
 // Use declared interfaces to represent server-side JSON.
 declare interface MyUserJson {
   name: string;
@@ -2622,13 +2721,13 @@ function nicestElement<T>(items: T[]): T {
 
 The `any` type allows assignment into any other type and dereferencing any property off it. Often this behaviour is not necessary or desirable, and code just needs to express that a type is unknown. Use the built-in type `unknown` in that situation — it expresses the concept and is much safer as it does not allow dereferencing arbitrary properties.
 
-```ts good
+```ts
 // Can assign any value (including null or undefined) into this but cannot
 // use it without narrowing the type or casting.
 const val: unknown = value;
 ```
 
-```ts bad
+```ts
 const danger: any = value /* result of an arbitrary expression */;
 danger.whoops();  // This access is completely unchecked!
 ```
@@ -2639,7 +2738,7 @@ To safely use `unknown` values, narrow the type using a [type guard](https://www
 
 Sometimes using `any` is legitimate, for example in tests to construct a mock object. In such cases, add a comment that suppresses the lint warning, and document why it is legitimate.
 
-```ts good
+```ts
 // This test only needs a partial implementation of BookService, and if
 // we overlooked something the test will fail in an obvious way.
 // This is an intentionally unsafe partial mock
@@ -2652,9 +2751,9 @@ const component = new MyComponent(mockBookService, /* unused ShoppingCart */ nul
 
 ### `{}` Type
 
-The `{}` type, also known as an _empty interface_ type, represents a interface with no properties. An empty interface type has no specified properties and therefore any non-nullish value is assignable to it.
+The `{}` type, also known as an _empty interface_ type, represents an interface with no properties. An empty interface type has no specified properties and therefore any non-nullish value is assignable to it.
 
-```ts bad
+```ts
 let player: {};
 
 player = {
@@ -2664,7 +2763,7 @@ player = {
 console.log(player.health) // Property 'health' does not exist on type '{}'.
 ```
 
-```ts bad
+```ts
 function takeAnything(obj:{}) {
 
 }
@@ -2683,7 +2782,7 @@ Google3 code **should not** use `{}` for most use cases. `{}` represents any non
 
 If you are tempted to create a Pair type, instead use a tuple type:
 
-```ts bad
+```ts
 interface Pair {
   first: string;
   second: string;
@@ -2694,7 +2793,7 @@ function splitInHalf(input: string): Pair {
 }
 ```
 
-```ts good
+```ts
 function splitInHalf(input: string): [string, string] {
   ...
   return [x, y];
@@ -2708,7 +2807,7 @@ However, often it's clearer to provide meaningful names for the properties.
 
 If declaring an `interface` is too heavyweight, you can use an inline object literal type:
 
-```ts good
+```ts
 function splitHostPort(address: string): {host: string, port: number} {
   ...
 }
@@ -2780,12 +2879,12 @@ JSDoc comments are understood by tools (such as editors and documentation genera
 
 Multi-line comments are indented at the same level as the surrounding code. They _must_ use multiple single-line comments (`//`-style), not block comment style (`/* */`).
 
-```ts good
+```ts
 // This is
 // fine
 ```
 
-```ts bad
+```ts
 /*
  * This should
  * use multiple
@@ -2801,7 +2900,7 @@ Comments are not enclosed in boxes drawn with asterisks or other characters.
 
 The basic formatting of JSDoc comments is as seen in this example:
 
-```ts good
+```ts
 /**
  * Multiple lines of JSDoc text are written here,
  * wrapped normally.
@@ -2812,7 +2911,7 @@ function doSomething(arg: number) { … }
 
 or in this single-line example:
 
-```ts good
+```ts
 /** This short jsdoc describes the function. */
 function doSomething(arg: number) { … }
 ```
@@ -2827,7 +2926,7 @@ JSDoc is written in Markdown, though it _may_ include HTML when necessary.
 
 This means that tooling parsing JSDoc will ignore plain text formatting, so if you did this:
 
-```ts bad
+```ts
 /**
  * Computes weight based on three factors:
  *   items sent
@@ -2844,7 +2943,7 @@ Computes weight based on three factors: items sent items received last timestamp
 
 Instead, write a Markdown list:
 
-```ts good
+```ts
 /**
  * Computes weight based on three factors:
  *
@@ -2858,7 +2957,7 @@ Instead, write a Markdown list:
 
 Google style allows a subset of JSDoc tags. Most tags must occupy their own line, with the tag at the beginning of the line.
 
-```ts good
+```ts
 /**
  * The "param" tag must occupy its own line and may not be combined.
  * @param left A description of the left param.
@@ -2867,7 +2966,7 @@ Google style allows a subset of JSDoc tags. Most tags must occupy their own line
 function add(left: number, right: number) { ... }
 ```
 
-```ts bad
+```ts
 /**
  * The "param" tag must occupy its own line and may not be combined.
  * @param left @param right
@@ -2879,7 +2978,7 @@ function add(left: number, right: number) { ... }
 
 Line-wrapped block tags are indented four spaces. Wrapped description text _may_ be lined up with the description on previous lines, but this horizontal alignment is discouraged.
 
-```ts good
+```ts
 /**
  * Illustrates line wrapping for long param/return descriptions.
  * @param foo This is a param with a particularly long description that just
@@ -2916,7 +3015,7 @@ A [parameter property](https://www.typescriptlang.org/docs/handbook/2/classes.ht
 
 To document these fields, use JSDoc's `@param` annotation. Editors display the description on constructor calls and property accesses.
 
-```ts good
+```ts
 /** This class demonstrates how parameter properties are documented. */
 class ParamProps {
   /**
@@ -2929,7 +3028,7 @@ class ParamProps {
 }
 ```
 
-```ts good
+```ts
 /** This class demonstrates how ordinary fields are documented. */
 class OrdinaryClass {
   /** The bean that will be used in the next call to brew(). */
@@ -2951,13 +3050,13 @@ For non-exported symbols, sometimes the name and type of the function or paramet
 
 - Avoid comments that just restate the parameter name and type, e.g.
 
-  ```ts bad
+  ```ts
   /** @param fooBarService The Bar service for the Foo application. */
   ```
 
 - Because of this rule, `@param` and `@return` lines are only required when they add information, and _may_ otherwise be omitted.
 
-  ```ts good
+  ```ts
   /**
    * POSTs the request to start coffee brewing.
    * @param amountLitres The amount to brew. Must fit the pot size!
@@ -2975,11 +3074,11 @@ Before adding these comments, consider refactoring the method to instead accept 
 
 "Parameter name" comments go before the parameter value, and include the parameter name and a `=` suffix:
 
-```ts good
+```ts
 someFunction(obviousParam, /* shouldRender= */ true, /* name= */ 'hello');
 ```
 
-Existing code may use a legacy parameter name comment style, which places these comments \~after\~ the parameter value and omits the `=`. Continuing to use this style within the file for consistency is acceptable.
+Existing code may use a legacy parameter name comment style, which places these comments ~~after~~ the parameter value and omits the `=`. Continuing to use this style within the file for consistency is acceptable.
 
 ```ts
 someFunction(obviousParam, true /* shouldRender */, 'hello' /* name */);
@@ -2991,7 +3090,7 @@ When a class, method, or property have both decorators like `@Component` and JsD
 
 - Do not write JsDoc between the Decorator and the decorated statement.
 
-  ```ts bad
+  ```ts
   @Component({
     selector: 'foo',
     template: 'bar',
@@ -3002,7 +3101,7 @@ When a class, method, or property have both decorators like `@Component` and JsD
 
 - Write the JsDoc block before the Decorator.
 
-  ```ts good
+  ```ts
   /** Component that prints "bar". */
   @Component({
     selector: 'foo',
@@ -3071,8 +3170,8 @@ The following points are the exceptions, which are the reasons we have some glob
 
    If it really just doesn't matter that much -- if it's an obscure corner of the language or if it avoids a bug that is unlikely to occur -- it's probably worth leaving out.
 
----
+## Footnotes
 
-1. Namespace imports are often called 'module imports' [↩](#fnref1)
+1. Namespace imports are often called 'module imports' [↩](#user-content-fnref-module_import)
 
-2. named imports are sometimes called 'destructuring imports' because they use similar syntax to destructuring assignments. [↩](#fnref2)
+2. named imports are sometimes called 'destructuring imports' because they use similar syntax to destructuring assignments. [↩](#user-content-fnref-destructuring_import)

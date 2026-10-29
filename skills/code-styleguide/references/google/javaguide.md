@@ -1,6 +1,6 @@
 # Google Java Style Guide
 
-Source: <https://google.github.io/styleguide/javaguide.html> · google/styleguide@e4d272eb151a (2026-09-15) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/javaguide.html> · google/styleguide@8e035461436f (2026-10-28) · CC-BY-3.0
 
 ## Index
 
@@ -23,22 +23,22 @@ Source: <https://google.github.io/styleguide/javaguide.html> · google/styleguid
   - L277 4.3 One statement per line
   - L281 4.4 Column limit: 100
   - L295 4.5 Line-wrapping
-  - L352 4.6 Whitespace
-  - L428 4.7 Grouping parentheses: recommended
-  - L432 4.8 Specific constructs
-- L688 5 Naming
-  - L690 5.1 Rules common to all identifiers
-  - L696 5.2 Rules by identifier type
-  - L780 5.3 Camel case: defined
-- L816 6 Programming Practices
-  - L818 6.1 @Override: always used
-  - L824 6.2 Caught exceptions: not ignored
-  - L840 6.3 Static members: qualified using class
-  - L851 6.4 Finalizers: not used
-- L855 7 Javadoc
-  - L857 7.1 Formatting
-  - L897 7.2 The summary fragment
-  - L905 7.3 Where Javadoc is used
+  - L354 4.6 Whitespace
+  - L431 4.7 Grouping parentheses: recommended
+  - L435 4.8 Specific constructs
+- L691 5 Naming
+  - L693 5.1 Rules common to all identifiers
+  - L699 5.2 Rules by identifier type
+  - L783 5.3 Camel case: defined
+- L820 6 Programming Practices
+  - L822 6.1 @Override: always used
+  - L828 6.2 Caught exceptions: not ignored
+  - L844 6.3 Static members: qualified using class
+  - L855 6.4 Finalizers: not used
+- L859 7 Javadoc
+  - L861 7.1 Formatting
+  - L901 7.2 The summary fragment
+  - L909 7.3 Where Javadoc is used
 
 ---
 
@@ -83,18 +83,18 @@ Aside from the line terminator sequence, the **ASCII horizontal space character*
 
 #### 2.3.2 Special escape sequences
 
-For any character that has a [special escape sequence](http://docs.oracle.com/javase/tutorial/java/data/characters.html) (`\b`, `\t`, `\n`, `\f`, `\r`, `\s`, `\"`, `\'` and `\\`), that sequence is used rather than the corresponding octal (e.g. `\012`) or Unicode (e.g. `\u000a`) escape.
+For any character that has a [special escape sequence](http://docs.oracle.com/javase/tutorial/java/data/characters.html) (`\b`, `\t`, `\n`, `\f`, `\r`, `\s`, `\"`, `\'` and `\\ `), that sequence is used rather than the corresponding octal (e.g. `\012`) or Unicode (e.g. `\u000a`) escape.
 
 #### 2.3.3 Non-ASCII characters
 
-For the remaining non-ASCII characters, either the actual Unicode character (e.g. `∞`) or the equivalent Unicode escape (e.g. `\u221e`) is used. The choice depends only on which makes the code **easier to read and understand**, although Unicode escapes outside string literals and comments are strongly discouraged.
+For the remaining non-ASCII characters, either the actual Unicode character (e.g. `∞`) or the equivalent Unicode escape (e.g. `\u221e`) is used. The choice depends only on which makes the code **easier to read and understand**, although Unicode escapes outside string literals and comments are strongly discouraged.
 
 **Tip:** In the Unicode escape case, and occasionally even when actual Unicode characters are used, an explanatory comment can be very helpful.
 
 Examples:
 
 | Example | Discussion |
-| - | - |
+| :- | :- |
 | `String unitAbbrev = "μs";` | Best: perfectly clear even without a comment. |
 | `String unitAbbrev = "\u03bcs"; // "μs"` | Allowed, but there's no reason to do this. |
 | `String unitAbbrev = "\u03bcs"; // Greek letter mu, "s"` | Allowed, but awkward and prone to mistakes. |
@@ -263,7 +263,7 @@ Examples:
   }
 ```
 
-```java bad
+```java
   // This is not acceptable: No concise empty blocks in a multi-block statement
   try {
     doSomething();
@@ -282,7 +282,7 @@ Each statement is followed by a line break.
 
 Java code has a column limit of 100 characters. A "character" means any Unicode code point. Except as noted below, any line that would exceed this limit must be line-wrapped, as explained in Section 4.5, [Line-wrapping](#s4.5-line-wrapping).
 
-Each Unicode code point counts as one character, even if its display width is greater or less. For example, if using [fullwidth characters](https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms), you may choose to wrap the line earlier than where this rule strictly requires.
+**Tip:** Each Unicode code point counts as one character, even if its display width is greater or less. For example, if using [fullwidth characters](https://en.wikipedia.org/wiki/Halfwidth_and_fullwidth_forms), you may choose to wrap the line earlier than where this rule strictly requires.
 
 **Exceptions:**
 
@@ -316,6 +316,7 @@ The prime directive of line-wrapping is: prefer to break at a **higher syntactic
      - a pipe in a catch block (`catch (FooException | BarException e)`).
 
 2. When a line is broken at an _assignment_ operator the break typically comes _after_ the symbol, but either way is acceptable.
+
    - This also applies to the colon in an enhanced `for` ("foreach") statement.
 
 3. A method, constructor, or record-class name stays attached to the open parenthesis (`(`) that follows it.
@@ -323,6 +324,7 @@ The prime directive of line-wrapping is: prefer to break at a **higher syntactic
 4. A comma (`,`) stays attached to the token that precedes it.
 
 5. A line is never broken adjacent to the arrow in a lambda or a switch rule, except that a break may come immediately after the arrow if the text following it consists of a single unbraced expression. Examples:
+
    ```java
    MyLambda<String, Long, Object> lambda =
        (String label, Long value, Object obj) -> {
@@ -401,6 +403,7 @@ Beyond where required by the language or other style rules, and apart from withi
 8. Between the type and identifier of a declaration: `List<String> list`
 
 9. _Optional_ just inside both braces of an array initializer
+
    - `new int[] {5, 6}` and `new int[] { 5, 6 }` are both valid
 
 10. Between a type annotation and `[]` or `...`.
@@ -423,7 +426,7 @@ private int   x;      // permitted, but future edits
 private Color color;  // may leave it unaligned
 ```
 
-**Tip:** Alignment can aid readability, but attempting to preserve alignment for its own sake creates future problems. For example, consider a change that touches only one line. If that change disrupts the previous alignment, it's important \*\*not\*\* to introduce additional changes on nearby lines simply to realign them. Introducing formatting changes on otherwise unaffected lines corrupts version history, slows down reviewers, and exacerbates merge conflicts. These practical concerns take priority over alignment.
+**Tip:** Alignment can aid readability, but attempting to preserve alignment for its own sake creates future problems. For example, consider a change that touches only one line. If that change disrupts the previous alignment, it's important **not** to introduce additional changes on nearby lines simply to realign them. Introducing formatting changes on otherwise unaffected lines corrupts version history, slows down reviewers, and exacerbates merge conflicts. These practical concerns take priority over alignment.
 
 ### 4.7 Grouping parentheses: recommended
 
@@ -648,13 +651,13 @@ A `TODO` comment begins with the word `TODO` in all caps, a following colon, and
 
 The purpose is to have a consistent `TODO` format that can be searched to find out how to get more details.
 
-```
+```java
 // TODO: crbug.com/12345678 - Remove this after the 2047q4 compatibility window expires.
 ```
 
 Avoid adding TODOs that refer to an individual or team as the context:
 
-```
+```java
 // TODO: @yourusername - File an issue and use a '*' for repetition.
 ```
 
@@ -664,14 +667,14 @@ If your `TODO` is of the form "At a future date do something" make sure that you
 
 Class and member modifiers, when present, appear in the order recommended by the Java Language Specification:
 
-```
+```java
 public protected private abstract default static final sealed non-sealed
   transient volatile synchronized native strictfp
 ```
 
 Modifiers on `requires` module directives, when present, appear in the following order:
 
-```
+```java
 transitive static
 ```
 
@@ -786,7 +789,8 @@ Beginning with the prose form of the name:
 1. Convert the phrase to plain ASCII and remove any apostrophes. For example, "Müller's algorithm" might become "Muellers algorithm".
 
 2. Divide this result into words, splitting on spaces and any remaining punctuation (typically hyphens).
-   - _Recommended:_ if any word already has a conventional camel-case appearance in common usage, split this into its constituent parts (e.g., "AdWords" becomes "ad words"). Note that a word such as "iOS" is not really in camel case _per se_; it defies _any_ convention, so this recommendation does not apply.
+
+   - _Recommended:_ if any word already has a conventional camel-case appearance in common usage, split this into its constituent parts (e.g., "AdWords" becomes "ad words"). Note that a word such as "iOS" is not really in camel case _per se_; it defies _any_ convention, so this recommendation does not apply.
 
 3. Now lowercase _everything_ (including acronyms), then uppercase only the first character of:
 
@@ -800,7 +804,7 @@ In very rare circumstances (for example, multipart version numbers), you may nee
 Examples:
 
 | Prose form | Correct | Incorrect |
-| - | - | - |
+| :- | :- | :- |
 | "XML HTTP request" | `XmlHttpRequest` | `XMLHTTPRequest` |
 | "new customer ID" | `newCustomerId` | `newCustomerID` |
 | "inner stopwatch" | `innerStopwatch` | `innerStopWatch` |
@@ -841,7 +845,7 @@ return handleTextResponse(response);
 
 When a reference to a static class member must be qualified, it is qualified with that class's name, not with a reference or expression of that class's type.
 
-```java bad
+```java
 Foo aFoo = ...;
 Foo.aStaticMethod(); // good
 aFoo.aStaticMethod(); // bad

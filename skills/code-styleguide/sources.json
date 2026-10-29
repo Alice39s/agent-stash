@@ -124,11 +124,11 @@
       "url": "https://google.github.io/styleguide/jsguide.html",
       "repository": "google/styleguide",
       "path": "jsguide.md",
-      "revision": "41320d010eed50035066a2f784f788e4196e1fb9",
-      "updated": "2026-10-15",
+      "revision": "572c673d9058242c049fbc8248b17029726c7afa",
+      "updated": "2026-10-28",
       "license": "CC-BY-3.0",
       "indexEnd": 70,
-      "lines": 3076
+      "lines": 3078
     },
     {
       "file": "references/google/javaguide.md",
@@ -136,12 +136,12 @@
       "title": "Google Java Style Guide",
       "url": "https://google.github.io/styleguide/javaguide.html",
       "repository": "google/styleguide",
-      "path": "javaguide.html",
-      "revision": "e4d272eb151adfb5f382501265172a99c6a19671",
-      "updated": "2026-09-15",
+      "path": "javaguide.md",
+      "revision": "8e035461436fa0bd20650d7b01fae92dd8f9a77b",
+      "updated": "2026-10-28",
       "license": "CC-BY-3.0",
       "indexEnd": 41,
-      "lines": 927
+      "lines": 931
     },
     {
       "file": "references/google/jsoncguide.md",
@@ -189,8 +189,8 @@
       "url": "https://google.github.io/styleguide/pyguide.html",
       "repository": "google/styleguide",
       "path": "pyguide.md",
-      "revision": "577f395ca4c30868313a6b234e582129d88d68f8",
-      "updated": "2026-10-23",
+      "revision": "cbce6a3f220b64fe950e40b43d3ff2a6a6479304",
+      "updated": "2026-10-26",
       "license": "CC-BY-3.0",
       "indexEnd": 48,
       "lines": 2399
@@ -237,15 +237,15 @@
     {
       "file": "references/google/tsguide.md",
       "topic": "TypeScript",
-      "title": "Google TypeScript Style Guide",
+      "title": "TS/JS Style Guide",
       "url": "https://google.github.io/styleguide/tsguide.html",
       "repository": "google/styleguide",
-      "path": "tsguide.html",
-      "revision": "e4d272eb151adfb5f382501265172a99c6a19671",
-      "updated": "2026-09-15",
+      "path": "tsguide.md",
+      "revision": "5ec857768df34c038b648d4b407e128d7224bbdb",
+      "updated": "2026-10-29",
       "license": "CC-BY-3.0",
       "indexEnd": 64,
-      "lines": 3078
+      "lines": 3177
     },
     {
       "file": "references/google/verilogguide.md",

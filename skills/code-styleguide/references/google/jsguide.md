@@ -1,6 +1,6 @@
 # Google JavaScript Style Guide
 
-Source: <https://google.github.io/styleguide/jsguide.html> · google/styleguide@41320d010eed (2026-10-15) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/jsguide.html> · google/styleguide@572c673d9058 (2026-10-28) · CC-BY-3.0
 
 ## Index
 
@@ -26,48 +26,48 @@ Source: <https://google.github.io/styleguide/jsguide.html> · google/styleguide@
   - L849 4.4 Column limit: 80
   - L865 4.5 Line-wrapping
   - L915 4.6 Whitespace
-  - L1008 4.7 Grouping parentheses: recommended
-  - L1016 4.8 Comments
-- L1054 5 Language features
-  - L1060 5.1 Local variable declarations
-  - L1099 5.2 Array literals
-  - L1179 5.3 Object literals
-  - L1357 5.4 Classes
-  - L1619 5.5 Functions
-  - L1790 5.6 String literals
-  - L1838 5.7 Number literals
-  - L1842 5.8 Control structures
-  - L1913 5.9 this
-  - L1919 5.10 Equality Checks
-  - L1935 5.11 Disallowed features
-- L2002 6 Naming
-  - L2004 6.1 Rules common to all identifiers
-  - L2031 6.2 Rules by identifier type
-  - L2132 6.3 Camel case: defined
-- L2168 7 JSDoc
-  - L2172 7.1 General form
-  - L2196 7.2 Markdown
-  - L2229 7.3 JSDoc tags
-  - L2270 7.4 Line wrapping
-  - L2289 7.5 Top/file-level comments
-  - L2303 7.6 Class comments
-  - L2334 7.7 Enum and typedef comments
-  - L2359 7.8 Method and function comments
-  - L2442 7.9 Property comments
-  - L2474 7.10 Type annotations
-  - L2627 7.11 Visibility annotations
-- L2631 8 Policies
-  - L2633 8.1 Issues unspecified by Google Style: Be Consistent!
-  - L2637 8.2 Compiler warnings
-  - L2669 8.3 Deprecation
-  - L2673 8.4 Code not in Google Style
-  - L2692 8.5 Local style rules
-  - L2696 8.6 Generated code: mostly exempt
-- L2700 9 Appendices
-  - L2702 9.1 JSDoc tag reference
-  - L2851 9.2 Commonly misunderstood style rules
-  - L2861 9.3 Style-related tools
-  - L2887 9.4 Exceptions for legacy platforms
+  - L1010 4.7 Grouping parentheses: recommended
+  - L1018 4.8 Comments
+- L1056 5 Language features
+  - L1062 5.1 Local variable declarations
+  - L1101 5.2 Array literals
+  - L1181 5.3 Object literals
+  - L1359 5.4 Classes
+  - L1621 5.5 Functions
+  - L1792 5.6 String literals
+  - L1840 5.7 Number literals
+  - L1844 5.8 Control structures
+  - L1915 5.9 this
+  - L1921 5.10 Equality Checks
+  - L1937 5.11 Disallowed features
+- L2004 6 Naming
+  - L2006 6.1 Rules common to all identifiers
+  - L2033 6.2 Rules by identifier type
+  - L2134 6.3 Camel case: defined
+- L2170 7 JSDoc
+  - L2174 7.1 General form
+  - L2198 7.2 Markdown
+  - L2231 7.3 JSDoc tags
+  - L2272 7.4 Line wrapping
+  - L2291 7.5 Top/file-level comments
+  - L2305 7.6 Class comments
+  - L2336 7.7 Enum and typedef comments
+  - L2361 7.8 Method and function comments
+  - L2444 7.9 Property comments
+  - L2476 7.10 Type annotations
+  - L2629 7.11 Visibility annotations
+- L2633 8 Policies
+  - L2635 8.1 Issues unspecified by Google Style: Be Consistent!
+  - L2639 8.2 Compiler warnings
+  - L2671 8.3 Deprecation
+  - L2675 8.4 Code not in Google Style
+  - L2694 8.5 Local style rules
+  - L2698 8.6 Generated code: mostly exempt
+- L2702 9 Appendices
+  - L2704 9.1 JSDoc tag reference
+  - L2853 9.2 Commonly misunderstood style rules
+  - L2863 9.3 Style-related tools
+  - L2889 9.4 Exceptions for legacy platforms
 
 ---
 
@@ -1005,6 +1005,8 @@ doSomething(
 }
 ```
 
+The [rectangle rule](https://github.com/google/google-java-format/wiki/The-Rectangle-Rule) asks that each part of a wrapped expression fit in its own bounding rectangle, which contains all of that part's text and none of any other part's.
+
 ### 4.7 Grouping parentheses: recommended
 
 Optional grouping parentheses are omitted only when the author and reviewer agree that there is no reasonable chance that the code will be misinterpreted without them, nor would they have made the code easier to read. It is _not_ reasonable to assume that every reader has the entire operator precedence table memorized.
@@ -1940,7 +1942,7 @@ Do not use the `with` keyword. It makes your code harder to understand and has b
 
 #### 5.11.2 Dynamic code evaluation
 
-Do not use `eval` or the `Function(...string)` constructor (except for code loaders). These features are potentially dangerous and simply do not work in CSP environments.
+Do not use `eval` or the `Function(...string)` constructor (except for code loaders). These features are potentially dangerous and simply do not work in environments with a [Content Security Policy (CSP)](https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP).
 
 #### 5.11.3 Automatic semicolon insertion
 
