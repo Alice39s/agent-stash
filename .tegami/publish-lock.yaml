@@ -1,26 +1,37 @@
 core:changelogs:
-  - content: "---\npackages:\n  \"@agent-stash/init\":\n    type: patch\n---\n\n## `/init` 的预设说明与出错提示\n\n- DSH 的预设列表里，自定义预设显示 `init.json` 里写的 `description`。没写 `description` 时显示 `file` 的路径，Pi 的补全菜单、Grok Build 技能和 goose recipe 的说明也显示这个路径。\n- DSH 里执行 `/init` 失败时，预设列表或输入框提示「/init 执行失败：」和原因，例如哪个预设的模板文件读不到；输入框保留原来的内容。\n"
-    filename: dsh-init-feedback.md
+  - content: "---\npackages:\n  \"@agent-stash/dsh-enhance\":\n    type: minor\n---\n\n## 新增 DSH 插件「增强提示词」\n\n- `@agent-stash/dsh-enhance`：输入框右下角、发送按钮左侧的按钮把草稿改写成更适合交给 AI 的提示词。草稿为空时按钮不显示；菜单里有「润色 Prompt」「仅结构化整理」「使 Prompt 更精炼」三个预设，数字键 1–9 直接选择。\n- 改写进行中草稿锁定，点按钮或按 Esc 停止；完成后按钮左侧出现撤销按钮，回到改写前的草稿。失败原因显示在按钮左侧，草稿不变。\n- 默认使用会话的模型，并附带当前会话最近 3 轮对话的正文，按钮提示与菜单顶部显示「已关联前 N 轮上下文」。上下文不含工具调用、工具输出和推理过程，能识别出的密钥替换为 `[redacted]`；草稿里的密钥以占位符发给模型，结果写回前换回原文。\n- 改写结果需要与草稿使用同一种文字、保留草稿里的代码和链接、不以回答式的开头开始，才会写回输入框。\n- 在「插件」页的配置页设置模型与推理强度、超时（默认 60 秒）、附带的轮数、快捷键（默认关闭，开启后为 ⇧⌘E / Ctrl+Shift+E），以及预设的顺序、名称与改写指令，也可以添加自定义预设。\n- 需要 DSH 0.2.1-rc.3 或更新的版本，在「插件」页填入 npm 包名即可安装。插件第一次启动时会从 npm 自动安装并启用 `@agent-stash/dsh-stash-kit`。\n"
+    filename: dsh-enhance.md
+    v: 0.0.0
+  - content: "---\npackages:\n  \"@agent-stash/dsh-skill-scout\":\n    type: minor\n---\n\n## 新增 DSH 插件「经验提炼」\n\n- `@agent-stash/dsh-skill-scout`：在本机读取已经结束的会话，把在多个会话里重复成功的流程、失败后修复并通过检查的过程整理成 Skill 建议。成功只看工具结果，Agent 自己说完成不算；fork 继承的历史不重复计数。\n- 会话标题栏右侧的 Skill 图标在有新的可保存建议时显示数量。收件箱分「可以保存」「本地发现」「历史」三组；详情里可以查看每个来源任务的命令、退出码和错误行，预览并修改 Skill 草稿，查看写入的文件 diff。\n- 保存后写入项目的 `.agents/skills/<name>/SKILL.md` 或用户的 `~/.agents/skills`，并确认 DSH 的 Skill 列表里出现了它；保存可以撤销。改进已有 Skill 时只在文件末尾追加一节。忽略与「忽略类似建议」可以恢复。\n- 模型复核默认关闭。打开后把脱敏后的证据发给所选模型（默认跟随 Agent 的默认模型），受每日次数、间隔与超时限制；回答要通过结构、证据引用和凭据检查才会成为建议。\n- 在「插件」页的配置页设置历史范围、静默期、重复次数、复核模型与推理强度、超时、限额、错误行与追加的脱敏规则、标题栏角标和默认保存位置。\n- 需要 DSH 0.2.1-rc.3 或更新版本的 Web 界面或桌面版，在「插件」页填入 npm 包名即可安装。\n"
+    filename: dsh-skill-scout.md
     v: 0.0.0
 core:packages:
+  - id: npm:@agent-stash/init
+    updated: false
   - changelogIds:
-      - dsh-init-feedback.md
-    id: npm:@agent-stash/init
+      - dsh-enhance.md
+    id: npm:@agent-stash/dsh-enhance
     updated: true
   - id: npm:agent-stash-docs
     updated: false
-  - id: npm:@agent-stash/dsh-autosuggest
-    updated: false
   - id: npm:@agent-stash/dsh-stash-kit
+    updated: false
+  - id: npm:@agent-stash/dsh-autosuggest
     updated: false
   - id: npm:@agent-stash/dsh-recall
     updated: false
+  - changelogIds:
+      - dsh-skill-scout.md
+    id: npm:@agent-stash/dsh-skill-scout
+    updated: true
   - id: npm:@agent-stash/dsh-message-edit
     updated: false
 npm:packages:
   - id: npm:@agent-stash/init
+  - id: npm:@agent-stash/dsh-enhance
   - id: npm:agent-stash-docs
-  - id: npm:@agent-stash/dsh-autosuggest
   - id: npm:@agent-stash/dsh-stash-kit
+  - id: npm:@agent-stash/dsh-autosuggest
   - id: npm:@agent-stash/dsh-recall
+  - id: npm:@agent-stash/dsh-skill-scout
   - id: npm:@agent-stash/dsh-message-edit

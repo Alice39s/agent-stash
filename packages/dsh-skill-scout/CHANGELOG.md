@@ -1,9 +1,6 @@
----
-packages:
-  "@agent-stash/dsh-skill-scout": minor
----
+## @agent-stash/dsh-skill-scout@0.1.0
 
-## 新增 DSH 插件「经验提炼」
+### 新增 DSH 插件「经验提炼」
 
 - `@agent-stash/dsh-skill-scout`：在本机读取已经结束的会话，把在多个会话里重复成功的流程、失败后修复并通过检查的过程整理成 Skill 建议。成功只看工具结果，Agent 自己说完成不算；fork 继承的历史不重复计数。
 - 会话标题栏右侧的 Skill 图标在有新的可保存建议时显示数量。收件箱分「可以保存」「本地发现」「历史」三组；详情里可以查看每个来源任务的命令、退出码和错误行，预览并修改 Skill 草稿，查看写入的文件 diff。
