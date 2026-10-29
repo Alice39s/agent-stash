@@ -18,6 +18,7 @@
 | [消息编辑](https://alice39s.github.io/agent-stash/zh/plugins/dsh-message-edit/)                          | DSH 插件，编辑消息、重新生成回复或重试回合，每次改动另开一个会话版本   |
 | [Prompt 回溯](https://alice39s.github.io/agent-stash/zh/plugins/dsh-recall/)                             | DSH 插件，在输入框里按 ↑↓ 翻看当前会话发过的 Prompt                    |
 | [Prompt 补全](https://alice39s.github.io/agent-stash/zh/plugins/dsh-autosuggest/)                        | DSH 插件，输入历史 Prompt 的开头时以灰字补出剩余部分                   |
+| [增强提示词](https://alice39s.github.io/agent-stash/zh/plugins/dsh-enhance/)                             | DSH 插件，把草稿改写成更适合交给 AI 的提示词，一键可撤销               |
 | [`code-styleguide`](https://alice39s.github.io/agent-stash/zh/skills/#code-styleguide)                   | 技能，Google、Angular 与 Android Kotlin 风格指南，每天从上游同步       |
 | [`self-use-<model>-subagent`](https://alice39s.github.io/agent-stash/zh/skills/#self-use-model-subagent) | 技能，在 DSH 里把任务委托给指定模型的子代理                            |
 

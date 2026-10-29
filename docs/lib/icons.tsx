@@ -15,6 +15,7 @@ import {
   SwatchBook,
   Terminal,
   Wand,
+  WandSparkles,
 } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -39,6 +40,7 @@ export const iconComponents = {
   SwatchBook,
   Terminal,
   Wand,
+  WandSparkles,
 };
 
 type IconName = keyof typeof iconComponents;
