@@ -17,7 +17,7 @@ Priority for conflicts, highest first: user requirements, keyboard usability and
 
 - [MUST] The overlay looks like a host surface. A reader who knows the DSH slash menu sees the same material, radius, row height, highlight, and caption ink.
 - [MUST] Readers keep their hands on the keyboard. Every action in a panel has a key, and the footer shows the keys with a short verb.
-- [SHOULD] Calm surfaces with purposeful motion. Motion explains where a panel or draft came from and never delays typing; panels carry no accent colors and show no badges or decorative icons beyond one row glyph.
+- [SHOULD] Motion explains where a panel or draft came from and never delays typing; panels carry no accent colors and show no badges or decorative icons beyond one row glyph.
 - [SHOULD] Copy is terse. Titles are a noun phrase; hint labels are one verb or a two-word verb phrase.
 
 ## 3. Composition
