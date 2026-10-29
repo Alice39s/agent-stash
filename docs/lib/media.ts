@@ -92,6 +92,30 @@ export const media = {
     width: 1000,
     height: 800,
   },
+  "skill-scout": {
+    image: "/media/skill-scout.png",
+    video: "/media/skill-scout.mp4",
+    width: 960,
+    height: 720,
+  },
+  "skill-scout-en": {
+    image: "/media/skill-scout-en.png",
+    video: "/media/skill-scout-en.mp4",
+    width: 960,
+    height: 720,
+  },
+  "skill-scout-settings": {
+    image: "/media/skill-scout-settings.png",
+    video: undefined,
+    width: 952,
+    height: 1094,
+  },
+  "skill-scout-settings-en": {
+    image: "/media/skill-scout-settings-en.png",
+    video: undefined,
+    width: 952,
+    height: 1091,
+  },
 } as const satisfies Record<
   string,
   { image: string; video: string | undefined; width: number; height: number }

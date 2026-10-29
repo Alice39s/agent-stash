@@ -1,0 +1,4 @@
+- insert:
+    - id: agent-stash-skill-scout
+      name: "@agent-stash/dsh-skill-scout"
+      config: {}

@@ -1,4 +1,12 @@
-import type { ButtonHTMLAttributes, InputHTMLAttributes, ReactElement, ReactNode } from "react";
+import {
+  useEffect,
+  type ButtonHTMLAttributes,
+  type CSSProperties,
+  type InputHTMLAttributes,
+  type ReactElement,
+  type ReactNode,
+  type RefObject,
+} from "react";
 
 /**
  * 组件测试里替代 DSH 模块表的 `@deepseek-ai/dsh-client-ui-primitives`：
@@ -127,6 +135,7 @@ export const IconChevronUpOutlineRegular = icon("chevron-up");
 export const IconChevronDownOutlineRegular = icon("chevron-down");
 export const IconTrashOutlineRegular = icon("trash");
 export const IconPlusOutlineRegular = icon("plus");
+export const IconSkillOutlineRegular = icon("skill");
 
 /** 提示文字与按键放在锚点外层的 `data-tooltip` 与 `data-tooltip-keys` 上，测试据此断言。 */
 export function Tooltip(props: {
@@ -236,4 +245,54 @@ export function Input({
   ...rest
 }: InputHTMLAttributes<HTMLInputElement> & { icon?: ReactNode }): ReactNode {
   return <input {...rest} />;
+}
+
+/** 宿主把 Markdown 渲染成富文本；替身原样输出文本，测试据此核对内容。 */
+export function MarkdownText(props: { text: string }): ReactNode {
+  return <div data-markdown="">{props.text}</div>;
+}
+
+/** 宿主渲染统一 diff；替身输出每个文件的路径与前后文本。 */
+export function DiffBlock(props: {
+  diffs: { path: string; oldText: string | null; newText: string }[];
+}): ReactNode {
+  return (
+    <div data-diff="">
+      {props.diffs.map((diff) => (
+        <section key={diff.path} data-path={diff.path}>
+          {diff.oldText !== null && <pre data-old="">{diff.oldText}</pre>}
+          <pre data-new="">{diff.newText}</pre>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+/** 宿主按锚点测量浮层位置；替身在打开时给出固定坐标。 */
+export function useAnchoredPosition(options: { open: boolean }): CSSProperties | null {
+  return options.open ? { left: 0, top: 0 } : null;
+}
+
+/** 与宿主相同：打开期间，指针按在根元素与浮层之外时关闭。 */
+export function useDismissOnOutsidePointer(
+  root: RefObject<HTMLElement | null>,
+  open: boolean,
+  setOpen: (open: boolean) => void,
+  portal?: RefObject<HTMLElement | null>,
+): void {
+  useEffect(() => {
+    if (!open) return undefined;
+    const close = (event: PointerEvent): void => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        root.current?.contains(target) !== true &&
+        portal?.current?.contains(target) !== true
+      ) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("pointerdown", close, true);
+    return () => document.removeEventListener("pointerdown", close, true);
+  }, [root, open, setOpen, portal]);
 }
