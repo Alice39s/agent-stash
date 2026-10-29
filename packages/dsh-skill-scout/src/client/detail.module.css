@@ -90,6 +90,11 @@
   color: var(--dsw-alias-label-secondary);
 }
 
+.risks {
+  margin: 0;
+  padding: 0 0 0 16px;
+}
+
 /* 模型写作中：一行状态，下面是按最终排版画出的占位条。 */
 .working {
   display: flex;

@@ -493,13 +493,19 @@ export function Detail({
       </section>
     );
 
-  /** 摘要：发现了什么、Skill 做什么、将要新建或改进哪个 Skill 与提纲。 */
+  /** 摘要里的方案：发现了什么、Skill 做什么、何时使用、将要新建或改进哪个 Skill 与提纲、风险、验证方式。 */
   const plan = (): ReactNode => (
     <dl className={styles.summary}>
       <dt>{t("detail.found")}</dt>
       <dd>{item.found}</dd>
       <dt>{t("detail.description")}</dt>
       <dd>{item.description}</dd>
+      {item.trigger !== null && (
+        <>
+          <dt>{t("detail.trigger")}</dt>
+          <dd>{item.trigger}</dd>
+        </>
+      )}
       <dt>{t("detail.plan")}</dt>
       <dd>
         <p className={styles.planTarget}>
@@ -512,6 +518,24 @@ export function Detail({
           ))}
         </ol>
       </dd>
+      {item.risks.length > 0 && (
+        <>
+          <dt>{t("detail.risks")}</dt>
+          <dd>
+            <ul className={styles.risks}>
+              {keyed(item.risks).map(({ key, text }) => (
+                <li key={key}>{text}</li>
+              ))}
+            </ul>
+          </dd>
+        </>
+      )}
+      {item.verification !== null && (
+        <>
+          <dt>{t("detail.verification")}</dt>
+          <dd>{item.verification}</dd>
+        </>
+      )}
     </dl>
   );
 

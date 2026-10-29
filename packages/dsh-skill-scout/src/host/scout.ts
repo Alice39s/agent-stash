@@ -4,7 +4,7 @@
  * Skill 并核对 DSH 能发现它。后台分析串行执行，不阻塞 Agent 主循环；只有持有工作锁的进程做分析与后台摘要。
  */
 import { realpath } from "node:fs/promises";
-import { resolve } from "pathe";
+import { dirname, resolve } from "pathe";
 import type { ActionErrorKind } from "../shared.ts";
 import type { Settings } from "./config.ts";
 import type {
@@ -28,6 +28,7 @@ import {
   isModelError,
   modelError,
   summaryPrompt,
+  type CreatorGuide,
   type EvidencePack,
   type Proposal,
   type RelatedSkill,
@@ -281,12 +282,15 @@ async function relatedSkills(
 async function creatorGuide(
   catalog: readonly DshSkillSummary[],
   redactText: (text: string) => string,
-): Promise<string | null> {
+): Promise<CreatorGuide | null> {
   const path = catalog.find((skill) => skill.name === CREATOR_SKILL)?.path;
   const content = path === undefined ? null : await readOptional(path);
-  if (content === null) return null;
+  if (path === undefined || content === null) return null;
   const text = redactText(content).trim();
-  return text.length <= CREATOR_CHARS ? text : `${text.slice(0, CREATOR_CHARS)}…`;
+  return {
+    dir: redactText(dirname(path)),
+    text: text.length <= CREATOR_CHARS ? text : `${text.slice(0, CREATOR_CHARS)}…`,
+  };
 }
 
 /**

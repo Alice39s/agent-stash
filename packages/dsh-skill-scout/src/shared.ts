@@ -72,10 +72,16 @@ export const ItemViewSchema = v.object({
   steps: v.array(v.string()),
   /** 摘要：在会话里发现了什么。 */
   found: Nullable(v.string()),
-  /** 摘要：Skill 做什么、什么时候用；改进时是追加的内容补上了什么。 */
+  /** 摘要：Skill 做什么；改进时是追加的内容补上了什么。 */
   description: Nullable(v.string()),
+  /** 摘要：什么时候用。 */
+  trigger: Nullable(v.string()),
   /** 摘要：打算写进 Skill 的步骤或追加的内容。 */
   outline: v.array(v.string()),
+  /** 摘要：照着做的风险。 */
+  risks: v.array(v.string()),
+  /** 摘要：怎么确认照着做成功了。 */
+  verification: Nullable(v.string()),
   /** 摘要判为跳过的理由。 */
   reason: Nullable(v.string()),
   occurrences: v.number(),

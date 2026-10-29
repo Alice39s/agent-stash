@@ -147,6 +147,8 @@ function releaseSummary(name = "npm-patch-release"): string {
     title: "Publish a patch release",
     found: "Three sessions ran the same checked release steps, and every command passed.",
     description: "Publish a patch version of an npm package after checks, with a tag and release.",
+    trigger: "When a patch release is due.",
+    verification: "The new version is published and tagged.",
     skill: name,
     outline: ["Run the checks and bundle", "Bump the patch version", "Push and publish"],
     refs: ["E1", "E2", "E3"],
@@ -413,6 +415,7 @@ describe("summary before draft", () => {
     expect(llm.calls[0]?.system).not.toContain("<skill_content");
     const system = llm.calls[1]?.system ?? "";
     expect(system).toContain('<skill_content name="skill-creator">');
+    expect(system).toMatch(/Base directory for this skill: \S+\/skills\/skill-creator\n/u);
     expect(system).toContain("Name the triggers in the description.");
     expect(system).toContain("~/notes");
     expect(system).not.toContain("/Users/alice");
@@ -564,6 +567,9 @@ describe("signals", () => {
       title: "修复 rollup 缺少平台二进制",
       found: "构建因可选依赖缺失失败，重装依赖后构建与测试通过。",
       description: "构建报 Cannot find module @rollup/rollup-<平台> 时重装依赖。",
+      trigger: "构建报找不到 rollup 平台包时。",
+      risks: ["会删除锁文件"],
+      verification: "重新构建与测试都通过。",
       skill: "fix-rollup-native-binary",
       outline: ["删除依赖与锁文件后重装", "重新构建"],
       refs: ["E1.3", "E1.8", "E1.11"],
@@ -717,6 +723,8 @@ description: Publish npm package releases with a version bump, npm publish, and 
       title: "Build bundles before publishing",
       found: "Every release ran pnpm bundle before npm version.",
       description: "Adds the bundle step the Skill does not mention.",
+      trigger: "Before every release.",
+      verification: "The published package contains the bundles.",
       skill: "npm-release",
       outline: ["Build the bundles first"],
       refs: ["E1", "E2"],
@@ -781,6 +789,8 @@ describe("untrusted content", () => {
     title: "Fix rollup",
     found: "The build recovered after a reinstall.",
     description: "Fix the build.",
+    trigger: "When the build cannot find rollup.",
+    verification: "The build passes.",
     skill: "fix-rollup",
     outline: ["Reinstall", "Build"],
     refs: ["E1.3"],

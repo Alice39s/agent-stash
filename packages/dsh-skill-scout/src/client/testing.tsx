@@ -50,7 +50,10 @@ export const UNSUMMARIZED: Partial<ItemView> = {
   title: null,
   found: null,
   description: null,
+  trigger: null,
   outline: [],
+  risks: [],
+  verification: null,
   decision: null,
   skill: null,
 };
@@ -67,7 +70,10 @@ export function item(fields: Partial<ItemView> = {}): ItemView {
     found:
       "Two sessions ran the tests, bumped the patch version, and pushed the tag; every step passed.",
     description: "Release a patch version of an npm package after the tests pass.",
+    trigger: "When the user asks for a patch release of widget.",
     outline: ["Run the tests", "Bump the patch version", "Push the tag"],
+    risks: ["Pushes a tag to the remote"],
+    verification: "The new tag is on the remote and the tests passed before the bump.",
     reason: null,
     occurrences: 2,
     sessions: [

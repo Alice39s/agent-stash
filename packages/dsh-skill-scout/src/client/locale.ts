@@ -73,7 +73,10 @@ const EN = {
   "detail.noSummaryModel": "No discovery model is available.",
   "detail.found": "Found",
   "detail.description": "Purpose",
+  "detail.trigger": "When to use",
   "detail.plan": "Plan",
+  "detail.risks": "Risks",
+  "detail.verification": "Verify",
   "detail.plan.create": "Create",
   "detail.plan.improve": "Add to",
   "detail.consent":
@@ -306,7 +309,10 @@ const ZH: Record<ScoutKey, string> = {
   "detail.noSummaryModel": "没有可用的发现模型。",
   "detail.found": "发现",
   "detail.description": "用途",
+  "detail.trigger": "何时使用",
   "detail.plan": "将要做",
+  "detail.risks": "风险",
+  "detail.verification": "验证方式",
   "detail.plan.create": "新建",
   "detail.plan.improve": "追加到",
   "detail.consent":

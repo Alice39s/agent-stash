@@ -143,17 +143,29 @@ describe("Detail with a summary", () => {
       "Bump the patch version",
       "Push the tag",
     ]);
+    const terms = [...dialog().querySelectorAll("dt")].map((dt) => dt.textContent);
+    expect(terms).toEqual(["Found", "Purpose", "When to use", "Plan", "Risks", "Verify"]);
+    expect([...dialog().querySelectorAll("dd ul li")].map((li) => li.textContent)).toEqual([
+      "Pushes a tag to the remote",
+    ]);
+    expect(text).toContain("The new tag is on the remote and the tests passed before the bump.");
     expect(text).toContain("Drafting sends the same evidence and this plan to deepseek-pro");
     expect(host.actions).toEqual([]);
     await click(button("Draft Skill", dialog()));
     expect(host.actions).toEqual([{ action: "draft", id: view.id }]);
   });
 
-  test("names the existing Skill a summary would add to", async () => {
-    const view = item({ state: "proposed", decision: "suggest_improve", skill: "release" });
+  test("names the existing Skill a summary would add to and leaves out empty risks", async () => {
+    const view = item({
+      state: "proposed",
+      decision: "suggest_improve",
+      skill: "release",
+      risks: [],
+    });
     await render(view, fakeHost(inboxOf([view])));
     const target = [...dialog().querySelectorAll("dd p > *")].map((part) => part.textContent);
     expect(target).toEqual(["Add to", "release"]);
+    expect([...dialog().querySelectorAll("dt")].map((dt) => dt.textContent)).not.toContain("Risks");
     expect(button("Draft addition", dialog())).toBeDefined();
   });
 
