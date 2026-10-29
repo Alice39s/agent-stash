@@ -20,9 +20,21 @@ export function sessionCount(t: ScoutTranslate, count: number): string {
   return t(count === 1 ? "meta.sessions.one" : "meta.sessions.other", { count });
 }
 
-/** 卡片标题：模型标题，未复核时用用户请求。 */
+/** 卡片标题：摘要里的标题，还没有摘要时用用户请求。 */
 export function titleOf(item: ItemView): string {
   return item.title ?? item.goal;
+}
+
+/** 状态文案；失败按阶段区分。 */
+export function stateLabel(t: ScoutTranslate, item: ItemView): string {
+  return item.state === "failed" && item.failure?.stage === "draft"
+    ? t("state.draftFailed")
+    : t(`state.${item.state}`);
+}
+
+/** 模型正在处理这条建议。 */
+export function inFlight(item: ItemView): boolean {
+  return item.state === "summarizing" || item.state === "drafting";
 }
 
 /** 一行元信息：信号类型 · 会话数 · 时间。 */
@@ -36,17 +48,37 @@ export function metaOf(t: ScoutTranslate, item: ItemView, now: number): string {
 
 /** 收件箱分组。 */
 export interface Groups {
-  readonly ready: readonly ItemView[];
+  /** 等用户决定的：摘要等待同意、草稿生成中、草稿可以保存。 */
+  readonly review: readonly ItemView[];
+  /** 本地规则发现、还没有摘要的，含摘要进行中与失败。 */
   readonly found: readonly ItemView[];
   readonly history: readonly ItemView[];
 }
 
-/** 按状态分组：可保存、本地发现（含复核中与失败）、历史。 */
+/** 失败在草稿阶段的建议仍有摘要，留在待决定的分组里。 */
+function draftFailed(item: ItemView): boolean {
+  return item.state === "failed" && item.failure?.stage === "draft";
+}
+
+/** 等用户决定的建议：标题栏的数字只数这些。 */
+export function needsReview(item: ItemView): boolean {
+  return (
+    item.state === "proposed" ||
+    item.state === "drafting" ||
+    item.state === "ready" ||
+    draftFailed(item)
+  );
+}
+
+/** 按状态分组：待决定、本地发现、历史。 */
 export function groupItems(items: readonly ItemView[]): Groups {
   return {
-    ready: items.filter((item) => item.state === "ready"),
+    review: items.filter(needsReview),
     found: items.filter(
-      (item) => item.state === "detected" || item.state === "reviewing" || item.state === "failed",
+      (item) =>
+        item.state === "detected" ||
+        item.state === "summarizing" ||
+        (item.state === "failed" && !draftFailed(item)),
     ),
     history: items.filter(
       (item) => item.state === "written" || item.state === "skipped" || item.state === "dismissed",

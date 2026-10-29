@@ -3,7 +3,14 @@
  * 标题语言跟随草稿正文：草稿里有汉字时用中文标题，否则用英文标题。
  */
 import { stringify } from "yaml";
-import type { DraftStep, SkillDraft } from "./review.ts";
+import type { DraftStep, SkillDraft } from "./llm.ts";
+
+/** 新 Skill 的名称与标题来自摘要，其余字段来自草稿。 */
+export interface DraftSource {
+  readonly name: string;
+  readonly title: string;
+  readonly draft: SkillDraft;
+}
 
 /** frontmatter 里标记本插件写入的 Skill；改进已有 Skill 时据此区分归属。 */
 export const OWNER_KEY = "skill-scout";
@@ -74,10 +81,9 @@ function bullets(items: readonly string[]): string {
 
 /**
  * 把模型草稿转换成可编辑的字段。
- * @param draft - 校验过的草稿。
- * @param title - 建议标题，作为正文一级标题。
+ * @param source - 摘要里的名称与标题（标题作为正文一级标题），以及校验过的草稿。
  */
-export function fieldsOfDraft(draft: SkillDraft, title: string): SkillFields {
+export function fieldsOfDraft({ name, title, draft }: DraftSource): SkillFields {
   const lang = languageOf([title, draft.description, ...draft.steps.map((step) => step.text)]);
   const h = HEADINGS[lang];
   const sections = [
@@ -91,7 +97,7 @@ export function fieldsOfDraft(draft: SkillDraft, title: string): SkillFields {
     ...(draft.limits.length > 0 ? [`## ${h.limits}\n\n${bullets(draft.limits)}`] : []),
   ];
   return {
-    name: draft.name,
+    name,
     description: draft.description,
     whenToUse: draft.whenToUse,
     body: sections.join("\n\n"),

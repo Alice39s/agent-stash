@@ -104,17 +104,29 @@ export const media = {
     width: 960,
     height: 720,
   },
+  "skill-scout-drafting": {
+    image: "/media/skill-scout-drafting.png",
+    video: undefined,
+    width: 960,
+    height: 720,
+  },
+  "skill-scout-drafting-en": {
+    image: "/media/skill-scout-drafting-en.png",
+    video: undefined,
+    width: 960,
+    height: 720,
+  },
   "skill-scout-settings": {
     image: "/media/skill-scout-settings.png",
     video: undefined,
     width: 952,
-    height: 1094,
+    height: 1329,
   },
   "skill-scout-settings-en": {
     image: "/media/skill-scout-settings-en.png",
     video: undefined,
     width: 952,
-    height: 1091,
+    height: 1326,
   },
 } as const satisfies Record<
   string,

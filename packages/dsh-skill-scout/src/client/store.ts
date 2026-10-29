@@ -1,13 +1,15 @@
 /**
  * 收件箱的浏览器端状态：所有会话标题栏里的入口共用一份。
- * Host 没有向插件推送事件的通道，状态靠读取刷新：有订阅者时定时读取（复核或分析进行中更频繁），
+ * Host 没有向插件推送事件的通道，状态靠读取刷新：有订阅者时定时读取（模型调用或分析进行中更频繁），
  * 页面重新获得焦点、连接重建与每次操作之后立即读取。页面隐藏时暂停定时读取。
  */
 import type { Action, ActionResult, InboxView } from "../shared.ts";
 import type { Observable } from "./dsh.ts";
 import type { ScoutKey } from "./locale.ts";
 
-/** 进行中时的读取间隔。 */
+/** 模型正在写摘要或草稿时的读取间隔：回复一到，界面在一秒内换掉进行中的占位。 */
+const MODEL_INTERVAL = 1_000;
+/** 分析会话或核对写入时的读取间隔。 */
 const BUSY_INTERVAL = 3_000;
 /** 空闲时的读取间隔。 */
 const IDLE_INTERVAL = 45_000;
@@ -47,14 +49,17 @@ export interface InboxStore extends Observable<InboxState> {
 
 const INITIAL: InboxState = { status: "idle", inbox: null, error: null, notice: null };
 
-/** 有后台工作正在进行：分析、复核，或写入后核对 DSH 能否发现。 */
-function busy(inbox: InboxView | null): boolean {
-  return (
-    inbox !== null &&
-    (inbox.status.scanning ||
-      inbox.status.reviewing !== null ||
-      inbox.items.some((item) => item.write?.checking === true))
-  );
+/**
+ * 下一次读取的间隔：模型调用进行中最短；分析会话或写入后核对 DSH 能否发现时居中；其余时候最长。
+ * @internal 导出供测试使用。
+ */
+export function pollInterval(inbox: InboxView | null): number {
+  if (inbox === null) return IDLE_INTERVAL;
+  if (inbox.status.working > 0) return MODEL_INTERVAL;
+  if (inbox.status.scanning || inbox.items.some((item) => item.write?.checking === true)) {
+    return BUSY_INTERVAL;
+  }
+  return IDLE_INTERVAL;
 }
 
 /**
@@ -76,13 +81,10 @@ export function createInboxStore(transport: InboxTransport): InboxStore {
   const schedule = (): void => {
     clearTimeout(timer);
     if (listeners.size === 0) return;
-    timer = setTimeout(
-      () => {
-        if (document.visibilityState === "hidden") schedule();
-        else void refresh();
-      },
-      busy(state.inbox) ? BUSY_INTERVAL : IDLE_INTERVAL,
-    );
+    timer = setTimeout(() => {
+      if (document.visibilityState === "hidden") schedule();
+      else void refresh();
+    }, pollInterval(state.inbox));
   };
 
   async function refresh(): Promise<void> {

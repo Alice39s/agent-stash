@@ -1,17 +1,20 @@
 /**
  * 插件状态存在 `ctx.storageDomain` 的 `skill_scout` domain 里，每条记录一个文件：
  * - sessions：每个已分析会话的进度与 Episode；
- * - suggestions：每个候选的状态、模型结论、写入记录与忽略记录；
- * - usage：每天的复核次数与用量。
+ * - suggestions：每个候选的状态、摘要、草稿、写入记录与忽略记录；
+ * - usage：每天的模型调用次数与用量。
  * 记录在打开 domain 时逐条用 valibot 校验，结构不符的记录由 DSH 备份后跳过。
+ *
+ * 版本 2 的 Episode 按命令动作记录操作，建议分摘要与草稿两段保存。版本 1 的记录由 DSH 丢弃，
+ * 历史范围内的会话按新格式重新分析；已经写入的 Skill 文件留在原处。
  */
 import * as v from "valibot";
 import type { DshDomain, DshDomainSpec, DshTable, JsonValue } from "./dsh.ts";
 import { CandidateSchema, EpisodeSchema } from "./model.ts";
-import { ReviewSchema } from "./review.ts";
+import { DraftSchema, SummarySchema } from "./llm.ts";
 
 export const DOMAIN_NAME = "skill_scout";
-const DOMAIN_VERSION = 1;
+const DOMAIN_VERSION = 2;
 
 /** 一个已分析的会话。 */
 export const SessionRecordSchema = v.object({
@@ -27,17 +30,19 @@ export type SessionRecord = v.InferOutput<typeof SessionRecordSchema>;
 
 /**
  * 建议的状态：
- * - detected：规则检测到，等待模型复核；
- * - ready：模型给出了建议，等待用户处理；
- * - skipped：模型认为不值得保存；
- * - failed：复核失败，记录失败原因；
+ * - detected：规则检测到，还没有摘要；
+ * - proposed：摘要认为值得保存，等待用户同意生成草稿；
+ * - skipped：摘要认为不值得保存；
+ * - ready：草稿已生成，等待用户审核保存；
+ * - failed：最近一次模型调用失败，失败记录里的 stage 说明是摘要还是草稿；
  * - dismissed：用户忽略；
  * - written：已写入 Skill 文件。
  */
 export const SuggestionStateSchema = v.picklist([
   "detected",
-  "ready",
+  "proposed",
   "skipped",
+  "ready",
   "failed",
   "dismissed",
   "written",
@@ -46,23 +51,36 @@ export type SuggestionState = v.InferOutput<typeof SuggestionStateSchema>;
 
 export const FailureKindSchema = v.picklist(["timeout", "model", "format", "evidence", "unsafe"]);
 
-export const ReviewRecordSchema = v.object({
+/** 模型调用的两个阶段。 */
+export const StageSchema = v.picklist(["summary", "draft"]);
+export type Stage = v.InferOutput<typeof StageSchema>;
+
+/** 一次模型调用的来源与用量。 */
+const CallEntries = {
   at: v.number(),
   provider: v.string(),
   model: v.string(),
   inputTokens: v.number(),
   outputTokens: v.number(),
-  /** 结论里需要提醒用户留意的命令类别。 */
+};
+
+export const SummaryRecordSchema = v.object({ ...CallEntries, summary: SummarySchema });
+export type SummaryRecord = v.InferOutput<typeof SummaryRecordSchema>;
+
+export const DraftRecordSchema = v.object({
+  ...CallEntries,
+  /** 草稿里需要提醒用户留意的命令类别。 */
   cautions: v.array(v.string()),
-  verdict: ReviewSchema,
+  draft: DraftSchema,
 });
-export type ReviewRecord = v.InferOutput<typeof ReviewRecordSchema>;
+export type DraftRecord = v.InferOutput<typeof DraftRecordSchema>;
 
 export const FailureRecordSchema = v.object({
+  stage: StageSchema,
   kind: FailureKindSchema,
   message: v.string(),
   at: v.number(),
-  /** 连续失败次数，决定下一次自动重试的等待时间。 */
+  /** 同一阶段的连续失败次数，决定下一次自动重试摘要的等待时间。 */
   attempts: v.number(),
 });
 export type FailureRecord = v.InferOutput<typeof FailureRecordSchema>;
@@ -93,21 +111,27 @@ export const SuggestionSchema = v.object({
   state: SuggestionStateSchema,
   detectedAt: v.number(),
   updatedAt: v.number(),
-  /** 上一次复核时的证据 Episode 数；模型跳过后证据翻倍才重新复核。 */
-  reviewedSize: v.number(),
-  review: v.nullable(ReviewRecordSchema),
+  /** 上一次摘要时的证据 Episode 数；摘要判为跳过后，证据翻倍才重新摘要。 */
+  summarizedSize: v.number(),
+  summary: v.nullable(SummaryRecordSchema),
+  draft: v.nullable(DraftRecordSchema),
   failure: v.nullable(FailureRecordSchema),
   write: v.nullable(WriteRecordSchema),
   dismissed: v.nullable(v.object({ at: v.number(), similar: v.boolean() })),
 });
 export type Suggestion = v.InferOutput<typeof SuggestionSchema>;
 
+/** 一天的模型用量；后台摘要的每日上限与间隔只看 `summaries` 与 `lastSummaryAt`。 */
 export const UsageRecordSchema = v.object({
-  reviews: v.number(),
+  /** 后台自动发起的摘要次数。 */
+  summaries: v.number(),
+  /** 用户发起的摘要与草稿次数。 */
+  requested: v.number(),
   failures: v.number(),
   inputTokens: v.number(),
   outputTokens: v.number(),
-  lastAt: v.number(),
+  /** 最近一次后台摘要的时间。 */
+  lastSummaryAt: v.number(),
 });
 export type UsageRecord = v.InferOutput<typeof UsageRecordSchema>;
 

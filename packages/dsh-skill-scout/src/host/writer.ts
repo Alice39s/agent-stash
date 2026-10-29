@@ -17,7 +17,7 @@ import {
 } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, resolve } from "pathe";
-import { SKILL_NAME } from "./review.ts";
+import { SKILL_NAME } from "./llm.ts";
 import type { WriteRecord } from "./store.ts";
 
 /** 写入失败的原因，界面据此给出说明。 */

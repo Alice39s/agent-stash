@@ -12,7 +12,9 @@ import {
   NOW,
   press,
   settle,
+  STATUS,
   translator,
+  UNSUMMARIZED,
   type FakeHost,
 } from "./testing.tsx";
 
@@ -94,32 +96,66 @@ describe("InboxEntry", () => {
     expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions, 1 new");
   });
 
-  test("shows a quiet count for new suggestions and clears it once the inbox is opened", async () => {
+  test("counts summaries and drafts that need a decision and clears the count once opened", async () => {
     const host = fakeHost(
       inboxOf([
         item(),
+        item({ id: "repeated:2", state: "proposed", title: "Deploy the docs site" }),
+        item({ ...UNSUMMARIZED, id: "recovery:1", kind: "recovery" }),
+      ]),
+    );
+    await render(host);
+    expect(trigger().querySelector("span")?.textContent).toBe("2");
+
+    await click(trigger());
+    expect(trigger().getAttribute("aria-expanded")).toBe("true");
+    const sections = [...(panel()?.querySelectorAll("section") ?? [])];
+    expect(sections.map((section) => section.getAttribute("aria-label"))).toEqual([
+      "Needs your decision",
+      "Found locally",
+    ]);
+    const decide = sections[0]?.textContent ?? "";
+    expect(decide).toContain("Cut a local patch release");
+    expect(decide).toContain("Release a patch version of an npm package after the tests pass.");
+    expect(decide).toContain("Draft ready");
+    expect(decide).toContain("Summary ready");
+    expect(sections[1]?.textContent).toContain("No summary yet");
+    expect(panel()?.textContent).toContain("Repeated workflow · 2 sessions · 1 min ago");
+    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions");
+    expect(trigger().querySelector("span")).toBeNull();
+  });
+
+  test("keeps a card in progress without a dismiss button and says which model is busy", async () => {
+    const host = fakeHost(
+      inboxOf(
+        [item({ state: "drafting" }), item({ ...UNSUMMARIZED, id: "r:2", state: "summarizing" })],
+        { working: 2 },
+      ),
+    );
+    await render(host);
+    expect(trigger().querySelector("span")).toBeNull();
+    await click(trigger());
+    const text = panel()?.textContent ?? "";
+    expect(text).toContain("Asking the model");
+    expect(text).toContain("Drafting");
+    expect(text).toContain("Summarizing");
+    expect(panel()?.querySelectorAll("button[aria-label^='Dismiss']")).toHaveLength(0);
+  });
+
+  test("keeps a summary whose draft failed among the decisions", async () => {
+    const host = fakeHost(
+      inboxOf([
         item({
-          id: "recovery:1",
-          kind: "recovery",
-          state: "detected",
-          title: null,
-          decision: null,
+          state: "failed",
+          failure: { stage: "draft", kind: "timeout", message: "timed out", at: NOW, attempts: 1 },
         }),
       ]),
     );
     await render(host);
-    expect(trigger().querySelector("span")?.textContent).toBe("1");
-
     await click(trigger());
-    expect(trigger().getAttribute("aria-expanded")).toBe("true");
-    const text = panel()?.textContent ?? "";
-    expect(text).toContain("Ready to save");
-    expect(text).toContain("Cut a local patch release");
-    expect(text).toContain("Found locally");
-    expect(text).toContain("Not reviewed");
-    expect(text).toContain("Repeated workflow · 2 sessions · 1 min ago");
-    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions");
-    expect(trigger().querySelector("span")).toBeNull();
+    const section = panel()?.querySelector("section");
+    expect(section?.getAttribute("aria-label")).toBe("Needs your decision");
+    expect(section?.textContent).toContain("Draft failed");
   });
 
   test("keeps the icon without a number when notifications are quiet", async () => {
@@ -138,12 +174,14 @@ describe("InboxEntry", () => {
     expect(text).toContain("4 sessions analyzed");
   });
 
-  test("tells the user when no review model is available", async () => {
-    const pending = item({ state: "detected", title: null, decision: null });
-    const host = fakeHost(inboxOf([pending], { model: null }));
+  test("tells the user when no discovery model is available", async () => {
+    const pending = item(UNSUMMARIZED);
+    const host = fakeHost(
+      inboxOf([pending], { models: { summary: null, draft: STATUS.models.draft } }),
+    );
     await render(host);
     await click(trigger());
-    expect(panel()?.textContent).toContain("No review model is available.");
+    expect(panel()?.textContent).toContain("No discovery model is available.");
   });
 
   test("dismisses a card with an undo that restores it", async () => {
@@ -186,6 +224,33 @@ describe("InboxEntry", () => {
     await press(document.activeElement, "Escape");
     expect(panel()).toBeNull();
     expect(document.activeElement).toBe(trigger());
+  });
+
+  test("does not count the summary the user waits for in the open detail as new", async () => {
+    const host = fakeHost(inboxOf([item({ ...UNSUMMARIZED })]));
+    await render(host);
+    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions");
+    await click(trigger());
+    await click(panel()?.querySelector("li button"));
+    await settle();
+
+    host.inbox = inboxOf([item({ state: "proposed" })]);
+    void host.store.refresh();
+    await settle();
+    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions");
+    expect(trigger().querySelector("span")).toBeNull();
+
+    // 别的建议在详情开着时变成待决定，照常计数。
+    host.inbox = inboxOf([
+      item({ state: "ready" }),
+      item({ id: "recovery:1", kind: "recovery", state: "proposed" }),
+    ]);
+    void host.store.refresh();
+    await settle();
+    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions, 1 new");
+
+    await click(button("Close", document.querySelector("dialog") ?? document));
+    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions");
   });
 
   test("keeps handled suggestions under a collapsed history", async () => {

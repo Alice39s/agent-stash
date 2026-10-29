@@ -1,6 +1,6 @@
 /**
  * Skill Scout 的 Host 半部：打开插件存储，注册浏览器路由，监听会话的回合结束，
- * 在持有工作锁时于后台分析会话与复核候选。
+ * 在持有工作锁时于后台分析会话、给候选写摘要。
  */
 import { join } from "pathe";
 import { currentSettings, type ConfigValue } from "./config.ts";
@@ -26,7 +26,7 @@ export const inject = [
   "connection",
 ];
 
-/** 后台定时检查：复核是否到期、锁是否可以接管、发现开关是否刚打开。 */
+/** 后台定时检查：摘要是否到期、锁是否可以接管、发现开关是否刚打开。 */
 const TICK = 60_000;
 
 export async function apply(ctx: ScoutContext, config: ConfigValue): Promise<void> {
@@ -49,7 +49,7 @@ export async function apply(ctx: ScoutContext, config: ConfigValue): Promise<voi
       signal: controller.signal,
     });
     yield () => scout.dispose();
-    const inbox = () => inboxView(store, settings(), scout.route(), scout.runtime(), Date.now());
+    const inbox = () => inboxView(store, settings(), scout.routes(), scout.runtime(), Date.now());
     const detail = (id: string) => {
       const suggestion = store.suggestions.get(recordKey(id));
       return suggestion === undefined ? undefined : detailView(store, suggestion, scout.runtime());

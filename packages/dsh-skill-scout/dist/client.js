@@ -656,16 +656,23 @@ window.__ModuleLoader__.load({
 			"recovery",
 			"complex"
 		]);
-		/** 建议在界面上的状态；reviewing 只存在于 Host 内存，表示模型正在复核它。 */
+		/**
+		* 建议在界面上的状态。summarizing 与 drafting 只存在于 Host 内存，表示发现模型正在写摘要、
+		* 生成模型正在写草稿；其余与存储里的状态一致。
+		*/
 		const ItemStateSchema = /* @__PURE__ */ picklist([
 			"detected",
-			"reviewing",
-			"ready",
+			"summarizing",
+			"proposed",
 			"skipped",
+			"drafting",
+			"ready",
 			"failed",
 			"dismissed",
 			"written"
 		]);
+		/** 模型调用的两个阶段：摘要与草稿。 */
+		const StageViewSchema = /* @__PURE__ */ picklist(["summary", "draft"]);
 		const DecisionSchema = /* @__PURE__ */ picklist([
 			"skip",
 			"suggest_create",
@@ -691,10 +698,24 @@ window.__ModuleLoader__.load({
 			id: /* @__PURE__ */ string(),
 			kind: SignalKindViewSchema,
 			state: ItemStateSchema,
-			/** 模型给出的标题；未复核时为 null，界面用 goal 代替。 */
+			/** 摘要给出的标题；还没有摘要时为 null，界面用 goal 代替。 */
 			title: Nullable(/* @__PURE__ */ string()),
 			goal: /* @__PURE__ */ string(),
-			/** 模型给出的理由。 */
+			/** 规则在这组任务里找到的共有步骤，原来的写法。 */
+			steps: /* @__PURE__ */ array(/* @__PURE__ */ string()),
+			/** 摘要：在会话里发现了什么。 */
+			found: Nullable(/* @__PURE__ */ string()),
+			/** 摘要：Skill 做什么；改进时是追加的内容补上了什么。 */
+			description: Nullable(/* @__PURE__ */ string()),
+			/** 摘要：什么时候用。 */
+			trigger: Nullable(/* @__PURE__ */ string()),
+			/** 摘要：打算写进 Skill 的步骤或追加的内容。 */
+			outline: /* @__PURE__ */ array(/* @__PURE__ */ string()),
+			/** 摘要：照着做的风险。 */
+			risks: /* @__PURE__ */ array(/* @__PURE__ */ string()),
+			/** 摘要：怎么确认照着做成功了。 */
+			verification: Nullable(/* @__PURE__ */ string()),
+			/** 摘要判为跳过的理由。 */
 			reason: Nullable(/* @__PURE__ */ string()),
 			occurrences: /* @__PURE__ */ number(),
 			sessions: /* @__PURE__ */ array(SessionRefSchema),
@@ -706,6 +727,7 @@ window.__ModuleLoader__.load({
 			skill: Nullable(/* @__PURE__ */ string()),
 			cautions: /* @__PURE__ */ array(/* @__PURE__ */ string()),
 			failure: Nullable(/* @__PURE__ */ object({
+				stage: StageViewSchema,
 				kind: FailureKindViewSchema,
 				message: /* @__PURE__ */ string(),
 				at: /* @__PURE__ */ number(),
@@ -726,27 +748,37 @@ window.__ModuleLoader__.load({
 			})),
 			dismissedSimilar: /* @__PURE__ */ boolean()
 		});
+		/** 一个阶段此刻使用的模型；没有可用模型时为 null。 */
+		const ModelViewSchema = Nullable(/* @__PURE__ */ object({
+			provider: /* @__PURE__ */ string(),
+			model: /* @__PURE__ */ string(),
+			effort: Nullable(/* @__PURE__ */ string()),
+			source: /* @__PURE__ */ picklist(["config", "default"])
+		}));
 		const InboxViewSchema = /* @__PURE__ */ object({
 			status: /* @__PURE__ */ object({
 				discovery: /* @__PURE__ */ boolean(),
-				review: /* @__PURE__ */ boolean(),
+				/** 后台自动写摘要。 */
+				summarize: /* @__PURE__ */ boolean(),
 				notify: /* @__PURE__ */ picklist(["badge", "quiet"]),
 				scope: /* @__PURE__ */ picklist(["project", "user"]),
-				model: Nullable(/* @__PURE__ */ object({
-					provider: /* @__PURE__ */ string(),
-					model: /* @__PURE__ */ string(),
-					effort: Nullable(/* @__PURE__ */ string()),
-					source: /* @__PURE__ */ picklist(["config", "default"])
-				})),
-				/** 本进程持有工作锁，负责分析与复核。 */
+				models: /* @__PURE__ */ object({
+					summary: ModelViewSchema,
+					draft: ModelViewSchema
+				}),
+				/** 本进程持有工作锁，负责分析与后台摘要。 */
 				lead: /* @__PURE__ */ boolean(),
 				scanning: /* @__PURE__ */ boolean(),
 				/** 回合已结束、等静默期过去后再分析的会话数。 */
 				waiting: /* @__PURE__ */ number(),
-				reviewing: Nullable(/* @__PURE__ */ string()),
+				/** 正在进行的摘要与草稿请求数。 */
+				working: /* @__PURE__ */ number(),
 				usage: /* @__PURE__ */ object({
-					reviews: /* @__PURE__ */ number(),
+					/** 今天的后台摘要次数与上限。 */
+					summaries: /* @__PURE__ */ number(),
 					limit: /* @__PURE__ */ number(),
+					/** 今天用户发起的摘要与草稿次数。 */
+					requested: /* @__PURE__ */ number(),
 					inputTokens: /* @__PURE__ */ number(),
 					outputTokens: /* @__PURE__ */ number()
 				}),
@@ -783,7 +815,7 @@ window.__ModuleLoader__.load({
 				"fix",
 				"recovered"
 			])),
-			/** 模型的结论引用了它。 */
+			/** 摘要或草稿引用了它。 */
 			cited: /* @__PURE__ */ boolean()
 		});
 		const EvidenceEpisodeSchema = /* @__PURE__ */ object({
@@ -797,6 +829,7 @@ window.__ModuleLoader__.load({
 			reads: /* @__PURE__ */ number(),
 			ops: /* @__PURE__ */ array(EvidenceOpSchema),
 			reply: Nullable(/* @__PURE__ */ string()),
+			steering: /* @__PURE__ */ array(/* @__PURE__ */ string()),
 			followup: Nullable(/* @__PURE__ */ string())
 		});
 		/** 可编辑的 Skill 字段。 */
@@ -806,17 +839,20 @@ window.__ModuleLoader__.load({
 			whenToUse: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ trim(), /* @__PURE__ */ maxLength(500)),
 			body: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ trim(), /* @__PURE__ */ minLength(1), /* @__PURE__ */ maxLength(2e4))
 		});
-		/** 一条建议的完整信息：证据、模型结论与草稿。 */
+		/** 一次模型调用的来源与用量。 */
+		const CallViewSchema = Nullable(/* @__PURE__ */ object({
+			provider: /* @__PURE__ */ string(),
+			model: /* @__PURE__ */ string(),
+			at: /* @__PURE__ */ number(),
+			inputTokens: /* @__PURE__ */ number(),
+			outputTokens: /* @__PURE__ */ number()
+		}));
+		/** 一条建议的完整信息：证据、摘要与草稿。 */
 		const DetailViewSchema = /* @__PURE__ */ object({
 			item: ItemViewSchema,
 			episodes: /* @__PURE__ */ array(EvidenceEpisodeSchema),
-			review: Nullable(/* @__PURE__ */ object({
-				provider: /* @__PURE__ */ string(),
-				model: /* @__PURE__ */ string(),
-				at: /* @__PURE__ */ number(),
-				inputTokens: /* @__PURE__ */ number(),
-				outputTokens: /* @__PURE__ */ number()
-			})),
+			summary: CallViewSchema,
+			draftCall: CallViewSchema,
 			/** suggest_create 的草稿字段。 */
 			draft: Nullable(SkillFieldsSchema),
 			/** suggest_improve 的追加内容。 */
@@ -1003,7 +1039,7 @@ window.__ModuleLoader__.load({
 		}
 		//#endregion
 		//#region \0dsh-css:src/client/detail.module.css.mjs
-		const css$2 = ".FSsC8q_tabs{z-index:1;background:var(--dsw-alias-bg-layer-2);padding:0 0 12px;position:sticky;top:0}.FSsC8q_panel{min-width:0}.FSsC8q_stack{flex-direction:column;gap:14px;min-width:0;display:flex}.FSsC8q_heading{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px;font-weight:600;line-height:18px}.FSsC8q_why p{color:var(--dsw-alias-label-primary);margin:4px 0 0;font-size:13px;line-height:20px}.FSsC8q_callout{border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:8px;margin:0;padding:12px 14px;font-size:13px;line-height:20px;display:flex}.FSsC8q_callout p{margin:0}.FSsC8q_note{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px;line-height:18px}.FSsC8q_caution{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-label);margin:0;padding:8px 12px;font-size:12px;line-height:18px}.FSsC8q_failure{color:var(--dsw-alias-state-error-label,var(--dsw-alias-state-warn-label));flex-direction:column;gap:2px;margin:0;font-size:13px;line-height:20px;display:flex}.FSsC8q_failureDetail{color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere;font-size:12px;line-height:18px}.FSsC8q_episode{border-top:.5px solid var(--dsw-alias-border-l2);flex-direction:column;gap:8px;padding:12px 0 0;display:flex}.FSsC8q_episodeHead{align-items:flex-start;gap:10px;display:flex}.FSsC8q_ref{border-radius:var(--dsw-radius-xs);background:var(--dsw-alias-interactive-bg-hover);min-width:24px;color:var(--dsw-alias-label-secondary);text-align:center;font-variant-numeric:tabular-nums;flex:none;padding:1px 6px;font-size:11px;line-height:18px}.FSsC8q_episodeText{flex-direction:column;flex:1;gap:2px;min-width:0;display:flex}.FSsC8q_goal{-webkit-line-clamp:2;color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;-webkit-box-orient:vertical;margin:0;font-size:13px;line-height:20px;display:-webkit-box;overflow:hidden}.FSsC8q_meta{color:var(--dsw-alias-label-tertiary);flex-wrap:wrap;gap:4px 10px;margin:0;font-size:12px;line-height:18px;display:flex}.FSsC8q_path{font-family:var(--dsw-font-family-mono,ui-monospace, monospace);font-size:11px}.FSsC8q_ops{flex-direction:column;margin:0;padding:0 0 0 34px;list-style:none;display:flex}.FSsC8q_op{border-radius:var(--dsw-radius-md);align-items:flex-start;gap:8px;padding:4px 8px;font-size:12px;line-height:18px;display:flex}.FSsC8q_op[data-cited]{background:var(--dsw-alias-interactive-bg-hover)}.FSsC8q_opGlyph{width:14px;height:18px;color:var(--dsw-alias-label-tertiary);flex:none;justify-content:center;align-items:center;display:inline-flex}.FSsC8q_op[data-ok=false] .FSsC8q_opGlyph{color:var(--dsw-alias-state-warn-label)}.FSsC8q_opBody{flex-wrap:wrap;flex:1;align-items:baseline;gap:2px 8px;min-width:0;display:flex}.FSsC8q_opLabel{min-width:0;font-family:var(--dsw-font-family-mono,ui-monospace, monospace);color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;font-size:12px}.FSsC8q_opLabel[data-kind=edit]{color:var(--dsw-alias-label-secondary)}.FSsC8q_opTags{flex-wrap:wrap;gap:4px;display:inline-flex}.FSsC8q_tag{border-radius:var(--dsw-radius-xs);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);padding:0 6px;font-size:11px;line-height:16px}.FSsC8q_tag[data-cited]{color:var(--dsw-alias-state-business-primary)}.FSsC8q_opError{color:var(--dsw-alias-label-tertiary);font-family:var(--dsw-font-family-mono,ui-monospace, monospace);overflow-wrap:anywhere;flex-basis:100%;font-size:11px}.FSsC8q_opRef{color:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary));font-variant-numeric:tabular-nums;flex:none;font-size:11px}.FSsC8q_toolbar{justify-content:space-between;align-items:center;gap:8px;display:flex}.FSsC8q_facts{grid-template-columns:max-content 1fr;gap:4px 16px;margin:0;font-size:13px;line-height:20px;display:grid}.FSsC8q_facts dt{color:var(--dsw-alias-label-tertiary)}.FSsC8q_facts dd{overflow-wrap:anywhere;min-width:0;margin:0}.FSsC8q_markdown{border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-layer-1,var(--dsw-alias-bg-base));box-shadow:0 0 0 .5px var(--dsw-alias-border-l2);padding:4px 16px}.FSsC8q_editor{flex-direction:column;gap:12px;display:flex}.FSsC8q_field{flex-direction:column;gap:4px;display:flex}.FSsC8q_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500;line-height:18px}.FSsC8q_input{box-sizing:border-box;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1,var(--dsw-alias-bg-base));width:100%;box-shadow:0 0 0 .5px var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;border:0;padding:7px 10px;font-size:13px;line-height:20px}.FSsC8q_input:focus-visible{box-shadow:0 0 0 1.5px var(--dsw-alias-state-business-primary);outline:none}.FSsC8q_mono{font-family:var(--dsw-font-family-mono,ui-monospace, monospace);font-size:12px;line-height:18px}.FSsC8q_spacer{flex:1}.FSsC8q_actionError{color:var(--dsw-alias-state-error-label,var(--dsw-alias-state-warn-label));flex-basis:100%;margin:0;font-size:12px;line-height:18px}.FSsC8q_written{min-width:0;color:var(--dsw-alias-label-secondary);flex-direction:column;margin:0;font-size:12px;line-height:18px;display:flex}.FSsC8q_writtenPath{color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family-mono,ui-monospace, monospace);overflow-wrap:anywhere}";
+		const css$2 = ".FSsC8q_tabs{z-index:1;background:var(--dsw-alias-bg-layer-2);padding:0 0 12px;position:sticky;top:0}.FSsC8q_panel{min-width:0}.FSsC8q_stack{flex-direction:column;gap:14px;min-width:0;display:flex}.FSsC8q_heading{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px;font-weight:600;line-height:18px}.FSsC8q_block{flex-direction:column;gap:6px;display:flex}.FSsC8q_steps{color:var(--dsw-alias-label-tertiary);flex-direction:column;gap:2px;margin:0;padding:0 0 0 20px;font-size:12px;line-height:18px;display:flex}.FSsC8q_steps code{font-family:var(--dsw-font-family-mono,ui-monospace, monospace);color:var(--dsw-alias-label-primary);overflow-wrap:anywhere}.FSsC8q_summary{grid-template-columns:max-content 1fr;gap:10px 16px;margin:0;font-size:13px;line-height:20px;display:grid}.FSsC8q_summary dt{color:var(--dsw-alias-label-tertiary)}.FSsC8q_summary dd{min-width:0;color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;margin:0}.FSsC8q_planTarget{flex-wrap:wrap;align-items:baseline;gap:6px;margin:0;display:flex}.FSsC8q_planTarget code{font-family:var(--dsw-font-family-mono,ui-monospace, monospace);font-size:12px}.FSsC8q_outline{color:var(--dsw-alias-label-secondary);margin:4px 0 0;padding:0 0 0 20px}.FSsC8q_risks{margin:0;padding:0 0 0 16px}.FSsC8q_working{flex-direction:column;gap:10px;display:flex}.FSsC8q_workingLabel{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px;line-height:18px}.FSsC8q_skeleton{border-radius:var(--dsw-radius-lg);box-shadow:0 0 0 .5px var(--dsw-alias-border-l2);flex-direction:column;gap:10px;padding:16px;display:flex}.FSsC8q_skeletonBar{border-radius:var(--dsw-radius-xs);background:var(--dsw-alias-bg-skeleton);height:10px;animation:1.1s cubic-bezier(.36,0,.64,1) infinite both FSsC8q_scout-skeleton}.FSsC8q_skeletonGap{height:4px}@keyframes FSsC8q_scout-skeleton{0%,to{opacity:1}50%{opacity:.5}}@media (prefers-reduced-motion:reduce){.FSsC8q_skeletonBar{animation:none}}.FSsC8q_callout{border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-interactive-bg-hover);flex-direction:column;gap:8px;margin:0;padding:12px 14px;font-size:13px;line-height:20px;display:flex}.FSsC8q_callout p{margin:0}.FSsC8q_note{color:var(--dsw-alias-label-tertiary);margin:0;font-size:12px;line-height:18px}.FSsC8q_caution{border-radius:var(--dsw-radius-md);background:var(--dsw-alias-state-warn-tertiary);color:var(--dsw-alias-state-warn-label);margin:0;padding:8px 12px;font-size:12px;line-height:18px}.FSsC8q_failure{color:var(--dsw-alias-state-error-label,var(--dsw-alias-state-warn-label));flex-direction:column;gap:2px;margin:0;font-size:13px;line-height:20px;display:flex}.FSsC8q_failureDetail{color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere;font-size:12px;line-height:18px}.FSsC8q_episode{border-top:.5px solid var(--dsw-alias-border-l2);flex-direction:column;gap:8px;padding:12px 0 0;display:flex}.FSsC8q_episodeHead{align-items:flex-start;gap:10px;display:flex}.FSsC8q_ref{border-radius:var(--dsw-radius-xs);background:var(--dsw-alias-interactive-bg-hover);min-width:24px;color:var(--dsw-alias-label-secondary);text-align:center;font-variant-numeric:tabular-nums;flex:none;padding:1px 6px;font-size:11px;line-height:18px}.FSsC8q_episodeText{flex-direction:column;flex:1;gap:2px;min-width:0;display:flex}.FSsC8q_goal{-webkit-line-clamp:2;color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;-webkit-box-orient:vertical;margin:0;font-size:13px;line-height:20px;display:-webkit-box;overflow:hidden}.FSsC8q_meta{color:var(--dsw-alias-label-tertiary);flex-wrap:wrap;gap:4px 10px;margin:0;font-size:12px;line-height:18px;display:flex}.FSsC8q_path{font-family:var(--dsw-font-family-mono,ui-monospace, monospace);font-size:11px}.FSsC8q_ops{flex-direction:column;margin:0;padding:0 0 0 34px;list-style:none;display:flex}.FSsC8q_op{border-radius:var(--dsw-radius-md);align-items:flex-start;gap:8px;padding:4px 8px;font-size:12px;line-height:18px;display:flex}.FSsC8q_op[data-cited]{background:var(--dsw-alias-interactive-bg-hover)}.FSsC8q_opGlyph{width:14px;height:18px;color:var(--dsw-alias-label-tertiary);flex:none;justify-content:center;align-items:center;display:inline-flex}.FSsC8q_op[data-ok=false] .FSsC8q_opGlyph{color:var(--dsw-alias-state-warn-label)}.FSsC8q_opBody{flex-wrap:wrap;flex:1;align-items:baseline;gap:2px 8px;min-width:0;display:flex}.FSsC8q_opLabel{min-width:0;font-family:var(--dsw-font-family-mono,ui-monospace, monospace);color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;font-size:12px}.FSsC8q_opLabel[data-kind=edit]{color:var(--dsw-alias-label-secondary)}.FSsC8q_opTags{flex-wrap:wrap;gap:4px;display:inline-flex}.FSsC8q_tag{border-radius:var(--dsw-radius-xs);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);padding:0 6px;font-size:11px;line-height:16px}.FSsC8q_tag[data-cited]{color:var(--dsw-alias-state-business-primary)}.FSsC8q_opError{color:var(--dsw-alias-label-tertiary);font-family:var(--dsw-font-family-mono,ui-monospace, monospace);overflow-wrap:anywhere;flex-basis:100%;font-size:11px}.FSsC8q_opRef{color:var(--dsw-alias-label-caption,var(--dsw-alias-label-tertiary));font-variant-numeric:tabular-nums;flex:none;font-size:11px}.FSsC8q_toolbar{justify-content:space-between;align-items:center;gap:8px;display:flex}.FSsC8q_toolbarActions{align-items:center;gap:4px;display:flex}.FSsC8q_facts{grid-template-columns:max-content 1fr;gap:4px 16px;margin:0;font-size:13px;line-height:20px;display:grid}.FSsC8q_facts dt{color:var(--dsw-alias-label-tertiary)}.FSsC8q_facts dd{overflow-wrap:anywhere;min-width:0;margin:0}.FSsC8q_markdown{border-radius:var(--dsw-radius-lg);background:var(--dsw-alias-bg-layer-1,var(--dsw-alias-bg-base));box-shadow:0 0 0 .5px var(--dsw-alias-border-l2);padding:4px 16px}.FSsC8q_editor{flex-direction:column;gap:12px;display:flex}.FSsC8q_field{flex-direction:column;gap:4px;display:flex}.FSsC8q_fieldLabel{color:var(--dsw-alias-label-secondary);font-size:12px;font-weight:500;line-height:18px}.FSsC8q_input{box-sizing:border-box;border-radius:var(--dsw-radius-md);background:var(--dsw-alias-bg-layer-1,var(--dsw-alias-bg-base));width:100%;box-shadow:0 0 0 .5px var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);font:inherit;resize:vertical;border:0;padding:7px 10px;font-size:13px;line-height:20px}.FSsC8q_input:focus-visible{box-shadow:0 0 0 1.5px var(--dsw-alias-state-business-primary);outline:none}.FSsC8q_mono{font-family:var(--dsw-font-family-mono,ui-monospace, monospace);font-size:12px;line-height:18px}.FSsC8q_spacer{flex:1}.FSsC8q_actionError{color:var(--dsw-alias-state-error-label,var(--dsw-alias-state-warn-label));flex-basis:100%;margin:0;font-size:12px;line-height:18px}.FSsC8q_written{min-width:0;color:var(--dsw-alias-label-secondary);flex-direction:column;margin:0;font-size:12px;line-height:18px;display:flex}.FSsC8q_writtenPath{color:var(--dsw-alias-label-primary);font-family:var(--dsw-font-family-mono,ui-monospace, monospace);overflow-wrap:anywhere}";
 		const tag$2 = "@agent-stash/dsh-skill-scout/detail.module.css";
 		if (document.querySelector(`style[data-plugin-css=${JSON.stringify(tag$2)}]`) === null) {
 			const style = document.createElement("style");
@@ -1014,6 +1050,7 @@ window.__ModuleLoader__.load({
 		}
 		var detail_module_css_default = {
 			"actionError": "FSsC8q_actionError",
+			"block": "FSsC8q_block",
 			"callout": "FSsC8q_callout",
 			"caution": "FSsC8q_caution",
 			"editor": "FSsC8q_editor",
@@ -1040,15 +1077,26 @@ window.__ModuleLoader__.load({
 			"opRef": "FSsC8q_opRef",
 			"ops": "FSsC8q_ops",
 			"opTags": "FSsC8q_opTags",
+			"outline": "FSsC8q_outline",
 			"panel": "FSsC8q_panel",
 			"path": "FSsC8q_path",
+			"planTarget": "FSsC8q_planTarget",
 			"ref": "FSsC8q_ref",
+			"risks": "FSsC8q_risks",
+			"scout-skeleton": "FSsC8q_scout-skeleton",
+			"skeleton": "FSsC8q_skeleton",
+			"skeletonBar": "FSsC8q_skeletonBar",
+			"skeletonGap": "FSsC8q_skeletonGap",
 			"spacer": "FSsC8q_spacer",
 			"stack": "FSsC8q_stack",
+			"steps": "FSsC8q_steps",
+			"summary": "FSsC8q_summary",
 			"tabs": "FSsC8q_tabs",
 			"tag": "FSsC8q_tag",
 			"toolbar": "FSsC8q_toolbar",
-			"why": "FSsC8q_why",
+			"toolbarActions": "FSsC8q_toolbarActions",
+			"working": "FSsC8q_working",
+			"workingLabel": "FSsC8q_workingLabel",
 			"written": "FSsC8q_written",
 			"writtenPath": "FSsC8q_writtenPath"
 		};
@@ -1069,9 +1117,17 @@ window.__ModuleLoader__.load({
 		function sessionCount(t, count) {
 			return t(count === 1 ? "meta.sessions.one" : "meta.sessions.other", { count });
 		}
-		/** 卡片标题：模型标题，未复核时用用户请求。 */
+		/** 卡片标题：摘要里的标题，还没有摘要时用用户请求。 */
 		function titleOf(item) {
 			return item.title ?? item.goal;
+		}
+		/** 状态文案；失败按阶段区分。 */
+		function stateLabel(t, item) {
+			return item.state === "failed" && item.failure?.stage === "draft" ? t("state.draftFailed") : t(`state.${item.state}`);
+		}
+		/** 模型正在处理这条建议。 */
+		function inFlight(item) {
+			return item.state === "summarizing" || item.state === "drafting";
 		}
 		/** 一行元信息：信号类型 · 会话数 · 时间。 */
 		function metaOf(t, item, now) {
@@ -1081,11 +1137,19 @@ window.__ModuleLoader__.load({
 				ago(t, item.updatedAt, now)
 			].join(" · ");
 		}
-		/** 按状态分组：可保存、本地发现（含复核中与失败）、历史。 */
+		/** 失败在草稿阶段的建议仍有摘要，留在待决定的分组里。 */
+		function draftFailed(item) {
+			return item.state === "failed" && item.failure?.stage === "draft";
+		}
+		/** 等用户决定的建议：标题栏的数字只数这些。 */
+		function needsReview(item) {
+			return item.state === "proposed" || item.state === "drafting" || item.state === "ready" || draftFailed(item);
+		}
+		/** 按状态分组：待决定、本地发现、历史。 */
 		function groupItems(items) {
 			return {
-				ready: items.filter((item) => item.state === "ready"),
-				found: items.filter((item) => item.state === "detected" || item.state === "reviewing" || item.state === "failed"),
+				review: items.filter(needsReview),
+				found: items.filter((item) => item.state === "detected" || item.state === "summarizing" || item.state === "failed" && !draftFailed(item)),
 				history: items.filter((item) => item.state === "written" || item.state === "skipped" || item.state === "dismissed")
 			};
 		}
@@ -1097,8 +1161,8 @@ window.__ModuleLoader__.load({
 		//#endregion
 		//#region src/client/detail.tsx
 		/**
-		* 一条建议的详情：证据、Skill 预览与编辑、文件改动，以及保存、忽略、撤销。
-		* 证据与草稿从 Host 读取；建议的状态跟随收件箱刷新，状态或更新时间变化时重新读取详情。
+		* 一条建议的详情：摘要、证据、Skill 预览与编辑、文件改动，以及生成摘要、同意生成草稿、保存、忽略、撤销。
+		* 证据、摘要与草稿从 Host 读取；建议的状态跟随收件箱刷新，状态或更新时间变化时重新读取详情。
 		*/
 		function message(error) {
 			return error instanceof Error ? error.message : String(error);
@@ -1235,6 +1299,14 @@ window.__ModuleLoader__.load({
 						className: detail_module_css_default.note,
 						children: t(episode.reads === 1 ? "evidence.reads.one" : "evidence.reads.other", { count: episode.reads })
 					}),
+					keyed(episode.steering).map(({ key, text }) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
+						className: detail_module_css_default.note,
+						children: [
+							t("evidence.steering"),
+							": ",
+							text
+						]
+					}, key)),
 					episode.followup !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
 						className: detail_module_css_default.note,
 						children: [
@@ -1295,12 +1367,73 @@ window.__ModuleLoader__.load({
 				]
 			});
 		}
+		/** 给可能重复的文本行配上稳定的 key：文本加上它第几次出现。 */
+		function keyed(lines) {
+			const seen = /* @__PURE__ */ new Map();
+			return lines.map((text) => {
+				const count = (seen.get(text) ?? 0) + 1;
+				seen.set(text, count);
+				return {
+					key: `${text}#${String(count)}`,
+					text
+				};
+			});
+		}
+		/** 摘要占位条的宽度：几行短文本。 */
+		const SUMMARY_BARS = [
+			"88%",
+			"72%",
+			"46%"
+		];
+		/** 草稿占位条的宽度，按 SKILL.md 的排版：标题、描述，空一行，一节标题与几行步骤；空串是段间空行。 */
+		const DRAFT_BARS = [
+			"36%",
+			"94%",
+			"82%",
+			"",
+			"22%",
+			"90%",
+			"74%",
+			"84%",
+			"58%"
+		];
+		/** 相邻占位条的起伏错开的时间，连起来是一道自上而下的波。 */
+		const BAR_STAGGER = 70;
+		/** 模型写作时的占位：按最终排版画出的几条横条，依次快速明暗起伏；减少动态效果时静止。 */
+		function Skeleton({ bars }) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				className: detail_module_css_default.skeleton,
+				"aria-hidden": "true",
+				children: keyed(bars).map(({ key, text: width }, index) => width === "" ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: detail_module_css_default.skeletonGap }, key) : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+					className: detail_module_css_default.skeletonBar,
+					style: {
+						width,
+						animationDelay: `${String(index * BAR_STAGGER)}ms`
+					}
+				}, key))
+			});
+		}
+		/** 模型正在处理时的一行状态与占位。 */
+		function Working({ label, bars }) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: detail_module_css_default.working,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+					className: detail_module_css_default.workingLabel,
+					role: "status",
+					children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.TextShimmer, {
+						active: true,
+						children: label
+					})
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Skeleton, { bars })]
+			});
+		}
 		/** 一条建议的详情对话框。 */
-		function Detail({ id, item, inbox, loadDetail, modelName, defaultScope, openSession, t, onClose }) {
+		function Detail({ id, item, inbox, loadDetail, models, defaultScope, openSession, t, onClose }) {
 			const tabsId = (0, react.useId)();
 			const labels = useLabels(t);
 			const [detail, setDetail] = (0, react.useState)({ status: "loading" });
-			const [tab, setTab] = (0, react.useState)("evidence");
+			/** 用户选中的页签；为 null 时跟随状态：草稿生成中与可以保存时看 Skill，其余看摘要。 */
+			const [chosenTab, setChosenTab] = (0, react.useState)(null);
 			const [scope, setScope] = (0, react.useState)(defaultScope);
 			const [editing, setEditing] = (0, react.useState)(false);
 			const [fields, setFields] = (0, react.useState)(null);
@@ -1334,12 +1467,16 @@ window.__ModuleLoader__.load({
 			const value = detail.status === "ready" ? detail.value : null;
 			const create = item.decision === "suggest_create";
 			const improve = item.decision === "suggest_improve";
-			const reviewed = create || improve;
+			const proposal = create || improve;
+			const drafted = value !== null && (value.draft !== null || value.section !== null);
 			const draft = fields ?? value?.draft ?? null;
 			const shownSection = section ?? value?.section ?? null;
 			const parsed = draft === null ? null : /* @__PURE__ */ safeParse(SkillFieldsSchema, draft);
 			const invalid = create && parsed !== null && !parsed.success;
-			const wantPreview = reviewed && item.state === "ready" && value !== null;
+			const draftFailed = item.state === "failed" && item.failure?.stage === "draft";
+			/** 摘要已经给出计划，等用户同意生成草稿。 */
+			const awaitingConsent = proposal && (item.state === "proposed" || draftFailed);
+			const wantPreview = drafted && item.state === "ready";
 			(0, react.useEffect)(() => {
 				if (!wantPreview || invalid) return void 0;
 				let stale = false;
@@ -1399,6 +1536,24 @@ window.__ModuleLoader__.load({
 				}
 			};
 			const skillName = item.skill ?? "";
+			const summarize = () => {
+				run("summarize", {
+					action: "summarize",
+					id
+				});
+			};
+			/** 同意摘要，生成草稿；之前的编辑与预览作废，页签回到跟随状态。 */
+			const generate = () => {
+				setFields(null);
+				setSection(null);
+				setEditing(false);
+				setPreview(null);
+				setChosenTab(null);
+				run("draft", {
+					action: "draft",
+					id
+				});
+			};
 			const dismiss = async (similar) => {
 				if (await run("dismiss", {
 					action: "dismiss",
@@ -1433,134 +1588,202 @@ window.__ModuleLoader__.load({
 					setPreview(null);
 				}
 			};
-			const tabs = [{
-				value: "evidence",
-				label: t("detail.tab.evidence")
-			}, ...reviewed ? [{
-				value: "skill",
-				label: t("detail.tab.skill")
-			}, ...item.state === "ready" ? [{
-				value: "changes",
-				label: t("detail.tab.changes")
-			}] : []] : []];
-			const activeTab = tabs.some((entry) => entry.value === tab) ? tab : "evidence";
+			const tabs = [
+				{
+					value: "summary",
+					label: t("detail.tab.summary")
+				},
+				...item.state === "drafting" || drafted ? [{
+					value: "skill",
+					label: t("detail.tab.skill")
+				}] : [],
+				...item.state === "ready" && drafted ? [{
+					value: "changes",
+					label: t("detail.tab.changes")
+				}] : [],
+				{
+					value: "evidence",
+					label: t("detail.tab.evidence")
+				}
+			];
+			const autoTab = item.state === "drafting" || item.state === "ready" ? "skill" : "summary";
+			const wanted = chosenTab ?? autoTab;
+			const activeTab = tabs.some((entry) => entry.value === wanted) ? wanted : "summary";
 			const subtitle = [
 				t(`kind.${item.kind}`),
 				sessionCount(t, item.occurrences),
-				value?.review === null || value === null ? t(`state.${item.state}`) : t("detail.reviewedBy", { model: value.review.model })
+				value?.draftCall != null ? t("detail.draftedBy", { model: value.draftCall.model }) : value?.summary != null ? t("detail.summarizedBy", { model: value.summary.model }) : stateLabel(t, item)
 			].join(" · ");
-			const reviewPanel = () => {
-				if (reviewed || item.state === "dismissed" || item.state === "written") return null;
-				if (item.state === "skipped") return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-					className: detail_module_css_default.callout,
-					children: t("detail.skipped")
-				});
-				if (item.state === "reviewing") return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-					className: detail_module_css_default.callout,
-					role: "status",
-					children: t("detail.reviewing", { model: modelName ?? "" })
-				});
-				return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-					className: detail_module_css_default.callout,
-					children: [
-						item.failure !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
-							className: detail_module_css_default.failure,
-							role: "alert",
-							children: [t("detail.failed", { kind: t(`failure.${item.failure.kind}`) }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: detail_module_css_default.failureDetail,
-								children: item.failure.message
-							})]
-						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("detail.local") }),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-							className: detail_module_css_default.note,
-							children: modelName === null ? t("detail.noModel") : t("detail.reviewNote", {
-								count: item.sessions.length,
-								model: modelName
-							})
-						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-							size: "sm",
-							variant: "outline",
-							"data-autofocus": "",
-							disabled: modelName === null || busy !== null,
-							onClick: () => void run("review", {
-								action: "analyze",
-								id
-							}),
-							children: item.failure === null ? t("detail.review") : t("detail.retry")
-						}) })
-					]
-				});
-			};
-			const evidence = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-				className: detail_module_css_default.stack,
+			const failure = (stage) => item.state === "failed" && item.failure?.stage === stage ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
+				className: detail_module_css_default.failure,
+				role: "alert",
+				children: [t(stage === "summary" ? "detail.failed.summary" : "detail.failed.draft", { kind: t(`failure.${item.failure.kind}`) }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+					className: detail_module_css_default.failureDetail,
+					children: item.failure.message
+				})]
+			}) : null;
+			/** 规则匹配到的步骤，原来的写法。 */
+			const steps = () => item.steps.length === 0 ? null : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+				className: detail_module_css_default.block,
+				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
+					className: detail_module_css_default.heading,
+					children: t("detail.steps")
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ol", {
+					className: detail_module_css_default.steps,
+					children: keyed(item.steps).map(({ key, text }) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("li", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", { children: text }) }, key))
+				})]
+			});
+			/** 摘要里的方案：发现了什么、Skill 做什么、何时使用、将要新建或改进哪个 Skill 与提纲、风险、验证方式。 */
+			const plan = () => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("dl", {
+				className: detail_module_css_default.summary,
 				children: [
-					reviewPanel(),
-					item.reason !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
-						className: detail_module_css_default.why,
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
-							className: detail_module_css_default.heading,
-							children: t("detail.why")
-						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: item.reason })]
-					}),
-					item.cautions.length > 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						className: detail_module_css_default.caution,
-						role: "note",
-						children: t("detail.cautions", { list: item.cautions.map((caution) => {
-							const key = `caution.${caution}`;
-							return isCaution(key) ? t(key) : caution;
-						}).join(", ") })
-					}),
-					value?.episodes.map((episode) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Episode, {
-						episode,
-						now,
-						openSession,
-						t
-					}, episode.episodeId))
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("detail.found") }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: item.found }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("detail.description") }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: item.description }),
+					item.trigger !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("detail.trigger") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: item.trigger })] }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("detail.plan") }),
+					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("dd", { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
+						className: detail_module_css_default.planTarget,
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: t(create ? "detail.plan.create" : "detail.plan.improve") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", { children: skillName })]
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ol", {
+						className: detail_module_css_default.outline,
+						children: keyed(item.outline).map(({ key, text }) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("li", { children: text }, key))
+					})] }),
+					item.risks.length > 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("detail.risks") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("ul", {
+						className: detail_module_css_default.risks,
+						children: keyed(item.risks).map(({ key, text }) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("li", { children: text }, key))
+					}) })] }),
+					item.verification !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("detail.verification") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: item.verification })] })
 				]
 			});
-			const skill = () => {
-				if (create && draft !== null) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+			const summaryTab = () => {
+				if (item.state === "summarizing") return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					className: detail_module_css_default.stack,
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Working, {
+						label: t("detail.summarizing", { model: models.summary ?? "" }),
+						bars: SUMMARY_BARS
+					}), steps()]
+				});
+				if (proposal) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					className: detail_module_css_default.stack,
+					children: [plan(), awaitingConsent && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: detail_module_css_default.callout,
+						children: [failure("draft"), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+							className: detail_module_css_default.note,
+							children: models.draft === null ? t("detail.noDraftModel") : t("detail.consent", { model: models.draft })
+						})]
+					})]
+				});
+				if (item.decision === "skip") return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: detail_module_css_default.stack,
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: detail_module_css_default.toolbar,
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
+						className: detail_module_css_default.callout,
+						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("detail.skipped") }), item.reason !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+							className: detail_module_css_default.note,
+							children: item.reason
+						})]
+					}), steps()]
+				});
+				return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					className: detail_module_css_default.stack,
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+						className: detail_module_css_default.callout,
+						children: [
+							failure("summary"),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", { children: t("detail.local") }),
+							item.state !== "written" && item.state !== "dismissed" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+								className: detail_module_css_default.note,
+								children: models.summary === null ? t("detail.noSummaryModel") : t("detail.summaryNote", {
+									count: item.sessions.length,
+									model: models.summary
+								})
+							})
+						]
+					}), steps()]
+				});
+			};
+			const evidence = () => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				className: detail_module_css_default.stack,
+				children: value?.episodes.map((episode) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Episode, {
+					episode,
+					now,
+					openSession,
+					t
+				}, episode.episodeId))
+			});
+			const cautions = () => item.cautions.length === 0 ? null : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+				className: detail_module_css_default.caution,
+				role: "note",
+				children: t("detail.cautions", { list: item.cautions.map((caution) => {
+					const key = `caution.${caution}`;
+					return isCaution(key) ? t(key) : caution;
+				}).join(", ") })
+			});
+			/** 草稿页签的工具栏：编辑、还原，以及按同一份摘要重新生成。 */
+			const toolbar = (lead) => /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+				className: detail_module_css_default.toolbar,
+				children: [lead, /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+					className: detail_module_css_default.toolbarActions,
+					children: [
+						item.state === "ready" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
+							size: "sm",
+							variant: "ghost",
+							disabled: busy !== null,
+							onClick: generate,
+							children: t("detail.redraft")
+						}),
+						(create ? fields : section) !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
+							size: "sm",
+							variant: "ghost",
+							onClick: () => create ? setFields(null) : setSection(null),
+							children: t("skill.reset")
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
 							size: "sm",
 							variant: "ghost",
 							onClick: () => setEditing(!editing),
 							disabled: item.state !== "ready",
 							children: editing ? t("skill.preview") : t("skill.edit")
-						}), fields !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-							size: "sm",
-							variant: "ghost",
-							onClick: () => setFields(null),
-							children: t("skill.reset")
-						})]
-					}), editing ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(FieldsEditor, {
-						fields: draft,
-						onChange: setFields,
-						t
-					}), invalid && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
-						className: detail_module_css_default.failure,
-						role: "alert",
-						children: t("skill.invalid")
-					})] }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("dl", {
-						className: detail_module_css_default.facts,
-						children: [
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("skill.name") }),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", { children: draft.name }) }),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("skill.description") }),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: draft.description }),
-							draft.whenToUse !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("skill.whenToUse") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: draft.whenToUse })] })
-						]
-					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						className: detail_module_css_default.markdown,
-						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.MarkdownText, {
-							text: draft.body,
-							labels: labels.markdown
 						})
-					})] })]
+					]
+				})]
+			});
+			const skill = () => {
+				if (item.state === "drafting") return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Working, {
+					label: t("detail.drafting", { model: models.draft ?? "" }),
+					bars: DRAFT_BARS
+				});
+				if (create && draft !== null) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					className: detail_module_css_default.stack,
+					children: [
+						cautions(),
+						toolbar(/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {})),
+						editing ? /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(FieldsEditor, {
+							fields: draft,
+							onChange: setFields,
+							t
+						}), invalid && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
+							className: detail_module_css_default.failure,
+							role: "alert",
+							children: t("skill.invalid")
+						})] }) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("dl", {
+							className: detail_module_css_default.facts,
+							children: [
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("skill.name") }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("code", { children: draft.name }) }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("skill.description") }),
+								/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: draft.description }),
+								draft.whenToUse !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("dt", { children: t("skill.whenToUse") }), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("dd", { children: draft.whenToUse })] })
+							]
+						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+							className: detail_module_css_default.markdown,
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.MarkdownText, {
+								text: draft.body,
+								labels: labels.markdown
+							})
+						})] })
+					]
 				});
 				if (improve && shownSection !== null) {
 					const notWritable = preview?.status === "ready" && preview.value.kind === "improve" && !preview.value.writable;
@@ -1571,19 +1794,11 @@ window.__ModuleLoader__.load({
 								className: detail_module_css_default.caution,
 								children: t("skill.notWritable", { skill: skillName })
 							}),
-							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-								className: detail_module_css_default.toolbar,
-								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-									className: detail_module_css_default.heading,
-									children: t("skill.section", { skill: skillName })
-								}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-									size: "sm",
-									variant: "ghost",
-									onClick: () => setEditing(!editing),
-									disabled: item.state !== "ready",
-									children: editing ? t("skill.preview") : t("skill.edit")
-								})]
-							}),
+							cautions(),
+							toolbar(/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: detail_module_css_default.heading,
+								children: t("skill.section", { skill: skillName })
+							})),
 							editing ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)("textarea", {
 								className: `${detail_module_css_default.input} ${detail_module_css_default.mono}`,
 								"aria-label": t("skill.section", { skill: skillName }),
@@ -1634,6 +1849,56 @@ window.__ModuleLoader__.load({
 					})]
 				});
 			};
+			/** 右侧的主操作：随阶段从生成摘要、同意生成草稿到保存。 */
+			const primary = () => {
+				if (item.state === "summarizing" || item.state === "drafting") return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
+					size: "sm",
+					variant: "primary",
+					disabled: true,
+					children: stateLabel(t, item)
+				});
+				if (awaitingConsent) return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
+					size: "sm",
+					variant: "primary",
+					"data-autofocus": "",
+					disabled: models.draft === null || busy !== null,
+					onClick: generate,
+					children: draftFailed ? t("detail.redraft") : create ? t("detail.draft.create") : t("detail.draft.improve")
+				});
+				if (item.state === "ready") {
+					const writable = !(preview?.status === "ready" && preview.value.kind === "improve" && !preview.value.writable);
+					return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [create && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.SegmentedControl, {
+						id: `${tabsId}-scope`,
+						label: t("scope.label"),
+						value: scope,
+						disabled: busy !== null,
+						options: [{
+							value: "project",
+							label: t("scope.project")
+						}, {
+							value: "user",
+							label: t("scope.user")
+						}],
+						onChange: setScope
+					}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
+						size: "sm",
+						variant: "primary",
+						"data-autofocus": "",
+						disabled: busy !== null || invalid || !writable,
+						onClick: () => void save(),
+						children: busy === "save" ? t("action.saving") : create ? t("action.save") : t("action.improve", { skill: skillName })
+					})] });
+				}
+				const again = item.decision === "skip" || item.failure !== null;
+				return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
+					size: "sm",
+					variant: item.decision === "skip" ? "outline" : "primary",
+					"data-autofocus": "",
+					disabled: models.summary === null || busy !== null,
+					onClick: summarize,
+					children: again ? t("detail.resummarize") : t("detail.summarize")
+				});
+			};
 			const footer = () => {
 				if (item.state === "written" && item.write !== null) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("p", {
@@ -1681,7 +1946,6 @@ window.__ModuleLoader__.load({
 					}),
 					children: t("action.restore")
 				})] });
-				const writable = !(preview?.status === "ready" && preview.value.kind === "improve" && !preview.value.writable);
 				return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
 						size: "sm",
@@ -1698,28 +1962,7 @@ window.__ModuleLoader__.load({
 						children: t("action.dismissSimilar")
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { className: detail_module_css_default.spacer }),
-					item.state === "ready" && create && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.SegmentedControl, {
-						id: `${tabsId}-scope`,
-						label: t("scope.label"),
-						value: scope,
-						disabled: busy !== null,
-						options: [{
-							value: "project",
-							label: t("scope.project")
-						}, {
-							value: "user",
-							label: t("scope.user")
-						}],
-						onChange: setScope
-					}),
-					item.state === "ready" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
-						size: "sm",
-						variant: "primary",
-						"data-autofocus": "",
-						disabled: busy !== null || invalid || !writable,
-						onClick: () => void save(),
-						children: busy === "save" ? t("action.saving") : create ? t("action.save") : t("action.improve", { skill: skillName })
-					})
+					primary()
 				] });
 			};
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Dialog, {
@@ -1751,20 +1994,21 @@ window.__ModuleLoader__.load({
 							})
 						]
 					}),
-					value !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [tabs.length > 1 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+					value !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 						className: detail_module_css_default.tabs,
 						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.SegmentedControl, {
 							id: tabsId,
 							label: t("detail.tabs"),
 							value: activeTab,
 							options: tabs,
-							onChange: setTab
+							onChange: setChosenTab
 						})
 					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: detail_module_css_default.panel,
-						role: tabs.length > 1 ? "tabpanel" : void 0,
-						"aria-labelledby": tabs.length > 1 ? `${tabsId}-${activeTab}` : void 0,
+						role: "tabpanel",
+						"aria-labelledby": `${tabsId}-${activeTab}`,
 						children: [
+							activeTab === "summary" && summaryTab(),
 							activeTab === "evidence" && evidence(),
 							activeTab === "skill" && skill(),
 							activeTab === "changes" && changes()
@@ -1791,7 +2035,7 @@ window.__ModuleLoader__.load({
 		}
 		//#endregion
 		//#region \0dsh-css:src/client/inbox.module.css.mjs
-		const css$1 = ".Wfa-jG_root{margin-left:4px;position:relative}.Wfa-jG_trigger{width:28px;height:28px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:0;border-radius:28px;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex;position:relative}.Wfa-jG_trigger:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:1px;color:var(--dsw-alias-label-secondary)}@media (hover:hover){.Wfa-jG_trigger:hover{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}}.Wfa-jG_trigger[aria-expanded=true]{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}.Wfa-jG_trigger svg{flex:none}.Wfa-jG_badge{box-sizing:border-box;background:var(--dsw-alias-label-secondary);min-width:14px;height:14px;color:var(--dsw-alias-bg-layer-1,var(--dsw-alias-bg-base));text-align:center;font-variant-numeric:tabular-nums;pointer-events:none;border-radius:7px;padding:0 3px;font-size:9px;font-weight:600;line-height:14px;position:absolute;top:1px;right:0}.Wfa-jG_panel{z-index:100;box-sizing:border-box;background:var(--dsw-specific-menu);width:360px;max-width:calc(100vw - 32px);max-height:min(480px,100vh - 140px);backdrop-filter:var(--dsw-menu-backdrop-filter);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);color:var(--dsw-alias-label-primary);animation:Wfa-jG_panel-in .14s var(--ds-ease-in-out,ease);border:0;border-radius:16px;flex-direction:column;padding:4px;display:flex;position:fixed}.Wfa-jG_panel:focus{outline:none}@keyframes Wfa-jG_panel-in{0%{opacity:0;transform:translateY(-2px)}to{opacity:1;transform:none}}.Wfa-jG_head{flex:none;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px 6px 12px;display:flex}.Wfa-jG_title{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px;font-weight:600;line-height:18px}.Wfa-jG_working{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}.Wfa-jG_scroll{--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2);flex-direction:column;flex:auto;gap:6px;min-height:0;display:flex;overflow-y:auto}.Wfa-jG_section{flex-direction:column;display:flex}.Wfa-jG_sectionTitle{color:var(--dsw-alias-label-tertiary);margin:0;padding:5px 12px 2px;font-size:11px;font-weight:500;line-height:16px}.Wfa-jG_list{flex-direction:column;gap:1px;margin:0;padding:0;list-style:none;display:flex}.Wfa-jG_card{border-radius:10px;align-items:flex-start;gap:4px;display:flex;position:relative}@media (hover:hover){.Wfa-jG_card:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Wfa-jG_open{min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;background:0 0;border:0;border-radius:10px;flex-direction:column;flex:1;gap:2px;padding:8px 4px 8px 12px;display:flex}.Wfa-jG_open:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-2px}.Wfa-jG_cardTitle{-webkit-line-clamp:2;overflow-wrap:anywhere;-webkit-box-orient:vertical;font-size:13px;line-height:18px;display:-webkit-box;overflow:hidden}.Wfa-jG_card[data-state=detected] .Wfa-jG_cardTitle,.Wfa-jG_card[data-state=failed] .Wfa-jG_cardTitle,.Wfa-jG_card[data-state=reviewing] .Wfa-jG_cardTitle{color:var(--dsw-alias-label-secondary)}.Wfa-jG_cardMeta{color:var(--dsw-alias-label-tertiary);flex-wrap:wrap;gap:2px 6px;font-size:11px;line-height:16px;display:flex}.Wfa-jG_state{color:var(--dsw-alias-label-secondary)}.Wfa-jG_card[data-state=failed] .Wfa-jG_state{color:var(--dsw-alias-state-warn-label)}.Wfa-jG_dismiss{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:0;background:0 0;border:0;border-radius:6px;flex:none;justify-content:center;align-items:center;margin:7px 6px 0 0;padding:0;display:inline-flex}.Wfa-jG_card:hover .Wfa-jG_dismiss,.Wfa-jG_card:focus-within .Wfa-jG_dismiss{opacity:1}.Wfa-jG_dismiss:focus-visible{opacity:1;outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-2px}@media (hover:hover){.Wfa-jG_dismiss:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}}@media (hover:none){.Wfa-jG_dismiss{opacity:1}}.Wfa-jG_historyToggle{color:var(--dsw-alias-label-tertiary);font:inherit;cursor:pointer;background:0 0;border:0;border-radius:6px;align-self:flex-start;margin:2px 0 2px 8px;padding:2px 4px;font-size:11px;line-height:16px}.Wfa-jG_historyToggle:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary)}@media (hover:hover){.Wfa-jG_historyToggle:hover{color:var(--dsw-alias-label-secondary)}}.Wfa-jG_banner{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);border-radius:10px;margin:2px 4px 4px;padding:8px 10px;font-size:12px;line-height:18px}.Wfa-jG_empty{flex-direction:column;gap:4px;padding:10px 12px 14px;display:flex}.Wfa-jG_emptyTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:13px;line-height:20px}.Wfa-jG_emptyBody{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px;line-height:18px}.Wfa-jG_caption{color:var(--dsw-alias-label-tertiary);margin:4px 0 0;padding:0 12px;font-size:11px;line-height:16px}.Wfa-jG_empty .Wfa-jG_caption{padding:0}.Wfa-jG_errorRow{color:var(--dsw-alias-state-warn-label);justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;font-size:12px;line-height:18px;display:flex}.Wfa-jG_link{color:var(--dsw-alias-state-business-primary);font:inherit;cursor:pointer;background:0 0;border:0;padding:0;font-size:12px}.Wfa-jG_link:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px;border-radius:4px}.Wfa-jG_notice{border-top:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);flex:none;justify-content:space-between;align-items:center;gap:8px;margin-top:4px;padding:8px 12px;font-size:12px;line-height:18px;display:flex}.Wfa-jG_noticeText{overflow-wrap:anywhere;min-width:0}@media (prefers-reduced-motion:reduce){.Wfa-jG_panel{animation:none}}";
+		const css$1 = ".Wfa-jG_root{margin-left:4px;position:relative}.Wfa-jG_trigger{width:28px;height:28px;color:var(--dsw-alias-label-tertiary);cursor:pointer;background:0 0;border:0;border-radius:28px;flex:none;justify-content:center;align-items:center;padding:0;display:inline-flex;position:relative}.Wfa-jG_trigger:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:1px;color:var(--dsw-alias-label-secondary)}@media (hover:hover){.Wfa-jG_trigger:hover{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}}.Wfa-jG_trigger[aria-expanded=true]{color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-interactive-bg-hover)}.Wfa-jG_trigger svg{flex:none}.Wfa-jG_badge{box-sizing:border-box;background:var(--dsw-alias-label-secondary);min-width:14px;height:14px;color:var(--dsw-alias-bg-layer-1,var(--dsw-alias-bg-base));text-align:center;font-variant-numeric:tabular-nums;pointer-events:none;border-radius:7px;padding:0 3px;font-size:9px;font-weight:600;line-height:14px;position:absolute;top:1px;right:0}.Wfa-jG_panel{z-index:100;box-sizing:border-box;background:var(--dsw-specific-menu);width:360px;max-width:calc(100vw - 32px);max-height:min(480px,100vh - 140px);backdrop-filter:var(--dsw-menu-backdrop-filter);--dsw-elevation-stroke-color:var(--dsw-alias-border-l1);box-shadow:var(--dsw-elevation-prominent);color:var(--dsw-alias-label-primary);animation:Wfa-jG_panel-in .14s var(--ds-ease-in-out,ease);border:0;border-radius:16px;flex-direction:column;padding:4px;display:flex;position:fixed}.Wfa-jG_panel:focus{outline:none}@keyframes Wfa-jG_panel-in{0%{opacity:0;transform:translateY(-2px)}to{opacity:1;transform:none}}.Wfa-jG_head{flex:none;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px 6px 12px;display:flex}.Wfa-jG_title{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px;font-weight:600;line-height:18px}.Wfa-jG_working{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px}.Wfa-jG_scroll{--dsh-scrollbar-thumb:var(--dsw-alias-scrollbar-bg-l2);--dsh-scrollbar-thumb-hover:var(--dsw-alias-scrollbar-hover-l2);flex-direction:column;flex:auto;gap:6px;min-height:0;display:flex;overflow-y:auto}.Wfa-jG_section{flex-direction:column;display:flex}.Wfa-jG_sectionTitle{color:var(--dsw-alias-label-tertiary);margin:0;padding:5px 12px 2px;font-size:11px;font-weight:500;line-height:16px}.Wfa-jG_list{flex-direction:column;gap:1px;margin:0;padding:0;list-style:none;display:flex}.Wfa-jG_card{border-radius:10px;align-items:flex-start;gap:4px;display:flex;position:relative}@media (hover:hover){.Wfa-jG_card:hover{background:var(--dsw-alias-interactive-bg-hover)}}.Wfa-jG_open{min-width:0;color:inherit;font:inherit;text-align:left;cursor:pointer;background:0 0;border:0;border-radius:10px;flex-direction:column;flex:1;gap:2px;padding:8px 4px 8px 12px;display:flex}.Wfa-jG_open:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-2px}.Wfa-jG_cardTitle{-webkit-line-clamp:2;overflow-wrap:anywhere;-webkit-box-orient:vertical;font-size:13px;line-height:18px;display:-webkit-box;overflow:hidden}.Wfa-jG_card[data-state=detected] .Wfa-jG_cardTitle,.Wfa-jG_card[data-state=summarizing] .Wfa-jG_cardTitle,.Wfa-jG_card[data-state=failed]:not([data-stage=draft]) .Wfa-jG_cardTitle{color:var(--dsw-alias-label-secondary)}.Wfa-jG_cardSummary{-webkit-line-clamp:2;color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;-webkit-box-orient:vertical;font-size:12px;line-height:17px;display:-webkit-box;overflow:hidden}.Wfa-jG_cardMeta{color:var(--dsw-alias-label-tertiary);flex-wrap:wrap;gap:2px 6px;font-size:11px;line-height:16px;display:flex}.Wfa-jG_state{color:var(--dsw-alias-label-secondary)}.Wfa-jG_card[data-state=failed] .Wfa-jG_state{color:var(--dsw-alias-state-warn-label)}.Wfa-jG_dismiss{width:22px;height:22px;color:var(--dsw-alias-label-tertiary);cursor:pointer;opacity:0;background:0 0;border:0;border-radius:6px;flex:none;justify-content:center;align-items:center;margin:7px 6px 0 0;padding:0;display:inline-flex}.Wfa-jG_card:hover .Wfa-jG_dismiss,.Wfa-jG_card:focus-within .Wfa-jG_dismiss{opacity:1}.Wfa-jG_dismiss:focus-visible{opacity:1;outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:-2px}@media (hover:hover){.Wfa-jG_dismiss:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover)}}@media (hover:none){.Wfa-jG_dismiss{opacity:1}}.Wfa-jG_historyToggle{color:var(--dsw-alias-label-tertiary);font:inherit;cursor:pointer;background:0 0;border:0;border-radius:6px;align-self:flex-start;margin:2px 0 2px 8px;padding:2px 4px;font-size:11px;line-height:16px}.Wfa-jG_historyToggle:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary)}@media (hover:hover){.Wfa-jG_historyToggle:hover{color:var(--dsw-alias-label-secondary)}}.Wfa-jG_banner{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);border-radius:10px;margin:2px 4px 4px;padding:8px 10px;font-size:12px;line-height:18px}.Wfa-jG_empty{flex-direction:column;gap:4px;padding:10px 12px 14px;display:flex}.Wfa-jG_emptyTitle{color:var(--dsw-alias-label-primary);margin:0;font-size:13px;line-height:20px}.Wfa-jG_emptyBody{color:var(--dsw-alias-label-secondary);margin:0;font-size:12px;line-height:18px}.Wfa-jG_caption{color:var(--dsw-alias-label-tertiary);margin:4px 0 0;padding:0 12px;font-size:11px;line-height:16px}.Wfa-jG_empty .Wfa-jG_caption{padding:0}.Wfa-jG_errorRow{color:var(--dsw-alias-state-warn-label);justify-content:space-between;align-items:center;gap:8px;padding:8px 12px;font-size:12px;line-height:18px;display:flex}.Wfa-jG_link{color:var(--dsw-alias-state-business-primary);font:inherit;cursor:pointer;background:0 0;border:0;padding:0;font-size:12px}.Wfa-jG_link:focus-visible{outline:2px solid var(--dsw-alias-state-business-primary);outline-offset:2px;border-radius:4px}.Wfa-jG_notice{border-top:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-secondary);flex:none;justify-content:space-between;align-items:center;gap:8px;margin-top:4px;padding:8px 12px;font-size:12px;line-height:18px;display:flex}.Wfa-jG_noticeText{overflow-wrap:anywhere;min-width:0}@media (prefers-reduced-motion:reduce){.Wfa-jG_panel{animation:none}}";
 		const tag$1 = "@agent-stash/dsh-skill-scout/inbox.module.css";
 		if (document.querySelector(`style[data-plugin-css=${JSON.stringify(tag$1)}]`) === null) {
 			const style = document.createElement("style");
@@ -1806,6 +2050,7 @@ window.__ModuleLoader__.load({
 			"caption": "Wfa-jG_caption",
 			"card": "Wfa-jG_card",
 			"cardMeta": "Wfa-jG_cardMeta",
+			"cardSummary": "Wfa-jG_cardSummary",
 			"cardTitle": "Wfa-jG_cardTitle",
 			"dismiss": "Wfa-jG_dismiss",
 			"empty": "Wfa-jG_empty",
@@ -1835,7 +2080,7 @@ window.__ModuleLoader__.load({
 		/**
 		* 会话标题栏里的经验提炼入口：一个图标按钮，有新建议时带一个小计数；点开是收件箱浮层，
 		* 点卡片打开详情对话框。入口在第一次读取完成前不渲染，避免标题栏闪动。
-		* 计数只算打开收件箱之后出现的可保存建议，看过即清零。
+		* 计数只算打开收件箱之后出现的、等用户决定的摘要与草稿，看过即清零；详情里正打开的那条在眼前，不计入。
 		*/
 		const SEEN_KEY = "agent-stash-skill-scout:seen";
 		const SeenSchema = /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ parseJson(), /* @__PURE__ */ array(/* @__PURE__ */ string()));
@@ -1869,32 +2114,45 @@ window.__ModuleLoader__.load({
 			left: 0,
 			top: 0
 		};
-		/** 新建议数：可保存且还没看过。 */
-		function unseen(inbox, seen) {
-			if (inbox === null) return 0;
-			return inbox.items.filter((item) => item.state === "ready" && !seen.has(item.id)).length;
+		/** 等用户决定的摘要与草稿。 */
+		function awaiting(inbox) {
+			return (inbox?.items ?? []).filter((item) => item.state === "proposed" || item.state === "ready").map((item) => item.id);
+		}
+		/** 新建议数：等用户决定、还没看过，也不是详情里正打开的那条。 */
+		function unseen(inbox, seen, viewing) {
+			return awaiting(inbox).filter((id) => id !== viewing && !seen.has(id)).length;
 		}
 		function Card({ item, now, t, onOpen, onDismiss }) {
 			const title = titleOf(item);
-			const showState = item.state !== "ready";
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
 				className: inbox_module_css_default.card,
 				"data-state": item.state,
+				"data-stage": item.failure?.stage,
 				children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("button", {
 					type: "button",
 					className: inbox_module_css_default.open,
 					"data-item": item.id,
 					onClick: () => onOpen(item.id),
-					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-						className: inbox_module_css_default.cardTitle,
-						children: title
-					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-						className: inbox_module_css_default.cardMeta,
-						children: [showState && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-							className: inbox_module_css_default.state,
-							children: t(`state.${item.state}`)
-						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: metaOf(t, item, now) })]
-					})]
+					children: [
+						/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: inbox_module_css_default.cardTitle,
+							children: title
+						}),
+						item.description !== null && item.state !== "written" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: inbox_module_css_default.cardSummary,
+							children: item.description
+						}),
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+							className: inbox_module_css_default.cardMeta,
+							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+								className: inbox_module_css_default.state,
+								children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.TextShimmer, {
+									active: inFlight(item),
+									children: stateLabel(t, item)
+								})
+							}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", { children: metaOf(t, item, now) })]
+						})
+					]
 				}), onDismiss !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
 					type: "button",
 					className: inbox_module_css_default.dismiss,
@@ -1910,7 +2168,7 @@ window.__ModuleLoader__.load({
 			const pending = inbox.items.some((item) => item.state === "detected" || item.state === "failed");
 			let key = null;
 			if (!status.discovery) key = "banner.discoveryOff";
-			else if (status.model === null && pending) key = "banner.noModel";
+			else if (status.models.summary === null && pending) key = "banner.noModel";
 			else if (!status.lead) key = "banner.secondary";
 			if (key === null) return null;
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
@@ -1921,7 +2179,7 @@ window.__ModuleLoader__.load({
 		function PanelBody({ inbox, now, t, onOpen, onDismiss }) {
 			const [history, setHistory] = (0, react.useState)(false);
 			const groups = groupItems(inbox.items);
-			if (groups.ready.length === 0 && groups.found.length === 0 && groups.history.length === 0) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+			if (groups.review.length === 0 && groups.found.length === 0 && groups.history.length === 0) return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: inbox_module_css_default.empty,
 				children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Banner, {
@@ -1955,7 +2213,7 @@ window.__ModuleLoader__.load({
 						now,
 						t,
 						onOpen,
-						onDismiss: item.state === "reviewing" ? void 0 : onDismiss
+						onDismiss: inFlight(item) ? void 0 : onDismiss
 					}, item.id))
 				})]
 			});
@@ -1964,7 +2222,7 @@ window.__ModuleLoader__.load({
 					inbox,
 					t
 				}),
-				section("section.ready", groups.ready),
+				section("section.review", groups.review),
 				section("section.found", groups.found),
 				groups.history.length > 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
 					className: inbox_module_css_default.section,
@@ -2017,23 +2275,24 @@ window.__ModuleLoader__.load({
 				position
 			]);
 			(0, react.useEffect)(() => {
-				if (!open || state.inbox === null) return;
-				const ready = state.inbox.items.filter((item) => item.state === "ready").map((item) => item.id);
-				if (ready.some((id) => !seen.has(id))) seen.add(ready);
+				if (state.inbox === null) return;
+				const ids = awaiting(state.inbox).filter((id) => open || id === detailId);
+				if (ids.some((id) => !seen.has(id))) seen.add(ids);
 			}, [
 				open,
+				detailId,
 				state.inbox,
 				seen
 			]);
 			if (state.inbox === null && state.status !== "error") return null;
-			const fresh = unseen(state.inbox, seen);
+			const fresh = unseen(state.inbox, seen, detailId);
 			const badge = state.inbox?.status.notify === "badge" && fresh > 0;
 			const label = fresh === 0 ? t("entry.label") : t(fresh === 1 ? "entry.count.one" : "entry.count.other", { count: fresh });
-			const working = state.inbox !== null && (state.inbox.status.scanning || state.inbox.status.reviewing !== null);
-			/** 打开收件箱：刷新状态，并把当前的可保存建议记为看过。 */
+			const asking = (state.inbox?.status.working ?? 0) > 0;
+			const working = asking || state.inbox?.status.scanning === true;
+			/** 打开收件箱：刷新状态，并把当前的待决定建议记为看过。 */
 			const show = () => {
-				const ready = state.inbox?.items.filter((item) => item.state === "ready").map((item) => item.id) ?? [];
-				seen.add(ready);
+				seen.add(awaiting(state.inbox));
 				setSeenVersion((version) => version + 1);
 				setNow(Date.now());
 				setOpen(true);
@@ -2092,7 +2351,10 @@ window.__ModuleLoader__.load({
 						}), working && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: inbox_module_css_default.working,
 							role: "status",
-							children: state.inbox?.status.reviewing === null ? t("panel.analyzing") : t("panel.reviewing")
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.TextShimmer, {
+								active: true,
+								children: asking ? t("panel.working") : t("panel.analyzing")
+							})
 						})]
 					}),
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
@@ -2167,7 +2429,10 @@ window.__ModuleLoader__.load({
 						item: detailItem,
 						inbox,
 						loadDetail,
-						modelName: state.inbox?.status.model?.model ?? null,
+						models: {
+							summary: state.inbox?.status.models.summary?.model ?? null,
+							draft: state.inbox?.status.models.draft?.model ?? null
+						},
 						defaultScope: state.inbox?.status.scope ?? "project",
 						openSession,
 						t,
@@ -2187,19 +2452,18 @@ window.__ModuleLoader__.load({
 				"entry.count.other": "Skill suggestions, {count} new",
 				"panel.title": "Skill suggestions",
 				"panel.analyzing": "Analyzing sessions",
-				"panel.reviewing": "Reviewing",
+				"panel.working": "Asking the model",
 				"panel.loading": "Loading",
 				"panel.error": "Could not load suggestions.",
 				"panel.retry": "Retry",
 				"panel.empty.title": "No suggestions",
 				"panel.empty.body": "A suggestion appears when a workflow repeats across sessions or a fix passes a check.",
 				"panel.analyzed": "{sessions} sessions analyzed",
-				"section.ready": "Ready to save",
+				"section.review": "Needs your decision",
 				"section.found": "Found locally",
 				"history.show": "History ({count})",
 				"history.hide": "Hide history",
-				"banner.noModel": "No review model is available. Choose one in Skill Scout settings.",
-				"banner.reviewOff": "Background review is off. Open a finding to review it.",
+				"banner.noModel": "No discovery model is available. Choose one in Skill Scout settings.",
 				"banner.discoveryOff": "Session analysis is off.",
 				"banner.secondary": "Another DSH window is analyzing sessions.",
 				"notice.dismissed": "Dismissed",
@@ -2213,11 +2477,14 @@ window.__ModuleLoader__.load({
 				"kind.complex": "Long verified task",
 				"meta.sessions.one": "{count} session",
 				"meta.sessions.other": "{count} sessions",
-				"state.detected": "Not reviewed",
-				"state.reviewing": "Reviewing",
-				"state.ready": "Ready",
+				"state.detected": "No summary yet",
+				"state.summarizing": "Summarizing",
+				"state.proposed": "Summary ready",
 				"state.skipped": "Not worth saving",
-				"state.failed": "Review failed",
+				"state.drafting": "Drafting",
+				"state.ready": "Draft ready",
+				"state.failed": "Summary failed",
+				"state.draftFailed": "Draft failed",
 				"state.dismissed": "Dismissed",
 				"state.written": "Saved",
 				"time.now": "just now",
@@ -2225,6 +2492,7 @@ window.__ModuleLoader__.load({
 				"time.hours": "{count} h ago",
 				"time.days": "{count} d ago",
 				"detail.close": "Close",
+				"detail.tab.summary": "Summary",
 				"detail.tab.evidence": "Evidence",
 				"detail.tab.skill": "Skill",
 				"detail.tab.changes": "Changes",
@@ -2232,15 +2500,32 @@ window.__ModuleLoader__.load({
 				"detail.why": "Why",
 				"detail.loading": "Loading the evidence",
 				"detail.error": "Could not load this suggestion.",
-				"detail.reviewedBy": "Reviewed by {model}",
-				"detail.local": "Found by local rules from tool results. Not reviewed yet.",
-				"detail.reviewNote": "Review sends a redacted summary of {count} tasks to {model}: requests, commands, exit codes, and one error line per failed command.",
-				"detail.review": "Review with model",
-				"detail.reviewing": "Reviewing with {model}",
-				"detail.noModel": "No review model is available.",
-				"detail.skipped": "The review found nothing worth saving.",
-				"detail.failed": "Review failed: {kind}",
-				"detail.retry": "Review again",
+				"detail.summarizedBy": "Summary by {model}",
+				"detail.draftedBy": "Draft by {model}",
+				"detail.local": "Local rules found this in tool results. No model has read it yet.",
+				"detail.steps": "Steps the rules matched",
+				"detail.summaryNote": "A summary sends redacted evidence from {count} tasks to {model}: requests, messages during the task, commands, exit codes, and one error line per failed command. It returns a few lines, not a Skill.",
+				"detail.summarize": "Summarize",
+				"detail.resummarize": "Summarize again",
+				"detail.summarizing": "{model} is writing the summary",
+				"detail.noSummaryModel": "No discovery model is available.",
+				"detail.found": "Found",
+				"detail.description": "Purpose",
+				"detail.trigger": "When to use",
+				"detail.plan": "Plan",
+				"detail.risks": "Risks",
+				"detail.verification": "Verify",
+				"detail.plan.create": "Create",
+				"detail.plan.improve": "Add to",
+				"detail.consent": "Drafting sends the same evidence and this plan to {model}, which writes the Skill. You review and edit it before anything is saved.",
+				"detail.noDraftModel": "No drafting model is available.",
+				"detail.draft.create": "Draft Skill",
+				"detail.draft.improve": "Draft addition",
+				"detail.redraft": "Draft again",
+				"detail.drafting": "{model} is drafting the Skill",
+				"detail.skipped": "The summary found nothing worth saving.",
+				"detail.failed.summary": "Summary failed: {kind}",
+				"detail.failed.draft": "Drafting failed: {kind}",
 				"detail.openSession": "Open session",
 				"detail.cautions": "Check before saving: {list}",
 				"failure.timeout": "timed out",
@@ -2262,6 +2547,7 @@ window.__ModuleLoader__.load({
 				"evidence.reads.one": "{count} read not shown",
 				"evidence.reads.other": "{count} reads not shown",
 				"evidence.exit": "exit {code}",
+				"evidence.steering": "During the task",
 				"evidence.followup": "Next message",
 				"evidence.list": "Operations in task {ref}",
 				"caution.sudo": "uses sudo",
@@ -2299,8 +2585,8 @@ window.__ModuleLoader__.load({
 				"written.missing": "DSH does not list the Skill yet. Check the file.",
 				"error.invalid": "This action does not apply to the suggestion in its current state.",
 				"error.missing": "The suggestion no longer exists.",
-				"error.busy": "Another review is running. Try again when it finishes.",
-				"error.no-model": "No review model is available.",
+				"error.busy": "This suggestion is already with the model.",
+				"error.no-model": "No model is available for this step.",
 				"error.exists": "A Skill file already exists at that path.",
 				"error.changed": "The file changed after the preview. Nothing was written.",
 				"error.outside": "The target is outside the project and user Skill folders.",
@@ -2322,16 +2608,19 @@ window.__ModuleLoader__.load({
 				"settings.save": "Save",
 				"settings.saving": "Saving",
 				"settings.section.discovery": "Discovery",
-				"settings.section.review": "Model review",
+				"settings.section.summary": "Summaries",
+				"settings.section.draft": "Drafting",
 				"settings.section.limits": "Limits",
 				"settings.section.privacy": "Privacy",
 				"settings.section.inbox": "Inbox",
 				"settings.discovery": "Analyze finished sessions",
 				"settings.discoveryHint": "Runs on this machine and reads only the session logs DSH already keeps.",
-				"settings.review": "Review in the background",
-				"settings.reviewHint": "Sends redacted evidence of strong findings to the review model. When off, a review runs only when you ask for one.",
-				"settings.model": "Review model",
-				"settings.modelHint": "The default follows the Agent's default model.",
+				"settings.summarize": "Summarize in the background",
+				"settings.summarizeHint": "Sends redacted evidence of strong findings to the discovery model for a short summary. A Skill is drafted only after you approve its summary.",
+				"settings.summaryModel": "Discovery model",
+				"settings.summaryModelHint": "Writes the summaries; a small, fast model is enough. The default follows the Agent's default model.",
+				"settings.draftModel": "Drafting model",
+				"settings.draftModelHint": "Writes the Skill after you approve a summary. The default follows the Agent's default model.",
 				"settings.modelDefault": "Default ({model})",
 				"settings.modelDefaultUnknown": "Default model",
 				"settings.modelLoading": "Loading models",
@@ -2340,12 +2629,14 @@ window.__ModuleLoader__.load({
 				"settings.effort": "Reasoning effort",
 				"settings.effortHint": "Lower effort is cheaper and faster.",
 				"settings.effortDefault": "Model default",
-				"settings.timeout": "Timeout",
-				"settings.timeoutHint": "Seconds before a review is abandoned.",
-				"settings.dailyReviews": "Reviews per day",
-				"settings.dailyReviewsHint": "Background reviews allowed each day.",
-				"settings.reviewInterval": "Review interval",
-				"settings.reviewIntervalHint": "Minutes between background reviews.",
+				"settings.summaryTimeout": "Timeout",
+				"settings.summaryTimeoutHint": "Seconds before a summary is abandoned.",
+				"settings.draftTimeout": "Timeout",
+				"settings.draftTimeoutHint": "Seconds before a draft is abandoned.",
+				"settings.dailySummaries": "Summaries per day",
+				"settings.dailySummariesHint": "Background summaries allowed each day. Your own requests do not count.",
+				"settings.summaryInterval": "Summary interval",
+				"settings.summaryIntervalHint": "Minutes between background summaries.",
 				"settings.quietPeriod": "Quiet period",
 				"settings.quietPeriodHint": "Minutes a session stays idle before it is analyzed.",
 				"settings.historyDays": "History",
@@ -2355,7 +2646,7 @@ window.__ModuleLoader__.load({
 				"settings.minOccurrences": "Repeats needed",
 				"settings.minOccurrencesHint": "Independent sessions before a repeated workflow counts.",
 				"settings.evidenceBudget": "Evidence budget",
-				"settings.evidenceBudgetHint": "Characters of evidence sent with one review.",
+				"settings.evidenceBudgetHint": "Characters of evidence sent with one request.",
 				"settings.readOutput": "Include error lines",
 				"settings.readOutputHint": "Keep one redacted line from each failed command as evidence.",
 				"settings.redactPatterns": "Extra redaction",
@@ -2367,13 +2658,14 @@ window.__ModuleLoader__.load({
 				"settings.notify.quiet": "Icon only",
 				"settings.scope": "New Skills go to",
 				"settings.scopeHint": "Project: .agents/skills in the repository. User: ~/.agents/skills.",
-				"settings.prompt": "Review guidance",
-				"settings.promptHint": "Replaces the built-in guidance. The reply format is always added.",
+				"settings.prompt": "Summary guidance",
+				"settings.promptHint": "Replaces the built-in guidance for deciding what is worth saving. The reply format is always added.",
 				"settings.promptPlaceholder": "Built-in guidance",
 				"unit.seconds": "s",
 				"unit.minutes": "min",
 				"unit.days": "days",
 				"unit.sessions": "sessions",
+				"unit.requests": "requests",
 				"unit.characters": "chars"
 			},
 			zh: {
@@ -2382,19 +2674,18 @@ window.__ModuleLoader__.load({
 				"entry.count.other": "Skill 建议，{count} 条新建议",
 				"panel.title": "Skill 建议",
 				"panel.analyzing": "正在分析会话",
-				"panel.reviewing": "正在复核",
+				"panel.working": "正在请求模型",
 				"panel.loading": "正在加载",
 				"panel.error": "无法加载建议。",
 				"panel.retry": "重试",
 				"panel.empty.title": "暂无建议",
 				"panel.empty.body": "同一流程在多个会话里重复出现，或某次修复经检查命令验证后，这里会出现建议。",
 				"panel.analyzed": "已分析 {sessions} 个会话",
-				"section.ready": "可以保存",
+				"section.review": "待你决定",
 				"section.found": "本地发现",
 				"history.show": "历史（{count}）",
 				"history.hide": "收起历史",
-				"banner.noModel": "没有可用的复核模型，请在经验提炼的设置里选择。",
-				"banner.reviewOff": "后台复核已关闭，打开一条发现即可手动复核。",
+				"banner.noModel": "没有可用的发现模型，请在经验提炼的设置里选择。",
 				"banner.discoveryOff": "会话分析已关闭。",
 				"banner.secondary": "另一个 DSH 窗口正在分析会话。",
 				"notice.dismissed": "已忽略",
@@ -2408,11 +2699,14 @@ window.__ModuleLoader__.load({
 				"kind.complex": "经验证的长任务",
 				"meta.sessions.one": "{count} 个会话",
 				"meta.sessions.other": "{count} 个会话",
-				"state.detected": "未复核",
-				"state.reviewing": "复核中",
-				"state.ready": "可以保存",
+				"state.detected": "尚未摘要",
+				"state.summarizing": "正在摘要",
+				"state.proposed": "摘要待确认",
 				"state.skipped": "不值得保存",
-				"state.failed": "复核失败",
+				"state.drafting": "正在生成",
+				"state.ready": "草稿待保存",
+				"state.failed": "摘要失败",
+				"state.draftFailed": "生成失败",
 				"state.dismissed": "已忽略",
 				"state.written": "已保存",
 				"time.now": "刚刚",
@@ -2420,6 +2714,7 @@ window.__ModuleLoader__.load({
 				"time.hours": "{count} 小时前",
 				"time.days": "{count} 天前",
 				"detail.close": "关闭",
+				"detail.tab.summary": "摘要",
 				"detail.tab.evidence": "证据",
 				"detail.tab.skill": "Skill",
 				"detail.tab.changes": "改动",
@@ -2427,15 +2722,32 @@ window.__ModuleLoader__.load({
 				"detail.why": "理由",
 				"detail.loading": "正在加载证据",
 				"detail.error": "无法加载这条建议。",
-				"detail.reviewedBy": "由 {model} 复核",
-				"detail.local": "由本地规则依据工具结果发现，尚未复核。",
-				"detail.reviewNote": "复核会把 {count} 个任务的脱敏摘要发给 {model}：用户请求、命令、退出码，以及每条失败命令的一行错误输出。",
-				"detail.review": "用模型复核",
-				"detail.reviewing": "{model} 正在复核",
-				"detail.noModel": "没有可用的复核模型。",
-				"detail.skipped": "复核认为没有值得保存的内容。",
-				"detail.failed": "复核失败：{kind}",
-				"detail.retry": "重新复核",
+				"detail.summarizedBy": "摘要：{model}",
+				"detail.draftedBy": "草稿：{model}",
+				"detail.local": "由本地规则依据工具结果发现，还没有发给任何模型。",
+				"detail.steps": "规则匹配到的步骤",
+				"detail.summaryNote": "生成摘要会把 {count} 个任务的脱敏证据发给 {model}：用户请求、任务中的插话、命令、退出码，以及每条失败命令的一行错误输出。模型只返回几行摘要，不写 Skill。",
+				"detail.summarize": "生成摘要",
+				"detail.resummarize": "重新摘要",
+				"detail.summarizing": "{model} 正在写摘要",
+				"detail.noSummaryModel": "没有可用的发现模型。",
+				"detail.found": "发现",
+				"detail.description": "用途",
+				"detail.trigger": "何时使用",
+				"detail.plan": "将要做",
+				"detail.risks": "风险",
+				"detail.verification": "验证方式",
+				"detail.plan.create": "新建",
+				"detail.plan.improve": "追加到",
+				"detail.consent": "生成草稿会把同样的证据和这份计划发给 {model}，由它写出 Skill。保存之前你可以审阅和修改。",
+				"detail.noDraftModel": "没有可用的生成模型。",
+				"detail.draft.create": "生成 Skill 草稿",
+				"detail.draft.improve": "生成追加内容",
+				"detail.redraft": "重新生成",
+				"detail.drafting": "{model} 正在生成 Skill",
+				"detail.skipped": "摘要认为没有值得保存的内容。",
+				"detail.failed.summary": "摘要失败：{kind}",
+				"detail.failed.draft": "生成草稿失败：{kind}",
 				"detail.openSession": "打开会话",
 				"detail.cautions": "保存前请确认：{list}",
 				"failure.timeout": "超时",
@@ -2457,6 +2769,7 @@ window.__ModuleLoader__.load({
 				"evidence.reads.one": "另有 {count} 次读取未列出",
 				"evidence.reads.other": "另有 {count} 次读取未列出",
 				"evidence.exit": "退出码 {code}",
+				"evidence.steering": "任务中插话",
 				"evidence.followup": "下一条消息",
 				"evidence.list": "任务 {ref} 的操作",
 				"caution.sudo": "使用 sudo",
@@ -2494,8 +2807,8 @@ window.__ModuleLoader__.load({
 				"written.missing": "DSH 还没有列出这个 Skill，请检查文件。",
 				"error.invalid": "这条建议当前的状态不支持这个操作。",
 				"error.missing": "这条建议已不存在。",
-				"error.busy": "另一条建议正在复核，完成后再试。",
-				"error.no-model": "没有可用的复核模型。",
+				"error.busy": "这条建议正在等模型回复。",
+				"error.no-model": "这一步没有可用的模型。",
 				"error.exists": "这个路径已经有 Skill 文件。",
 				"error.changed": "预览之后文件被改过，没有写入任何内容。",
 				"error.outside": "目标不在项目或用户的 Skill 目录里。",
@@ -2517,16 +2830,19 @@ window.__ModuleLoader__.load({
 				"settings.save": "保存",
 				"settings.saving": "正在保存",
 				"settings.section.discovery": "发现",
-				"settings.section.review": "模型复核",
+				"settings.section.summary": "摘要",
+				"settings.section.draft": "生成 Skill",
 				"settings.section.limits": "限额",
 				"settings.section.privacy": "隐私",
 				"settings.section.inbox": "收件箱",
 				"settings.discovery": "分析已结束的会话",
 				"settings.discoveryHint": "在本机运行，只读取 DSH 已保存的会话日志。",
-				"settings.review": "后台复核",
-				"settings.reviewHint": "把较强发现的脱敏证据发给复核模型。关闭时只在你手动要求时复核。",
-				"settings.model": "复核模型",
-				"settings.modelHint": "默认跟随 Agent 的默认模型。",
+				"settings.summarize": "后台生成摘要",
+				"settings.summarizeHint": "把较强发现的脱敏证据发给发现模型，只生成简短摘要。你同意摘要之后才会生成 Skill 草稿。",
+				"settings.summaryModel": "发现模型",
+				"settings.summaryModelHint": "写摘要用，小而快的模型就够。默认跟随 Agent 的默认模型。",
+				"settings.draftModel": "生成模型",
+				"settings.draftModelHint": "你同意摘要后写 Skill 用。默认跟随 Agent 的默认模型。",
 				"settings.modelDefault": "默认（{model}）",
 				"settings.modelDefaultUnknown": "默认模型",
 				"settings.modelLoading": "正在加载模型",
@@ -2535,12 +2851,14 @@ window.__ModuleLoader__.load({
 				"settings.effort": "推理强度",
 				"settings.effortHint": "强度越低，越便宜也越快。",
 				"settings.effortDefault": "模型默认",
-				"settings.timeout": "超时",
-				"settings.timeoutHint": "单次复核等待的秒数。",
-				"settings.dailyReviews": "每日复核次数",
-				"settings.dailyReviewsHint": "每天允许的后台复核次数。",
-				"settings.reviewInterval": "复核间隔",
-				"settings.reviewIntervalHint": "两次后台复核之间的分钟数。",
+				"settings.summaryTimeout": "超时",
+				"settings.summaryTimeoutHint": "单次摘要等待的秒数。",
+				"settings.draftTimeout": "超时",
+				"settings.draftTimeoutHint": "单次生成等待的秒数。",
+				"settings.dailySummaries": "每日摘要次数",
+				"settings.dailySummariesHint": "每天允许的后台摘要次数，手动发起的不计入。",
+				"settings.summaryInterval": "摘要间隔",
+				"settings.summaryIntervalHint": "两次后台摘要之间的分钟数。",
 				"settings.quietPeriod": "静默期",
 				"settings.quietPeriodHint": "会话空闲多少分钟后开始分析。",
 				"settings.historyDays": "历史范围",
@@ -2550,7 +2868,7 @@ window.__ModuleLoader__.load({
 				"settings.minOccurrences": "重复次数",
 				"settings.minOccurrencesHint": "重复流程至少要出现在多少个独立会话里。",
 				"settings.evidenceBudget": "证据上限",
-				"settings.evidenceBudgetHint": "单次复核发送的证据字符数。",
+				"settings.evidenceBudgetHint": "单次请求发送的证据字符数。",
 				"settings.readOutput": "包含错误行",
 				"settings.readOutputHint": "每条失败命令保留一行脱敏后的输出作为证据。",
 				"settings.redactPatterns": "追加脱敏规则",
@@ -2562,13 +2880,14 @@ window.__ModuleLoader__.load({
 				"settings.notify.quiet": "只显示图标",
 				"settings.scope": "新 Skill 保存到",
 				"settings.scopeHint": "项目：仓库里的 .agents/skills。用户：~/.agents/skills。",
-				"settings.prompt": "复核要求",
-				"settings.promptHint": "替换内置的判断标准，回复格式的约定始终保留。",
+				"settings.prompt": "摘要要求",
+				"settings.promptHint": "替换内置的「是否值得保存」判断标准，回复格式的约定始终保留。",
 				"settings.promptPlaceholder": "内置的判断标准",
 				"unit.seconds": "秒",
 				"unit.minutes": "分钟",
 				"unit.days": "天",
 				"unit.sessions": "个",
+				"unit.requests": "次",
 				"unit.characters": "字符"
 			}
 		};
@@ -2612,19 +2931,23 @@ window.__ModuleLoader__.load({
 		//#region src/client/settings.tsx
 		/**
 		* 插件页里经验提炼条目的配置页。改动先暂存，点保存才按读到的版本号写回 profile；
-		* 写入被拒绝或传输失败时保留暂存值并提示。复核模型从 Host 的模型目录里选，
-		* 留空时跟随 Agent 的默认模型。
+		* 写入被拒绝或传输失败时保留暂存值并提示。发现模型（写摘要）与生成模型（写 Skill 草稿）
+		* 分别从 Host 的模型目录里选，留空时跟随 Agent 的默认模型。
 		*/
 		/** 与 Host `Config` 相同的默认值。 */
 		const DEFAULT_SETTINGS = {
 			discovery: true,
-			review: false,
-			provider: "",
-			model: "",
-			effort: "",
-			timeout: 90,
-			dailyReviews: 6,
-			reviewInterval: 10,
+			summarize: false,
+			summaryProvider: "",
+			summaryModel: "",
+			summaryEffort: "",
+			summaryTimeout: 60,
+			draftProvider: "",
+			draftModel: "",
+			draftEffort: "",
+			draftTimeout: 180,
+			dailySummaries: 6,
+			summaryInterval: 10,
 			quietPeriod: 2,
 			historyDays: 30,
 			maxSessions: 200,
@@ -2638,17 +2961,22 @@ window.__ModuleLoader__.load({
 		};
 		/** 数值字段的范围与单位，与 Host `Config` 一致。 */
 		const NUMBERS = {
-			timeout: {
+			summaryTimeout: {
 				min: 10,
 				max: 600,
 				unit: "unit.seconds"
 			},
-			dailyReviews: {
+			draftTimeout: {
+				min: 10,
+				max: 900,
+				unit: "unit.seconds"
+			},
+			dailySummaries: {
 				min: 1,
 				max: 100,
-				unit: "unit.sessions"
+				unit: "unit.requests"
 			},
-			reviewInterval: {
+			summaryInterval: {
 				min: 1,
 				max: 1440,
 				unit: "unit.minutes"
@@ -2682,13 +3010,17 @@ window.__ModuleLoader__.load({
 		/** 设置服务快照值的结构；缺失或类型不符的字段取默认值。 */
 		const SettingsSchema = /* @__PURE__ */ object({
 			discovery: /* @__PURE__ */ fallback(/* @__PURE__ */ boolean(), DEFAULT_SETTINGS.discovery),
-			review: /* @__PURE__ */ fallback(/* @__PURE__ */ boolean(), DEFAULT_SETTINGS.review),
-			provider: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.provider),
-			model: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.model),
-			effort: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.effort),
-			timeout: /* @__PURE__ */ fallback(/* @__PURE__ */ number(), DEFAULT_SETTINGS.timeout),
-			dailyReviews: /* @__PURE__ */ fallback(/* @__PURE__ */ number(), DEFAULT_SETTINGS.dailyReviews),
-			reviewInterval: /* @__PURE__ */ fallback(/* @__PURE__ */ number(), DEFAULT_SETTINGS.reviewInterval),
+			summarize: /* @__PURE__ */ fallback(/* @__PURE__ */ boolean(), DEFAULT_SETTINGS.summarize),
+			summaryProvider: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.summaryProvider),
+			summaryModel: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.summaryModel),
+			summaryEffort: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.summaryEffort),
+			summaryTimeout: /* @__PURE__ */ fallback(/* @__PURE__ */ number(), DEFAULT_SETTINGS.summaryTimeout),
+			draftProvider: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.draftProvider),
+			draftModel: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.draftModel),
+			draftEffort: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.draftEffort),
+			draftTimeout: /* @__PURE__ */ fallback(/* @__PURE__ */ number(), DEFAULT_SETTINGS.draftTimeout),
+			dailySummaries: /* @__PURE__ */ fallback(/* @__PURE__ */ number(), DEFAULT_SETTINGS.dailySummaries),
+			summaryInterval: /* @__PURE__ */ fallback(/* @__PURE__ */ number(), DEFAULT_SETTINGS.summaryInterval),
 			quietPeriod: /* @__PURE__ */ fallback(/* @__PURE__ */ number(), DEFAULT_SETTINGS.quietPeriod),
 			historyDays: /* @__PURE__ */ fallback(/* @__PURE__ */ number(), DEFAULT_SETTINGS.historyDays),
 			maxSessions: /* @__PURE__ */ fallback(/* @__PURE__ */ number(), DEFAULT_SETTINGS.maxSessions),
@@ -2706,13 +3038,17 @@ window.__ModuleLoader__.load({
 		}
 		const SETTING_KEYS = [
 			"discovery",
-			"review",
-			"provider",
-			"model",
-			"effort",
-			"timeout",
-			"dailyReviews",
-			"reviewInterval",
+			"summarize",
+			"summaryProvider",
+			"summaryModel",
+			"summaryEffort",
+			"summaryTimeout",
+			"draftProvider",
+			"draftModel",
+			"draftEffort",
+			"draftTimeout",
+			"dailySummaries",
+			"summaryInterval",
 			"quietPeriod",
 			"historyDays",
 			"maxSessions",
@@ -2725,9 +3061,10 @@ window.__ModuleLoader__.load({
 			"prompt"
 		];
 		const NUMBER_KEYS = [
-			"timeout",
-			"dailyReviews",
-			"reviewInterval",
+			"summaryTimeout",
+			"draftTimeout",
+			"dailySummaries",
+			"summaryInterval",
 			"quietPeriod",
 			"historyDays",
 			"maxSessions",
@@ -2785,8 +3122,27 @@ window.__ModuleLoader__.load({
 		function modelValue(provider, model) {
 			return provider === "" || model === "" ? "" : `${provider}${SEPARATOR}${model}`;
 		}
-		function ModelFields({ staged, catalog, disabled, onChange, t }) {
+		/** 每个阶段的 provider、模型与推理强度对应的设置字段。 */
+		const MODEL_KEYS = {
+			summary: {
+				provider: "summaryProvider",
+				model: "summaryModel",
+				effort: "summaryEffort"
+			},
+			draft: {
+				provider: "draftProvider",
+				model: "draftModel",
+				effort: "draftEffort"
+			}
+		};
+		function ModelFields({ stage, staged: values, catalog, disabled, onChange, t }) {
 			const id = (0, react.useId)();
+			const keys = MODEL_KEYS[stage];
+			const staged = {
+				provider: values[keys.provider],
+				model: values[keys.model],
+				effort: values[keys.effort]
+			};
 			const groups = catalog.status === "ready" ? catalog.catalog.groups : [];
 			const current = modelValue(staged.provider, staged.model);
 			const fallback = catalog.status === "ready" ? catalog.catalog.default : null;
@@ -2797,8 +3153,8 @@ window.__ModuleLoader__.load({
 			const listed = groups.some((group) => group.models.some((model) => modelValue(group.id, model.id) === current));
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(Field, {
 				id: `${id}-model`,
-				label: t("settings.model"),
-				hint: t("settings.modelHint"),
+				label: t(stage === "summary" ? "settings.summaryModel" : "settings.draftModel"),
+				hint: t(stage === "summary" ? "settings.summaryModelHint" : "settings.draftModelHint"),
 				children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("select", {
 						id: `${id}-model`,
@@ -2808,9 +3164,9 @@ window.__ModuleLoader__.load({
 						onChange: (event) => {
 							const [provider = "", model = ""] = event.target.value.split(SEPARATOR);
 							onChange({
-								provider,
-								model,
-								effort: ""
+								[keys.provider]: provider,
+								[keys.model]: model,
+								[keys.effort]: ""
 							});
 						},
 						children: [
@@ -2850,7 +3206,7 @@ window.__ModuleLoader__.load({
 					className: settings_module_css_default.select,
 					value: staged.effort,
 					disabled,
-					onChange: (event) => onChange({ effort: event.target.value }),
+					onChange: (event) => onChange({ [keys.effort]: event.target.value }),
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("option", {
 						value: "",
 						children: t("settings.effortDefault")
@@ -2991,17 +3347,18 @@ window.__ModuleLoader__.load({
 								children: [
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
 										className: settings_module_css_default.title,
-										children: translate("settings.section.review")
+										children: translate("settings.section.summary")
 									}),
-									toggle("review", "settings.review", "settings.reviewHint"),
+									toggle("summarize", "settings.summarize", "settings.summarizeHint"),
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ModelFields, {
+										stage: "summary",
 										staged,
 										catalog: models,
 										disabled: !writable,
 										onChange: update,
 										t: translate
 									}),
-									number("timeout"),
+									number("summaryTimeout"),
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(Field, {
 										id: `${id}-prompt`,
 										label: translate("settings.prompt"),
@@ -3024,10 +3381,28 @@ window.__ModuleLoader__.load({
 								children: [
 									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
 										className: settings_module_css_default.title,
+										children: translate("settings.section.draft")
+									}),
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)(ModelFields, {
+										stage: "draft",
+										staged,
+										catalog: models,
+										disabled: !writable,
+										onChange: update,
+										t: translate
+									}),
+									number("draftTimeout")
+								]
+							}),
+							/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("section", {
+								className: settings_module_css_default.section,
+								children: [
+									/* @__PURE__ */ (0, react_jsx_runtime.jsx)("h3", {
+										className: settings_module_css_default.title,
 										children: translate("settings.section.limits")
 									}),
-									number("dailyReviews"),
-									number("reviewInterval"),
+									number("dailySummaries"),
+									number("summaryInterval"),
 									number("evidenceBudget")
 								]
 							}),
@@ -3116,7 +3491,9 @@ window.__ModuleLoader__.load({
 		}
 		//#endregion
 		//#region src/client/store.ts
-		/** 进行中时的读取间隔。 */
+		/** 模型正在写摘要或草稿时的读取间隔：回复一到，界面在一秒内换掉进行中的占位。 */
+		const MODEL_INTERVAL = 1e3;
+		/** 分析会话或核对写入时的读取间隔。 */
 		const BUSY_INTERVAL = 3e3;
 		/** 空闲时的读取间隔。 */
 		const IDLE_INTERVAL = 45e3;
@@ -3128,9 +3505,15 @@ window.__ModuleLoader__.load({
 			error: null,
 			notice: null
 		};
-		/** 有后台工作正在进行：分析、复核，或写入后核对 DSH 能否发现。 */
-		function busy(inbox) {
-			return inbox !== null && (inbox.status.scanning || inbox.status.reviewing !== null || inbox.items.some((item) => item.write?.checking === true));
+		/**
+		* 下一次读取的间隔：模型调用进行中最短；分析会话或写入后核对 DSH 能否发现时居中；其余时候最长。
+		* @internal 导出供测试使用。
+		*/
+		function pollInterval(inbox) {
+			if (inbox === null) return IDLE_INTERVAL;
+			if (inbox.status.working > 0) return MODEL_INTERVAL;
+			if (inbox.status.scanning || inbox.items.some((item) => item.write?.checking === true)) return BUSY_INTERVAL;
+			return IDLE_INTERVAL;
 		}
 		/**
 		* 创建收件箱状态。
@@ -3152,7 +3535,7 @@ window.__ModuleLoader__.load({
 				timer = setTimeout(() => {
 					if (document.visibilityState === "hidden") schedule();
 					else refresh();
-				}, busy(state.inbox) ? BUSY_INTERVAL : IDLE_INTERVAL);
+				}, pollInterval(state.inbox));
 			};
 			async function refresh() {
 				const current = ++generation;
