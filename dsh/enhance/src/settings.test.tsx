@@ -8,6 +8,7 @@ import {
   type EnhanceHarness,
 } from "./harness.tsx";
 import type { CatalogGroup } from "./dsh.ts";
+import { BUILTIN_INSTRUCTIONS } from "./presets.ts";
 
 const CATALOG: CatalogGroup[] = [
   {
@@ -188,6 +189,29 @@ describe("enhance settings page", () => {
         },
       ],
     ]);
+  });
+
+  test("shows the built-in instructions in the editor until they are changed", async () => {
+    const { page, settings } = await open();
+    await click(
+      [...page.querySelectorAll("button")].find((button) => button.textContent === "Edit"),
+    );
+    const textarea = page.querySelector("textarea");
+    expect(textarea?.value).toBe(BUILTIN_INSTRUCTIONS.polish);
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in");
+    await input(textarea, `${BUILTIN_INSTRUCTIONS.polish}\nKeep it under 200 words.`);
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in, edited");
+    await input(textarea, BUILTIN_INSTRUCTIONS.polish);
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in");
+    expect(save(page)?.disabled).toBe(true);
+    await input(textarea, "");
+    expect(textarea?.value).toBe(BUILTIN_INSTRUCTIONS.polish);
+    await input(textarea, "Polish it.");
+    await click(save(page));
+    expect(settings.writes[0]?.[0]).toMatchObject({
+      path: ["presets"],
+      value: [{ id: "polish", prompt: "Polish it." }, { id: "structure" }, { id: "concise" }],
+    });
   });
 
   test("requires instructions before a custom preset can be saved", async () => {

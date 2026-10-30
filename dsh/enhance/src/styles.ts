@@ -449,10 +449,13 @@ ${p}-textarea {
   outline: none;
   background: var(--dsw-alias-bg-layer-1);
   font: inherit;
-  font-size: 13px;
-  line-height: 20px;
+  font-family: var(--ds-font-family-code, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 18px;
   color: var(--dsw-alias-label-primary);
   resize: vertical;
+  field-sizing: content;
+  max-height: 480px;
 }
 ${p}-textarea:focus {
   border-color: var(--dsw-alias-state-business-primary);
