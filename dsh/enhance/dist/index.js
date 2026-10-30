@@ -1470,7 +1470,8 @@ const DEFAULT_PRESETS = BUILTIN_PRESETS.map((id) => ({
 	id,
 	title: "",
 	description: "",
-	prompt: ""
+	prompt: "",
+	icon: ""
 }));
 function isBuiltin(id) {
 	return BUILTIN_PRESETS.includes(id);
@@ -1615,7 +1616,8 @@ const PresetSchema = Schema.object({
 	id: Schema.string().required(),
 	title: Schema.string().default(""),
 	description: Schema.string().default(""),
-	prompt: Schema.string().default("")
+	prompt: Schema.string().default(""),
+	icon: Schema.string().default("")
 });
 const Config = Schema.object({
 	provider: Schema.string().default(DEFAULT_SETTINGS.provider).description("Provider route of the rewriting model. Leave it and model empty to follow the session's model.").volatile(),
@@ -1629,7 +1631,8 @@ const Config = Schema.object({
 		id,
 		title: "",
 		description: "",
-		prompt: ""
+		prompt: "",
+		icon: ""
 	}))).description("Rewrite presets shown in the menu, in order.").volatile()
 });
 function currentSettings(config) {

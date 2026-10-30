@@ -27,7 +27,15 @@ describe("enhance Config", () => {
   });
 
   test("keeps profile overrides, including custom presets", () => {
-    const presets = [{ id: "custom-1", title: "Translate", description: "", prompt: "Translate." }];
+    const presets = [
+      {
+        id: "custom-1",
+        title: "Translate",
+        description: "",
+        prompt: "Translate.",
+        icon: "globe-outline",
+      },
+    ];
     const config = Config({
       provider: "deepseek",
       model: "flash",
@@ -76,23 +84,20 @@ describe("enhance settings in the browser", () => {
     expect(
       parseSettings({ presets: [{ id: "concise" }, { id: "steps", prompt: "List it." }] }).presets,
     ).toEqual([
-      { id: "concise", title: "", description: "", prompt: "" },
-      { id: "steps", title: "", description: "", prompt: "List it." },
+      { id: "concise", title: "", description: "", prompt: "", icon: "" },
+      { id: "steps", title: "", description: "", prompt: "List it.", icon: "" },
     ]);
     expect(currentSettings(Config({ presets: [{ id: "concise" }] })).presets).toEqual([
-      { id: "concise", title: "", description: "", prompt: "" },
+      { id: "concise", title: "", description: "", prompt: "", icon: "" },
     ]);
   });
 });
 
 describe("preset instructions", () => {
   test("uses the built-in instructions while a built-in preset has none of its own", () => {
-    expect(presetInstructions({ id: "polish", title: "", description: "", prompt: "" })).toBe(
-      BUILTIN_INSTRUCTIONS.polish,
-    );
-    expect(
-      presetInstructions({ id: "polish", title: "", description: "", prompt: " Mine. " }),
-    ).toBe("Mine.");
+    const polish = { id: "polish", title: "", description: "", prompt: "", icon: "" };
+    expect(presetInstructions(polish)).toBe(BUILTIN_INSTRUCTIONS.polish);
+    expect(presetInstructions({ ...polish, prompt: " Mine. " })).toBe("Mine.");
   });
 
   test("polishes after the structure steps and includes the writing references", () => {
@@ -108,7 +113,7 @@ describe("preset instructions", () => {
 
   test("has no instructions for a custom preset left empty", () => {
     expect(
-      presetInstructions({ id: "custom-1", title: "X", description: "", prompt: "" }),
+      presetInstructions({ id: "custom-1", title: "X", description: "", prompt: "", icon: "" }),
     ).toBeUndefined();
   });
 });

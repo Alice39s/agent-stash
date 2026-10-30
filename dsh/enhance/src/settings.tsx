@@ -12,7 +12,9 @@ import {
 import { useEffect, useId, useState, type ReactNode } from "react";
 import { presetLabel } from "./button.tsx";
 import type { CatalogGroup, CatalogModel, ConfigPathOp, JsonValue, RowConfigProps } from "./dsh.ts";
+import { IconPicker, PresetGlyph } from "./icon-picker.tsx";
 import { format, type EnhanceKey } from "./locales.ts";
+import { presetIcon, storedIcon } from "./preset-icons.ts";
 import { editablePrompt, isBuiltin, storedPrompt, type Preset } from "./presets.ts";
 import {
   MAX_CONTEXT_TURNS,
@@ -86,7 +88,8 @@ function samePresets(left: readonly Preset[], right: readonly Preset[]): boolean
         preset.id === other.id &&
         preset.title === other.title &&
         preset.description === other.description &&
-        preset.prompt === other.prompt
+        preset.prompt === other.prompt &&
+        preset.icon === other.icon
       );
     })
   );
@@ -285,6 +288,7 @@ function PresetEditor({ presets, locked, stage, t }: PresetEditorProps): ReactNo
       title: "",
       description: "",
       prompt: "",
+      icon: "",
     };
     stage([...presets, preset]);
     setEditing(preset.id);
@@ -301,12 +305,20 @@ function PresetEditor({ presets, locked, stage, t }: PresetEditorProps): ReactNo
           const open = editing === preset.id;
           const missing = !builtin && preset.prompt.trim() === "";
           const edited =
-            builtin && (preset.title !== "" || preset.description !== "" || preset.prompt !== "");
+            builtin &&
+            (preset.title !== "" ||
+              preset.description !== "" ||
+              preset.prompt !== "" ||
+              preset.icon !== "");
+          const icon = presetIcon(preset);
           const field = (name: string): string => `${id}-${preset.id}-${name}`;
           return (
             <li key={preset.id} className={`${K}-preset`}>
               <div className={`${K}-preset-head`}>
                 <span className={`${K}-preset-index`}>{index + 1}</span>
+                <span className={`${K}-preset-glyph`}>
+                  <PresetGlyph name={icon} size={16} />
+                </span>
                 <span className={`${K}-preset-text`}>
                   <span className={`${K}-preset-title`}>
                     <span className={`${K}-preset-title-text`}>{title}</span>
@@ -361,6 +373,17 @@ function PresetEditor({ presets, locked, stage, t }: PresetEditorProps): ReactNo
               </div>
               {open && (
                 <div className={`${K}-preset-form`}>
+                  <span className={`${K}-preset-label`} id={field("icon")}>
+                    {t("presetIcon")}
+                  </span>
+                  <IconPicker
+                    value={icon}
+                    labelledBy={field("icon")}
+                    disabled={locked}
+                    onChange={(name) =>
+                      replace(index, { ...preset, icon: storedIcon(preset.id, name) })
+                    }
+                  />
                   <label className={`${K}-preset-label`} htmlFor={field("title")}>
                     {t("presetTitle")}
                   </label>
@@ -414,6 +437,7 @@ function PresetEditor({ presets, locked, stage, t }: PresetEditorProps): ReactNo
                             title: "",
                             description: "",
                             prompt: "",
+                            icon: "",
                           })
                         }
                       >

@@ -371,6 +371,50 @@ ${p}-preset-index {
   font-variant-numeric: tabular-nums;
   color: var(--dsw-alias-label-tertiary);
 }
+${p}-preset-glyph {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  color: var(--dsw-alias-label-secondary);
+}
+${p}-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 28px);
+  gap: 2px;
+  width: max-content;
+}
+${p}-icon-option {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+@media (hover: hover) {
+  ${p}-icon-option:hover:not(:disabled) {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+${p}-icon-option[aria-checked="true"] {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-state-business-primary);
+}
+${p}-icon-option:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+${p}-icon-option:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
 ${p}-preset-text {
   display: flex;
   flex: 1;
