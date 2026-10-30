@@ -9,6 +9,8 @@ export interface Preset {
   readonly title: string;
   readonly description: string;
   readonly prompt: string;
+  /** DSH 图标库里的图标名；留空时用默认图标。 */
+  readonly icon: string;
 }
 
 /** 预设列表的默认值：三个内置预设，全部沿用内置版本。 */
@@ -17,6 +19,7 @@ export const DEFAULT_PRESETS: readonly Preset[] = BUILTIN_PRESETS.map((id) => ({
   title: "",
   description: "",
   prompt: "",
+  icon: "",
 }));
 
 export function isBuiltin(id: string): id is BuiltinPreset {

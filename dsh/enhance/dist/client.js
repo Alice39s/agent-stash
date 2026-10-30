@@ -478,149 +478,6 @@ window.__ModuleLoader__.load({
 			}, []), elements];
 		}
 		//#endregion
-		//#region dsh/enhance/src/locales.ts
-		const en = {
-			enhance: "Enhance prompt",
-			undo: "Undo enhancement",
-			cancel: "Stop enhancing",
-			tip: "Click to enhance the prompt",
-			tipLinked: "Click to enhance the prompt (last {n} turns linked)",
-			tipLinkedOne: "Click to enhance the prompt (last turn linked)",
-			estimate: "This rewrite will use about {tokens} tokens",
-			estimateLinked: "This rewrite will use about {tokens} tokens, with the last {n} turns linked",
-			estimateLinkedOne: "This rewrite will use about {tokens} tokens, with the last turn linked",
-			working: "Enhancing…",
-			unchanged: "Already clear, nothing changed",
-			references: "Remove the reference chips to enhance this draft",
-			manage: "Manage presets…",
-			"preset.polish": "Polish prompt",
-			"preset.polish.hint": "Structure, then expand within your intent in a natural voice",
-			"preset.structure": "Structure only",
-			"preset.structure.hint": "Reorganize for the AI without changing the meaning",
-			"preset.concise": "Make it concise",
-			"preset.concise.hint": "Keep the key points, good for dictated text",
-			"preset.untitled": "Untitled preset",
-			"error.timeout": "No result within {n} s",
-			"error.model": "The model request failed",
-			"error.truncated": "The result was cut off",
-			"error.empty": "The model returned nothing",
-			"error.invalid": "Unusable result, draft kept",
-			"error.no-model": "No model available",
-			"error.preset": "This preset's instructions cannot be used",
-			"error.context": "Could not read the session",
-			"error.network": "Could not reach DSH",
-			dismiss: "Dismiss",
-			summary: "Model, session context, shortcut, and presets",
-			unavailable: "This DSH does not expose the settings of this plugin.",
-			readOnly: "This profile is read-only.",
-			saveFailed: "Saving failed. Your changes are kept, try again.",
-			save: "Save",
-			saving: "Saving…",
-			model: "Model",
-			modelHint: "Follow the session uses the model and reasoning effort of the current conversation.",
-			modelFollow: "Follow the session",
-			modelLoading: "Loading models…",
-			modelFailed: "Could not load the model list.",
-			modelRetry: "Retry",
-			modelMissing: "{name} (unavailable)",
-			effort: "Reasoning effort",
-			effortDefault: "Model default",
-			timeout: "Timeout (seconds)",
-			contextToggle: "Include recent turns",
-			contextHint: "Helps the rewriter resolve words like “this” or “the earlier plan”. Only message text is sent, without tool output, reasoning, or recognizable secrets.",
-			contextTurns: "Turns to include",
-			shortcut: "Keyboard shortcut",
-			shortcutHint: "{keys} opens the menu, stops a running rewrite, or undoes the last one.",
-			shortcutNone: "No keys bound. Assign them on the Shortcuts settings page.",
-			presets: "Presets",
-			presetTitle: "Name",
-			presetDescription: "Description",
-			presetPrompt: "Instructions",
-			presetPromptCustom: "What the rewriter should do with the draft",
-			presetUp: "Move up",
-			presetDown: "Move down",
-			presetRemove: "Remove",
-			presetReset: "Restore built-in",
-			presetAdd: "Add preset",
-			presetEdit: "Edit",
-			presetDone: "Done",
-			presetNeedsPrompt: "A custom preset needs instructions.",
-			presetBuiltin: "Built-in",
-			presetBuiltinEdited: "Built-in, edited"
-		};
-		const zh = {
-			enhance: "增强提示词",
-			undo: "撤销增强",
-			cancel: "停止增强",
-			tip: "点我增强提示词",
-			tipLinked: "点我增强提示词（已关联最近 {n} 轮上下文）",
-			tipLinkedOne: "点我增强提示词（已关联最近 1 轮上下文）",
-			estimate: "本轮润色请求将消耗大约 {tokens} Tokens",
-			estimateLinked: "本轮润色请求将消耗大约 {tokens} Tokens，已关联最近 {n} 轮上下文",
-			estimateLinkedOne: "本轮润色请求将消耗大约 {tokens} Tokens，已关联最近 1 轮上下文",
-			working: "正在增强…",
-			unchanged: "已经很清楚，无需改动",
-			references: "移除草稿里的引用块后才能增强",
-			manage: "管理预设…",
-			"preset.polish": "润色 Prompt",
-			"preset.polish.hint": "先整理结构，再在原意内发散，去掉 AI 腔",
-			"preset.structure": "仅结构化整理",
-			"preset.structure.hint": "不改原意，整理成 AI 更易理解的结构",
-			"preset.concise": "使 Prompt 更精炼",
-			"preset.concise.hint": "提炼核心要点，适合整理语音输入",
-			"preset.untitled": "未命名预设",
-			"error.timeout": "{n} 秒内没有结果",
-			"error.model": "模型请求失败",
-			"error.truncated": "结果被截断",
-			"error.empty": "模型没有返回内容",
-			"error.invalid": "结果不可用，已保留原稿",
-			"error.no-model": "没有可用的模型",
-			"error.preset": "这个预设的改写指令无法使用",
-			"error.context": "读取会话失败",
-			"error.network": "无法连接 DSH",
-			dismiss: "关闭",
-			summary: "模型、会话上下文、快捷键与预设",
-			unavailable: "当前 DSH 没有开放本插件的配置。",
-			readOnly: "当前 profile 只读。",
-			saveFailed: "保存失败，改动已保留，请重试。",
-			save: "保存",
-			saving: "正在保存…",
-			model: "模型",
-			modelHint: "跟随会话时使用当前对话的模型与推理强度。",
-			modelFollow: "跟随会话",
-			modelLoading: "正在读取模型列表…",
-			modelFailed: "读取模型列表失败。",
-			modelRetry: "重试",
-			modelMissing: "{name}（不可用）",
-			effort: "推理强度",
-			effortDefault: "模型默认",
-			timeout: "超时（秒）",
-			contextToggle: "附带最近几轮对话",
-			contextHint: "让改写器理解「这个」「刚才的方案」指的是什么。只发送消息正文，不含工具输出、推理过程和可识别的密钥。",
-			contextTurns: "附带轮数",
-			shortcut: "快捷键",
-			shortcutHint: "按 {keys} 打开菜单；增强进行中按它停止，完成后按它撤销。",
-			shortcutNone: "未绑定按键，可在「快捷键」设置页指定。",
-			presets: "预设",
-			presetTitle: "名称",
-			presetDescription: "说明",
-			presetPrompt: "改写指令",
-			presetPromptCustom: "改写器要怎样处理草稿",
-			presetUp: "上移",
-			presetDown: "下移",
-			presetRemove: "删除",
-			presetReset: "恢复内置",
-			presetAdd: "添加预设",
-			presetEdit: "编辑",
-			presetDone: "完成",
-			presetNeedsPrompt: "自定义预设需要填写改写指令。",
-			presetBuiltin: "内置",
-			presetBuiltinEdited: "内置 · 已修改"
-		};
-		function format(template, values) {
-			return template.replace(/\{(\w+)\}/gu, (match, name) => name in values ? String(values[name]) : match);
-		}
-		//#endregion
 		//#region dsh/enhance/src/presets.ts
 		const BUILTIN_PRESETS = [
 			"polish",
@@ -631,7 +488,8 @@ window.__ModuleLoader__.load({
 			id,
 			title: "",
 			description: "",
-			prompt: ""
+			prompt: "",
+			icon: ""
 		}));
 		function isBuiltin(id) {
 			return BUILTIN_PRESETS.includes(id);
@@ -724,129 +582,62 @@ ${ORGANIZE_STEPS}
 			return isBuiltin(id) && text.trim() === BUILTIN_INSTRUCTIONS[id].trim() ? "" : text;
 		}
 		//#endregion
-		//#region dsh/enhance/src/wire.ts
-		const REWRITE_PATH = "/dsh-enhance/rewrite";
-		const CONTEXT_PATH = "/dsh-enhance/context";
-		const NonEmptySchema = /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ minLength(1));
-		const SessionModelSchema = /* @__PURE__ */ object({
-			provider: NonEmptySchema,
-			model: NonEmptySchema,
-			reasoningEffort: /* @__PURE__ */ optional(NonEmptySchema)
-		});
-		const RewriteResultSchema = /* @__PURE__ */ object({
-			text: /* @__PURE__ */ string(),
-			unchanged: /* @__PURE__ */ boolean(),
-			turns: /* @__PURE__ */ number()
-		});
-		const ContextResultSchema = /* @__PURE__ */ object({
-			turns: /* @__PURE__ */ number(),
-			tokens: /* @__PURE__ */ record(/* @__PURE__ */ string(), /* @__PURE__ */ number())
-		});
-		const FailureSchema = /* @__PURE__ */ object({
-			reason: /* @__PURE__ */ picklist([
-				"timeout",
-				"model",
-				"truncated",
-				"empty",
-				"invalid",
-				"no-model",
-				"preset",
-				"context"
-			]),
-			message: /* @__PURE__ */ string()
-		});
-		//#endregion
-		//#region dsh/enhance/src/request.ts
-		function relative(path) {
-			return path.slice(1);
+		//#region dsh/enhance/src/preset-icons.ts
+		const PRESET_ICON_NAMES = [
+			"sparkle",
+			"enhance-outline",
+			"flat-list-outline",
+			"list-pen-outline",
+			"checklist-outline",
+			"compact-outline",
+			"wrap-lines-outline",
+			"edit-outline",
+			"microphone-outline",
+			"think-outline",
+			"light-outline",
+			"goal-outline",
+			"plan-outline",
+			"question-outline",
+			"info-outline",
+			"search-outline",
+			"inspect-outline",
+			"compare-split-outline",
+			"code-outline",
+			"api-outline",
+			"database-outline",
+			"branch-outline",
+			"warning-triangle-outline",
+			"shield-outline",
+			"gauge-outline",
+			"clock-outline",
+			"link-outline",
+			"globe-outline",
+			"user-outline",
+			"users-outline",
+			"skill-outline",
+			"agent-preset-outline",
+			"personalization-outline",
+			"deliver-doc",
+			"folder-open-outline",
+			"paper-plane-outline"
+		];
+		const BUILTIN_ICONS = {
+			polish: "sparkle",
+			structure: "flat-list-outline",
+			concise: "compact-outline"
+		};
+		const CUSTOM_ICON = "list-pen-outline";
+		function isPresetIcon(name) {
+			return PRESET_ICON_NAMES.includes(name);
 		}
-		async function requestRewrite(payload, signal) {
-			let response;
-			try {
-				response = await fetch(relative(REWRITE_PATH), {
-					method: "POST",
-					headers: {
-						accept: "application/json",
-						"content-type": "application/json"
-					},
-					body: JSON.stringify(payload),
-					signal
-				});
-			} catch (error) {
-				if (signal.aborted) throw error;
-				return {
-					ok: false,
-					reason: "network",
-					message: `POST ${REWRITE_PATH}: ${String(error)}`
-				};
-			}
-			const body = await response.json().catch(() => void 0);
-			if (response.ok) {
-				const parsed = /* @__PURE__ */ safeParse(RewriteResultSchema, body);
-				if (parsed.success) return {
-					ok: true,
-					value: parsed.output
-				};
-				return {
-					ok: false,
-					reason: "network",
-					message: `POST ${REWRITE_PATH}: unexpected response`
-				};
-			}
-			const failure = /* @__PURE__ */ safeParse(FailureSchema, body);
-			if (failure.success) return {
-				ok: false,
-				...failure.output
-			};
-			const message = typeof body === "object" && body !== null && "message" in body ? String(body.message) : response.statusText;
-			return {
-				ok: false,
-				reason: "network",
-				message: `POST ${REWRITE_PATH} ${String(response.status)}: ${message}`
-			};
+		function defaultIcon(id) {
+			return isBuiltin(id) ? BUILTIN_ICONS[id] : CUSTOM_ICON;
 		}
-		async function requestContext(sessionId, signal) {
-			const url = `${relative(CONTEXT_PATH)}?session=${encodeURIComponent(sessionId)}`;
-			const response = await fetch(url, {
-				headers: { accept: "application/json" },
-				signal
-			});
-			if (!response.ok) throw new Error(`GET ${CONTEXT_PATH} answered ${String(response.status)}`);
-			return parse(ContextResultSchema, await response.json());
+		function presetIcon(preset) {
+			return isPresetIcon(preset.icon) ? preset.icon : defaultIcon(preset.id);
 		}
-		//#endregion
-		//#region dsh/enhance/src/state.ts
-		const IDLE = { kind: "idle" };
-		function followDraft(state, draft) {
-			if (state.kind === "running") return draft === state.source ? void 0 : IDLE;
-			if (state.kind === "note") return draft === state.draft ? void 0 : IDLE;
-			if (state.kind !== "done") return void 0;
-			if (state.applied === void 0) return draft === state.before ? void 0 : {
-				...state,
-				applied: draft
-			};
-			return draft === state.applied ? void 0 : IDLE;
-		}
-		//#endregion
-		//#region dsh/enhance/src/store.ts
-		function createValueStore(initial, same = Object.is) {
-			let value = initial;
-			const listeners = /* @__PURE__ */ new Set();
-			return {
-				get: () => value,
-				set(next) {
-					if (same(value, next)) return;
-					value = next;
-					for (const listener of listeners) listener();
-				},
-				subscribe(listener) {
-					listeners.add(listener);
-					return () => listeners.delete(listener);
-				}
-			};
-		}
-		function useValue(store) {
-			return (0, react.useSyncExternalStore)(store.subscribe, store.get);
+		function storedIcon(id, name) {
+			return name === defaultIcon(id) ? "" : name;
 		}
 		//#endregion
 		//#region dsh/enhance/src/styles.ts
@@ -1211,6 +1002,50 @@ ${p}-preset-index {
   font-variant-numeric: tabular-nums;
   color: var(--dsw-alias-label-tertiary);
 }
+${p}-preset-glyph {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  color: var(--dsw-alias-label-secondary);
+}
+${p}-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 28px);
+  gap: 2px;
+  width: max-content;
+}
+${p}-icon-option {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+@media (hover: hover) {
+  ${p}-icon-option:hover:not(:disabled) {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+${p}-icon-option[aria-checked="true"] {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-state-business-primary);
+}
+${p}-icon-option:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+${p}-icon-option:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
 ${p}-preset-text {
   display: flex;
   flex: 1;
@@ -1328,6 +1163,370 @@ ${p}-add {
   align-self: flex-start;
 }
 `;
+		}
+		//#endregion
+		//#region dsh/enhance/src/icon-picker.tsx
+		const GLYPHS = {
+			sparkle: _deepseek_ai_dsh_client_ui_primitives.IconSparkleRegular,
+			"enhance-outline": _deepseek_ai_dsh_client_ui_primitives.IconEnhanceOutlineRegular,
+			"flat-list-outline": _deepseek_ai_dsh_client_ui_primitives.IconFlatListOutlineRegular,
+			"list-pen-outline": _deepseek_ai_dsh_client_ui_primitives.IconListPenOutlineRegular,
+			"checklist-outline": _deepseek_ai_dsh_client_ui_primitives.IconChecklistOutlineRegular,
+			"compact-outline": _deepseek_ai_dsh_client_ui_primitives.IconCompactOutlineRegular,
+			"wrap-lines-outline": _deepseek_ai_dsh_client_ui_primitives.IconWrapLinesOutlineRegular,
+			"edit-outline": _deepseek_ai_dsh_client_ui_primitives.IconEditOutlineRegular,
+			"microphone-outline": _deepseek_ai_dsh_client_ui_primitives.IconMicrophoneOutlineRegular,
+			"think-outline": _deepseek_ai_dsh_client_ui_primitives.IconThinkOutlineRegular,
+			"light-outline": _deepseek_ai_dsh_client_ui_primitives.IconLightOutlineRegular,
+			"goal-outline": _deepseek_ai_dsh_client_ui_primitives.IconGoalOutlineRegular,
+			"plan-outline": _deepseek_ai_dsh_client_ui_primitives.IconPlanOutlineRegular,
+			"question-outline": _deepseek_ai_dsh_client_ui_primitives.IconQuestionOutlineRegular,
+			"info-outline": _deepseek_ai_dsh_client_ui_primitives.IconInfoOutlineRegular,
+			"search-outline": _deepseek_ai_dsh_client_ui_primitives.IconSearchOutlineRegular,
+			"inspect-outline": _deepseek_ai_dsh_client_ui_primitives.IconInspectOutlineRegular,
+			"compare-split-outline": _deepseek_ai_dsh_client_ui_primitives.IconCompareSplitOutlineRegular,
+			"code-outline": _deepseek_ai_dsh_client_ui_primitives.IconCodeOutlineRegular,
+			"api-outline": _deepseek_ai_dsh_client_ui_primitives.IconApiOutlineRegular,
+			"database-outline": _deepseek_ai_dsh_client_ui_primitives.IconDatabaseOutlineRegular,
+			"branch-outline": _deepseek_ai_dsh_client_ui_primitives.IconBranchOutlineRegular,
+			"warning-triangle-outline": _deepseek_ai_dsh_client_ui_primitives.IconWarningTriangleOutlineRegular,
+			"shield-outline": _deepseek_ai_dsh_client_ui_primitives.IconShieldOutlineRegular,
+			"gauge-outline": _deepseek_ai_dsh_client_ui_primitives.IconGaugeOutlineRegular,
+			"clock-outline": _deepseek_ai_dsh_client_ui_primitives.IconClockOutlineRegular,
+			"link-outline": _deepseek_ai_dsh_client_ui_primitives.IconLinkOutlineRegular,
+			"globe-outline": _deepseek_ai_dsh_client_ui_primitives.IconGlobeOutlineRegular,
+			"user-outline": _deepseek_ai_dsh_client_ui_primitives.IconUserOutlineRegular,
+			"users-outline": _deepseek_ai_dsh_client_ui_primitives.IconUsersOutlineRegular,
+			"skill-outline": _deepseek_ai_dsh_client_ui_primitives.IconSkillOutlineRegular,
+			"agent-preset-outline": _deepseek_ai_dsh_client_ui_primitives.IconAgentPresetOutlineRegular,
+			"personalization-outline": _deepseek_ai_dsh_client_ui_primitives.IconPersonalizationOutlineRegular,
+			"deliver-doc": _deepseek_ai_dsh_client_ui_primitives.IconDeliverDocRegular,
+			"folder-open-outline": _deepseek_ai_dsh_client_ui_primitives.IconFolderOpenOutlineRegular,
+			"paper-plane-outline": _deepseek_ai_dsh_client_ui_primitives.IconPaperPlaneOutlineRegular
+		};
+		function PresetGlyph({ name, size }) {
+			const Glyph = GLYPHS[name];
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Glyph, { size });
+		}
+		function spoken(name) {
+			return name.replace(/-outline$/u, "").replaceAll("-", " ");
+		}
+		function step(key, index) {
+			const last = PRESET_ICON_NAMES.length - 1;
+			switch (key) {
+				case "ArrowLeft": return Math.max(0, index - 1);
+				case "ArrowRight": return Math.min(last, index + 1);
+				case "ArrowUp": return index - 9 >= 0 ? index - 9 : index;
+				case "ArrowDown": return index + 9 <= last ? index + 9 : index;
+				case "Home": return 0;
+				case "End": return last;
+				default: return;
+			}
+		}
+		function IconPicker({ value, labelledBy, disabled, onChange }) {
+			const grid = (0, react.useRef)(null);
+			const onKeyDown = (event) => {
+				const next = step(event.key, PRESET_ICON_NAMES.indexOf(value));
+				const name = next === void 0 ? void 0 : PRESET_ICON_NAMES[next];
+				if (next === void 0 || name === void 0) return;
+				event.preventDefault();
+				onChange(name);
+				grid.current?.querySelectorAll("[role=\"radio\"]")[next]?.focus();
+			};
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				ref: grid,
+				role: "radiogroup",
+				"aria-labelledby": labelledBy,
+				className: `${K}-icon-grid`,
+				onKeyDown,
+				children: PRESET_ICON_NAMES.map((name) => {
+					const checked = name === value;
+					return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+						type: "button",
+						role: "radio",
+						"aria-checked": checked,
+						"aria-label": spoken(name),
+						tabIndex: checked ? 0 : -1,
+						disabled,
+						className: `${K}-icon-option`,
+						onClick: () => onChange(name),
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PresetGlyph, {
+							name,
+							size: 16
+						})
+					}, name);
+				})
+			});
+		}
+		//#endregion
+		//#region dsh/enhance/src/locales.ts
+		const en = {
+			enhance: "Enhance prompt",
+			undo: "Undo enhancement",
+			cancel: "Stop enhancing",
+			tip: "Click to enhance the prompt",
+			tipLinked: "Click to enhance the prompt (last {n} turns linked)",
+			tipLinkedOne: "Click to enhance the prompt (last turn linked)",
+			estimate: "This rewrite will use about {tokens} tokens",
+			estimateLinked: "This rewrite will use about {tokens} tokens, with the last {n} turns linked",
+			estimateLinkedOne: "This rewrite will use about {tokens} tokens, with the last turn linked",
+			working: "Enhancing…",
+			unchanged: "Already clear, nothing changed",
+			references: "Remove the reference chips to enhance this draft",
+			manage: "Manage presets…",
+			"preset.polish": "Polish prompt",
+			"preset.polish.hint": "Structure, then expand within your intent in a natural voice",
+			"preset.structure": "Structure only",
+			"preset.structure.hint": "Reorganize for the AI without changing the meaning",
+			"preset.concise": "Make it concise",
+			"preset.concise.hint": "Keep the key points, good for dictated text",
+			"preset.untitled": "Untitled preset",
+			"error.timeout": "No result within {n} s",
+			"error.model": "The model request failed",
+			"error.truncated": "The result was cut off",
+			"error.empty": "The model returned nothing",
+			"error.invalid": "Unusable result, draft kept",
+			"error.no-model": "No model available",
+			"error.preset": "This preset's instructions cannot be used",
+			"error.context": "Could not read the session",
+			"error.network": "Could not reach DSH",
+			dismiss: "Dismiss",
+			summary: "Model, session context, shortcut, and presets",
+			unavailable: "This DSH does not expose the settings of this plugin.",
+			readOnly: "This profile is read-only.",
+			saveFailed: "Saving failed. Your changes are kept, try again.",
+			save: "Save",
+			saving: "Saving…",
+			model: "Model",
+			modelHint: "Follow the session uses the model and reasoning effort of the current conversation.",
+			modelFollow: "Follow the session",
+			modelLoading: "Loading models…",
+			modelFailed: "Could not load the model list.",
+			modelRetry: "Retry",
+			modelMissing: "{name} (unavailable)",
+			effort: "Reasoning effort",
+			effortDefault: "Model default",
+			timeout: "Timeout (seconds)",
+			contextToggle: "Include recent turns",
+			contextHint: "Helps the rewriter resolve words like “this” or “the earlier plan”. Only message text is sent, without tool output, reasoning, or recognizable secrets.",
+			contextTurns: "Turns to include",
+			shortcut: "Keyboard shortcut",
+			shortcutHint: "{keys} opens the menu, stops a running rewrite, or undoes the last one.",
+			shortcutNone: "No keys bound. Assign them on the Shortcuts settings page.",
+			presets: "Presets",
+			presetTitle: "Name",
+			presetDescription: "Description",
+			presetIcon: "Icon",
+			presetPrompt: "Instructions",
+			presetPromptCustom: "What the rewriter should do with the draft",
+			presetUp: "Move up",
+			presetDown: "Move down",
+			presetRemove: "Remove",
+			presetReset: "Restore built-in",
+			presetAdd: "Add preset",
+			presetEdit: "Edit",
+			presetDone: "Done",
+			presetNeedsPrompt: "A custom preset needs instructions.",
+			presetBuiltin: "Built-in",
+			presetBuiltinEdited: "Built-in, edited"
+		};
+		const zh = {
+			enhance: "增强提示词",
+			undo: "撤销增强",
+			cancel: "停止增强",
+			tip: "点我增强提示词",
+			tipLinked: "点我增强提示词（已关联最近 {n} 轮上下文）",
+			tipLinkedOne: "点我增强提示词（已关联最近 1 轮上下文）",
+			estimate: "本轮润色请求将消耗大约 {tokens} Tokens",
+			estimateLinked: "本轮润色请求将消耗大约 {tokens} Tokens，已关联最近 {n} 轮上下文",
+			estimateLinkedOne: "本轮润色请求将消耗大约 {tokens} Tokens，已关联最近 1 轮上下文",
+			working: "正在增强…",
+			unchanged: "已经很清楚，无需改动",
+			references: "移除草稿里的引用块后才能增强",
+			manage: "管理预设…",
+			"preset.polish": "润色 Prompt",
+			"preset.polish.hint": "先整理结构，再在原意内发散，去掉 AI 腔",
+			"preset.structure": "仅结构化整理",
+			"preset.structure.hint": "不改原意，整理成 AI 更易理解的结构",
+			"preset.concise": "使 Prompt 更精炼",
+			"preset.concise.hint": "提炼核心要点，适合整理语音输入",
+			"preset.untitled": "未命名预设",
+			"error.timeout": "{n} 秒内没有结果",
+			"error.model": "模型请求失败",
+			"error.truncated": "结果被截断",
+			"error.empty": "模型没有返回内容",
+			"error.invalid": "结果不可用，已保留原稿",
+			"error.no-model": "没有可用的模型",
+			"error.preset": "这个预设的改写指令无法使用",
+			"error.context": "读取会话失败",
+			"error.network": "无法连接 DSH",
+			dismiss: "关闭",
+			summary: "模型、会话上下文、快捷键与预设",
+			unavailable: "当前 DSH 没有开放本插件的配置。",
+			readOnly: "当前 profile 只读。",
+			saveFailed: "保存失败，改动已保留，请重试。",
+			save: "保存",
+			saving: "正在保存…",
+			model: "模型",
+			modelHint: "跟随会话时使用当前对话的模型与推理强度。",
+			modelFollow: "跟随会话",
+			modelLoading: "正在读取模型列表…",
+			modelFailed: "读取模型列表失败。",
+			modelRetry: "重试",
+			modelMissing: "{name}（不可用）",
+			effort: "推理强度",
+			effortDefault: "模型默认",
+			timeout: "超时（秒）",
+			contextToggle: "附带最近几轮对话",
+			contextHint: "让改写器理解「这个」「刚才的方案」指的是什么。只发送消息正文，不含工具输出、推理过程和可识别的密钥。",
+			contextTurns: "附带轮数",
+			shortcut: "快捷键",
+			shortcutHint: "按 {keys} 打开菜单；增强进行中按它停止，完成后按它撤销。",
+			shortcutNone: "未绑定按键，可在「快捷键」设置页指定。",
+			presets: "预设",
+			presetTitle: "名称",
+			presetDescription: "说明",
+			presetIcon: "图标",
+			presetPrompt: "改写指令",
+			presetPromptCustom: "改写器要怎样处理草稿",
+			presetUp: "上移",
+			presetDown: "下移",
+			presetRemove: "删除",
+			presetReset: "恢复内置",
+			presetAdd: "添加预设",
+			presetEdit: "编辑",
+			presetDone: "完成",
+			presetNeedsPrompt: "自定义预设需要填写改写指令。",
+			presetBuiltin: "内置",
+			presetBuiltinEdited: "内置 · 已修改"
+		};
+		function format(template, values) {
+			return template.replace(/\{(\w+)\}/gu, (match, name) => name in values ? String(values[name]) : match);
+		}
+		//#endregion
+		//#region dsh/enhance/src/wire.ts
+		const REWRITE_PATH = "/dsh-enhance/rewrite";
+		const CONTEXT_PATH = "/dsh-enhance/context";
+		const NonEmptySchema = /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ minLength(1));
+		const SessionModelSchema = /* @__PURE__ */ object({
+			provider: NonEmptySchema,
+			model: NonEmptySchema,
+			reasoningEffort: /* @__PURE__ */ optional(NonEmptySchema)
+		});
+		const RewriteResultSchema = /* @__PURE__ */ object({
+			text: /* @__PURE__ */ string(),
+			unchanged: /* @__PURE__ */ boolean(),
+			turns: /* @__PURE__ */ number()
+		});
+		const ContextResultSchema = /* @__PURE__ */ object({
+			turns: /* @__PURE__ */ number(),
+			tokens: /* @__PURE__ */ record(/* @__PURE__ */ string(), /* @__PURE__ */ number())
+		});
+		const FailureSchema = /* @__PURE__ */ object({
+			reason: /* @__PURE__ */ picklist([
+				"timeout",
+				"model",
+				"truncated",
+				"empty",
+				"invalid",
+				"no-model",
+				"preset",
+				"context"
+			]),
+			message: /* @__PURE__ */ string()
+		});
+		//#endregion
+		//#region dsh/enhance/src/request.ts
+		function relative(path) {
+			return path.slice(1);
+		}
+		async function requestRewrite(payload, signal) {
+			let response;
+			try {
+				response = await fetch(relative(REWRITE_PATH), {
+					method: "POST",
+					headers: {
+						accept: "application/json",
+						"content-type": "application/json"
+					},
+					body: JSON.stringify(payload),
+					signal
+				});
+			} catch (error) {
+				if (signal.aborted) throw error;
+				return {
+					ok: false,
+					reason: "network",
+					message: `POST ${REWRITE_PATH}: ${String(error)}`
+				};
+			}
+			const body = await response.json().catch(() => void 0);
+			if (response.ok) {
+				const parsed = /* @__PURE__ */ safeParse(RewriteResultSchema, body);
+				if (parsed.success) return {
+					ok: true,
+					value: parsed.output
+				};
+				return {
+					ok: false,
+					reason: "network",
+					message: `POST ${REWRITE_PATH}: unexpected response`
+				};
+			}
+			const failure = /* @__PURE__ */ safeParse(FailureSchema, body);
+			if (failure.success) return {
+				ok: false,
+				...failure.output
+			};
+			const message = typeof body === "object" && body !== null && "message" in body ? String(body.message) : response.statusText;
+			return {
+				ok: false,
+				reason: "network",
+				message: `POST ${REWRITE_PATH} ${String(response.status)}: ${message}`
+			};
+		}
+		async function requestContext(sessionId, signal) {
+			const url = `${relative(CONTEXT_PATH)}?session=${encodeURIComponent(sessionId)}`;
+			const response = await fetch(url, {
+				headers: { accept: "application/json" },
+				signal
+			});
+			if (!response.ok) throw new Error(`GET ${CONTEXT_PATH} answered ${String(response.status)}`);
+			return parse(ContextResultSchema, await response.json());
+		}
+		//#endregion
+		//#region dsh/enhance/src/state.ts
+		const IDLE = { kind: "idle" };
+		function followDraft(state, draft) {
+			if (state.kind === "running") return draft === state.source ? void 0 : IDLE;
+			if (state.kind === "note") return draft === state.draft ? void 0 : IDLE;
+			if (state.kind !== "done") return void 0;
+			if (state.applied === void 0) return draft === state.before ? void 0 : {
+				...state,
+				applied: draft
+			};
+			return draft === state.applied ? void 0 : IDLE;
+		}
+		//#endregion
+		//#region dsh/enhance/src/store.ts
+		function createValueStore(initial, same = Object.is) {
+			let value = initial;
+			const listeners = /* @__PURE__ */ new Set();
+			return {
+				get: () => value,
+				set(next) {
+					if (same(value, next)) return;
+					value = next;
+					for (const listener of listeners) listener();
+				},
+				subscribe(listener) {
+					listeners.add(listener);
+					return () => listeners.delete(listener);
+				}
+			};
+		}
+		function useValue(store) {
+			return (0, react.useSyncExternalStore)(store.subscribe, store.get);
 		}
 		//#endregion
 		//#region dsh/enhance/src/tokens.ts
@@ -1625,6 +1824,10 @@ ${p}-add {
 						onPointerEnter: () => setPointed(preset.id),
 						onFocus: () => setPointed(preset.id),
 						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.MenuItemButton, {
+							icon: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PresetGlyph, {
+								name: presetIcon(preset),
+								size: 14
+							}),
 							...index < NUMBERED ? { shortcut: { keys: [String(index + 1)] } } : {},
 							onSelect: () => run(preset),
 							children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
@@ -1780,7 +1983,8 @@ ${p}-add {
 			id: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ minLength(1)),
 			title: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), ""),
 			description: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), ""),
-			prompt: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), "")
+			prompt: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), ""),
+			icon: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), "")
 		});
 		const SettingsSchema = /* @__PURE__ */ object({
 			provider: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.provider),
@@ -1928,7 +2132,7 @@ ${p}-add {
 		function samePresets(left, right) {
 			return left.length === right.length && left.every((preset, index) => {
 				const other = right[index];
-				return other !== void 0 && preset.id === other.id && preset.title === other.title && preset.description === other.description && preset.prompt === other.prompt;
+				return other !== void 0 && preset.id === other.id && preset.title === other.title && preset.description === other.description && preset.prompt === other.prompt && preset.icon === other.icon;
 			});
 		}
 		function settingsOps(base, next) {
@@ -2102,7 +2306,8 @@ ${p}-add {
 					id: `custom-${crypto.randomUUID().slice(0, 8)}`,
 					title: "",
 					description: "",
-					prompt: ""
+					prompt: "",
+					icon: ""
 				};
 				stage([...presets, preset]);
 				setEditing(preset.id);
@@ -2123,7 +2328,8 @@ ${p}-add {
 							const builtin = isBuiltin(preset.id);
 							const open = editing === preset.id;
 							const missing = !builtin && preset.prompt.trim() === "";
-							const edited = builtin && (preset.title !== "" || preset.description !== "" || preset.prompt !== "");
+							const edited = builtin && (preset.title !== "" || preset.description !== "" || preset.prompt !== "" || preset.icon !== "");
+							const icon = presetIcon(preset);
 							const field = (name) => `${id}-${preset.id}-${name}`;
 							return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
 								className: `${K}-preset`,
@@ -2133,6 +2339,13 @@ ${p}-add {
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 											className: `${K}-preset-index`,
 											children: index + 1
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: `${K}-preset-glyph`,
+											children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PresetGlyph, {
+												name: icon,
+												size: 16
+											})
 										}),
 										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 											className: `${K}-preset-text`,
@@ -2197,6 +2410,20 @@ ${p}-add {
 								}), open && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									className: `dsh-enhance-preset-form`,
 									children: [
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: `dsh-enhance-preset-label`,
+											id: field("icon"),
+											children: t("presetIcon")
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconPicker, {
+											value: icon,
+											labelledBy: field("icon"),
+											disabled: locked,
+											onChange: (name) => replace(index, {
+												...preset,
+												icon: storedIcon(preset.id, name)
+											})
+										}),
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("label", {
 											className: `dsh-enhance-preset-label`,
 											htmlFor: field("title"),
@@ -2259,7 +2486,8 @@ ${p}-add {
 													id: preset.id,
 													title: "",
 													description: "",
-													prompt: ""
+													prompt: "",
+													icon: ""
 												}),
 												children: t("presetReset")
 											})

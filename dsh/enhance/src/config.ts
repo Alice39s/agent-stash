@@ -13,6 +13,7 @@ const PresetSchema = Schema.object({
   title: Schema.string().default(""),
   description: Schema.string().default(""),
   prompt: Schema.string().default(""),
+  icon: Schema.string().default(""),
 });
 
 /**
@@ -59,7 +60,9 @@ export const Config = Schema.object({
     .description("Bind ⇧⌘E / Ctrl+Shift+E to the enhance button.")
     .volatile(),
   presets: Schema.array(PresetSchema)
-    .default(BUILTIN_PRESETS.map((id) => ({ id, title: "", description: "", prompt: "" })))
+    .default(
+      BUILTIN_PRESETS.map((id) => ({ id, title: "", description: "", prompt: "", icon: "" })),
+    )
     .description("Rewrite presets shown in the menu, in order.")
     .volatile(),
 });

@@ -168,6 +168,11 @@ describe("enhance button", () => {
       "Manage presets…",
     ]);
     expect(menuItems(h)[2]?.getAttribute("aria-keyshortcuts")).toBe("3");
+    expect(
+      menuItems(h)
+        .slice(0, 3)
+        .map((item) => item.querySelector("svg")?.getAttribute("data-icon")),
+    ).toEqual(["sparkle", "flat-list-outline", "compact-outline"]);
   });
 
   test("opens the plugin details from the menu", async () => {

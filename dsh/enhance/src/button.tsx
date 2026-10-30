@@ -24,7 +24,9 @@ import * as v from "valibot";
 import type { StashKit } from "../../kit/src/service.ts";
 import { useComposer } from "../../shared/client/composer.ts";
 import type { ModelSelectionView, RightSlotProps } from "./dsh.ts";
+import { PresetGlyph } from "./icon-picker.tsx";
 import { format, type EnhanceKey } from "./locales.ts";
+import { presetIcon } from "./preset-icons.ts";
 import { isBuiltin, type Preset } from "./presets.ts";
 import { requestContext, requestRewrite } from "./request.ts";
 import type { EnhanceSettings } from "./settings-value.ts";
@@ -387,6 +389,7 @@ export function createEnhanceButton(
           onFocus={() => setPointed(preset.id)}
         >
           <MenuItemButton
+            icon={<PresetGlyph name={presetIcon(preset)} size={14} />}
             {...(index < NUMBERED ? { shortcut: { keys: [String(index + 1)] } } : {})}
             onSelect={() => run(preset)}
           >
