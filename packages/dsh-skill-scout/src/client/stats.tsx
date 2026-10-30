@@ -294,6 +294,7 @@ function LeadShare({ stats, t }: CardProps): ReactNode {
           <ShareBar
             label={t("stats.leads")}
             empty={t("stats.leads.empty")}
+            hiddenAll={t("chart.hidden.all")}
             segments={LEAD_ORDER.map((state) => ({
               key: state,
               label: t(`funnel.lead.${state}`),
@@ -321,6 +322,7 @@ function IdeaShare({ stats, t }: CardProps): ReactNode {
           <ShareBar
             label={t("stats.ideas")}
             empty={t("stats.ideas.empty")}
+            hiddenAll={t("chart.hidden.all")}
             segments={IDEA_ORDER.map((state) => ({
               key: state,
               label: t(`funnel.idea.${state}`),

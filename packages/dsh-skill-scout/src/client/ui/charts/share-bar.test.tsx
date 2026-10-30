@@ -109,12 +109,14 @@ describe("ShareBar", () => {
 
   test("falls back to the empty line when the legend hides every category, and brings the bar back", async () => {
     const root = await render(
-      <ShareBar segments={LEADS} label="Leads by state" empty="No leads" />,
+      <ShareBar segments={LEADS} label="Leads by state" empty="No leads" hiddenAll="All hidden" />,
     );
     await click(button(/^Summarized/u, root));
     await click(button(/^Waiting/u, root));
     await click(button(/^Failed/u, root));
-    expect(root.textContent).toContain("No leads");
+    // 数据还在，只是被图例关掉，说明与「本来就没有线索」不同。
+    expect(root.textContent).toContain("All hidden");
+    expect(root.textContent).not.toContain("No leads");
     expect(root.querySelector("[role=img]")).toBeNull();
     // 图例留在原地，用户可以把某一类再打开。
     expect(root.querySelectorAll("[data-legend]")).toHaveLength(3);

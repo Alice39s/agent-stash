@@ -31,6 +31,8 @@ export interface ShareBarProps {
   readonly label: string;
   /** 各类都是 0 时显示的一行说明。 */
   readonly empty: string;
+  /** 有数据但被图例全部关掉时显示的一行说明。 */
+  readonly hiddenAll?: string;
   /** 默认在横条上方显示图例。 */
   readonly legend?: boolean;
   /** 提示与读屏描述里的数量，完整写出。 */
@@ -46,6 +48,7 @@ export function ShareBar({
   segments,
   label,
   empty,
+  hiddenAll,
   legend = true,
   formatValue = formatNumber,
   formatLegend = formatCompact,
@@ -107,7 +110,10 @@ export function ShareBar({
         />
       )}
       {visible.length === 0 ? (
-        <ChartEmpty height={legend ? 36 : 20} text={empty} />
+        <ChartEmpty
+          height={legend ? 36 : 20}
+          text={present.length > 0 ? (hiddenAll ?? empty) : empty}
+        />
       ) : (
         <>
           <div className={styles.plot}>

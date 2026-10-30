@@ -4406,6 +4406,7 @@ window.__ModuleLoader__.load({
 				"chart.day": "{m}/{d}",
 				"chart.locale": "en-US",
 				"chart.trend.empty": "Not enough data",
+				"chart.hidden.all": "Every category is hidden",
 				"code.copy": "Copy",
 				"code.copied": "Copied",
 				"code.label": "Code",
@@ -4841,6 +4842,7 @@ window.__ModuleLoader__.load({
 				"chart.day": "{m}月{d}日",
 				"chart.locale": "zh-CN",
 				"chart.trend.empty": "数据不足",
+				"chart.hidden.all": "各类都已隐藏",
 				"code.copy": "复制",
 				"code.copied": "已复制",
 				"code.label": "代码",
@@ -7902,7 +7904,7 @@ window.__ModuleLoader__.load({
 		*/
 		/** 一条占比条至多的类别数。 */
 		const MAX_SEGMENTS = 6;
-		function ShareBar({ segments, label, empty, legend = true, formatValue = formatNumber, formatLegend = compact }) {
+		function ShareBar({ segments, label, empty, hiddenAll, legend = true, formatValue = formatNumber, formatLegend = compact }) {
 			const { hidden, toggle } = useHiddenKeys();
 			const [emphasis, setEmphasis] = (0, react.useState)(null);
 			const present = segments.filter((segment) => segment.value > 0);
@@ -7950,7 +7952,7 @@ window.__ModuleLoader__.load({
 					onEmphasis: setEmphasis
 				}), visible.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ChartEmpty, {
 					height: legend ? 36 : 20,
-					text: empty
+					text: present.length > 0 ? hiddenAll ?? empty : empty
 				}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 					className: charts_module_css_default.plot,
 					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
@@ -8685,6 +8687,7 @@ window.__ModuleLoader__.load({
 					children: (loaded) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ShareBar, {
 						label: t("stats.leads"),
 						empty: t("stats.leads.empty"),
+						hiddenAll: t("chart.hidden.all"),
 						segments: LEAD_ORDER.map((state) => ({
 							key: state,
 							label: t(`funnel.lead.${state}`),
@@ -8706,6 +8709,7 @@ window.__ModuleLoader__.load({
 					children: (loaded) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ShareBar, {
 						label: t("stats.ideas"),
 						empty: t("stats.ideas.empty"),
+						hiddenAll: t("chart.hidden.all"),
 						segments: IDEA_ORDER.map((state) => ({
 							key: state,
 							label: t(`funnel.idea.${state}`),
