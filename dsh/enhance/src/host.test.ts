@@ -10,6 +10,7 @@ import {
   rewriteHandler,
   type EnhanceHostContext,
 } from "./host.ts";
+import { loadReferences } from "./references.ts";
 import type { LlmView, ModelRoute, StreamChunkView } from "./rewrite.ts";
 import { DEFAULT_SETTINGS } from "./settings-value.ts";
 import { CONTEXT_PATH, REWRITE_PATH } from "./wire.ts";
@@ -98,7 +99,7 @@ async function rewrite(
   body: unknown,
   config: Record<string, unknown> = {},
 ): Promise<{ status: number; body: unknown }> {
-  const base = await serve(rewriteHandler(h.ctx, Config(config)));
+  const base = await serve(rewriteHandler(h.ctx, Config(config), loadReferences));
   const response = await fetch(`${base}${REWRITE_PATH}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -172,6 +173,57 @@ describe("rewrite route", () => {
       { presets },
     );
     expect(h.calls[0]?.system.endsWith("\n\nTranslate to English.")).toBe(true);
+  });
+
+  test("inlines the bundled writing references into the polish instructions", async () => {
+    const h = harness({});
+    await rewrite(h, { session: "s1", preset: "polish", draft: "do it", model: SESSION_MODEL });
+    const system = h.calls[0]?.system ?? "";
+    expect(system).not.toContain("<include");
+    expect(system).toMatch(
+      /<reference name="humanizer" source="https:\/\/github\.com\/blader\/humanizer\/blob\/[0-9a-f]{40}\/SKILL\.md" license="MIT">\n---\nname: humanizer/u,
+    );
+    expect(system).toContain('<reference name="no-ai-slop"');
+    expect(system).toContain('<reference name="no-negative-echo"');
+  });
+
+  test("lets a custom preset include a bundled reference", async () => {
+    const h = harness({});
+    const presets = [
+      {
+        id: "custom-1",
+        title: "Tone",
+        description: "",
+        prompt: 'Remove AI tells.\n<include ref="no-ai-slop" />',
+      },
+    ];
+    await rewrite(
+      h,
+      { session: "s1", preset: "custom-1", draft: "do it", model: SESSION_MODEL },
+      { presets },
+    );
+    expect(h.calls[0]?.system).toContain('Remove AI tells.\n<reference name="no-ai-slop"');
+  });
+
+  test("names an unknown reference in a preset", async () => {
+    const h = harness({});
+    const presets = [
+      { id: "custom-1", title: "", description: "", prompt: '<include ref="style" />' },
+    ];
+    const result = await rewrite(
+      h,
+      { session: "s1", preset: "custom-1", draft: "do it", model: SESSION_MODEL },
+      { presets },
+    );
+    expect(result).toEqual({
+      status: 404,
+      body: {
+        reason: "preset",
+        message:
+          'preset "custom-1" includes "style", which is not a bundled reference (bundled: humanizer, no-ai-slop, no-negative-echo)',
+      },
+    });
+    expect(h.calls).toEqual([]);
   });
 
   test("answers 404 for an unknown preset", async () => {

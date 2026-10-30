@@ -10,6 +10,7 @@ import {
   type SurfaceEvent,
 } from "./context.ts";
 import { presetInstructions } from "./presets.ts";
+import { expandIncludes, loadReferences, type References } from "./references.ts";
 import { buildPrompt, runRewrite, type LlmView, type ModelRoute } from "./rewrite.ts";
 import type { EnhanceSettings } from "./settings-value.ts";
 import {
@@ -68,6 +69,40 @@ async function contextTurns(
   return selectTurns(projectTurns(surface.events), settings.contextTurns);
 }
 
+/** 读取随包分发的写作参考；第一次调用时读取，之后复用同一份结果。 */
+export type ReferenceSource = () => Promise<References>;
+
+/** 预设实际发给模型的模式说明：自定义或内置指令，`<include>` 换成写作参考的全文。 */
+export function resolveInstructions(
+  settings: EnhanceSettings,
+  presetId: string,
+  references: References,
+):
+  | { readonly ok: true; readonly text: string }
+  | { readonly ok: false; readonly failure: Failure } {
+  const preset = settings.presets.find((candidate) => candidate.id === presetId);
+  const instructions = preset === undefined ? undefined : presetInstructions(preset);
+  if (instructions === undefined) {
+    return {
+      ok: false,
+      failure: {
+        reason: "preset",
+        message: `preset "${presetId}" does not exist or has no instructions`,
+      },
+    };
+  }
+  const expanded = expandIncludes(instructions, references);
+  if (expanded.ok) return expanded;
+  const known = [...references.keys()].join(", ");
+  return {
+    ok: false,
+    failure: {
+      reason: "preset",
+      message: `preset "${presetId}" includes ${expanded.missing.map((name) => `"${name}"`).join(", ")}, which is not a bundled reference (bundled: ${known})`,
+    },
+  };
+}
+
 const STATUS: Readonly<Record<Failure["reason"], number>> = {
   timeout: 504,
   model: 502,
@@ -116,6 +151,7 @@ export function contextHandler(
 export function rewriteHandler(
   ctx: EnhanceHostContext,
   config: ConfigValue,
+  references: ReferenceSource,
 ): DshWebRoute["handler"] {
   return guardRoute(
     (req) => ctx.connection.requestRejection(req),
@@ -128,13 +164,9 @@ export function rewriteHandler(
       }
       const { session, preset: presetId, draft, model } = body.value;
       const settings = currentSettings(config);
-      const preset = settings.presets.find((candidate) => candidate.id === presetId);
-      const instructions = preset === undefined ? undefined : presetInstructions(preset);
-      if (instructions === undefined) {
-        sendFailure(res, {
-          reason: "preset",
-          message: `preset "${presetId}" does not exist or has no instructions`,
-        });
+      const instructions = resolveInstructions(settings, presetId, await references());
+      if (!instructions.ok) {
+        sendFailure(res, instructions.failure);
         return;
       }
       const route = resolveRoute(settings, model, () =>
@@ -158,7 +190,7 @@ export function rewriteHandler(
       res.on("close", () => {
         if (!res.writableFinished) closed.abort();
       });
-      const prompt = buildPrompt(draft, instructions, turns);
+      const prompt = buildPrompt(draft, instructions.text, turns);
       const outcome = await runRewrite(ctx.llm, route, prompt, draft, {
         signal: closed.signal,
         timeoutMs: settings.timeout * 1000,
@@ -181,8 +213,10 @@ export function rewriteHandler(
 
 /** 注册改写与上下文两条路由，插件卸载时一并移除。 */
 export function registerRoutes(ctx: EnhanceHostContext, config: ConfigValue): void {
+  let loading: Promise<References> | undefined;
+  const references: ReferenceSource = () => (loading ??= loadReferences());
   const routes: DshWebRoute[] = [
-    { kind: "exact", path: REWRITE_PATH, handler: rewriteHandler(ctx, config) },
+    { kind: "exact", path: REWRITE_PATH, handler: rewriteHandler(ctx, config, references) },
     { kind: "exact", path: CONTEXT_PATH, handler: contextHandler(ctx, config) },
   ];
   for (const route of routes) {

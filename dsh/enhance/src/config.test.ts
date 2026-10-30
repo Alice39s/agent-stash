@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 import { Config, currentSettings } from "./config.ts";
-import { BUILTIN_INSTRUCTIONS, BUILTIN_PRESETS, presetInstructions } from "./presets.ts";
+import {
+  BUILTIN_INSTRUCTIONS,
+  BUILTIN_PRESETS,
+  ORGANIZE_STEPS,
+  presetInstructions,
+} from "./presets.ts";
 import { DEFAULT_SETTINGS, parseSettings } from "./settings-value.ts";
 
 describe("enhance Config", () => {
@@ -88,6 +93,17 @@ describe("preset instructions", () => {
     expect(
       presetInstructions({ id: "polish", title: "", description: "", prompt: " Mine. " }),
     ).toBe("Mine.");
+  });
+
+  test("polishes after the structure steps and includes the writing references", () => {
+    const { polish, structure } = BUILTIN_INSTRUCTIONS;
+    expect(structure).toContain(ORGANIZE_STEPS);
+    const organize = polish.indexOf(`<step name="structure">\n${ORGANIZE_STEPS}\n</step>`);
+    expect(organize).toBeGreaterThan(-1);
+    expect(polish.indexOf('<step name="expand">')).toBeGreaterThan(organize);
+    for (const name of ["humanizer", "no-ai-slop", "no-negative-echo"]) {
+      expect(polish).toContain(`<include ref="${name}" />`);
+    }
   });
 
   test("has no instructions for a custom preset left empty", () => {
