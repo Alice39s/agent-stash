@@ -11,3 +11,5 @@ docs/tsconfig.tsbuildinfo
 .DS_Store
 .ruff
 .turbo
+
+.pnpm-store/
