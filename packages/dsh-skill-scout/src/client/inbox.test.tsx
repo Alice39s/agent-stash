@@ -1,16 +1,18 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { createSeenStore, InboxEntry } from "./inbox.tsx";
+import { InboxEntry } from "./inbox.tsx";
+import { HistoryPage } from "./page.tsx";
 import {
   button,
   click,
-  detailOf,
   fakeHost,
   inboxOf,
   item,
   mount,
   NOW,
   press,
+  progress,
+  perform,
   settle,
   STATUS,
   translator,
@@ -19,23 +21,11 @@ import {
 } from "./testing.tsx";
 
 const t = translator("en");
-let unmount: (() => void) | undefined;
+let unmounts: (() => void)[] = [];
 
 async function render(host: FakeHost) {
-  const view = await mount(
-    <InboxEntry
-      inbox={host.store}
-      seen={createSeenStore(window.localStorage)}
-      loadDetail={async (id) => {
-        const found = host.inbox.items.find((entry) => entry.id === id);
-        if (found === undefined) throw new Error(`no item ${id}`);
-        return detailOf(found);
-      }}
-      openSession={null}
-      t={t}
-    />,
-  );
-  unmount = view.unmount;
+  const view = await mount(<InboxEntry {...host.face} t={t} />);
+  unmounts.push(view.unmount);
   return view;
 }
 
@@ -47,6 +37,11 @@ function panel(): HTMLElement | null {
   return document.querySelector<HTMLElement>("[role=dialog][aria-label='Skill suggestions']");
 }
 
+/** 标题栏入口下方弹出的提示。 */
+function toast(): HTMLElement | null {
+  return document.body.querySelector<HTMLElement>(":scope > [role=status]");
+}
+
 beforeEach(() => {
   window.localStorage.clear();
   vi.useFakeTimers({ toFake: ["Date"] });
@@ -54,34 +49,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  unmount?.();
-  unmount = undefined;
+  for (const unmount of unmounts) unmount();
+  unmounts = [];
   document.body.innerHTML = "";
   vi.useRealTimers();
-});
-
-describe("createSeenStore", () => {
-  test("treats a damaged record as empty", () => {
-    window.localStorage.setItem("agent-stash-skill-scout:seen", "{not json");
-    const seen = createSeenStore(window.localStorage);
-    expect(seen.has("a")).toBe(false);
-    seen.add(["a"]);
-    expect(seen.has("a")).toBe(true);
-  });
-
-  test("remembers seen suggestions in memory when storage refuses writes", () => {
-    const writes: string[] = [];
-    const seen = createSeenStore({
-      getItem: () => null,
-      setItem: (key) => {
-        writes.push(key);
-        throw new DOMException("full", "QuotaExceededError");
-      },
-    });
-    seen.add(["a", "b"]);
-    expect(writes).toEqual(["agent-stash-skill-scout:seen"]);
-    expect(seen.has("b")).toBe(true);
-  });
 });
 
 describe("InboxEntry", () => {
@@ -100,7 +71,7 @@ describe("InboxEntry", () => {
     const host = fakeHost(
       inboxOf([
         item(),
-        item({ id: "repeated:2", state: "proposed", title: "Deploy the docs site" }),
+        item({ id: "repeated:2~0", state: "proposed", title: "Deploy the docs site" }),
         item({ ...UNSUMMARIZED, id: "recovery:1", kind: "recovery" }),
       ]),
     );
@@ -125,10 +96,27 @@ describe("InboxEntry", () => {
     expect(trigger().querySelector("span")).toBeNull();
   });
 
+  test("names the source of extracted ideas and the ideas folded into a card", async () => {
+    const host = fakeHost(
+      inboxOf([
+        item({ kind: "session", occurrences: 1, merged: 2 }),
+        item({ id: "selected:ab~0", kind: "selected", occurrences: 3, title: "Bump deps" }),
+      ]),
+    );
+    await render(host);
+    await click(trigger());
+    const text = panel()?.textContent ?? "";
+    expect(text).toContain("Session extract · 1 session · 2 more with this name · 1 min ago");
+    expect(text).toContain("Selected tasks · 3 sessions · 1 min ago");
+  });
+
   test("keeps a card in progress without a dismiss button and says which model is busy", async () => {
     const host = fakeHost(
       inboxOf(
-        [item({ state: "drafting" }), item({ ...UNSUMMARIZED, id: "r:2", state: "summarizing" })],
+        [
+          item({ state: "drafting", progress: progress({ stage: "draft" }) }),
+          item({ ...UNSUMMARIZED, id: "r:2", state: "summarizing", progress: progress() }),
+        ],
         { working: 2 },
       ),
     );
@@ -189,11 +177,11 @@ describe("InboxEntry", () => {
     await render(host);
     await click(trigger());
     await click(button("Dismiss: Cut a local patch release"));
-    expect(host.actions).toEqual([{ action: "dismiss", id: "repeated:1", similar: false }]);
+    expect(host.actions).toEqual([{ action: "dismiss", id: "repeated:1~0", similar: false }]);
     expect(panel()?.querySelector("[role=status]")?.textContent).toContain("Dismissed");
 
     await click(button("Undo", panel() ?? document));
-    expect(host.actions.at(-1)).toEqual({ action: "restore", id: "repeated:1" });
+    expect(host.actions.at(-1)).toEqual({ action: "restore", id: "repeated:1~0" });
   });
 
   test("closes on Escape and returns focus to the entry", async () => {
@@ -205,52 +193,22 @@ describe("InboxEntry", () => {
     expect(document.activeElement).toBe(trigger());
   });
 
-  test("opens the detail dialog from a card and returns to the inbox when it closes", async () => {
-    const host = fakeHost(inboxOf([item()]));
+  test("opens a card in the history page with the card selected", async () => {
+    const host = fakeHost(inboxOf([item(), item({ id: "complex:2", state: "skipped" })]));
     await render(host);
     await click(trigger());
-    await click(panel()?.querySelector("li button"));
-    await settle();
-    const dialog = document.querySelector("dialog");
-    expect(dialog?.open).toBe(true);
-    expect(dialog?.getAttribute("aria-label")).toBe("Cut a local patch release");
+    await click(panel()?.querySelector("[data-item='repeated:1~0']"));
     expect(panel()).toBeNull();
+    expect(host.pagesOpened).toBe(1);
+    expect(host.face.page.getSnapshot()).toMatchObject({
+      tab: "suggestions",
+      selected: "repeated:1~0",
+    });
 
-    await click(button("Close", dialog ?? document));
-    expect(document.querySelector("dialog")).toBeNull();
-    expect(panel()).not.toBeNull();
-    expect(document.activeElement?.getAttribute("data-item")).toBe("repeated:1");
-
-    await press(document.activeElement, "Escape");
-    expect(panel()).toBeNull();
-    expect(document.activeElement).toBe(trigger());
-  });
-
-  test("does not count the summary the user waits for in the open detail as new", async () => {
-    const host = fakeHost(inboxOf([item({ ...UNSUMMARIZED })]));
-    await render(host);
-    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions");
     await click(trigger());
-    await click(panel()?.querySelector("li button"));
-    await settle();
-
-    host.inbox = inboxOf([item({ state: "proposed" })]);
-    void host.store.refresh();
-    await settle();
-    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions");
-    expect(trigger().querySelector("span")).toBeNull();
-
-    // 别的建议在详情开着时变成待决定，照常计数。
-    host.inbox = inboxOf([
-      item({ state: "ready" }),
-      item({ id: "recovery:1", kind: "recovery", state: "proposed" }),
-    ]);
-    void host.store.refresh();
-    await settle();
-    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions, 1 new");
-
-    await click(button("Close", document.querySelector("dialog") ?? document));
-    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions");
+    await click(button("Skill Scout History", panel() ?? document));
+    expect(host.pagesOpened).toBe(2);
+    expect(host.face.page.getSnapshot().selected).toBeNull();
   });
 
   test("keeps handled suggestions under a collapsed history", async () => {
@@ -264,5 +222,77 @@ describe("InboxEntry", () => {
     expect(panel()?.querySelectorAll("li")).toHaveLength(0);
     await click(toggle);
     expect(panel()?.querySelectorAll("li")).toHaveLength(2);
+  });
+});
+
+describe("InboxEntry notices", () => {
+  test("pops up a notice with View when a summary finishes, and View opens the card", async () => {
+    const host = fakeHost(
+      inboxOf([item({ ...UNSUMMARIZED, state: "summarizing", progress: progress() })], {
+        working: 1,
+      }),
+    );
+    await render(host);
+    expect(toast()).toBeNull();
+
+    host.inbox = inboxOf([
+      item({ state: "proposed", ideaCount: 2 }),
+      item({ id: "repeated:1~1", state: "proposed", ideaCount: 2, title: "Publish the docs" }),
+    ]);
+    await perform(() => host.store.refresh());
+    await settle();
+    expect(toast()?.textContent).toContain("Summary proposed 2 ideas: Cut a local patch release");
+
+    await click(button("View", toast() ?? document));
+    expect(toast()).toBeNull();
+    expect(host.pagesOpened).toBe(1);
+    expect(host.face.page.getSnapshot().selected).toBe("repeated:1~0");
+  });
+
+  test("closes a popped-up notice", async () => {
+    const host = fakeHost(inboxOf([item({ state: "drafting" })], { working: 1 }));
+    await render(host);
+    host.inbox = inboxOf([item({ state: "ready" })]);
+    await perform(() => host.store.refresh());
+    await settle();
+    expect(toast()?.textContent).toContain("Draft ready: Cut a local patch release");
+    await click(button("Close", toast() ?? document));
+    expect(toast()).toBeNull();
+  });
+
+  test("shows notices in the open history page instead of the header, and does not count the idea the page shows", async () => {
+    const migrate = {
+      ...UNSUMMARIZED,
+      id: "complex:5",
+      kind: "complex",
+      goal: "Migrate the config",
+    } as const;
+    const host = fakeHost(
+      inboxOf(
+        [
+          item({ ...UNSUMMARIZED, state: "summarizing", progress: progress() }),
+          item({ ...migrate, state: "summarizing", progress: progress() }),
+        ],
+        { working: 2 },
+      ),
+    );
+    await render(host);
+    host.face.page.update({ selected: "repeated:1" });
+    const page = await mount(<HistoryPage {...host.face} t={t} />);
+    unmounts.push(page.unmount);
+    await settle();
+
+    host.inbox = inboxOf([
+      item({ state: "proposed" }),
+      item({ ...migrate, state: "skipped" }),
+      item({ id: "recovery:4~0", kind: "recovery", state: "ready", title: "Reinstall deps" }),
+    ]);
+    await perform(() => host.store.refresh());
+    await settle();
+    await settle();
+    expect(page.container.querySelector("[aria-label='Cut a local patch release']")).not.toBeNull();
+    expect(page.container.textContent).toContain("Not worth saving: Migrate the config");
+    expect(toast()).toBeNull();
+    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions, 1 new");
   });
 });

@@ -141,18 +141,36 @@ export const EpisodeSchema = v.object({
 });
 export type Episode = v.InferOutput<typeof EpisodeSchema>;
 
-/** 候选的信号类型。 */
+/** 规则检测的信号类型。 */
 export const SignalKindSchema = v.picklist(["repeated", "recovery", "complex"]);
 export type SignalKind = v.InferOutput<typeof SignalKindSchema>;
 
-/** 规则检测出的一条候选。 */
+/** 线索的来源：三种规则信号，加上用户要求提炼的整段会话（session）与所选任务（selected）。 */
+export const LeadKindSchema = v.picklist([
+  "repeated",
+  "recovery",
+  "complex",
+  "session",
+  "selected",
+]);
+export type LeadKind = v.InferOutput<typeof LeadKindSchema>;
+
+/** 用户要求提炼的两种线索：没有规则匹配的步骤，证据是用户给定的全部任务。 */
+export function isRequested(kind: LeadKind): kind is "session" | "selected" {
+  return kind === "session" || kind === "selected";
+}
+
+/** 一条线索的候选：规则检测出的一组任务，或用户要求提炼的整段会话与所选任务。 */
 export const CandidateSchema = v.object({
-  /** 指纹，同一模式在多次检测间保持不变。 */
+  /**
+   * 规则候选是指纹，同一模式在多次检测间保持不变；整段会话是 `session:<会话 id>`，
+   * 所选任务是 `selected:<任务 id 的哈希>`。
+   */
   id: v.string(),
-  kind: SignalKindSchema,
-  /** 用来比较相似候选的特征：命令动作或错误签名的集合。 */
+  kind: LeadKindSchema,
+  /** 用来比较相似候选的特征：命令动作或错误签名的集合；用户要求提炼的线索为空。 */
   features: v.array(v.string()),
-  /** 这组任务共有的步骤，按代表任务里的顺序，用原来写法的签名展示。 */
+  /** 这组任务共有的步骤，按代表任务里的顺序，用原来写法的签名展示；用户要求提炼的线索为空。 */
   steps: v.array(v.string()),
   /** 证据 Episode，最新的在前。 */
   episodeIds: v.array(v.string()),

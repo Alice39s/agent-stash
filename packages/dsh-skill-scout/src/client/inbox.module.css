@@ -62,17 +62,12 @@
   pointer-events: none;
 }
 
-/* 浮层材质与宿主菜单一致。 */
-.panel {
+/* 浮层与弹出提示的材质与宿主菜单一致。 */
+.panel,
+.toast {
   position: fixed;
   z-index: 100;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-  width: 360px;
-  max-width: calc(100vw - 32px);
-  max-height: min(480px, calc(100vh - 140px));
-  padding: 4px;
   border: 0;
   border-radius: 16px;
   background: var(--dsw-specific-menu);
@@ -81,6 +76,15 @@
   box-shadow: var(--dsw-elevation-prominent);
   color: var(--dsw-alias-label-primary);
   animation: panel-in 140ms var(--ds-ease-in-out, ease);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  max-height: min(480px, calc(100vh - 140px));
+  padding: 4px;
 }
 
 /* 浮层自身只是焦点的落脚点，焦点环留给里面的卡片与按钮。 */
@@ -103,9 +107,8 @@
   display: flex;
   flex: none;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
-  padding: 8px 10px 6px 12px;
+  padding: 8px 12px 6px;
 }
 
 .title {
@@ -122,6 +125,10 @@
   color: var(--dsw-alias-label-tertiary);
 }
 
+.spacer {
+  flex: 1;
+}
+
 .scroll {
   display: flex;
   flex: 1 1 auto;
@@ -131,217 +138,6 @@
   overflow-y: auto;
   --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
   --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
-}
-
-.section {
-  display: flex;
-  flex-direction: column;
-}
-
-.sectionTitle {
-  margin: 0;
-  padding: 5px 12px 2px;
-  font-size: 11px;
-  line-height: 16px;
-  font-weight: 500;
-  color: var(--dsw-alias-label-tertiary);
-}
-
-.list {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.card {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: 4px;
-  border-radius: 10px;
-}
-
-@media (hover: hover) {
-  .card:hover {
-    background: var(--dsw-alias-interactive-bg-hover);
-  }
-}
-
-.open {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-  padding: 8px 4px 8px 12px;
-  border: 0;
-  border-radius: 10px;
-  background: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.open:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
-  outline-offset: -2px;
-}
-
-.cardTitle {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  font-size: 13px;
-  line-height: 18px;
-  overflow-wrap: anywhere;
-}
-
-.card[data-state="detected"] .cardTitle,
-.card[data-state="summarizing"] .cardTitle,
-.card[data-state="failed"]:not([data-stage="draft"]) .cardTitle {
-  color: var(--dsw-alias-label-secondary);
-}
-
-/* 摘要里的一句用途说明，最多两行。 */
-.cardSummary {
-  display: -webkit-box;
-  overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  font-size: 12px;
-  line-height: 17px;
-  color: var(--dsw-alias-label-secondary);
-  overflow-wrap: anywhere;
-}
-
-.cardMeta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 6px;
-  font-size: 11px;
-  line-height: 16px;
-  color: var(--dsw-alias-label-tertiary);
-}
-
-.state {
-  color: var(--dsw-alias-label-secondary);
-}
-
-.card[data-state="failed"] .state {
-  color: var(--dsw-alias-state-warn-label);
-}
-
-.dismiss {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 22px;
-  margin: 7px 6px 0 0;
-  padding: 0;
-  border: 0;
-  border-radius: 6px;
-  background: none;
-  color: var(--dsw-alias-label-tertiary);
-  cursor: pointer;
-  opacity: 0;
-}
-
-.card:hover .dismiss,
-.card:focus-within .dismiss {
-  opacity: 1;
-}
-
-.dismiss:focus-visible {
-  opacity: 1;
-  outline: 2px solid var(--dsw-alias-state-business-primary);
-  outline-offset: -2px;
-}
-
-@media (hover: hover) {
-  .dismiss:hover {
-    color: var(--dsw-alias-label-primary);
-    background: var(--dsw-alias-interactive-bg-hover);
-  }
-}
-
-@media (hover: none) {
-  .dismiss {
-    opacity: 1;
-  }
-}
-
-.historyToggle {
-  align-self: flex-start;
-  margin: 2px 0 2px 8px;
-  padding: 2px 4px;
-  border: 0;
-  border-radius: 6px;
-  background: none;
-  color: var(--dsw-alias-label-tertiary);
-  font: inherit;
-  font-size: 11px;
-  line-height: 16px;
-  cursor: pointer;
-}
-
-.historyToggle:focus-visible {
-  outline: 2px solid var(--dsw-alias-state-business-primary);
-}
-
-@media (hover: hover) {
-  .historyToggle:hover {
-    color: var(--dsw-alias-label-secondary);
-  }
-}
-
-.banner {
-  margin: 2px 4px 4px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  background: var(--dsw-alias-interactive-bg-hover);
-  color: var(--dsw-alias-label-secondary);
-  font-size: 12px;
-  line-height: 18px;
-}
-
-.empty {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px 14px;
-}
-
-.emptyTitle {
-  margin: 0;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--dsw-alias-label-primary);
-}
-
-.emptyBody {
-  margin: 0;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--dsw-alias-label-secondary);
-}
-
-.caption {
-  margin: 4px 0 0;
-  padding: 0 12px;
-  font-size: 11px;
-  line-height: 16px;
-  color: var(--dsw-alias-label-tertiary);
-}
-
-.empty .caption {
-  padding: 0;
 }
 
 .errorRow {
@@ -371,12 +167,11 @@
   border-radius: 4px;
 }
 
-/* 操作结果：浮层底部一行，带撤销，几秒后自行消失。 */
+/* 操作结果：浮层底部一行，几秒后自行消失。 */
 .notice {
   display: flex;
   flex: none;
   align-items: center;
-  justify-content: space-between;
   gap: 8px;
   margin-top: 4px;
   padding: 8px 12px;
@@ -386,13 +181,49 @@
   color: var(--dsw-alias-label-secondary);
 }
 
-.noticeText {
-  min-width: 0;
-  overflow-wrap: anywhere;
+/* 浮层关着、页面也没开时，提示从入口下方弹出。 */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: max-content;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 8px 8px 8px 14px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.toastClose {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+}
+
+.toastClose:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: -2px;
+}
+
+@media (hover: hover) {
+  .toastClose:hover {
+    color: var(--dsw-alias-label-primary);
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel {
+  .panel,
+  .toast {
     animation: none;
   }
 }

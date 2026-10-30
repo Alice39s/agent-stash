@@ -1,6 +1,7 @@
 /**
- * 一条建议的详情：摘要、证据、Skill 预览与编辑、文件改动，以及生成摘要、同意生成草稿、保存、忽略、撤销。
- * 证据、摘要与草稿从 Host 读取；建议的状态跟随收件箱刷新，状态或更新时间变化时重新读取详情。
+ * 一张卡片的详情面板，嵌在会话 Tab 与「历史回溯提炼」页的右栏：摘要、证据、Skill 预览与编辑、文件改动，
+ * 以及生成摘要、同意生成草稿、保存、忽略、撤销。同一线索给出多个 idea 时可以在面板里切换。
+ * 证据、摘要与草稿从 Host 读取；卡片的状态跟随收件箱刷新，状态或更新时间变化时重新读取详情。
  */
 import {
   Button,
@@ -9,23 +10,25 @@ import {
   IconCloseOutlineRegular,
   MarkdownText,
   SegmentedControl,
-  TextShimmer,
 } from "@deepseek-ai/dsh-client-ui-primitives";
-import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import * as v from "valibot";
 import {
   SkillFieldsSchema,
   type Action,
   type DetailView,
+  type InboxView,
   type EvidenceEpisode,
   type ItemView,
   type PreviewView,
   type SkillFields,
 } from "../shared.ts";
-import { Dialog } from "./dialog.tsx";
 import styles from "./detail.module.css";
-import { ago, sessionCount, shortPath, stateLabel, titleOf } from "./format.ts";
+import type { ScoutFace } from "./face.ts";
+import { ago, shortPath, sourceOf, stateLabel, titleOf } from "./format.ts";
+import { errorText, useLoaded, type Loaded } from "./hooks.ts";
 import type { ScoutKey, ScoutTranslate } from "./locale.ts";
+import { Working } from "./progress.tsx";
 import type { InboxStore, Notice } from "./store.ts";
 
 type Tab = "summary" | "evidence" | "skill" | "changes";
@@ -38,25 +41,15 @@ export interface StageModels {
 }
 
 export interface DetailProps {
-  readonly id: string;
   readonly item: ItemView;
   readonly inbox: InboxStore;
-  /** 读取详情；`version` 标识建议的状态，变化时重新读取。 */
-  readonly loadDetail: (id: string, version: string, signal: AbortSignal) => Promise<DetailView>;
+  readonly loadDetail: (id: string, signal: AbortSignal) => Promise<DetailView>;
   readonly models: StageModels;
   readonly defaultScope: "project" | "user";
   readonly openSession: ((sessionId: string) => void) | null;
   readonly t: ScoutTranslate;
-  readonly onClose: () => void;
-}
-
-type Loaded<T> =
-  | { readonly status: "loading" }
-  | { readonly status: "ready"; readonly value: T }
-  | { readonly status: "error"; readonly error: string };
-
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  /** 切换到同一线索的另一个 idea。 */
+  readonly onSelect: (id: string) => void;
 }
 
 /** Markdown 与 diff 视图的文案。 */
@@ -78,8 +71,10 @@ function useLabels(t: ScoutTranslate) {
         copied: t("code.copied"),
         collapse: t("diff.collapse"),
         collapseAria: t("diff.collapseAria"),
-        expand: (count: number) => t("diff.expand", { count }),
-        expandAria: (count: number) => t("diff.expand", { count }),
+        expand: (count: number) =>
+          t(count === 1 ? "diff.expand.one" : "diff.expand.other", { count }),
+        expandAria: (count: number) =>
+          t(count === 1 ? "diff.expand.one" : "diff.expand.other", { count }),
       },
     };
   }, [t]);
@@ -236,53 +231,41 @@ function keyed(lines: readonly string[]): { readonly key: string; readonly text:
   });
 }
 
-/** 摘要占位条的宽度：几行短文本。 */
-const SUMMARY_BARS = ["88%", "72%", "46%"] as const;
-/** 草稿占位条的宽度，按 SKILL.md 的排版：标题、描述，空一行，一节标题与几行步骤；空串是段间空行。 */
-const DRAFT_BARS = ["36%", "94%", "82%", "", "22%", "90%", "74%", "84%", "58%"] as const;
-/** 相邻占位条的起伏错开的时间，连起来是一道自上而下的波。 */
-const BAR_STAGGER = 70;
-
-/** 模型写作时的占位：按最终排版画出的几条横条，依次快速明暗起伏；减少动态效果时静止。 */
-function Skeleton({ bars }: { readonly bars: readonly string[] }): ReactNode {
-  return (
-    <div className={styles.skeleton} aria-hidden="true">
-      {keyed(bars).map(({ key, text: width }, index) =>
-        width === "" ? (
-          <span key={key} className={styles.skeletonGap} />
-        ) : (
-          <span
-            key={key}
-            className={styles.skeletonBar}
-            style={{ width, animationDelay: `${String(index * BAR_STAGGER)}ms` }}
-          />
-        ),
-      )}
-    </div>
-  );
+/** 详情面板；换一张卡片时编辑、预览与页签都重新开始。 */
+export function DetailPanel(props: DetailProps): ReactNode {
+  return <Detail key={props.item.id} {...props} />;
 }
 
-/** 模型正在处理时的一行状态与占位。 */
-function Working({
-  label,
-  bars,
+/** 按收件箱里的工作状态（两个阶段的模型、默认保存位置）显示一张卡片的详情。 */
+export function ItemDetail({
+  face,
+  view,
+  item,
+  t,
+  onSelect,
 }: {
-  readonly label: string;
-  readonly bars: readonly string[];
+  readonly face: ScoutFace;
+  readonly view: InboxView;
+  readonly item: ItemView;
+  readonly t: ScoutTranslate;
+  readonly onSelect: (id: string) => void;
 }): ReactNode {
+  const { models, scope } = view.status;
   return (
-    <div className={styles.working}>
-      <p className={styles.workingLabel} role="status">
-        <TextShimmer active>{label}</TextShimmer>
-      </p>
-      <Skeleton bars={bars} />
-    </div>
+    <DetailPanel
+      item={item}
+      inbox={face.inbox}
+      loadDetail={face.loadDetail}
+      models={{ summary: models.summary?.model ?? null, draft: models.draft?.model ?? null }}
+      defaultScope={scope}
+      openSession={face.openSession}
+      t={t}
+      onSelect={onSelect}
+    />
   );
 }
 
-/** 一条建议的详情对话框。 */
-export function Detail({
-  id,
+function Detail({
   item,
   inbox,
   loadDetail,
@@ -290,11 +273,11 @@ export function Detail({
   defaultScope,
   openSession,
   t,
-  onClose,
+  onSelect,
 }: DetailProps): ReactNode {
+  const id = item.id;
   const tabsId = useId();
   const labels = useLabels(t);
-  const [detail, setDetail] = useState<Loaded<DetailView>>({ status: "loading" });
   /** 用户选中的页签；为 null 时跟随状态：草稿生成中与可以保存时看 Skill，其余看摘要。 */
   const [chosenTab, setChosenTab] = useState<Tab | null>(null);
   const [scope, setScope] = useState(defaultScope);
@@ -306,22 +289,16 @@ export function Detail({
   const [error, setError] = useState<string | null>(null);
   const [now] = useState(() => Date.now());
 
-  // 建议的状态或更新时间变化时重新读取详情：摘要与草稿都在模型回复之后才有。
+  // 面板开着时这张卡片的请求结束不另行提示，待决定的摘要与草稿也算看过。
+  useEffect(() => inbox.watch(id), [inbox, id]);
+
+  // 卡片的状态或更新时间变化时重新读取详情：摘要与草稿都在模型回复之后才有。
   const version = `${item.state}:${String(item.updatedAt)}`;
-  useEffect(() => {
-    const controller = new AbortController();
-    loadDetail(id, version, controller.signal).then(
-      (value) => {
-        if (controller.signal.aborted) return;
-        setDetail({ status: "ready", value });
-      },
-      (reason: unknown) => {
-        if (controller.signal.aborted) return;
-        setDetail({ status: "error", error: message(reason) });
-      },
-    );
-    return () => controller.abort();
-  }, [id, version, loadDetail]);
+  const load = useCallback(
+    (_version: string, signal: AbortSignal) => loadDetail(id, signal),
+    [loadDetail, id],
+  );
+  const detail = useLoaded(load, version);
 
   const value = detail.status === "ready" ? detail.value : null;
   const create = item.decision === "suggest_create";
@@ -363,7 +340,7 @@ export function Detail({
               });
           },
           (reason: unknown) => {
-            if (!stale) setPreview({ status: "error", error: message(reason) });
+            if (!stale) setPreview({ status: "error", error: errorText(reason) });
           },
         );
       },
@@ -387,7 +364,7 @@ export function Detail({
       if (!result.ok) setError(t(`error.${result.error.kind}`));
       return result.ok;
     } catch (reason) {
-      setError(t("error.request", { error: message(reason) }));
+      setError(t("error.request", { error: errorText(reason) }));
       return false;
     } finally {
       setBusy(null);
@@ -407,17 +384,17 @@ export function Detail({
     setChosenTab(null);
     void run("draft", { action: "draft", id });
   };
-  const dismiss = async (similar: boolean): Promise<void> => {
-    const ok = await run(
+  const dismiss = (similar: boolean): void => {
+    void run(
       "dismiss",
       { action: "dismiss", id, similar },
       {
         key: similar ? "notice.dismissedSimilar" : "notice.dismissed",
         params: {},
         undo: { action: "restore", id },
+        view: null,
       },
     );
-    if (ok) onClose();
   };
   const save = async (): Promise<void> => {
     const ok = await run(
@@ -436,6 +413,7 @@ export function Detail({
         key: "notice.written",
         params: { skill: draft?.name ?? skillName },
         undo: { action: "undo", id },
+        view: null,
       },
     );
     if (ok) {
@@ -459,8 +437,7 @@ export function Detail({
   const activeTab = tabs.some((entry) => entry.value === wanted) ? wanted : "summary";
 
   const subtitle = [
-    t(`kind.${item.kind}`),
-    sessionCount(t, item.occurrences),
+    sourceOf(t, item),
     value?.draftCall != null
       ? t("detail.draftedBy", { model: value.draftCall.model })
       : value?.summary != null
@@ -543,10 +520,7 @@ export function Detail({
     if (item.state === "summarizing") {
       return (
         <div className={styles.stack}>
-          <Working
-            label={t("detail.summarizing", { model: models.summary ?? "" })}
-            bars={SUMMARY_BARS}
-          />
+          <Working stage="summary" progress={item.progress} model={models.summary} t={t} />
           {steps()}
         </div>
       );
@@ -588,7 +562,12 @@ export function Detail({
             <p className={styles.note}>
               {models.summary === null
                 ? t("detail.noSummaryModel")
-                : t("detail.summaryNote", { count: item.sessions.length, model: models.summary })}
+                : t(
+                    item.sessions.length === 1
+                      ? "detail.summaryNote.one"
+                      : "detail.summaryNote.other",
+                    { count: item.sessions.length, model: models.summary },
+                  )}
             </p>
           )}
         </div>
@@ -658,9 +637,7 @@ export function Detail({
 
   const skill = (): ReactNode => {
     if (item.state === "drafting") {
-      return (
-        <Working label={t("detail.drafting", { model: models.draft ?? "" })} bars={DRAFT_BARS} />
-      );
+      return <Working stage="draft" progress={item.progress} model={models.draft} t={t} />;
     }
     if (create && draft !== null) {
       return (
@@ -779,7 +756,6 @@ export function Detail({
         <Button
           size="sm"
           variant="primary"
-          data-autofocus=""
           disabled={models.draft === null || busy !== null}
           onClick={generate}
         >
@@ -815,7 +791,6 @@ export function Detail({
           <Button
             size="sm"
             variant="primary"
-            data-autofocus=""
             disabled={busy !== null || invalid || !writable}
             onClick={() => void save()}
           >
@@ -833,7 +808,6 @@ export function Detail({
       <Button
         size="sm"
         variant={item.decision === "skip" ? "outline" : "primary"}
-        data-autofocus=""
         disabled={models.summary === null || busy !== null}
         onClick={summarize}
       >
@@ -871,14 +845,12 @@ export function Detail({
                   key: "notice.undone",
                   params: { skill: item.write?.skill ?? skillName },
                   undo: null,
+                  view: null,
                 },
               )
             }
           >
             {t("action.undo")}
-          </Button>
-          <Button size="sm" variant="primary" onClick={onClose} data-autofocus="">
-            {t("action.done")}
           </Button>
         </>
       );
@@ -895,7 +867,7 @@ export function Detail({
               void run(
                 "restore",
                 { action: "restore", id },
-                { key: "notice.restored", params: {}, undo: null },
+                { key: "notice.restored", params: {}, undo: null, view: null },
               )
             }
           >
@@ -906,20 +878,10 @@ export function Detail({
     }
     return (
       <>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={busy !== null}
-          onClick={() => void dismiss(false)}
-        >
+        <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => dismiss(false)}>
           {t("action.dismiss")}
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={busy !== null}
-          onClick={() => void dismiss(true)}
-        >
+        <Button size="sm" variant="ghost" disabled={busy !== null} onClick={() => dismiss(true)}>
           {t("action.dismissSimilar")}
         </Button>
         <span className={styles.spacer} />
@@ -928,54 +890,78 @@ export function Detail({
     );
   };
 
+  const title = titleOf(item);
+  const siblings = value?.siblings ?? [];
   return (
-    <Dialog
-      title={titleOf(item)}
-      subtitle={subtitle}
-      closeLabel={t("detail.close")}
-      busy={busy === "save" || busy === "undo"}
-      onClose={onClose}
-      footer={
-        <>
-          {error !== null && (
-            <p className={styles.actionError} role="alert">
-              {error}
-            </p>
-          )}
-          {footer()}
-        </>
-      }
-    >
-      {detail.status === "loading" && (
-        <p className={styles.note} role="status">
-          {t("detail.loading")}
-        </p>
+    <section className={styles.detail} aria-label={title} aria-busy={busy !== null || undefined}>
+      <header className={styles.header}>
+        <h2 className={styles.title}>{title}</h2>
+        <p className={styles.subtitle}>{subtitle}</p>
+      </header>
+      {siblings.length > 1 && (
+        <nav className={styles.siblings} aria-label={t("detail.siblings")}>
+          <h3 className={styles.heading}>{t("detail.siblings")}</h3>
+          <ul className={styles.siblingList}>
+            {siblings.map((sibling) => (
+              <li key={sibling.id}>
+                <button
+                  type="button"
+                  className={styles.sibling}
+                  aria-current={sibling.id === id || undefined}
+                  onClick={() => onSelect(sibling.id)}
+                >
+                  <span className={styles.siblingTitle}>{sibling.title}</span>
+                  <span className={styles.siblingState}>{t(`state.${sibling.state}`)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </nav>
       )}
-      {detail.status === "error" && (
-        <p className={styles.failure} role="alert">
-          {t("detail.error")} <span className={styles.failureDetail}>{detail.error}</span>
-        </p>
-      )}
-      {value !== null && (
-        <>
-          <div className={styles.tabs}>
-            <SegmentedControl
-              id={tabsId}
-              label={t("detail.tabs")}
-              value={activeTab}
-              options={tabs}
-              onChange={setChosenTab}
-            />
-          </div>
-          <div className={styles.panel} role="tabpanel" aria-labelledby={`${tabsId}-${activeTab}`}>
-            {activeTab === "summary" && summaryTab()}
-            {activeTab === "evidence" && evidence()}
-            {activeTab === "skill" && skill()}
-            {activeTab === "changes" && changes()}
-          </div>
-        </>
-      )}
-    </Dialog>
+      <div className={styles.body}>
+        {detail.status === "loading" && (
+          <p className={styles.note} role="status">
+            {t("detail.loading")}
+          </p>
+        )}
+        {detail.status === "error" && (
+          <p className={styles.failure} role="alert">
+            {t("detail.error")} <span className={styles.failureDetail}>{detail.error}</span>
+          </p>
+        )}
+        {value !== null && (
+          <>
+            <div className={styles.tabs}>
+              <SegmentedControl
+                id={tabsId}
+                label={t("detail.tabs")}
+                value={activeTab}
+                options={tabs}
+                onChange={setChosenTab}
+              />
+            </div>
+            <div
+              className={styles.panel}
+              role="tabpanel"
+              aria-labelledby={`${tabsId}-${activeTab}`}
+            >
+              {activeTab === "summary" && summaryTab()}
+              {activeTab === "evidence" && evidence()}
+              {activeTab === "skill" && skill()}
+              {activeTab === "changes" && changes()}
+            </div>
+          </>
+        )}
+      </div>
+      <footer className={styles.footer}>
+        {error !== null && (
+          <p className={styles.actionError} role="alert">
+            {error}
+          </p>
+        )}
+        {footer()}
+      </footer>
+    </section>
   );
 }
 

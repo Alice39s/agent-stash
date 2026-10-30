@@ -1,7 +1,8 @@
 /**
  * 会话标题栏里的经验提炼入口：一个图标按钮，有新建议时带一个小计数；点开是收件箱浮层，
- * 点卡片打开详情对话框。入口在第一次读取完成前不渲染，避免标题栏闪动。
- * 计数只算打开收件箱之后出现的、等用户决定的摘要与草稿，看过即清零；详情里正打开的那条在眼前，不计入。
+ * 点卡片在主区域打开「历史回溯提炼」页并选中这条。入口在第一次读取完成前不渲染，避免标题栏闪动。
+ * 计数只算打开收件箱之后出现的、等用户决定的摘要与草稿，看过即清零；详情面板里正显示的那条在眼前，不计入。
+ * 页面没开着时，提示从入口下方弹出。
  */
 import {
   IconCloseOutlineRegular,
@@ -19,61 +20,12 @@ import {
   type ReactNode,
 } from "react";
 import { createPortal } from "react-dom";
-import * as v from "valibot";
-import type { DetailView, InboxView, ItemView } from "../shared.ts";
-import { Detail } from "./detail.tsx";
-import { groupItems, inFlight, metaOf, stateLabel, titleOf } from "./format.ts";
+import type { InboxView } from "../shared.ts";
+import { Banner, dismissItem, EmptyInbox, GroupedCards, NoticeBar } from "./cards.tsx";
+import { showItem, type FaceProps } from "./face.ts";
 import { useSnapshot } from "./hooks.ts";
-import type { ScoutTranslate } from "./locale.ts";
-import type { InboxStore } from "./store.ts";
+import type { SeenStore } from "./seen.ts";
 import styles from "./inbox.module.css";
-
-/** 注入到标题栏入口的共享对象。 */
-export interface InboxFace {
-  readonly inbox: InboxStore;
-  readonly seen: SeenStore;
-  readonly loadDetail: (id: string, version: string, signal: AbortSignal) => Promise<DetailView>;
-  readonly openSession: ((sessionId: string) => void) | null;
-}
-
-export type InboxEntryProps = InboxFace & { readonly t: ScoutTranslate };
-
-/** 看过的待决定建议；存在 localStorage 里，跨窗口共享。 */
-export interface SeenStore {
-  has(id: string): boolean;
-  add(ids: readonly string[]): void;
-}
-
-const SEEN_KEY = "agent-stash-skill-scout:seen";
-const SEEN_LIMIT = 200;
-
-const SeenSchema = v.pipe(v.string(), v.parseJson(), v.array(v.string()));
-
-/**
- * 以 localStorage 保存看过的建议 id，只保留最近的一部分。
- * localStorage 是页面共享的外部存储：内容损坏时当作没有记录，写不进去（无痕模式、配额已满）时只记在内存里，
- * 两种情况都只影响角标计数。
- */
-export function createSeenStore(storage: Pick<Storage, "getItem" | "setItem">): SeenStore {
-  let memory: readonly string[] = [];
-  const read = (): readonly string[] => {
-    const raw = storage.getItem(SEEN_KEY);
-    if (raw === null) return memory;
-    const parsed = v.safeParse(SeenSchema, raw);
-    return parsed.success ? [...new Set([...parsed.output, ...memory])] : memory;
-  };
-  return {
-    has: (id) => read().includes(id),
-    add(ids) {
-      memory = [...new Set([...read(), ...ids])].slice(-SEEN_LIMIT);
-      try {
-        storage.setItem(SEEN_KEY, JSON.stringify(memory));
-      } catch (error) {
-        if (!(error instanceof DOMException)) throw error;
-      }
-    },
-  };
-}
 
 const MEASURE_STYLE: CSSProperties = { visibility: "hidden", left: 0, top: 0 };
 
@@ -84,162 +36,22 @@ function awaiting(inbox: InboxView | null): string[] {
     .map((item) => item.id);
 }
 
-/** 新建议数：等用户决定、还没看过，也不是详情里正打开的那条。 */
-function unseen(inbox: InboxView | null, seen: SeenStore, viewing: string | null): number {
-  return awaiting(inbox).filter((id) => id !== viewing && !seen.has(id)).length;
+/** 新建议数：等用户决定、还没看过，也不在打开的详情里。 */
+function unseen(inbox: InboxView | null, seen: SeenStore, viewing: readonly string[]): number {
+  return awaiting(inbox).filter((id) => !viewing.includes(id) && !seen.has(id)).length;
 }
 
-interface CardProps {
-  readonly item: ItemView;
-  readonly now: number;
-  readonly t: ScoutTranslate;
-  readonly onOpen: (id: string) => void;
-  readonly onDismiss?: ((id: string) => void) | undefined;
-}
-
-function Card({ item, now, t, onOpen, onDismiss }: CardProps): ReactNode {
-  const title = titleOf(item);
-  return (
-    <li className={styles.card} data-state={item.state} data-stage={item.failure?.stage}>
-      <button
-        type="button"
-        className={styles.open}
-        data-item={item.id}
-        onClick={() => onOpen(item.id)}
-      >
-        <span className={styles.cardTitle}>{title}</span>
-        {item.description !== null && item.state !== "written" && (
-          <span className={styles.cardSummary}>{item.description}</span>
-        )}
-        <span className={styles.cardMeta}>
-          <span className={styles.state}>
-            <TextShimmer active={inFlight(item)}>{stateLabel(t, item)}</TextShimmer>
-          </span>
-          <span>{metaOf(t, item, now)}</span>
-        </span>
-      </button>
-      {onDismiss !== undefined && (
-        <button
-          type="button"
-          className={styles.dismiss}
-          aria-label={`${t("action.dismiss")}: ${title}`}
-          title={t("action.dismiss")}
-          onClick={() => onDismiss(item.id)}
-        >
-          <IconCloseOutlineRegular size={12} />
-        </button>
-      )}
-    </li>
-  );
-}
-
-interface PanelBodyProps {
-  readonly inbox: InboxView;
-  readonly now: number;
-  readonly t: ScoutTranslate;
-  readonly onOpen: (id: string) => void;
-  readonly onDismiss: (id: string) => void;
-}
-
-function Banner({
-  inbox,
-  t,
-}: {
-  readonly inbox: InboxView;
-  readonly t: ScoutTranslate;
-}): ReactNode {
-  const { status } = inbox;
-  const pending = inbox.items.some((item) => item.state === "detected" || item.state === "failed");
-  let key: "banner.noModel" | "banner.discoveryOff" | "banner.secondary" | null = null;
-  if (!status.discovery) key = "banner.discoveryOff";
-  else if (status.models.summary === null && pending) key = "banner.noModel";
-  else if (!status.lead) key = "banner.secondary";
-  if (key === null) return null;
-  return <p className={styles.banner}>{t(key)}</p>;
-}
-
-function PanelBody({ inbox, now, t, onOpen, onDismiss }: PanelBodyProps): ReactNode {
-  const [history, setHistory] = useState(false);
-  const groups = groupItems(inbox.items);
-  if (groups.review.length === 0 && groups.found.length === 0 && groups.history.length === 0) {
-    return (
-      <div className={styles.empty}>
-        <Banner inbox={inbox} t={t} />
-        <p className={styles.emptyTitle}>{t("panel.empty.title")}</p>
-        <p className={styles.emptyBody}>{t("panel.empty.body")}</p>
-        <p className={styles.caption}>
-          {t("panel.analyzed", { sessions: inbox.status.analyzed.sessions })}
-        </p>
-      </div>
-    );
-  }
-  const section = (
-    key: "section.review" | "section.found",
-    items: readonly ItemView[],
-  ): ReactNode =>
-    items.length === 0 ? null : (
-      <section className={styles.section} aria-label={t(key)}>
-        <h3 className={styles.sectionTitle}>{t(key)}</h3>
-        <ul className={styles.list}>
-          {items.map((item) => (
-            <Card
-              key={item.id}
-              item={item}
-              now={now}
-              t={t}
-              onOpen={onOpen}
-              onDismiss={inFlight(item) ? undefined : onDismiss}
-            />
-          ))}
-        </ul>
-      </section>
-    );
-  return (
-    <>
-      <Banner inbox={inbox} t={t} />
-      {section("section.review", groups.review)}
-      {section("section.found", groups.found)}
-      {groups.history.length > 0 && (
-        <section className={styles.section}>
-          <button
-            type="button"
-            className={styles.historyToggle}
-            aria-expanded={history}
-            onClick={() => setHistory(!history)}
-          >
-            {history ? t("history.hide") : t("history.show", { count: groups.history.length })}
-          </button>
-          {history && (
-            <ul className={styles.list}>
-              {groups.history.map((item) => (
-                <Card key={item.id} item={item} now={now} t={t} onOpen={onOpen} />
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
-    </>
-  );
-}
-
-/** 标题栏入口与收件箱浮层。 */
-export function InboxEntry({
-  inbox,
-  seen,
-  loadDetail,
-  openSession,
-  t,
-}: InboxEntryProps): ReactNode {
+/** 标题栏入口、收件箱浮层与弹出提示。 */
+export function InboxEntry(props: FaceProps): ReactNode {
+  const { inbox, seen, t } = props;
   const state = useSnapshot(inbox);
   const [open, setOpen] = useState(false);
   const [now, setNow] = useState(() => Date.now());
-  const [detailId, setDetailId] = useState<string | null>(null);
-  /** 详情关闭、收件箱重新打开后要聚焦的卡片。 */
-  const [returnTo, setReturnTo] = useState<string | null>(null);
   const [, setSeenVersion] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const toastRef = useRef<HTMLDivElement>(null);
   const position = useAnchoredPosition({
     open,
     anchorRef: triggerRef,
@@ -248,26 +60,27 @@ export function InboxEntry({
     gap: 5,
     margin: 16,
   });
-  useDismissOnOutsidePointer(rootRef, open && detailId === null, setOpen, panelRef);
+  const toast = !open && !state.paged ? state.notice : null;
+  const toastPosition = useAnchoredPosition({
+    open: toast !== null,
+    anchorRef: triggerRef,
+    panelRef: toastRef,
+    side: "bottom",
+    gap: 5,
+    margin: 16,
+  });
+  useDismissOnOutsidePointer(rootRef, open, setOpen, panelRef);
 
-  // 从详情回到收件箱时，焦点落回刚才那张卡片；卡片已移走时落在浮层上，Escape 照常可用。
-  useEffect(() => {
-    if (!open || returnTo === null || position === null) return;
-    const panelElement = panelRef.current;
-    const card = panelElement?.querySelector<HTMLElement>(`[data-item="${CSS.escape(returnTo)}"]`);
-    (card ?? panelElement)?.focus();
-  }, [open, returnTo, position]);
-
-  // 收件箱开着时出现的待决定建议也算看过；详情开着时，用户在里面等到的摘要或草稿同样算看过。
+  // 收件箱开着时出现的待决定建议算看过；详情面板里等到的摘要或草稿同样算看过。
   useEffect(() => {
     if (state.inbox === null) return;
-    const ids = awaiting(state.inbox).filter((id) => open || id === detailId);
+    const ids = awaiting(state.inbox).filter((id) => open || state.viewing.includes(id));
     if (ids.some((id) => !seen.has(id))) seen.add(ids);
-  }, [open, detailId, state.inbox, seen]);
+  }, [open, state.viewing, state.inbox, seen]);
 
   if (state.inbox === null && state.status !== "error") return null;
 
-  const fresh = unseen(state.inbox, seen, detailId);
+  const fresh = unseen(state.inbox, seen, state.viewing);
   const badge = state.inbox?.status.notify === "badge" && fresh > 0;
   const label =
     fresh === 0
@@ -286,34 +99,19 @@ export function InboxEntry({
   };
   const close = (): void => {
     setOpen(false);
-    setReturnTo(null);
     setSeenVersion((version) => version + 1);
     triggerRef.current?.focus();
   };
   const onKeyDown = (event: KeyboardEvent<HTMLElement>): void => {
-    if (event.key !== "Escape" || !open || detailId !== null) return;
+    if (event.key !== "Escape" || !open) return;
     event.preventDefault();
     close();
   };
-  const openDetail = (id: string): void => {
+  /** 在页面里打开一张卡片；不传 id 时只打开页面。 */
+  const openPage = (id: string | null): void => {
     setOpen(false);
-    setDetailId(id);
+    showItem(props, id);
   };
-  const closeDetail = (): void => {
-    setReturnTo(detailId);
-    setDetailId(null);
-    show();
-  };
-  const dismiss = (id: string): void => {
-    void inbox.act(
-      { action: "dismiss", id, similar: false },
-      { key: "notice.dismissed", params: {}, undo: { action: "restore", id } },
-    );
-  };
-
-  const detailItem =
-    detailId === null ? undefined : state.inbox?.items.find((item) => item.id === detailId);
-  const notice = state.notice;
 
   const panel = open
     ? createPortal(
@@ -335,6 +133,10 @@ export function InboxEntry({
                 </TextShimmer>
               </span>
             )}
+            <span className={styles.spacer} />
+            <button type="button" className={styles.link} onClick={() => openPage(null)}>
+              {t("page.title")}
+            </button>
           </div>
           <div className={styles.scroll}>
             {state.status === "error" && (
@@ -345,43 +147,53 @@ export function InboxEntry({
                 </button>
               </div>
             )}
-            {state.inbox === null && state.status === "loading" && (
-              <p className={styles.caption} role="status">
-                {t("panel.loading")}
-              </p>
-            )}
-            {state.inbox !== null && (
-              <PanelBody
-                inbox={state.inbox}
-                now={now}
-                t={t}
-                onOpen={openDetail}
-                onDismiss={dismiss}
-              />
-            )}
+            {state.inbox !== null && <Banner inbox={state.inbox} t={t} />}
+            {state.inbox !== null &&
+              (state.inbox.items.length === 0 ? (
+                <EmptyInbox inbox={state.inbox} t={t} />
+              ) : (
+                <GroupedCards
+                  items={state.inbox.items}
+                  now={now}
+                  t={t}
+                  selected={null}
+                  onOpen={openPage}
+                  onDismiss={(id) => dismissItem(inbox, id)}
+                />
+              ))}
           </div>
-          {notice !== null && (
+          {state.notice !== null && (
             <div className={styles.notice} role="status">
-              <span className={styles.noticeText}>{t(notice.key, notice.params)}</span>
-              {notice.undo !== null && (
-                <button
-                  type="button"
-                  className={styles.link}
-                  onClick={() => {
-                    const action = notice.undo;
-                    inbox.clearNotice();
-                    if (action !== null) void inbox.act(action);
-                  }}
-                >
-                  {t("notice.undo")}
-                </button>
-              )}
+              <NoticeBar notice={state.notice} face={props} t={t} onView={() => setOpen(false)} />
             </div>
           )}
         </div>,
         document.body,
       )
     : null;
+
+  const popup =
+    toast === null
+      ? null
+      : createPortal(
+          <div
+            ref={toastRef}
+            className={styles.toast}
+            style={toastPosition ?? MEASURE_STYLE}
+            role="status"
+          >
+            <NoticeBar notice={toast} face={props} t={t} />
+            <button
+              type="button"
+              className={styles.toastClose}
+              aria-label={t("notice.close")}
+              onClick={() => inbox.clearNotice()}
+            >
+              <IconCloseOutlineRegular size={12} />
+            </button>
+          </div>,
+          document.body,
+        );
 
   return (
     <div ref={rootRef} className={styles.root} onKeyDown={onKeyDown}>
@@ -403,22 +215,7 @@ export function InboxEntry({
         )}
       </button>
       {panel}
-      {detailId !== null && detailItem !== undefined && (
-        <Detail
-          id={detailId}
-          item={detailItem}
-          inbox={inbox}
-          loadDetail={loadDetail}
-          models={{
-            summary: state.inbox?.status.models.summary?.model ?? null,
-            draft: state.inbox?.status.models.draft?.model ?? null,
-          }}
-          defaultScope={state.inbox?.status.scope ?? "project"}
-          openSession={openSession}
-          t={t}
-          onClose={closeDetail}
-        />
-      )}
+      {popup}
     </div>
   );
 }

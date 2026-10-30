@@ -116,6 +116,42 @@ export const media = {
     width: 960,
     height: 720,
   },
+  "skill-scout-session": {
+    image: "/media/skill-scout-session.png",
+    video: undefined,
+    width: 1280,
+    height: 800,
+  },
+  "skill-scout-session-en": {
+    image: "/media/skill-scout-session-en.png",
+    video: undefined,
+    width: 1280,
+    height: 800,
+  },
+  "skill-scout-search": {
+    image: "/media/skill-scout-search.png",
+    video: undefined,
+    width: 1280,
+    height: 800,
+  },
+  "skill-scout-search-en": {
+    image: "/media/skill-scout-search-en.png",
+    video: undefined,
+    width: 1280,
+    height: 800,
+  },
+  "skill-scout-stats": {
+    image: "/media/skill-scout-stats.png",
+    video: undefined,
+    width: 1280,
+    height: 1009,
+  },
+  "skill-scout-stats-en": {
+    image: "/media/skill-scout-stats-en.png",
+    video: undefined,
+    width: 1280,
+    height: 1009,
+  },
   "skill-scout-settings": {
     image: "/media/skill-scout-settings.png",
     video: undefined,

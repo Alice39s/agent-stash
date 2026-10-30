@@ -1,10 +1,124 @@
-/* 详情正文：摘要、证据列表、Skill 预览与编辑、文件改动。只用宿主主题变量。 */
+/* 详情面板：标题、同一线索的其他 idea、页签与正文、底部操作。只用宿主主题变量。
+   面板填满右栏，标题与操作固定，正文在中间滚动。 */
+.detail {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  color: var(--dsw-alias-label-primary);
+  font-size: 14px;
+  line-height: 22px;
+}
+
+.header {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 2px;
+  padding: 16px 20px 10px;
+}
+
+.title {
+  margin: 0;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* 同一线索的其他 idea：当前的那个高亮。 */
+.siblings {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 20px 10px;
+}
+
+.siblingList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sibling {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 10px;
+  border: 0;
+  border-radius: var(--dsw-radius-md);
+  background: none;
+  box-shadow: 0 0 0 0.5px var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.sibling[aria-current="true"] {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+@media (hover: hover) {
+  .sibling:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+
+.sibling:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 1px;
+}
+
+.siblingTitle {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.siblingState {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+  font-size: 11px;
+}
+
+.body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  padding: 0 20px 16px;
+  overflow-y: auto;
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+.footer {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 20px 16px;
+  border-top: 0.5px solid var(--dsw-alias-border-l2);
+}
+
 .tabs {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   padding: 0 0 12px;
-  background: var(--dsw-alias-bg-layer-2);
 }
 
 .panel {
@@ -103,10 +217,23 @@
 }
 
 .workingLabel {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px 8px;
   margin: 0;
   font-size: 12px;
   line-height: 18px;
   color: var(--dsw-alias-label-secondary);
+}
+
+.model,
+.elapsed {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.elapsed {
+  font-variant-numeric: tabular-nums;
 }
 
 .skeleton {
@@ -140,10 +267,16 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .skeletonBar {
-    animation: none;
-  }
+/* 收到的正文按比例点亮占位条：点亮的条用着重色，不再起伏。 */
+.skeletonBar[data-lit] {
+  background: var(--dsw-alias-state-business-primary);
+  opacity: 0.35;
+  animation: none;
+}
+
+/* 系统要求减少动态效果时，占位条全部静止。 */
+.working[data-motion="reduce"] .skeletonBar {
+  animation: none;
 }
 
 .callout {

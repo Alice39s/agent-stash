@@ -8,6 +8,12 @@ export const ROUTE_BASE = "/agent-stash-skill-scout";
 export const INBOX_PATH = `${ROUTE_BASE}/inbox`;
 export const DETAIL_PATH = `${ROUTE_BASE}/detail`;
 export const ACTION_PATH = `${ROUTE_BASE}/action`;
+export const SESSION_PATH = `${ROUTE_BASE}/session`;
+export const SEARCH_PATH = `${ROUTE_BASE}/search`;
+export const STATS_PATH = `${ROUTE_BASE}/stats`;
+
+/** 会话 Tab 与「历史回溯提炼」页在 DSH 槽位里的 id。 */
+export const VIEW_ID = "skill-scout";
 
 /** 插件页里本插件配置页的键：`<包名>#<条目 id>`。 */
 export const PACKAGE_NAME = "@agent-stash/dsh-skill-scout";
@@ -15,11 +21,19 @@ export const ROW_ID = "agent-stash-skill-scout";
 
 const Nullable = <T extends v.GenericSchema>(schema: T) => v.nullable(schema);
 
-export const SignalKindViewSchema = v.picklist(["repeated", "recovery", "complex"]);
+/** 线索的来源：三种规则信号，加上用户发起的「提炼本会话」与「提炼所选」。 */
+export const SignalKindViewSchema = v.picklist([
+  "repeated",
+  "recovery",
+  "complex",
+  "session",
+  "selected",
+]);
 
 /**
- * 建议在界面上的状态。summarizing 与 drafting 只存在于 Host 内存，表示发现模型正在写摘要、
- * 生成模型正在写草稿；其余与存储里的状态一致。
+ * 一张卡片在界面上的状态。还没有可同意的 idea 时，卡片代表整条线索：detected、summarizing、skipped、
+ * failed（摘要失败）、dismissed；摘要给出 idea 后，每个 idea 一张卡片：proposed、drafting、ready、
+ * failed（草稿失败）、dismissed、written。summarizing 与 drafting 只存在于 Host 内存。
  */
 export const ItemStateSchema = v.picklist([
   "detected",
@@ -50,6 +64,39 @@ export const FailureKindViewSchema = v.picklist([
 ]);
 export type FailureKind = v.InferOutput<typeof FailureKindViewSchema>;
 
+/**
+ * 一次模型请求走到哪一步：
+ * - queued：等前一个请求结束；
+ * - preparing：整理证据包、读取已有 Skill 与 skill-creator；
+ * - waiting：请求已发出，还没收到任何分块；
+ * - thinking：收到推理内容；
+ * - writing：收到正文，`chars` 是已收到的字数；
+ * - checking：回复已收齐，正在按 schema 与证据核对。
+ */
+export const ProgressPhaseSchema = v.picklist([
+  "queued",
+  "preparing",
+  "waiting",
+  "thinking",
+  "writing",
+  "checking",
+]);
+export type ProgressPhase = v.InferOutput<typeof ProgressPhaseSchema>;
+
+export const ProgressViewSchema = v.object({
+  stage: v.picklist(["summary", "draft"]),
+  phase: ProgressPhaseSchema,
+  /** 请求开始的时间。 */
+  startedAt: v.number(),
+  /** 进入当前阶段的时间。 */
+  phaseAt: v.number(),
+  /** 已收到的正文字数。 */
+  chars: v.number(),
+  /** 这类回复通常的字数，界面据此估算进度；不是上限。 */
+  expected: v.number(),
+});
+export type ProgressView = v.InferOutput<typeof ProgressViewSchema>;
+
 /** 证据来自的一次任务。 */
 export const SessionRefSchema = v.object({
   sessionId: v.string(),
@@ -60,9 +107,17 @@ export const SessionRefSchema = v.object({
 });
 export type SessionRef = v.InferOutput<typeof SessionRefSchema>;
 
-/** 收件箱里的一条建议。 */
+/** 收件箱里的一张卡片：一个 idea，或者还没有 idea 的一条线索。 */
 export const ItemViewSchema = v.object({
+  /** idea 是 `<线索 id>~<下标>`，线索就是线索 id。 */
   id: v.string(),
+  leadId: v.string(),
+  /** idea 在摘要里的下标；卡片代表整条线索时为 null。 */
+  ideaIndex: Nullable(v.number()),
+  /** 这条线索的摘要给出的 idea 数。 */
+  ideaCount: v.number(),
+  /** 其他线索里同名、未结束的 idea 折叠进这张卡片的数量。 */
+  merged: v.number(),
   kind: SignalKindViewSchema,
   state: ItemStateSchema,
   /** 摘要给出的标题；还没有摘要时为 null，界面用 goal 代替。 */
@@ -114,6 +169,8 @@ export const ItemViewSchema = v.object({
     }),
   ),
   dismissedSimilar: v.boolean(),
+  /** 正在进行的模型请求；没有时为 null。 */
+  progress: Nullable(ProgressViewSchema),
 });
 export type ItemView = v.InferOutput<typeof ItemViewSchema>;
 
@@ -149,9 +206,22 @@ export const StatusViewSchema = v.object({
     limit: v.number(),
     /** 今天用户发起的摘要与草稿次数。 */
     requested: v.number(),
+    /** 未命中缓存的输入。 */
     inputTokens: v.number(),
+    cacheReadTokens: v.number(),
+    cacheWriteTokens: v.number(),
     outputTokens: v.number(),
   }),
+  /** 回溯更早的会话；没有在回溯时为 null。 */
+  backfill: Nullable(
+    v.object({
+      range: v.picklist(["90d", "all"]),
+      state: v.picklist(["listing", "running", "paused", "done"]),
+      total: v.number(),
+      done: v.number(),
+      failed: v.number(),
+    }),
+  ),
   lastError: Nullable(v.object({ kind: v.string(), message: v.string(), at: v.number() })),
   analyzed: v.object({ sessions: v.number(), episodes: v.number() }),
 });
@@ -219,6 +289,8 @@ export type CallView = v.InferOutput<typeof CallViewSchema>;
 /** 一条建议的完整信息：证据、摘要与草稿。 */
 export const DetailViewSchema = v.object({
   item: ItemViewSchema,
+  /** 同一线索的全部 idea（含这一个），按摘要里的顺序。 */
+  siblings: v.array(v.object({ id: v.string(), title: v.string(), state: ItemStateSchema })),
   episodes: v.array(EvidenceEpisodeSchema),
   summary: CallViewSchema,
   draftCall: CallViewSchema,
@@ -251,6 +323,123 @@ export const PreviewViewSchema = v.variant("kind", [
 ]);
 export type PreviewView = v.InferOutput<typeof PreviewViewSchema>;
 
+/** 一个任务（Episode）的概要，用于会话 Tab 与搜索结果。 */
+export const TaskViewSchema = v.object({
+  episodeId: v.string(),
+  sessionId: v.string(),
+  at: v.number(),
+  cwd: Nullable(v.string()),
+  goal: v.string(),
+  outcome: v.picklist(["verified", "succeeded", "unverified", "disputed", "failed", "aborted"]),
+  commands: v.number(),
+  edits: v.number(),
+  recoveries: v.number(),
+  /** 前几步的命令签名或改动文件。 */
+  steps: v.array(v.string()),
+  /** 搜索命中的片段（命令、错误行、文件路径或插话）；不是搜索结果时为空。 */
+  matches: v.array(v.string()),
+});
+export type TaskView = v.InferOutput<typeof TaskViewSchema>;
+
+/** 一个会话在插件里的分析情况。 */
+export const SessionViewSchema = v.object({
+  sessionId: v.string(),
+  /**
+   * - analyzed：已分析，日志之后没有变化或正在等静默期；
+   * - waiting：回合已结束，等静默期过去；
+   * - pending：还没分析（超出历史范围、分析关闭，或启动时还没读到）；
+   * - failed：分析出错，`error` 是原因；
+   * - subagent：子代理会话，不单独分析；
+   * - missing：DSH 里找不到这个会话。
+   */
+  state: v.picklist(["analyzed", "waiting", "pending", "failed", "subagent", "missing"]),
+  scannedAt: Nullable(v.number()),
+  error: Nullable(v.string()),
+  tasks: v.array(TaskViewSchema),
+});
+export type SessionView = v.InferOutput<typeof SessionViewSchema>;
+
+export const SearchViewSchema = v.object({
+  query: v.string(),
+  /** 命中总数；`hits` 只含前 `limit` 条，按命中词数与时间排序。 */
+  total: v.number(),
+  hits: v.array(TaskViewSchema),
+  /** 索引覆盖的范围。 */
+  indexed: v.object({ sessions: v.number(), episodes: v.number() }),
+});
+export type SearchView = v.InferOutput<typeof SearchViewSchema>;
+
+/** 一次模型调用的记录。 */
+export const CallLogViewSchema = v.object({
+  at: v.number(),
+  stage: StageViewSchema,
+  /** 线索或 idea 的 id，用来跳到那张卡片。 */
+  itemId: v.string(),
+  title: v.string(),
+  provider: v.string(),
+  model: v.string(),
+  durationMs: v.number(),
+  inputTokens: v.number(),
+  cacheReadTokens: v.number(),
+  cacheWriteTokens: v.number(),
+  outputTokens: v.number(),
+  result: v.picklist(["proposed", "skipped", "drafted", "failed"]),
+  /** 不值得保存的理由、idea 数或失败原因。 */
+  detail: Nullable(v.string()),
+});
+export type CallLogView = v.InferOutput<typeof CallLogViewSchema>;
+
+const Count = v.number();
+
+export const StatsViewSchema = v.object({
+  coverage: v.object({
+    analyzed: Count,
+    /** 历史范围内、不是子代理的会话数；还没列出会话时为 null。 */
+    inRange: Nullable(Count),
+    /** DSH 里全部不是子代理的会话数。 */
+    total: Nullable(Count),
+    backfilled: Count,
+    failed: v.array(v.object({ sessionId: v.string(), message: v.string(), at: v.number() })),
+  }),
+  outcomes: v.object({
+    verified: Count,
+    succeeded: Count,
+    unverified: Count,
+    disputed: Count,
+    failed: Count,
+    aborted: Count,
+  }),
+  funnel: v.object({
+    leads: Count,
+    summarized: Count,
+    skipped: Count,
+    ideas: Count,
+    drafted: Count,
+    written: Count,
+    dismissed: Count,
+  }),
+  /** 跨会话出现最多的动作（日常动作与查看类命令除外）。 */
+  actions: v.array(v.object({ key: v.string(), label: v.string(), sessions: Count })),
+  /** 在多个会话里出现的同一类错误。 */
+  errors: v.array(v.object({ signature: v.string(), example: v.string(), sessions: Count })),
+  /** 近 7 天每天的模型用量，最早的在前。 */
+  usage: v.array(
+    v.object({
+      day: v.string(),
+      summaries: Count,
+      requested: Count,
+      failures: Count,
+      inputTokens: Count,
+      cacheReadTokens: Count,
+      cacheWriteTokens: Count,
+      outputTokens: Count,
+    }),
+  ),
+  /** 最近的模型调用，最新的在前。 */
+  calls: v.array(CallLogViewSchema),
+});
+export type StatsView = v.InferOutput<typeof StatsViewSchema>;
+
 const Id = v.pipe(v.string(), v.minLength(1), v.maxLength(200));
 const Scope = v.optional(v.picklist(["project", "user"]));
 const Section = v.optional(v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(8000)));
@@ -277,6 +466,18 @@ export const ActionSchema = v.variant("action", [
   }),
   v.object({ action: v.literal("undo"), id: Id }),
   v.object({ action: v.literal("scan") }),
+  /** 不等静默期，立即分析一个会话。 */
+  v.object({ action: v.literal("analyze-session"), sessionId: Id }),
+  /** 把整段会话交给发现模型，最多给出 5 个 idea。 */
+  v.object({ action: v.literal("extract-session"), sessionId: Id }),
+  /** 把搜索结果里勾选的任务交给发现模型。 */
+  v.object({
+    action: v.literal("extract-selected"),
+    episodeIds: v.pipe(v.array(Id), v.minLength(1), v.maxLength(12)),
+  }),
+  /** 读入历史范围之外更早的会话，供搜索与提炼。 */
+  v.object({ action: v.literal("backfill"), range: v.picklist(["90d", "all"]) }),
+  v.object({ action: v.literal("backfill-pause") }),
 ]);
 export type Action = v.InferInput<typeof ActionSchema>;
 
@@ -290,11 +491,18 @@ export const ActionErrorKindSchema = v.picklist([
   "changed",
   "outside",
   "unsafe",
+  "empty",
 ]);
 export type ActionErrorKind = v.InferOutput<typeof ActionErrorKindSchema>;
 
 export const ActionResultSchema = v.variant("ok", [
-  v.object({ ok: v.literal(true), inbox: InboxViewSchema, preview: v.optional(PreviewViewSchema) }),
+  v.object({
+    ok: v.literal(true),
+    inbox: InboxViewSchema,
+    preview: v.optional(PreviewViewSchema),
+    /** extract-session 与 extract-selected 建立或沿用的线索 id。 */
+    leadId: v.optional(v.string()),
+  }),
   v.object({
     ok: v.literal(false),
     error: v.object({ kind: ActionErrorKindSchema, message: v.string() }),

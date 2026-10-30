@@ -1,4 +1,4 @@
-/** 浏览器半部测试共用的翻译函数、收件箱样例、Host 路由替身与挂载工具。 */
+/** 浏览器半部测试共用的翻译函数、收件箱与会话样例、Host 路由替身与挂载工具。 */
 import { act, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import type {
@@ -8,9 +8,18 @@ import type {
   InboxView,
   ItemView,
   PreviewView,
+  ProgressView,
+  SearchView,
+  SessionView,
+  StatsView,
   StatusView,
+  TaskView,
 } from "../shared.ts";
+import type { SearchQuery } from "./api.ts";
+import type { ScoutFace } from "./face.ts";
 import { SCOUT_DICTIONARIES, type ScoutTranslate } from "./locale.ts";
+import { createPageStore } from "./navigation.ts";
+import { createSeenStore } from "./seen.ts";
 import { createInboxStore, type InboxStore } from "./store.ts";
 
 /** 与宿主 `locale.bind` 相同的 `{name}` 插值；缺参数时直接报错。 */
@@ -39,13 +48,23 @@ export const STATUS: StatusView = {
   scanning: false,
   waiting: 0,
   working: 0,
-  usage: { summaries: 1, limit: 6, requested: 1, inputTokens: 1200, outputTokens: 300 },
+  usage: {
+    summaries: 1,
+    limit: 6,
+    requested: 1,
+    inputTokens: 1200,
+    cacheReadTokens: 800,
+    cacheWriteTokens: 100,
+    outputTokens: 300,
+  },
+  backfill: null,
   lastError: null,
   analyzed: { sessions: 4, episodes: 4 },
 };
 
-/** 摘要与草稿都还没有的建议应有的字段。 */
+/** 摘要还没有给出 idea 的线索卡片应有的字段。 */
 export const UNSUMMARIZED: Partial<ItemView> = {
+  id: "repeated:1",
   state: "detected",
   title: null,
   found: null,
@@ -58,10 +77,19 @@ export const UNSUMMARIZED: Partial<ItemView> = {
   skill: null,
 };
 
-/** 一条建议；默认是草稿已生成、可以保存的重复流程。 */
+/**
+ * 一张卡片；默认是一条线索的第一个 idea，草稿已生成、可以保存的重复流程。
+ * 线索 id 与 idea 下标按 `<线索 id>~<下标>` 从 id 推出。
+ */
 export function item(fields: Partial<ItemView> = {}): ItemView {
+  const id = fields.id ?? "repeated:1~0";
+  const [leadId = id, index] = id.split("~");
   return {
-    id: "repeated:1",
+    id,
+    leadId,
+    ideaIndex: index === undefined ? null : Number(index),
+    ideaCount: index === undefined ? 0 : 1,
+    merged: 0,
     kind: "repeated",
     state: "ready",
     title: "Cut a local patch release",
@@ -101,6 +129,20 @@ export function item(fields: Partial<ItemView> = {}): ItemView {
     failure: null,
     write: null,
     dismissedSimilar: false,
+    progress: null,
+    ...fields,
+  };
+}
+
+/** 模型请求的进度；默认是摘要正在写、已收到一半预计字数。 */
+export function progress(fields: Partial<ProgressView> = {}): ProgressView {
+  return {
+    stage: "summary",
+    phase: "writing",
+    startedAt: NOW - 12_000,
+    phaseAt: NOW - 3_000,
+    chars: 450,
+    expected: 900,
     ...fields,
   };
 }
@@ -123,11 +165,15 @@ const CALL = {
   outputTokens: 300,
 };
 
-/** 一条建议的详情：两个任务的证据，第一个任务的检查被模型引用。 */
+/** 一张卡片的详情：两个任务的证据，第一个任务的检查被模型引用；idea 卡片的 siblings 只有它自己。 */
 export function detailOf(view: ItemView): DetailView {
   const drafted = view.state === "ready" || view.state === "written";
   return {
     item: view,
+    siblings:
+      view.ideaIndex === null
+        ? []
+        : [{ id: view.id, title: view.title ?? view.goal, state: view.state }],
     episodes: [
       {
         ref: "E1",
@@ -208,16 +254,170 @@ export const CREATE_PREVIEW: PreviewView = {
   exists: false,
 };
 
-/** 记录提交的操作；`answer` 决定 Host 的回应，`gate` 不为 null 时读取收件箱要等它兑现。 */
+/** 一个任务的概要；默认是 s1 里经检查通过的一次发布。 */
+export function task(fields: Partial<TaskView> = {}): TaskView {
+  return {
+    episodeId: "s1:8",
+    sessionId: "s1",
+    at: NOW - 3_600_000,
+    cwd: "~/work/widget",
+    goal: "Release a patch version",
+    outcome: "verified",
+    commands: 3,
+    edits: 1,
+    recoveries: 0,
+    steps: ["npm test", "npm version patch", "git push --tags"],
+    matches: [],
+    ...fields,
+  };
+}
+
+/** 会话 s1：已分析，两个任务。 */
+export const SESSION: SessionView = {
+  sessionId: "s1",
+  state: "analyzed",
+  scannedAt: NOW - 120_000,
+  error: null,
+  tasks: [
+    task(),
+    task({
+      episodeId: "s1:12",
+      at: NOW - 1_800_000,
+      goal: "Fix the build config",
+      outcome: "failed",
+      commands: 2,
+      edits: 2,
+      recoveries: 1,
+      steps: ["npm run build"],
+    }),
+  ],
+};
+
+/** 搜索「npm test」的命中：三个会话里各一个任务。 */
+export const SEARCH_HITS: readonly TaskView[] = [
+  task({ matches: ["npm test -- --run", "Error: npm test failed"] }),
+  task({
+    episodeId: "s2:8",
+    sessionId: "s2",
+    at: NOW - 60_000,
+    goal: "Release another patch",
+    matches: ["npm test"],
+  }),
+  task({
+    episodeId: "s3:4",
+    sessionId: "s3",
+    at: NOW - 86_400_000,
+    goal: "Check the tests before publishing",
+    outcome: "unverified",
+    matches: ["pnpm exec npm test"],
+  }),
+];
+
+/** 统计样例：一个分析失败的会话，近 7 天里有两天有用量，两次模型调用。 */
+export const STATS: StatsView = {
+  coverage: {
+    analyzed: 40,
+    inRange: 48,
+    total: 120,
+    backfilled: 12,
+    failed: [{ sessionId: "s9", message: "日志无法解析", at: NOW - 600_000 }],
+  },
+  outcomes: { verified: 20, succeeded: 8, unverified: 6, disputed: 1, failed: 4, aborted: 1 },
+  funnel: { leads: 10, summarized: 6, skipped: 2, ideas: 7, drafted: 3, written: 1, dismissed: 2 },
+  actions: [
+    { key: "pm run build", label: "pnpm build", sessions: 9 },
+    { key: "vitest", label: "vitest run", sessions: 6 },
+  ],
+  errors: [
+    {
+      signature: "Cannot find module <path>",
+      example: "Cannot find module 'vite'",
+      sessions: 3,
+    },
+  ],
+  usage: [
+    "2026-10-24",
+    "2026-10-25",
+    "2026-10-26",
+    "2026-10-27",
+    "2026-10-28",
+    "2026-10-29",
+    "2026-10-30",
+  ].map((day, index) => ({
+    day,
+    summaries: index === 6 ? 2 : 0,
+    requested: index >= 5 ? 1 : 0,
+    failures: index === 6 ? 1 : 0,
+    inputTokens: index >= 5 ? 1200 : 0,
+    cacheReadTokens: index >= 5 ? 3400 : 0,
+    cacheWriteTokens: index >= 5 ? 600 : 0,
+    outputTokens: index >= 5 ? 500 : 0,
+  })),
+  calls: [
+    {
+      at: NOW - 60_000,
+      stage: "draft",
+      itemId: "repeated:1~0",
+      title: "Cut a local patch release",
+      provider: "deepseek",
+      model: "deepseek-pro",
+      durationMs: 42_000,
+      inputTokens: 1200,
+      cacheReadTokens: 3400,
+      cacheWriteTokens: 600,
+      outputTokens: 500,
+      result: "drafted",
+      detail: null,
+    },
+    {
+      at: NOW - 600_000,
+      stage: "summary",
+      itemId: "complex:3",
+      title: "Migrate the config format",
+      provider: "deepseek",
+      model: "deepseek-flash",
+      durationMs: 8_000,
+      inputTokens: 900,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      outputTokens: 120,
+      result: "skipped",
+      detail: "A one-off migration",
+    },
+  ],
+};
+
+/**
+ * Host 路由的替身：记录提交的操作与搜索条件。`answer` 决定操作的回应，`gate` 不为 null 时读取收件箱要等它兑现；
+ * `face` 是注入到各个 Slot 组件的共享对象，打开页面与会话只记次数。
+ */
 export interface FakeHost {
   readonly actions: Action[];
   inbox: InboxView;
   answer: (action: Action) => ActionResult;
   gate: Promise<void> | null;
   readonly store: InboxStore;
+  detail: (view: ItemView) => DetailView;
+  session: SessionView;
+  readonly queries: SearchQuery[];
+  answerSearch: (query: SearchQuery) => SearchView;
+  stats: StatsView;
+  readonly sessionsOpened: string[];
+  pagesOpened: number;
+  readonly face: ScoutFace;
 }
 
 export function fakeHost(inbox: InboxView): FakeHost {
+  const store = createInboxStore({
+    fetchInbox: async () => {
+      await host.gate;
+      return host.inbox;
+    },
+    postAction: async (action) => {
+      host.actions.push(action);
+      return host.answer(action);
+    },
+  });
   const host: FakeHost = {
     actions: [],
     inbox,
@@ -226,16 +426,39 @@ export function fakeHost(inbox: InboxView): FakeHost {
       action.action === "preview"
         ? { ok: true, inbox: host.inbox, preview: CREATE_PREVIEW }
         : { ok: true, inbox: host.inbox },
-    store: createInboxStore({
-      fetchInbox: async () => {
-        await host.gate;
-        return host.inbox;
-      },
-      postAction: async (action) => {
-        host.actions.push(action);
-        return host.answer(action);
-      },
+    store,
+    detail: detailOf,
+    session: SESSION,
+    queries: [],
+    answerSearch: (query) => ({
+      query: query.q,
+      total: SEARCH_HITS.length,
+      hits: [...SEARCH_HITS],
+      indexed: { sessions: 4, episodes: 4 },
     }),
+    stats: STATS,
+    sessionsOpened: [],
+    pagesOpened: 0,
+    face: {
+      inbox: store,
+      page: createPageStore(),
+      seen: createSeenStore(window.localStorage),
+      loadDetail: async (id) => {
+        const found = host.inbox.items.find((entry) => entry.id === id);
+        if (found === undefined) throw new Error(`no item ${id}`);
+        return host.detail(found);
+      },
+      loadSession: async () => host.session,
+      search: async (query) => {
+        host.queries.push(query);
+        return host.answerSearch(query);
+      },
+      loadStats: async () => host.stats,
+      openSession: (sessionId) => host.sessionsOpened.push(sessionId),
+      openPage: () => {
+        host.pagesOpened += 1;
+      },
+    },
   };
   return host;
 }
@@ -311,4 +534,29 @@ export function button(name: string | RegExp, root: ParentNode = document): HTML
   });
   if (found === undefined) throw new Error(`没有按钮 ${String(name)}`);
   return found;
+}
+
+/** 让真实计时器走一段时间，并等待随后的渲染。 */
+export async function wait(ms: number): Promise<void> {
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  });
+}
+
+/** 像用户选择一样改变下拉框的值，并等待随后的渲染。 */
+export async function choose(element: HTMLSelectElement | null, value: string): Promise<void> {
+  if (element === null) throw new Error("没有下拉框");
+  await act(async () => {
+    element.value = value;
+    element.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+}
+
+/** 在 act 里改动 store（读取收件箱、切换页面位置），并等待随后的渲染。 */
+export async function perform(change: () => void | Promise<void>): Promise<void> {
+  await act(async () => {
+    await change();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
 }

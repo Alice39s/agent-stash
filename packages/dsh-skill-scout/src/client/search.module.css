@@ -1,0 +1,100 @@
+/* 「搜索」分栏：输入框与结果过滤、索引范围与回溯、勾选后的操作条、结果列表。 */
+.search {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  padding-bottom: 16px;
+  overflow-y: auto;
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.input,
+.select {
+  box-sizing: border-box;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--dsw-radius-md);
+  background: var(--dsw-alias-bg-layer-1, var(--dsw-alias-bg-base));
+  box-shadow: 0 0 0 0.5px var(--dsw-alias-border-l2);
+  color: var(--dsw-alias-label-primary);
+  font: inherit;
+  font-size: 13px;
+}
+
+.input {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+.input:focus-visible,
+.select:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1.5px var(--dsw-alias-state-business-primary);
+}
+
+/* 回溯：进度条、进度文字与按钮排成一行，窄时换行。 */
+.backfill {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 18px;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.meter {
+  flex: 0 1 160px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--dsw-alias-bg-skeleton);
+}
+
+.meterFill {
+  display: block;
+  height: 100%;
+  background: var(--dsw-alias-state-business-primary);
+  transition: width var(--ds-transition-duration, 200ms) var(--ds-ease-in-out, ease);
+}
+
+.backfillText {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 8px;
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.failed {
+  color: var(--dsw-alias-state-warn-label);
+}
+
+/* 勾选了任务后出现的操作条。 */
+.picked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px 6px 12px;
+  border-radius: var(--dsw-radius-lg);
+  background: var(--dsw-alias-interactive-bg-hover);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .meterFill {
+    transition: none;
+  }
+}

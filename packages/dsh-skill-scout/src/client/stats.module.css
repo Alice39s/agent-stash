@@ -1,0 +1,275 @@
+/* 「统计」分栏：自适应列数的卡片，图表都是按比例宽度的横条。 */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  align-content: start;
+  gap: 12px;
+  min-height: 0;
+  padding-bottom: 16px;
+  overflow-y: auto;
+  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
+  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 14px 16px;
+  border-radius: var(--dsw-radius-lg);
+  box-shadow: 0 0 0 0.5px var(--dsw-alias-border-l2);
+  font-size: 12px;
+  line-height: 18px;
+}
+
+/* 最近的模型调用：一行一条，占满整行。 */
+.card[data-wide] {
+  grid-column: 1 / -1;
+}
+
+.title {
+  margin: 0;
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-primary);
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 12px;
+  line-height: 18px;
+  font-weight: 500;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.figure dt {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.figure dd {
+  margin: 0;
+  font-size: 18px;
+  line-height: 26px;
+  font-variant-numeric: tabular-nums;
+}
+
+.bar {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 40px;
+  height: 8px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--dsw-alias-bg-skeleton);
+}
+
+.segment {
+  height: 100%;
+  background: var(--dsw-alias-state-business-primary);
+}
+
+/* 结果与用量的分段颜色，图例用同样的颜色。 */
+[data-segment="verified"] {
+  --scout-swatch: var(--dsw-alias-state-business-primary);
+}
+
+[data-segment="succeeded"] {
+  --scout-swatch: color-mix(in srgb, var(--dsw-alias-state-business-primary) 55%, transparent);
+}
+
+[data-segment="unverified"] {
+  --scout-swatch: var(--dsw-alias-label-tertiary);
+}
+
+[data-segment="disputed"] {
+  --scout-swatch: var(--dsw-alias-state-warn-label);
+}
+
+[data-segment="failed"] {
+  --scout-swatch: var(--dsw-alias-state-error-primary, var(--dsw-alias-state-warn-label));
+}
+
+[data-segment="aborted"] {
+  --scout-swatch: var(--dsw-alias-border-l4);
+}
+
+[data-segment="inputTokens"] {
+  --scout-swatch: var(--dsw-alias-state-business-primary);
+}
+
+[data-segment="cacheReadTokens"] {
+  --scout-swatch: color-mix(in srgb, var(--dsw-alias-state-business-primary) 40%, transparent);
+}
+
+[data-segment="cacheWriteTokens"] {
+  --scout-swatch: var(--dsw-alias-state-warn-label);
+}
+
+[data-segment="outputTokens"] {
+  --scout-swatch: var(--dsw-alias-label-secondary);
+}
+
+.segment[data-segment] {
+  background: var(--scout-swatch, var(--dsw-alias-state-business-primary));
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--scout-swatch, var(--dsw-alias-state-business-primary));
+}
+
+.count {
+  color: var(--dsw-alias-label-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.funnel,
+.days {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 40px;
+  align-items: center;
+  gap: 8px;
+}
+
+.step .count {
+  text-align: right;
+}
+
+.stepLabel {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.day {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 2px 8px;
+}
+
+.dayLabel {
+  color: var(--dsw-alias-label-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.dayFigures,
+.day .rowMeta {
+  grid-column: 2;
+}
+
+.dayFigures {
+  color: var(--dsw-alias-label-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row,
+.rowButton {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 8px;
+  padding: 6px 8px;
+  border-radius: var(--dsw-radius-md);
+}
+
+.rowButton {
+  width: 100%;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .rowButton:hover {
+    background: var(--dsw-alias-interactive-bg-hover);
+  }
+}
+
+.rowButton:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: -2px;
+}
+
+.rowMain {
+  display: flex;
+  flex: 1 1 200px;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.callTitle {
+  color: var(--dsw-alias-label-primary);
+  font-size: 13px;
+  line-height: 20px;
+  overflow-wrap: anywhere;
+}
+
+.rowNote {
+  color: var(--dsw-alias-label-secondary);
+  overflow-wrap: anywhere;
+}
+
+.rowButton[data-result="failed"] .rowNote {
+  color: var(--dsw-alias-state-warn-label);
+}
+
+.rowMeta {
+  color: var(--dsw-alias-label-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.mono {
+  flex: 1 1 200px;
+  min-width: 0;
+  font-family: var(--dsw-font-family-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--dsw-alias-label-primary);
+  overflow-wrap: anywhere;
+}
