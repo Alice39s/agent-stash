@@ -1030,17 +1030,9 @@ window.__ModuleLoader__.load({
 					at: /* @__PURE__ */ number$2()
 				}))
 			}),
-			outcomes: /* @__PURE__ */ object({
-				verified: Count,
-				succeeded: Count,
-				unverified: Count,
-				disputed: Count,
-				failed: Count,
-				aborted: Count
-			}),
 			/**
-			* 线索与 idea 各自按存储里的状态计数，两者单位不同，分开统计。正在摘要的线索计入 detected，
-			* 正在生成草稿的 idea 计入它请求前的状态。
+			* 线索与 idea 各自按存储里的状态计数，两者单位不同，分开统计。整条线索被忽略时它的 idea 计入
+			* dismissed；正在摘要的线索计入 detected，正在生成草稿的 idea 计入它请求前的状态。
 			*/
 			funnel: /* @__PURE__ */ object({
 				leads: /* @__PURE__ */ object({
@@ -1198,6 +1190,11 @@ window.__ModuleLoader__.load({
 		const MINUTE = 60 * SECOND;
 		const HOUR = 60 * MINUTE;
 		const DAY$1 = 24 * HOUR;
+		/** 绝对时间的格式：中等日期与短时间，统计表格与行的 `title` 共用。 */
+		const DATE_TIME = {
+			dateStyle: "medium",
+			timeStyle: "short"
+		};
 		/** 相对时间：刚刚、N 分钟前、N 小时前、N 天前。 */
 		function ago(t, at, now) {
 			const elapsed = Math.max(0, now - at);
@@ -1206,13 +1203,13 @@ window.__ModuleLoader__.load({
 			if (elapsed < DAY$1) return t("time.hours", { count: Math.floor(elapsed / HOUR) });
 			return t("time.days", { count: Math.floor(elapsed / DAY$1) });
 		}
-		/** 一段时长：N 秒、N 分 N 秒。 */
+		/** 一段时长：N 秒、N 分 N 秒，秒数不补零（design 6 的 `{s}s`、`{m}m {s}s`）。 */
 		function duration(t, ms) {
 			const seconds = Math.floor(Math.max(0, ms) / SECOND);
 			if (seconds < 60) return t("duration.seconds", { seconds });
 			return t("duration.minutes", {
 				minutes: Math.floor(seconds / 60),
-				seconds: String(seconds % 60).padStart(2, "0")
+				seconds: seconds % 60
 			});
 		}
 		const COMPACT = new Intl.NumberFormat("en", {
@@ -1323,9 +1320,9 @@ window.__ModuleLoader__.load({
 				more: Math.max(0, steps.length - 3)
 			};
 		}
-		/** 绝对时间，放在相对时间的 `title` 里。 */
-		function absolute(at) {
-			return new Date(at).toLocaleString();
+		/** 绝对时间，放在相对时间的 `title` 里：按界面语言（`chart.locale`）写，与统计表格同一套格式。 */
+		function absolute(at, locale) {
+			return new Date(at).toLocaleString(locale, DATE_TIME);
 		}
 		/** 元信息的各项：来源、会话数、同名折叠数、时间；界面用「 · 」隔开。 */
 		function metaItems(t, item, now) {
@@ -1716,7 +1713,7 @@ window.__ModuleLoader__.load({
 					...rest,
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("time", {
 						dateTime: new Date(item.updatedAt).toISOString(),
-						title: absolute(item.updatedAt),
+						title: absolute(item.updatedAt, t("chart.locale")),
 						children: time
 					}, "time")
 				],
@@ -3514,7 +3511,7 @@ window.__ModuleLoader__.load({
 			error: null,
 			notice: null,
 			viewing: [],
-			paged: false
+			hosting: false
 		};
 		/**
 		* 下一次读取的间隔：模型调用进行中最短；分析会话、回溯或写入后核对 DSH 能否发现时居中；其余时候最长。
@@ -3717,13 +3714,13 @@ window.__ModuleLoader__.load({
 					hosts += 1;
 					set({
 						...state,
-						paged: true
+						hosting: true
 					});
 					return () => {
 						hosts -= 1;
 						set({
 							...state,
-							paged: hosts > 0
+							hosting: hosts > 0
 						});
 					};
 				},
@@ -3732,6 +3729,14 @@ window.__ModuleLoader__.load({
 					clearTimeout(noticeTimer);
 					window.removeEventListener("focus", onFocus);
 					listeners.clear();
+					surfaces.clear();
+					watching.clear();
+					hosts = 0;
+					set({
+						...state,
+						viewing: [],
+						hosting: false
+					});
 				}
 			};
 		}
@@ -3805,7 +3810,7 @@ window.__ModuleLoader__.load({
 				gap: 5,
 				margin: 16
 			});
-			const toast = !open && !state.paged ? state.notice : null;
+			const toast = !open && !state.hosting ? state.notice : null;
 			const toastPosition = (0, _deepseek_ai_dsh_client_ui_primitives.useAnchoredPosition)({
 				open: toast !== null,
 				anchorRef: triggerRef,
@@ -3816,6 +3821,9 @@ window.__ModuleLoader__.load({
 			});
 			(0, _deepseek_ai_dsh_client_ui_primitives.useDismissOnOutsidePointer)(rootRef, open, setOpen, panelRef);
 			(0, react.useEffect)(() => open ? inbox.listing(everyItem) : void 0, [inbox, open]);
+			(0, react.useEffect)(() => {
+				if (open) panelRef.current?.focus();
+			}, [open]);
 			(0, react.useEffect)(() => {
 				if (state.inbox === null) return;
 				const ids = awaiting(state.inbox).filter((id) => open || state.viewing.includes(id));
@@ -4304,9 +4312,8 @@ window.__ModuleLoader__.load({
 				"stats.errors": "Recurring errors",
 				"stats.errors.empty": "No error repeats across sessions",
 				"stats.searchFor": "Search for {text}",
-				"stats.week.current": "This week",
-				"stats.week.ago.one": "{count} week ago",
-				"stats.week.ago.other": "{count} weeks ago",
+				"stats.week.current": "Last 7 days",
+				"stats.week.range": "{from}–{to} days ago",
 				"stats.usage": "Model usage, last 7 days",
 				"stats.usage.total.one": "{count} token",
 				"stats.usage.total.other": "{count} tokens",
@@ -4740,9 +4747,8 @@ window.__ModuleLoader__.load({
 				"stats.errors": "反复出现的错误",
 				"stats.errors.empty": "还没有跨会话重复的错误",
 				"stats.searchFor": "搜索 {text}",
-				"stats.week.current": "本周",
-				"stats.week.ago.one": "{count} 周前",
-				"stats.week.ago.other": "{count} 周前",
+				"stats.week.current": "最近 7 天",
+				"stats.week.range": "{from}–{to} 天前",
 				"stats.usage": "近 7 天模型用量",
 				"stats.usage.total.one": "{count} token",
 				"stats.usage.total.other": "{count} token",
@@ -4990,10 +4996,6 @@ window.__ModuleLoader__.load({
 				index: 1,
 				state: "ongoing"
 			},
-			skipped: {
-				index: 1,
-				state: "idle"
-			},
 			proposed: {
 				index: 1,
 				state: "warning"
@@ -5011,32 +5013,43 @@ window.__ModuleLoader__.load({
 				state: "done"
 			}
 		};
-		/** 失败停在出错的那一步；已忽略的卡片停在摘要（还没有摘要）或草稿。 */
+		/** 失败停在出错的那一步；已结束的卡片（不值得保存、已忽略）没有位置。 */
 		function position(item) {
+			if (item.state === "skipped" || item.state === "dismissed") return null;
 			if (item.state === "failed") return {
 				index: item.failure?.stage === "draft" ? 2 : 1,
 				state: "error"
 			};
-			if (item.state === "dismissed") return {
-				index: item.decision === null || item.decision === "skip" ? 1 : 2,
-				state: "idle"
-			};
 			return POSITIONS[item.state];
 		}
-		function lifecycleOf(t, item) {
-			const closed = item.state === "skipped" || item.state === "dismissed";
-			const { index, state } = position(item);
+		/** 已结束卡片的一步：空闲的点，状态词是「已结束」。 */
+		function quietStep(t, id) {
 			return {
-				closed,
+				id,
+				label: t(LABELS[id]),
+				state: "idle",
+				current: false,
+				word: t("step.state.closed")
+			};
+		}
+		function lifecycleOf(t, item) {
+			const spot = position(item);
+			if (spot === null) return {
+				closed: true,
+				steps: ORDER.map((id) => quietStep(t, id))
+			};
+			const { index, state } = spot;
+			return {
+				closed: false,
 				steps: ORDER.map((id, at) => {
-					const current = !closed && at === index;
-					const stepState = closed ? "idle" : at < index ? "done" : current ? state : "idle";
+					const current = at === index;
+					const stepState = at < index ? "done" : current ? state : "idle";
 					return {
 						id,
 						label: t(LABELS[id]),
 						state: stepState,
 						current,
-						word: closed ? t("step.state.closed") : t(WORDS[stepState])
+						word: t(WORDS[stepState])
 					};
 				})
 			};
@@ -5457,7 +5470,7 @@ window.__ModuleLoader__.load({
 		}
 		//#endregion
 		//#region \0dsh-css:src/client/ui/steps.module.css.mjs
-		const css$11 = ".jtIVSq_root{flex-direction:column;gap:6px;min-width:0;display:flex;container-type:inline-size}.jtIVSq_steps{font:var(--dsw-font-xxs-12);align-items:center;margin:0;padding:0;list-style:none;display:flex}.jtIVSq_step{color:var(--dsw-alias-label-tertiary);flex:none;align-items:center;gap:6px;display:inline-flex}.jtIVSq_step[data-state=done]{color:var(--dsw-alias-label-secondary)}.jtIVSq_step[data-current]{font:var(--dsw-font-xxs-strong-12);color:var(--dsw-alias-label-primary)}.jtIVSq_step[data-state=closed]{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-tertiary)}.jtIVSq_line{background:var(--dsw-alias-border-l3);flex:none;width:12px;height:1px;margin:0 8px}.jtIVSq_label{white-space:nowrap}.jtIVSq_next{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;margin:0}.jtIVSq_next[data-failed]{color:var(--dsw-alias-state-error-primary)}@container (width<=360px){.jtIVSq_step:not([data-current]) .jtIVSq_label{display:none}}";
+		const css$11 = ".jtIVSq_root{flex-direction:column;gap:6px;min-width:0;display:flex;container-type:inline-size}.jtIVSq_steps{font:var(--dsw-font-xxs-12);align-items:center;margin:0;padding:0;list-style:none;display:flex}.jtIVSq_step{color:var(--dsw-alias-label-tertiary);flex:none;align-items:center;gap:6px;display:inline-flex}.jtIVSq_step[data-state=done]{color:var(--dsw-alias-label-secondary)}.jtIVSq_step[data-current]{font:var(--dsw-font-xxs-strong-12);color:var(--dsw-alias-label-primary)}.jtIVSq_line{background:var(--dsw-alias-border-l3);flex:none;width:12px;height:1px;margin:0 8px}.jtIVSq_label{white-space:nowrap}.jtIVSq_next{font:var(--dsw-font-xxs-12);color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;margin:0}.jtIVSq_next[data-failed]{color:var(--dsw-alias-state-error-primary)}@container (width<=360px){.jtIVSq_step:not([data-current]) .jtIVSq_label{display:none}}";
 		const tag$11 = "@agent-stash/dsh-skill-scout/steps.module.css";
 		if (document.querySelector(`style[data-plugin-css=${JSON.stringify(tag$11)}]`) === null) {
 			const style = document.createElement("style");
@@ -5492,12 +5505,12 @@ window.__ModuleLoader__.load({
 						"aria-hidden": "true"
 					}), /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
 						className: steps_module_css_default.step,
-						"data-state": closed ? "closed" : step.state,
+						"data-state": step.state,
 						"data-current": step.current || void 0,
 						"aria-label": `${step.label}: ${step.word}`,
 						"aria-current": step.current ? "step" : void 0,
 						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.StateDot, {
-							state: closed ? "idle" : step.state,
+							state: step.state,
 							appearance: "step",
 							size: 16
 						}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
@@ -5605,7 +5618,7 @@ window.__ModuleLoader__.load({
 										}),
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("time", {
 											className: detail_module_css_default.metaItem,
-											title: absolute(episode.at),
+											title: absolute(episode.at, t("chart.locale")),
 											children: ago(t, episode.at, now)
 										}),
 										episode.cwd !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
@@ -6422,7 +6435,7 @@ window.__ModuleLoader__.load({
 									children: entry
 								}, entry)), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("time", {
 									className: detail_module_css_default.metaItem,
-									title: absolute(item.updatedAt),
+									title: absolute(item.updatedAt, t("chart.locale")),
 									children: ago(t, item.updatedAt, now)
 								})]
 							}),
@@ -6637,7 +6650,7 @@ window.__ModuleLoader__.load({
 				status,
 				metadata: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("time", {
 					dateTime: new Date(task.at).toISOString(),
-					title: absolute(task.at),
+					title: absolute(task.at, t("chart.locale")),
 					children: ago(t, task.at, now)
 				}, "time"), ...counts],
 				metaFill: task.cwd === null ? void 0 : /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.PathLabel, { path: task.cwd }),
@@ -6829,9 +6842,11 @@ window.__ModuleLoader__.load({
 						className: search_module_css_default.meter,
 						role: "progressbar",
 						"aria-label": t("backfill.progress"),
-						"aria-valuemin": 0,
-						"aria-valuemax": backfill.total,
-						"aria-valuenow": backfill.done,
+						...backfill.total > 0 ? {
+							"aria-valuemin": 0,
+							"aria-valuemax": backfill.total,
+							"aria-valuenow": backfill.done
+						} : {},
 						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 							className: search_module_css_default.meterFill,
 							style: { width: backfill.total === 0 ? "0%" : `${String(backfill.done / backfill.total * 100)}%` }
@@ -7836,7 +7851,6 @@ window.__ModuleLoader__.load({
 			const tipId = (0, react.useId)();
 			if (segments.length > MAX_SEGMENTS) throw new Error(`ShareBar shows at most ${String(MAX_SEGMENTS)} categories, got ${String(segments.length)}`);
 			const total = visible.reduce((sum, segment) => sum + segment.value, 0);
-			const all = present.reduce((sum, segment) => sum + segment.value, 0);
 			const share = (value) => total > 0 ? value / total : 0;
 			const current = active === null ? void 0 : visible[active];
 			const focused = current?.key ?? emphasis;
@@ -7863,7 +7877,7 @@ window.__ModuleLoader__.load({
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 				className: charts_module_css_default.chart,
 				"data-chart": "share",
-				children: all === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ChartEmpty, {
+				children: present.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ChartEmpty, {
 					height: legend ? 36 : 20,
 					text: empty
 				}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
@@ -7905,7 +7919,7 @@ window.__ModuleLoader__.load({
 					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 						id: descId,
 						className: charts_module_css_default.srOnly,
-						children: present.map((segment) => `${segment.label} ${formatValue(segment.value)} (${formatPercent(segment.value / all)})`).join(", ")
+						children: visible.map((segment) => `${segment.label} ${formatValue(segment.value)} (${formatPercent(share(segment.value))})`).join(", ")
 					})
 				] })
 			});
@@ -8466,13 +8480,6 @@ window.__ModuleLoader__.load({
 		function when(t, at, now) {
 			return now - at > 30 * DAY ? dayLabel(t, new Date(at).toISOString().slice(0, 10)) : ago(t, at, now);
 		}
-		/** 悬停时显示的完整时间。 */
-		function exactTime(t, at) {
-			return new Intl.DateTimeFormat(t("chart.locale"), {
-				dateStyle: "medium",
-				timeStyle: "short"
-			}).format(at);
-		}
 		/** 一次调用的结论：idea 数、理由或失败原因。 */
 		function callResult(t, call) {
 			const result = t(`call.${call.result}`);
@@ -8593,12 +8600,15 @@ window.__ModuleLoader__.load({
 				]
 			});
 		}
-		/** 近 8 周的会话数，最早的在前：最后一周是本周。 */
+		/** 近 8 周的会话数，最早的在前：每个点是截至 `back` 周前那天的 7 天窗口，最后一个是最近 7 天。 */
 		function weekPoints(t, weeks) {
 			return weeks.map((value, index) => {
 				const back = weeks.length - 1 - index;
 				return {
-					label: back === 0 ? t("stats.week.current") : plural(t, "stats.week.ago", back),
+					label: back === 0 ? t("stats.week.current") : t("stats.week.range", {
+						from: back * 7,
+						to: back * 7 + 6
+					}),
 					value
 				};
 			});
@@ -8728,7 +8738,7 @@ window.__ModuleLoader__.load({
 						shimmer: false
 					},
 					metadata: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-						title: exactTime(t, entry.at),
+						title: absolute(entry.at, t("chart.locale")),
 						children: when(t, entry.at, now)
 					}, "time")],
 					onOpen: openSession === null ? void 0 : () => openSession(entry.sessionId)
@@ -8869,7 +8879,7 @@ window.__ModuleLoader__.load({
 						children: when(t, call.at, now)
 					}),
 					text: (call) => when(t, call.at, now),
-					title: (call) => exactTime(t, call.at)
+					title: (call) => absolute(call.at, t("chart.locale"))
 				}
 			];
 		}
@@ -9076,9 +9086,22 @@ window.__ModuleLoader__.load({
 			const nav = useSnapshot(page);
 			const baseId = (0, react.useId)();
 			const [pageRef, single] = useSinglePane();
+			const view = state.inbox;
+			const suggestions = nav.tab === "suggestions" && view !== null;
+			const current = suggestions ? currentItem(view, nav.selected) : void 0;
+			const currentId = current?.id ?? null;
 			(0, react.useEffect)(() => inbox.hostNotices(), [inbox]);
 			const listsAll = nav.tab === "suggestions";
-			(0, react.useEffect)(() => listsAll ? inbox.listing(everyItem) : void 0, [inbox, listsAll]);
+			(0, react.useEffect)(() => {
+				if (!listsAll) return void 0;
+				return inbox.listing((entry) => single && nav.selected !== null ? entry.id === currentId : true);
+			}, [
+				inbox,
+				listsAll,
+				single,
+				nav.selected,
+				currentId
+			]);
 			const panelId = `${baseId}-panel`;
 			const tab = (value, label) => ({
 				value,
@@ -9086,9 +9109,6 @@ window.__ModuleLoader__.load({
 				id: `${baseId}-${value}`,
 				panelId
 			});
-			const view = state.inbox;
-			const suggestions = nav.tab === "suggestions" && view !== null;
-			const current = suggestions ? currentItem(view, nav.selected) : void 0;
 			const notice = state.notice;
 			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				ref: pageRef,
@@ -9286,7 +9306,7 @@ window.__ModuleLoader__.load({
 					dot: scanning ? "ongoing" : "done",
 					title: t(count === 1 ? "session.state.analyzed.one" : "session.state.analyzed.other", { count }),
 					meta: value.scannedAt === null ? null : /* @__PURE__ */ (0, react_jsx_runtime.jsx)("time", {
-						title: absolute(value.scannedAt),
+						title: absolute(value.scannedAt, t("chart.locale")),
 						children: ago(t, value.scannedAt, now)
 					})
 				};
@@ -9323,7 +9343,7 @@ window.__ModuleLoader__.load({
 			const [recordsOpen, setRecordsOpen] = (0, react.useState)(null);
 			const { busy, error, run } = useAction(inbox, t);
 			const now = useNow(6e4);
-			(0, react.useEffect)(() => inbox.listing((item) => cites(item, sessionId)), [inbox, sessionId]);
+			(0, react.useEffect)(() => inbox.hostNotices(), [inbox]);
 			const status = state.inbox?.status;
 			const [acted, setActed] = (0, react.useState)(0);
 			const revision = [
@@ -9338,6 +9358,17 @@ window.__ModuleLoader__.load({
 			const items = citing(view?.items ?? [], sessionId);
 			const groups = groupItems(items);
 			const current = resolveItem(items, selected) ?? groups.review[0] ?? groups.found[0] ?? items[0];
+			const currentId = current?.id ?? null;
+			(0, react.useEffect)(() => inbox.listing((item) => {
+				if (!cites(item, sessionId)) return false;
+				return single && selected !== null ? item.id === currentId : true;
+			}), [
+				inbox,
+				sessionId,
+				single,
+				selected,
+				currentId
+			]);
 			const value = session.status === "ready" ? session.value : null;
 			const closed = value === null || value.state === "subagent" || value.state === "missing";
 			const header = viewStatus(t, session, status?.scanning === true, now);
@@ -9391,6 +9422,14 @@ window.__ModuleLoader__.load({
 							view !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Banner, {
 								inbox: view,
 								t
+							}),
+							state.notice !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ResultNotice, {
+								text: t(state.notice.key, state.notice.params),
+								links: noticeLinks(state.notice, props, t),
+								close: {
+									label: t("notice.close"),
+									onClick: () => inbox.clearNotice()
+								}
 							}),
 							error !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ErrorNotice, { text: error }),
 							session.status === "error" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ErrorNotice, {
