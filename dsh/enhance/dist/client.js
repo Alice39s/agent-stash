@@ -705,7 +705,7 @@ ${p}-button {
   height: 28px;
   padding: 0;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--dsw-radius-sm);
   background: transparent;
   color: var(--dsw-alias-label-tertiary);
   cursor: pointer;
