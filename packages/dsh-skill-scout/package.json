@@ -1,6 +1,6 @@
 {
   "name": "@agent-stash/dsh-skill-scout",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Find reusable workflows in finished DeepSeek Harness sessions and suggest Agent Skills to review, save, and undo",
   "keywords": [
     "agent-skills",
