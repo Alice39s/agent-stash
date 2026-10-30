@@ -75,7 +75,7 @@ Keycaps:
 
 Composer button visuals:
 
-- [MUST] A 28px circle like the host `+` button, a 16px host icon in `--dsw-alias-label-tertiary`, no fill at rest. Hover, an open menu, a running rewrite, and the undo button use `--dsw-alias-interactive-bg-hover` with secondary ink. A blocked button (reference chips in the draft) is at 40% opacity and explains why in its tooltip.
+- [MUST] A 28px square with `--dsw-radius-sm` corners, the same radius as the model selector beside it, and a 16px host icon in `--dsw-alias-label-tertiary`, no fill at rest. Hover, an open menu, a running rewrite, and the undo button use `--dsw-alias-interactive-bg-hover` with secondary ink. A blocked button (reference chips in the draft) is at 40% opacity and explains why in its tooltip.
 - [MUST] While a rewrite runs, the button shows the host spinner and turns into a stop icon on hover or keyboard focus; the editable area is `inert`, `aria-busy`, and dims to 45% opacity.
 - [SHOULD] Status line: 12px / 18px, tertiary ink, error text in `--dsw-alias-state-error-primary` with a 12px warning icon and a 16px dismiss button; at most 240px wide. The running label uses the host `TextShimmer`.
 - [SHOULD] Menu rows: title 13px / 20px primary ink, hint 12px / 18px tertiary ink; the menu is at least 248px wide. Rows 1–9 show their number key.

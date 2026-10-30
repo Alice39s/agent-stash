@@ -9,8 +9,8 @@ export const MENU_CLASS = `${K}-menu`;
 const EASE_OUT = "cubic-bezier(0.23, 1, 0.32, 1)";
 
 /**
- * 增强按钮、状态提示、菜单行与配置页的样式。按钮与输入框里的 `+` 按钮同为 28px 圆形，
- * 平时只用三级文字色；动画按框架的 `motion` 设置分档，减少动态效果时只保留淡入。
+ * 增强按钮、状态提示、菜单行与配置页的样式。按钮 28px 见方，圆角与同一行的模型选择框一样取
+ * `--dsw-radius-sm`，平时只用三级文字色；动画按框架的 `motion` 设置分档，减少动态效果时只保留淡入。
  */
 export function enhanceCss(): string {
   const p = `.${K}`;
@@ -30,7 +30,7 @@ ${p}-button {
   height: 28px;
   padding: 0;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--dsw-radius-sm);
   background: transparent;
   color: var(--dsw-alias-label-tertiary);
   cursor: pointer;
