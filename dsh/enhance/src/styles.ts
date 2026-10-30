@@ -158,6 +158,19 @@ ${p}-dismiss:focus-visible {
 ${p}-menu {
   min-width: 248px;
 }
+${p}-estimate {
+  box-sizing: border-box;
+  width: 0;
+  min-width: 100%;
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-tertiary);
+}
+${p}-row-slot {
+  display: contents;
+}
 ${p}-row {
   display: flex;
   flex-direction: column;

@@ -26,13 +26,14 @@ import { useComposer } from "../../shared/client/composer.ts";
 import type { ModelSelectionView, RightSlotProps } from "./dsh.ts";
 import { format, type EnhanceKey } from "./locales.ts";
 import { isBuiltin, type Preset } from "./presets.ts";
-import { requestContextTurns, requestRewrite } from "./request.ts";
+import { requestContext, requestRewrite } from "./request.ts";
 import type { EnhanceSettings } from "./settings-value.ts";
 import type { ShortcutBridge } from "./shortcut.ts";
 import { followDraft, IDLE, type EnhanceState } from "./state.ts";
 import { useValue, type ValueStore } from "./store.ts";
 import { BUSY, K, MENU_CLASS } from "./styles.ts";
-import { SessionModelSchema, type SessionModel } from "./wire.ts";
+import { estimateTokens, formatTokens } from "./tokens.ts";
+import { SessionModelSchema, type ContextResult, type SessionModel } from "./wire.ts";
 
 /** 增强按钮从插件级共享的部分。 */
 export interface ButtonShared {
@@ -68,13 +69,27 @@ export function presetLabel(
   return { title, hint };
 }
 
-/** 关联几轮上下文的文案；没有关联时为 `undefined`。 */
-export function contextLabel(
-  turns: number | undefined,
+/** 按钮提示：关联了上下文时注明轮数。 */
+export function tipLabel(turns: number | undefined, t: (key: EnhanceKey) => string): string {
+  if (turns === undefined || turns === 0) return t("tip");
+  return turns === 1 ? t("tipLinkedOne") : format(t("tipLinked"), { n: turns });
+}
+
+/**
+ * 菜单顶部的一行：用 `preset` 改写这份草稿预计消耗的 token 数，以及关联的上下文轮数。
+ * 还没读到上下文，或这个预设的指令无法展开时为 `undefined`。
+ */
+export function estimateLabel(
+  context: ContextResult | undefined,
+  preset: string | undefined,
+  draft: string,
   t: (key: EnhanceKey) => string,
 ): string | undefined {
-  if (turns === undefined || turns === 0) return undefined;
-  return turns === 1 ? t("contextOne") : format(t("context"), { n: turns });
+  const base = preset === undefined ? undefined : context?.tokens[preset];
+  if (context === undefined || base === undefined) return undefined;
+  const values = { tokens: formatTokens(base + estimateTokens(draft)), n: context.turns };
+  if (context.turns === 0) return format(t("estimate"), values);
+  return format(t(context.turns === 1 ? "estimateLinkedOne" : "estimateLinked"), values);
 }
 
 /** 会话下一次请求会用的模型，写成字符串以便投影订阅只在它变化时重新渲染。 */
@@ -87,15 +102,18 @@ function parseModel(key: string | undefined): SessionModel | undefined {
   return key === undefined ? undefined : v.parse(SessionModelSchema, JSON.parse(key));
 }
 
-/** 下一次改写会关联几轮对话；`key` 变化时重新读取，`active` 为假时不读取。 */
-function useContextTurns(sessionId: string, active: boolean, key: string): number | undefined {
-  const [turns, setTurns] = useState<{ readonly key: string; readonly value: number }>();
+/** 下一次改写关联的轮数与各预设的预计用量；`key` 变化时重新读取，`active` 为假时不读取。 */
+function useContext(sessionId: string, active: boolean, key: string): ContextResult | undefined {
+  const [context, setContext] = useState<{
+    readonly key: string;
+    readonly value: ContextResult;
+  }>();
   const stamp = `${sessionId}:${key}`;
   useEffect(() => {
     if (!active) return undefined;
     const controller = new AbortController();
-    requestContextTurns(sessionId, controller.signal).then(
-      (value) => setTurns({ key: stamp, value }),
+    requestContext(sessionId, controller.signal).then(
+      (value) => setContext({ key: stamp, value }),
       (error: unknown) => {
         if (controller.signal.aborted) return;
         console.error(`[${K}] reading the context of session "${sessionId}" failed:`, error);
@@ -103,7 +121,7 @@ function useContextTurns(sessionId: string, active: boolean, key: string): numbe
     );
     return () => controller.abort();
   }, [sessionId, active, stamp]);
-  return active && turns?.key === stamp ? turns.value : undefined;
+  return active && context?.key === stamp ? context.value : undefined;
 }
 
 /** 把焦点交回输入框，光标放在草稿末尾。 */
@@ -151,12 +169,15 @@ export function createEnhanceButton(
     const current = followed ?? state;
 
     const empty = draft.trim() === "";
-    const turns = useContextTurns(
+    // 新一轮对话、上下文设置或预设变化时，轮数与预计用量都要重新读取。
+    const context = useContext(
       sessionId,
-      settings.context && !empty,
-      `${String(stamp)}:${String(settings.contextTurns)}`,
+      !empty,
+      JSON.stringify([stamp, settings.context, settings.contextTurns, settings.presets]),
     );
-    const linked = contextLabel(turns, t);
+    // 菜单顶部按指针或焦点所在的预设估算；都不在预设上时按第一个预设。
+    const [pointed, setPointed] = useState<string>();
+    if (!open && pointed !== undefined) setPointed(undefined);
 
     // 改写进行中锁住草稿：可编辑区域设为 inert 并变淡，焦点交给按钮，Esc 停止。
     const running = current.kind === "running";
@@ -313,9 +334,8 @@ export function createEnhanceButton(
       ? t("cancel")
       : references
         ? t("references")
-        : linked === undefined
-          ? t("enhance")
-          : `${t("enhance")} · ${linked}`;
+        : tipLabel(context?.turns, t);
+    const estimate = estimateLabel(context, pointed ?? presets[0]?.id, draft, t);
     const trigger = (
       <Tooltip
         label={tooltip}
@@ -360,16 +380,22 @@ export function createEnhanceButton(
     const rows = presets.map((preset, index) => {
       const { title, hint } = presetLabel(preset, t);
       return (
-        <MenuItemButton
+        <div
           key={preset.id}
-          {...(index < NUMBERED ? { shortcut: { keys: [String(index + 1)] } } : {})}
-          onSelect={() => run(preset)}
+          className={`${K}-row-slot`}
+          onPointerEnter={() => setPointed(preset.id)}
+          onFocus={() => setPointed(preset.id)}
         >
-          <span className={`${K}-row`}>
-            <span className={`${K}-row-title`}>{title}</span>
-            {hint !== "" && <span className={`${K}-row-hint`}>{hint}</span>}
-          </span>
-        </MenuItemButton>
+          <MenuItemButton
+            {...(index < NUMBERED ? { shortcut: { keys: [String(index + 1)] } } : {})}
+            onSelect={() => run(preset)}
+          >
+            <span className={`${K}-row`}>
+              <span className={`${K}-row-title`}>{title}</span>
+              {hint !== "" && <span className={`${K}-row-hint`}>{hint}</span>}
+            </span>
+          </MenuItemButton>
+        </div>
       );
     });
 
@@ -406,7 +432,6 @@ export function createEnhanceButton(
           autoFocus
           listClassName={MENU_CLASS}
           onClose={closeMenu}
-          items={linked === undefined ? [] : [{ type: "label", id: "context", text: linked }]}
           footer={
             manage === undefined
               ? []
@@ -425,6 +450,11 @@ export function createEnhanceButton(
             manage?.();
           }}
         >
+          {estimate !== undefined && (
+            <div className={`${K}-estimate`} role="presentation">
+              {estimate}
+            </div>
+          )}
           {rows}
         </Menu>
       </div>
@@ -443,7 +473,7 @@ interface StatusProps {
  * 失败说明之外还有具体原因的失败：供应商的报错、被拒绝的检查项、读取会话或连接的错误。
  * 这些原因原样放在提示里；其余失败的说明已经完整，不再加提示。
  */
-const DETAILED: ReadonlySet<string> = new Set(["model", "invalid", "context", "network"]);
+const DETAILED: ReadonlySet<string> = new Set(["model", "invalid", "preset", "context", "network"]);
 
 /** 按钮左侧的一行状态：改写中、失败原因或无需改动。 */
 function Status({ state, timeout, t, onDismiss }: StatusProps): ReactNode {

@@ -2,7 +2,7 @@ import * as v from "valibot";
 
 /** 改写路由：`POST`，请求体为 {@link RewriteRequestSchema}，成功时回 {@link RewriteResultSchema}。 */
 export const REWRITE_PATH = "/dsh-enhance/rewrite";
-/** 上下文路由：`GET ?session=<id>`，回 {@link ContextResultSchema}，即下一次改写会关联几轮对话。 */
+/** 上下文路由：`GET ?session=<id>`，回 {@link ContextResultSchema}：下一次改写关联的轮数与预计用量。 */
 export const CONTEXT_PATH = "/dsh-enhance/context";
 
 /** 草稿的最大长度，超出时 Host 拒绝请求。 */
@@ -39,7 +39,17 @@ export const RewriteResultSchema = v.object({
 
 export type RewriteResult = v.InferOutput<typeof RewriteResultSchema>;
 
-export const ContextResultSchema = v.object({ turns: v.number() });
+export const ContextResultSchema = v.object({
+  /** 下一次改写会关联的对话轮数。 */
+  turns: v.number(),
+  /**
+   * 预设 id 到草稿为空时这次请求的预计输入 token 数：系统提示、会话上下文与分段标签。
+   * 浏览器半部加上草稿本身的估算即是整次请求；指令无法展开的预设不在其中。
+   */
+  tokens: v.record(v.string(), v.number()),
+});
+
+export type ContextResult = v.InferOutput<typeof ContextResultSchema>;
 
 /**
  * 改写失败的原因，浏览器半部据此显示本地化文案；`message` 保留原始细节。

@@ -19,12 +19,15 @@ interface Pending {
 let harness: EnhanceHarness | undefined;
 const pending: Pending[] = [];
 const contextReads: string[] = [];
+const TOKENS = { polish: 13_000, structure: 1500, concise: 1600 };
+let contextTurns = 2;
 
 beforeEach(() => {
+  contextTurns = 2;
   vi.stubGlobal("fetch", (url: string, init?: RequestInit) => {
     if (url.startsWith("dsh-enhance/context")) {
       contextReads.push(url);
-      return Promise.resolve(Response.json({ turns: 2 }));
+      return Promise.resolve(Response.json({ turns: contextTurns, tokens: TOKENS }));
     }
     return new Promise<Response>((resolve, reject) => {
       const signal = init?.signal ?? new AbortController().signal;
@@ -101,18 +104,57 @@ describe("enhance button", () => {
     expect(button(h)?.getAttribute("aria-label")).toBe("Enhance prompt");
   });
 
-  test("names the linked turns in its tooltip and menu", async () => {
+  test("names the linked turns in its tooltip", async () => {
     const h = await mount();
     await h.type("do what we planned");
     await act(async () => {});
     expect(contextReads).toEqual(["dsh-enhance/context?session=s1"]);
     expect(button(h)?.parentElement?.dataset["tooltip"]).toBe(
-      "Enhance prompt · Linked to the last 2 turns",
+      "Click to enhance the prompt (last 2 turns linked)",
     );
+  });
+
+  test("estimates the tokens of the preset under focus in the menu", async () => {
+    const h = await mount();
+    // 18 个拉丁字符，约 6 token。
+    await h.type("do what we planned");
+    await act(async () => {});
     await openMenu(h);
-    expect(h.slot().querySelector('[role="menu"]')?.textContent).toContain(
-      "Linked to the last 2 turns",
+    const estimate = () => h.slot().querySelector(".dsh-enhance-estimate")?.textContent;
+    expect(estimate()).toBe(
+      "This rewrite will use about 13,006 tokens, with the last 2 turns linked",
     );
+    const concise = menuItems(h)[2];
+    if (!(concise instanceof HTMLElement)) throw new Error("no concise row");
+    await act(async () => concise.focus());
+    expect(estimate()).toBe(
+      "This rewrite will use about 1,606 tokens, with the last 2 turns linked",
+    );
+    await click(button(h));
+    await openMenu(h);
+    expect(estimate()).toContain("13,006 tokens");
+  });
+
+  test("leaves the turns out when no context is linked", async () => {
+    contextTurns = 0;
+    const h = await mount();
+    await h.type("do what we planned");
+    await act(async () => {});
+    expect(button(h)?.parentElement?.dataset["tooltip"]).toBe("Click to enhance the prompt");
+    await openMenu(h);
+    expect(h.slot().querySelector(".dsh-enhance-estimate")?.textContent).toBe(
+      "This rewrite will use about 13,006 tokens",
+    );
+  });
+
+  test("reads the estimate again after the presets change", async () => {
+    const settings = createEnhanceSettings();
+    const h = await mount({ settings });
+    await h.type("do what we planned");
+    await act(async () => {});
+    await settings.publish({ presets: [{ id: "concise" }] });
+    await act(async () => {});
+    expect(contextReads).toHaveLength(2);
   });
 
   test("lists the three built-in presets with their descriptions", async () => {

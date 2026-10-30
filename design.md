@@ -40,7 +40,8 @@ Inline ghost text:
 Composer button (Prompt enhance):
 
 - [MUST] The button sits in the composer's right control row, left of the model selector and the send button, 12px apart like the host controls. It renders nothing while the draft is empty, so an empty composer looks like the host one.
-- [MUST] Its menu is the host `Menu`, opened above the button and aligned to its right edge. Rows carry a title and a one-line hint; an optional label row on top names the linked context, and the footer holds one management link.
+- [MUST] Its menu is the host `Menu`, opened above the button and aligned to its right edge. Rows carry a title and a one-line hint, and the footer holds one management link.
+- [MUST] A label row on top of the menu states the estimated token cost of the preset under the pointer or keyboard focus (the first preset otherwise) and the number of linked turns. The tooltip of the button names the linked turns too.
 - [MUST] Status text (running, failure, nothing to change) sits on the left of the button inside the same row and never pushes the composer wider; long text ends in an ellipsis. Failures stay inline next to the button; no toast.
 - [MUST] After a rewrite, an undo button appears left of the main button and leaves when the draft changes.
 
@@ -79,6 +80,7 @@ Composer button visuals:
 - [MUST] While a rewrite runs, the button shows the host spinner and turns into a stop icon on hover or keyboard focus; the editable area is `inert`, `aria-busy`, and dims to 45% opacity.
 - [SHOULD] Status line: 12px / 18px, tertiary ink, error text in `--dsw-alias-state-error-primary` with a 12px warning icon and a 16px dismiss button; at most 240px wide. The running label uses the host `TextShimmer`.
 - [SHOULD] Menu rows: title 13px / 20px primary ink, hint 12px / 18px tertiary ink; the menu is at least 248px wide. Rows 1–9 show their number key.
+- [SHOULD] The estimate label uses the host menu label type (11px / 15px, tertiary ink, padding 6px 8px) with tabular numerals and thousands separators. It wraps inside the width the rows set and never widens the menu.
 
 Settings page:
 
