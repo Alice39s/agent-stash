@@ -28,14 +28,19 @@ import { PresetGlyph } from "./icon-picker.tsx";
 import { format, type EnhanceKey } from "./locales.ts";
 import { presetIcon } from "./preset-icons.ts";
 import { isBuiltin, type Preset } from "./presets.ts";
-import { requestContext, requestRewrite } from "./request.ts";
+import { requestContext, requestRewrite, requestTokens } from "./request.ts";
 import type { EnhanceSettings } from "./settings-value.ts";
 import type { ShortcutBridge } from "./shortcut.ts";
 import { followDraft, IDLE, type EnhanceState } from "./state.ts";
 import { useValue, type ValueStore } from "./store.ts";
 import { BUSY, K, MENU_CLASS } from "./styles.ts";
-import { estimateTokens, formatTokens } from "./tokens.ts";
-import { SessionModelSchema, type ContextResult, type SessionModel } from "./wire.ts";
+import { formatTokens } from "./token-format.ts";
+import {
+  MAX_DRAFT_CHARS,
+  SessionModelSchema,
+  type ContextResult,
+  type SessionModel,
+} from "./wire.ts";
 
 /** 增强按钮从插件级共享的部分。 */
 export interface ButtonShared {
@@ -84,12 +89,12 @@ export function tipLabel(turns: number | undefined, t: (key: EnhanceKey) => stri
 export function estimateLabel(
   context: ContextResult | undefined,
   preset: string | undefined,
-  draft: string,
+  draftTokens: number | undefined,
   t: (key: EnhanceKey) => string,
 ): string | undefined {
   const base = preset === undefined ? undefined : context?.tokens[preset];
-  if (context === undefined || base === undefined) return undefined;
-  const values = { tokens: formatTokens(base + estimateTokens(draft)), n: context.turns };
+  if (context === undefined || base === undefined || draftTokens === undefined) return undefined;
+  const values = { tokens: formatTokens(base + draftTokens), n: context.turns };
   if (context.turns === 0) return format(t("estimate"), values);
   return format(t(context.turns === 1 ? "estimateLinkedOne" : "estimateLinked"), values);
 }
@@ -124,6 +129,31 @@ function useContext(sessionId: string, active: boolean, key: string): ContextRes
     return () => controller.abort();
   }, [sessionId, active, stamp]);
   return active && context?.key === stamp ? context.value : undefined;
+}
+
+/** 菜单打开后防抖估算；编辑或关闭菜单时取消旧请求，不展示旧草稿的数字。 */
+function useDraftTokens(draft: string, active: boolean): number | undefined {
+  const [result, setResult] = useState<{ readonly draft: string; readonly tokens: number }>();
+  useEffect(() => {
+    if (!active || draft.length > MAX_DRAFT_CHARS) return undefined;
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      requestTokens(draft, controller.signal).then(
+        (tokens) => {
+          if (!controller.signal.aborted) setResult({ draft, tokens });
+        },
+        (error: unknown) => {
+          if (!controller.signal.aborted)
+            console.error(`[${K}] estimating draft tokens failed:`, error);
+        },
+      );
+    }, 150);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [draft, active]);
+  return active && result?.draft === draft ? result.tokens : undefined;
 }
 
 /** 把焦点交回输入框，光标放在草稿末尾。 */
@@ -163,6 +193,7 @@ export function createEnhanceButton(
     const [state, setState] = useState<EnhanceState>(IDLE);
     const [owner, setOwner] = useState(sessionId);
     const [open, setOpen] = useState(false);
+    const draftTokens = useDraftTokens(draft, open);
     // 切换会话或草稿变化时在渲染中同步跟随，避免旧状态多留一帧。
     const moved = owner === sessionId ? undefined : IDLE;
     if (moved !== undefined) setOwner(sessionId);
@@ -337,7 +368,7 @@ export function createEnhanceButton(
       : references
         ? t("references")
         : tipLabel(context?.turns, t);
-    const estimate = estimateLabel(context, pointed ?? presets[0]?.id, draft, t);
+    const estimate = estimateLabel(context, pointed ?? presets[0]?.id, draftTokens, t);
     const trigger = (
       <Tooltip
         label={tooltip}

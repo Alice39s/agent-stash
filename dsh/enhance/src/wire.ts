@@ -4,9 +4,18 @@ import * as v from "valibot";
 export const REWRITE_PATH = "/dsh-enhance/rewrite";
 /** 上下文路由：`GET ?session=<id>`，回 {@link ContextResultSchema}：下一次改写关联的轮数与预计用量。 */
 export const CONTEXT_PATH = "/dsh-enhance/context";
+/** 草稿估算路由：编码器留在 Host，浏览器不加载 WASM。 */
+export const TOKENS_PATH = "/dsh-enhance/tokens";
 
 /** 草稿的最大长度，超出时 Host 拒绝请求。 */
 export const MAX_DRAFT_CHARS = 20_000;
+
+export const TokensRequestSchema = v.object({
+  draft: v.pipe(v.string(), v.maxLength(MAX_DRAFT_CHARS)),
+});
+export const TokensResultSchema = v.object({
+  tokens: v.pipe(v.number(), v.integer(), v.minValue(0)),
+});
 
 const NonEmptySchema = v.pipe(v.string(), v.minLength(1));
 

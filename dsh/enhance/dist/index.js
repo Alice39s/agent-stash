@@ -2,6 +2,7 @@ import { fileURLToPath } from "node:url";
 import { existsSync, readFileSync } from "node:fs";
 import { text } from "node:stream/consumers";
 import { readFile } from "node:fs/promises";
+import { get_encoding } from "tiktoken";
 //#region node_modules/.pnpm/pathe@2.0.3/node_modules/pathe/dist/shared/pathe.M-eThtNZ.mjs
 const _DRIVE_LETTER_START_RE = /^[A-Za-z]:\//;
 function normalizeWindowsPath(input = "") {
@@ -1980,18 +1981,23 @@ async function runRewrite(llm, route, prompt, original, options) {
 }
 //#endregion
 //#region dsh/enhance/src/tokens.ts
-const WIDE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+let encoder;
 function estimateTokens(text) {
-	const wide = text.match(WIDE)?.length ?? 0;
-	const all = text.match(/[\s\S]/gu)?.length ?? 0;
-	return Math.ceil(wide * .6 + (all - wide) * .3);
+	if (text === "") return 0;
+	encoder ??= get_encoding("o200k_base");
+	return encoder.encode(text, [], []).length;
 }
-new Intl.NumberFormat("en-US");
+function freeTokenEncoder() {
+	encoder?.free();
+	encoder = void 0;
+}
 //#endregion
 //#region dsh/enhance/src/wire.ts
 const REWRITE_PATH = "/dsh-enhance/rewrite";
 const CONTEXT_PATH = "/dsh-enhance/context";
+const TOKENS_PATH = "/dsh-enhance/tokens";
 const MAX_DRAFT_CHARS = 2e4;
+const TokensRequestSchema = /* @__PURE__ */ object({ draft: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ maxLength(MAX_DRAFT_CHARS)) });
 const NonEmptySchema = /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ minLength(1));
 const RewriteRequestSchema = /* @__PURE__ */ object({
 	session: NonEmptySchema,
@@ -2173,17 +2179,33 @@ function rewriteHandler(ctx, config, references) {
 	});
 }
 function registerRoutes(ctx, config) {
+	ctx.effect(() => freeTokenEncoder, "dsh-enhance: token encoder");
 	let loading;
 	const references = () => loading ??= loadReferences();
-	const routes = [{
-		kind: "exact",
-		path: REWRITE_PATH,
-		handler: rewriteHandler(ctx, config, references)
-	}, {
-		kind: "exact",
-		path: CONTEXT_PATH,
-		handler: contextHandler(ctx, config, references)
-	}];
+	const routes = [
+		{
+			kind: "exact",
+			path: REWRITE_PATH,
+			handler: rewriteHandler(ctx, config, references)
+		},
+		{
+			kind: "exact",
+			path: CONTEXT_PATH,
+			handler: contextHandler(ctx, config, references)
+		},
+		{
+			kind: "exact",
+			path: TOKENS_PATH,
+			handler: guardRoute((req) => ctx.connection.requestRejection(req), "POST", async (req, res) => {
+				const body = await readJsonBody(req, TokensRequestSchema);
+				if (!body.ok) {
+					sendJson(res, body.status, { message: body.message });
+					return;
+				}
+				sendJson(res, 200, { tokens: estimateTokens(body.value.draft) });
+			})
+		}
+	];
 	for (const route of routes) ctx.effect(() => ctx.webServer.register(route), `dsh-enhance: ${route.path}`);
 }
 //#endregion

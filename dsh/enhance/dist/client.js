@@ -1267,9 +1267,9 @@ ${p}-add {
 			tip: "Click to enhance the prompt",
 			tipLinked: "Click to enhance the prompt (last {n} turns linked)",
 			tipLinkedOne: "Click to enhance the prompt (last turn linked)",
-			estimate: "This rewrite will use about {tokens} tokens",
-			estimateLinked: "This rewrite will use about {tokens} tokens, with the last {n} turns linked",
-			estimateLinkedOne: "This rewrite will use about {tokens} tokens, with the last turn linked",
+			estimate: "o200k_base input estimate: {tokens} tokens",
+			estimateLinked: "o200k_base input estimate: {tokens} tokens, with the last {n} turns linked",
+			estimateLinkedOne: "o200k_base input estimate: {tokens} tokens, with the last turn linked",
 			working: "Enhancing…",
 			unchanged: "Already clear, nothing changed",
 			references: "Remove the reference chips to enhance this draft",
@@ -1338,9 +1338,9 @@ ${p}-add {
 			tip: "点我增强提示词",
 			tipLinked: "点我增强提示词（已关联最近 {n} 轮上下文）",
 			tipLinkedOne: "点我增强提示词（已关联最近 1 轮上下文）",
-			estimate: "本轮润色请求将消耗大约 {tokens} Tokens",
-			estimateLinked: "本轮润色请求将消耗大约 {tokens} Tokens，已关联最近 {n} 轮上下文",
-			estimateLinkedOne: "本轮润色请求将消耗大约 {tokens} Tokens，已关联最近 1 轮上下文",
+			estimate: "o200k_base 输入估算：{tokens} Tokens",
+			estimateLinked: "o200k_base 输入估算：{tokens} Tokens，已关联最近 {n} 轮上下文",
+			estimateLinkedOne: "o200k_base 输入估算：{tokens} Tokens，已关联最近 1 轮上下文",
 			working: "正在增强…",
 			unchanged: "已经很清楚，无需改动",
 			references: "移除草稿里的引用块后才能增强",
@@ -1409,6 +1409,8 @@ ${p}-add {
 		//#region dsh/enhance/src/wire.ts
 		const REWRITE_PATH = "/dsh-enhance/rewrite";
 		const CONTEXT_PATH = "/dsh-enhance/context";
+		const TOKENS_PATH = "/dsh-enhance/tokens";
+		const TokensResultSchema = /* @__PURE__ */ object({ tokens: /* @__PURE__ */ pipe(/* @__PURE__ */ number(), /* @__PURE__ */ integer(), /* @__PURE__ */ minValue(0)) });
 		const NonEmptySchema = /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ minLength(1));
 		const SessionModelSchema = /* @__PURE__ */ object({
 			provider: NonEmptySchema,
@@ -1442,6 +1444,19 @@ ${p}-add {
 		//#region dsh/enhance/src/request.ts
 		function relative(path) {
 			return path.slice(1);
+		}
+		async function requestTokens(draft, signal) {
+			const response = await fetch(relative(TOKENS_PATH), {
+				method: "POST",
+				headers: {
+					accept: "application/json",
+					"content-type": "application/json"
+				},
+				body: JSON.stringify({ draft }),
+				signal
+			});
+			if (!response.ok) throw new Error(`POST ${TOKENS_PATH} answered ${String(response.status)}`);
+			return parse(TokensResultSchema, await response.json()).tokens;
 		}
 		async function requestRewrite(payload, signal) {
 			let response;
@@ -1532,13 +1547,7 @@ ${p}-add {
 			return (0, react.useSyncExternalStore)(store.subscribe, store.get);
 		}
 		//#endregion
-		//#region dsh/enhance/src/tokens.ts
-		const WIDE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
-		function estimateTokens(text) {
-			const wide = text.match(WIDE)?.length ?? 0;
-			const all = text.match(/[\s\S]/gu)?.length ?? 0;
-			return Math.ceil(wide * .6 + (all - wide) * .3);
-		}
+		//#region dsh/enhance/src/token-format.ts
 		const GROUPED = new Intl.NumberFormat("en-US");
 		function formatTokens(tokens) {
 			return GROUPED.format(tokens);
@@ -1559,11 +1568,11 @@ ${p}-add {
 			if (turns === void 0 || turns === 0) return t("tip");
 			return turns === 1 ? t("tipLinkedOne") : format(t("tipLinked"), { n: turns });
 		}
-		function estimateLabel(context, preset, draft, t) {
+		function estimateLabel(context, preset, draftTokens, t) {
 			const base = preset === void 0 ? void 0 : context?.tokens[preset];
-			if (context === void 0 || base === void 0) return void 0;
+			if (context === void 0 || base === void 0 || draftTokens === void 0) return void 0;
 			const values = {
-				tokens: formatTokens(base + estimateTokens(draft)),
+				tokens: formatTokens(base + draftTokens),
 				n: context.turns
 			};
 			if (context.turns === 0) return format(t("estimate"), values);
@@ -1597,6 +1606,28 @@ ${p}-add {
 			]);
 			return active && context?.key === stamp ? context.value : void 0;
 		}
+		function useDraftTokens(draft, active) {
+			const [result, setResult] = (0, react.useState)();
+			(0, react.useEffect)(() => {
+				if (!active || draft.length > 2e4) return void 0;
+				const controller = new AbortController();
+				const timer = setTimeout(() => {
+					requestTokens(draft, controller.signal).then((tokens) => {
+						if (!controller.signal.aborted) setResult({
+							draft,
+							tokens
+						});
+					}, (error) => {
+						if (!controller.signal.aborted) console.error(`[${K}] estimating draft tokens failed:`, error);
+					});
+				}, 150);
+				return () => {
+					clearTimeout(timer);
+					controller.abort();
+				};
+			}, [draft, active]);
+			return active && result?.draft === draft ? result.tokens : void 0;
+		}
 		function focusEnd(editable) {
 			if (!editable.isConnected) return;
 			editable.focus();
@@ -1619,6 +1650,7 @@ ${p}-add {
 				const [state, setState] = (0, react.useState)(IDLE);
 				const [owner, setOwner] = (0, react.useState)(sessionId);
 				const [open, setOpen] = (0, react.useState)(false);
+				const draftTokens = useDraftTokens(draft, open);
 				const moved = owner === sessionId ? void 0 : IDLE;
 				if (moved !== void 0) setOwner(sessionId);
 				const followed = moved ?? followDraft(state, draft);
@@ -1786,7 +1818,7 @@ ${p}-add {
 					run(preset);
 				};
 				const tooltip = running ? t("cancel") : references ? t("references") : tipLabel(context?.turns, t);
-				const estimate = estimateLabel(context, pointed ?? presets[0]?.id, draft, t);
+				const estimate = estimateLabel(context, pointed ?? presets[0]?.id, draftTokens, t);
 				const trigger = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
 					label: tooltip,
 					shortcutKeys: running ? ["Esc"] : keys.length > 0 && current.kind !== "done" ? keys : void 0,
