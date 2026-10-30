@@ -13,7 +13,7 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import { presetLabel } from "./button.tsx";
 import type { CatalogGroup, CatalogModel, ConfigPathOp, JsonValue, RowConfigProps } from "./dsh.ts";
 import { format, type EnhanceKey } from "./locales.ts";
-import { isBuiltin, type Preset } from "./presets.ts";
+import { editablePrompt, isBuiltin, storedPrompt, type Preset } from "./presets.ts";
 import {
   MAX_CONTEXT_TURNS,
   MAX_TIMEOUT,
@@ -300,6 +300,8 @@ function PresetEditor({ presets, locked, stage, t }: PresetEditorProps): ReactNo
           const builtin = isBuiltin(preset.id);
           const open = editing === preset.id;
           const missing = !builtin && preset.prompt.trim() === "";
+          const edited =
+            builtin && (preset.title !== "" || preset.description !== "" || preset.prompt !== "");
           const field = (name: string): string => `${id}-${preset.id}-${name}`;
           return (
             <li key={preset.id} className={`${K}-preset`}>
@@ -308,7 +310,11 @@ function PresetEditor({ presets, locked, stage, t }: PresetEditorProps): ReactNo
                 <span className={`${K}-preset-text`}>
                   <span className={`${K}-preset-title`}>
                     <span className={`${K}-preset-title-text`}>{title}</span>
-                    {builtin && <span className={`${K}-preset-tag`}>{t("presetBuiltin")}</span>}
+                    {builtin && (
+                      <span className={`${K}-preset-tag`}>
+                        {edited ? t("presetBuiltinEdited") : t("presetBuiltin")}
+                      </span>
+                    )}
                   </span>
                   {hint !== "" && <span className={`${K}-preset-hint`}>{hint}</span>}
                   {missing && !open && (
@@ -383,33 +389,38 @@ function PresetEditor({ presets, locked, stage, t }: PresetEditorProps): ReactNo
                   <textarea
                     id={field("prompt")}
                     className={`${K}-textarea`}
-                    value={preset.prompt}
+                    value={editablePrompt(preset)}
                     rows={6}
-                    placeholder={builtin ? t("presetPromptBuiltin") : t("presetPromptCustom")}
+                    spellCheck={false}
+                    placeholder={t("presetPromptCustom")}
                     aria-invalid={missing}
                     disabled={locked}
-                    onChange={(event) => replace(index, { ...preset, prompt: event.target.value })}
+                    onChange={(event) =>
+                      replace(index, {
+                        ...preset,
+                        prompt: storedPrompt(preset.id, event.target.value),
+                      })
+                    }
                   />
                   {missing && <p className={`${K}-invalid`}>{t("presetNeedsPrompt")}</p>}
-                  {builtin &&
-                    (preset.title !== "" || preset.description !== "" || preset.prompt !== "") && (
-                      <div className={`${K}-preset-footer`}>
-                        <Button
-                          size="sm"
-                          disabled={locked}
-                          onClick={() =>
-                            replace(index, {
-                              id: preset.id,
-                              title: "",
-                              description: "",
-                              prompt: "",
-                            })
-                          }
-                        >
-                          {t("presetReset")}
-                        </Button>
-                      </div>
-                    )}
+                  {edited && (
+                    <div className={`${K}-preset-footer`}>
+                      <Button
+                        size="sm"
+                        disabled={locked}
+                        onClick={() =>
+                          replace(index, {
+                            id: preset.id,
+                            title: "",
+                            description: "",
+                            prompt: "",
+                          })
+                        }
+                      >
+                        {t("presetReset")}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </li>

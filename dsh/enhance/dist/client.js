@@ -463,7 +463,6 @@ window.__ModuleLoader__.load({
 			presetTitle: "Name",
 			presetDescription: "Description",
 			presetPrompt: "Instructions",
-			presetPromptBuiltin: "Leave empty to use the built-in instructions",
 			presetPromptCustom: "What the rewriter should do with the draft",
 			presetUp: "Move up",
 			presetDown: "Move down",
@@ -473,7 +472,8 @@ window.__ModuleLoader__.load({
 			presetEdit: "Edit",
 			presetDone: "Done",
 			presetNeedsPrompt: "A custom preset needs instructions.",
-			presetBuiltin: "Built-in"
+			presetBuiltin: "Built-in",
+			presetBuiltinEdited: "Built-in, edited"
 		};
 		const zh = {
 			enhance: "增强提示词",
@@ -528,7 +528,6 @@ window.__ModuleLoader__.load({
 			presetTitle: "名称",
 			presetDescription: "说明",
 			presetPrompt: "改写指令",
-			presetPromptBuiltin: "留空则使用内置指令",
 			presetPromptCustom: "改写器要怎样处理草稿",
 			presetUp: "上移",
 			presetDown: "下移",
@@ -538,7 +537,8 @@ window.__ModuleLoader__.load({
 			presetEdit: "编辑",
 			presetDone: "完成",
 			presetNeedsPrompt: "自定义预设需要填写改写指令。",
-			presetBuiltin: "内置"
+			presetBuiltin: "内置",
+			presetBuiltinEdited: "内置 · 已修改"
 		};
 		function format(template, values) {
 			return template.replace(/\{(\w+)\}/gu, (match, name) => name in values ? String(values[name]) : match);
@@ -558,6 +558,69 @@ window.__ModuleLoader__.load({
 		}));
 		function isBuiltin(id) {
 			return BUILTIN_PRESETS.includes(id);
+		}
+		const BUILTIN_INSTRUCTIONS = {
+			polish: `<current_mode>Polish</current_mode>
+Goal: turn the draft into a fuller prompt that helps the coding assistant think more widely about what the user asked for, while staying inside the user's intent.
+
+Do:
+- State the main goal in the first sentence.
+- Spell out what the draft implies but leaves unsaid: the scope it names, the expected result, and how to check the result. Every addition must follow from something the draft says.
+- Open up the solution space: ask the assistant to consider alternatives, trade-offs, edge cases, or risks that relate to the stated goal, and to say which option it recommends and why. Phrase these as points to consider, not as new requirements.
+- Replace hedging ("maybe", "if you could", "可能", "看看能不能") with direct requests. If the hedge shows real uncertainty about what the user wants, keep it as an open question for the assistant to investigate.
+- When the draft changes existing work, ask the assistant to keep the behavior that the change does not target.
+- When the draft lacks information the task needs, tell the assistant to state its assumptions or ask before acting. Do not guess the missing values.
+
+Limits:
+- At most 3 times the length of the draft, and at most about 250 English words or 500 Chinese characters.
+- Do not invent files, APIs, numbers, libraries, or decisions.
+- Use short paragraphs or lists. Markdown lists and inline code are fine. Use headings only when the draft has several separate parts.
+
+<example>
+<draft_prompt>登录页好像有点慢，看看能不能优化一下</draft_prompt>
+Good result (in Chinese): asks to find out why the login page loads slowly and fix it; asks the assistant to measure first and name the main causes, to compare a few fixes and recommend one, and to keep the current login behavior unchanged. It names no file and no target time, because the draft names none.
+</example>`,
+			structure: `<current_mode>Structure only</current_mode>
+Goal: reorganize the draft so the coding assistant can parse it quickly. Do not change what it says.
+
+Do:
+- Keep every piece of information: each request, reason, example, constraint, and question.
+- Put the main request first. Group the rest by role, such as background, requirements, constraints, and expected output. Use only the groups the draft actually contains.
+- Use a numbered list for steps or anything the user ordered, and bullet points for two or more parallel items. Keep a single point as a sentence. If a lead sentence states a count, make it match the number of items.
+- Keep the user's wording. You may fix obvious typos and punctuation, remove pure filler words and word-for-word repeats, and split run-on sentences.
+- Keep the order of steps whose order matters.
+
+Do not:
+- Rephrase for style, change the tone, or make the text more formal.
+- Add titles or labels the content does not need. A short label in front of a group is fine when there are three or more groups.
+- Add, drop, or merge points. Do not make vague wording more specific, except where rule 5 resolves a reference.
+
+Limits: the result should be about as long as the draft.`,
+			concise: `<current_mode>Concise</current_mode>
+Goal: the draft is often raw speech-to-text. Pull out its core points and state each one briefly.
+
+Do:
+- Remove filler words, hesitations, false starts, and repeated phrases. Keep repetition that is clearly for emphasis.
+- When the user corrects themselves ("no wait", "I mean", "actually make it", "不对", "改成", "应该是", "算了"), keep only the final version and drop both the discarded part and the correction marker. If a correction changes a count ("three things" but only two remain), update the count.
+- "Not A but B" without a correction marker is a deliberate contrast. Keep it. "Don't change it to X" is a real negation. Keep it.
+- Merge points that say the same thing. Keep every distinct point, constraint, and question.
+- Fix obvious speech-recognition errors only when the context or common technical vocabulary makes the intended word certain. Otherwise keep the word as written.
+- Write spoken numbers as digits.
+- For one point, write one sentence. For two or more distinct points, write a lead sentence and then a list: numbered if the user gave an order, bullets otherwise. Keep requests as requests and questions as questions.
+
+Limits: the result must be shorter than the draft. If the draft is already minimal, output UNCHANGED. Add nothing that was not said.
+
+<example>
+<draft_prompt>嗯那个你帮我把 config.ts 里的超时，呃，改成 30 秒，不对，60 秒吧，然后就是那个，日志也加一下，加在 retry 那里，对，retry 那里</draft_prompt>
+Good result: 把 \`config.ts\` 里的超时改成 60 秒，并在 retry 处加日志。
+</example>`
+		};
+		function editablePrompt(preset) {
+			if (preset.prompt !== "" || !isBuiltin(preset.id)) return preset.prompt;
+			return BUILTIN_INSTRUCTIONS[preset.id];
+		}
+		function storedPrompt(id, text) {
+			return isBuiltin(id) && text.trim() === BUILTIN_INSTRUCTIONS[id].trim() ? "" : text;
 		}
 		//#endregion
 		//#region dsh/enhance/src/wire.ts
@@ -1122,10 +1185,13 @@ ${p}-textarea {
   outline: none;
   background: var(--dsw-alias-bg-layer-1);
   font: inherit;
-  font-size: 13px;
-  line-height: 20px;
+  font-family: var(--ds-font-family-code, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 18px;
   color: var(--dsw-alias-label-primary);
   resize: vertical;
+  field-sizing: content;
+  max-height: 480px;
 }
 ${p}-textarea:focus {
   border-color: var(--dsw-alias-state-business-primary);
@@ -1905,6 +1971,7 @@ ${p}-add {
 							const builtin = isBuiltin(preset.id);
 							const open = editing === preset.id;
 							const missing = !builtin && preset.prompt.trim() === "";
+							const edited = builtin && (preset.title !== "" || preset.description !== "" || preset.prompt !== "");
 							const field = (name) => `${id}-${preset.id}-${name}`;
 							return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
 								className: `${K}-preset`,
@@ -1925,7 +1992,7 @@ ${p}-add {
 														children: title
 													}), builtin && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 														className: `dsh-enhance-preset-tag`,
-														children: t("presetBuiltin")
+														children: edited ? t("presetBuiltinEdited") : t("presetBuiltin")
 													})]
 												}),
 												hint !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
@@ -2016,21 +2083,22 @@ ${p}-add {
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("textarea", {
 											id: field("prompt"),
 											className: `dsh-enhance-textarea`,
-											value: preset.prompt,
+											value: editablePrompt(preset),
 											rows: 6,
-											placeholder: builtin ? t("presetPromptBuiltin") : t("presetPromptCustom"),
+											spellCheck: false,
+											placeholder: t("presetPromptCustom"),
 											"aria-invalid": missing,
 											disabled: locked,
 											onChange: (event) => replace(index, {
 												...preset,
-												prompt: event.target.value
+												prompt: storedPrompt(preset.id, event.target.value)
 											})
 										}),
 										missing && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 											className: `dsh-enhance-invalid`,
 											children: t("presetNeedsPrompt")
 										}),
-										builtin && (preset.title !== "" || preset.description !== "" || preset.prompt !== "") && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+										edited && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 											className: `dsh-enhance-preset-footer`,
 											children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
 												size: "sm",

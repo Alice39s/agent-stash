@@ -53,7 +53,6 @@ export const en = {
   presetTitle: "Name",
   presetDescription: "Description",
   presetPrompt: "Instructions",
-  presetPromptBuiltin: "Leave empty to use the built-in instructions",
   presetPromptCustom: "What the rewriter should do with the draft",
   presetUp: "Move up",
   presetDown: "Move down",
@@ -64,6 +63,7 @@ export const en = {
   presetDone: "Done",
   presetNeedsPrompt: "A custom preset needs instructions.",
   presetBuiltin: "Built-in",
+  presetBuiltinEdited: "Built-in, edited",
 } as const;
 
 export type EnhanceKey = keyof typeof en;
@@ -122,7 +122,6 @@ export const zh: Readonly<Record<EnhanceKey, string>> = {
   presetTitle: "名称",
   presetDescription: "说明",
   presetPrompt: "改写指令",
-  presetPromptBuiltin: "留空则使用内置指令",
   presetPromptCustom: "改写器要怎样处理草稿",
   presetUp: "上移",
   presetDown: "下移",
@@ -133,6 +132,7 @@ export const zh: Readonly<Record<EnhanceKey, string>> = {
   presetDone: "完成",
   presetNeedsPrompt: "自定义预设需要填写改写指令。",
   presetBuiltin: "内置",
+  presetBuiltinEdited: "内置 · 已修改",
 };
 
 /** 替换文案里的 `{name}` 占位符。 */
