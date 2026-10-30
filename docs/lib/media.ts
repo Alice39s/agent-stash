@@ -144,13 +144,13 @@ export const media = {
     image: "/media/skill-scout-stats.png",
     video: undefined,
     width: 1280,
-    height: 1009,
+    height: 1932,
   },
   "skill-scout-stats-en": {
     image: "/media/skill-scout-stats-en.png",
     video: undefined,
     width: 1280,
-    height: 1009,
+    height: 1932,
   },
   "skill-scout-settings": {
     image: "/media/skill-scout-settings.png",
