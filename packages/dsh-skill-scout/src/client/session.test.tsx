@@ -312,4 +312,19 @@ describe("SessionTab", () => {
     await render(host);
     expect(section("Tasks in this session").querySelectorAll("li[data-episode]")).toHaveLength(7);
   });
+
+  test("shows the result of an action at the top of the view with its undo", async () => {
+    const host = fakeHost(inboxOf([item()]));
+    await render(host);
+    await click(button("Dismiss: Cut a local patch release", root));
+    const notice = root.querySelector("[data-notice=result]");
+    expect(notice?.textContent).toContain("Dismissed");
+    expect(host.actions.at(-1)).toEqual({ action: "dismiss", id: "repeated:1~0", similar: false });
+    await click(button("Close", notice ?? root));
+    expect(root.querySelector("[data-notice=result]")).toBeNull();
+
+    await click(button("Dismiss: Cut a local patch release", root));
+    await click(button("Undo", root.querySelector("[data-notice=result]") ?? root));
+    expect(host.actions.at(-1)).toEqual({ action: "restore", id: "repeated:1~0" });
+  });
 });

@@ -332,7 +332,6 @@ export const STATS: StatsView = {
     backfilled: 12,
     failed: [{ sessionId: "s9", message: "日志无法解析", at: NOW - 600_000 }],
   },
-  outcomes: { verified: 20, succeeded: 8, unverified: 6, disputed: 1, failed: 4, aborted: 1 },
   funnel: {
     leads: { detected: 2, summarized: 6, skipped: 2, failed: 1, dismissed: 1 },
     ideas: { proposed: 3, ready: 1, failed: 1, written: 2, dismissed: 1 },

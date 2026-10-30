@@ -34,8 +34,8 @@ export interface InboxState {
   readonly notice: Notice | null;
   /** 打开的详情正在显示的卡片。 */
   readonly viewing: readonly string[];
-  /** 「历史回溯提炼」页开着：提示显示在页面里，标题栏不再弹出。 */
-  readonly paged: boolean;
+  /** 有可见的插件表面（页面、会话视图）承接提示：提示显示在那里，标题栏不再弹出。 */
+  readonly hosting: boolean;
 }
 
 /** 收件箱依赖的读取与写入；测试里换成本地实现。 */
@@ -58,7 +58,7 @@ export interface InboxStore extends Observable<InboxState> {
    * 这些卡片的后台工作结束时由行里的圆点和状态词表达，不再弹出提示（design 4.9）。返回停止列出的函数。
    */
   listing(lists: (item: ItemView) => boolean): () => void;
-  /** 页面开始承接提示；返回交还的函数。 */
+  /** 一个可见的插件表面开始承接提示；返回交还的函数。 */
   hostNotices(): () => void;
   /** 停止计时器与监听。 */
   dispose(): void;
@@ -70,7 +70,7 @@ const INITIAL: InboxState = {
   error: null,
   notice: null,
   viewing: [],
-  paged: false,
+  hosting: false,
 };
 
 /**
@@ -280,10 +280,10 @@ export function createInboxStore(transport: InboxTransport): InboxStore {
     },
     hostNotices() {
       hosts += 1;
-      set({ ...state, paged: true });
+      set({ ...state, hosting: true });
       return () => {
         hosts -= 1;
-        set({ ...state, paged: hosts > 0 });
+        set({ ...state, hosting: hosts > 0 });
       };
     },
     dispose() {
@@ -291,6 +291,10 @@ export function createInboxStore(transport: InboxTransport): InboxStore {
       clearTimeout(noticeTimer);
       window.removeEventListener("focus", onFocus);
       listeners.clear();
+      surfaces.clear();
+      watching.clear();
+      hosts = 0;
+      set({ ...state, viewing: [], hosting: false });
     },
   };
 }

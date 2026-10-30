@@ -62,8 +62,8 @@ export function ShareBar({
     );
   }
 
+  // 提示与读屏描述共用这一个合计：关掉一类图例后，横条、提示与描述里的占比一起变。
   const total = visible.reduce((sum, segment) => sum + segment.value, 0);
-  const all = present.reduce((sum, segment) => sum + segment.value, 0);
   const share = (value: number): number => (total > 0 ? value / total : 0);
   const current = active === null ? undefined : visible[active];
   const focused = current?.key ?? emphasis;
@@ -92,7 +92,7 @@ export function ShareBar({
 
   return (
     <div className={styles.chart} data-chart="share">
-      {all === 0 ? (
+      {present.length === 0 ? (
         <ChartEmpty height={legend ? 36 : 20} text={empty} />
       ) : (
         <>
@@ -138,10 +138,10 @@ export function ShareBar({
             {tooltip}
           </div>
           <span id={descId} className={styles.srOnly}>
-            {present
+            {visible
               .map(
                 (segment) =>
-                  `${segment.label} ${formatValue(segment.value)} (${formatPercent(segment.value / all)})`,
+                  `${segment.label} ${formatValue(segment.value)} (${formatPercent(share(segment.value))})`,
               )
               .join(", ")}
           </span>

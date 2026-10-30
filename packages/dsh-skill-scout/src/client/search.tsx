@@ -138,14 +138,19 @@ function Scope({
           )}
         </span>
       </div>
+      {/* 列出会话阶段还不知道总数：不给 now 与 max，按不确定进度处理，避免 max 等于 min。 */}
       {active && (
         <div
           className={styles.meter}
           role="progressbar"
           aria-label={t("backfill.progress")}
-          aria-valuemin={0}
-          aria-valuemax={backfill.total}
-          aria-valuenow={backfill.done}
+          {...(backfill.total > 0
+            ? {
+                "aria-valuemin": 0,
+                "aria-valuemax": backfill.total,
+                "aria-valuenow": backfill.done,
+              }
+            : {})}
         >
           <span
             className={styles.meterFill}

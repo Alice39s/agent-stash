@@ -25,12 +25,11 @@ import {
   type FakeHost,
 } from "./testing.tsx";
 
-const t = translator("en");
 let unmount: (() => void) | undefined;
 let root: HTMLElement;
 
-async function render(host: FakeHost) {
-  const mounted = await mount(<HistoryPage {...host.face} t={t} />);
+async function render(host: FakeHost, locale: "en" | "zh" = "en") {
+  const mounted = await mount(<HistoryPage {...host.face} t={translator(locale)} />);
   unmount = mounted.unmount;
   root = mounted.container;
   await settle();
@@ -133,6 +132,59 @@ describe("HistoryPage suggestions", () => {
     await width.resize(720);
     await click(button("Back to the list", detail() ?? root));
     expect(host.face.page.getSnapshot().selected).toBeNull();
+  });
+
+  test.each([
+    ["en", "en-US"],
+    ["zh", "zh-CN"],
+  ] as const)("writes a row's absolute time in the interface locale in %s", async (locale, tag) => {
+    await render(fakeHost(inboxOf([item()])), locale);
+    const time = root
+      .querySelector("[data-item='repeated:1~0']")
+      ?.closest("li")
+      ?.querySelector("time[title]");
+    expect(time?.getAttribute("title")).toBe(
+      new Date(NOW - 60_000).toLocaleString(tag, { dateStyle: "medium", timeStyle: "short" }),
+    );
+  });
+
+  test("lists only the card its open detail shows while the page is one pane wide", async () => {
+    const waiting = item({ state: "drafting" });
+    const done = item({
+      id: "recovery:2~0",
+      kind: "recovery",
+      state: "drafting",
+      title: "Reinstall deps",
+    });
+    const host = fakeHost(inboxOf([waiting, done], { working: 2 }));
+    host.face.page.update({ selected: "repeated:1~0" });
+    await render(host);
+    host.inbox = inboxOf([waiting, { ...done, state: "ready" }], { working: 1 });
+    await perform(() => host.store.refresh());
+    await settle();
+    expect(root.querySelector("[data-notice=result]")?.textContent).toContain(
+      "Draft ready: Reinstall deps",
+    );
+  });
+
+  test("lists every card while both panes are shown", async () => {
+    const width = driveResize();
+    const waiting = item({ state: "drafting" });
+    const done = item({
+      id: "recovery:2~0",
+      kind: "recovery",
+      state: "drafting",
+      title: "Reinstall deps",
+    });
+    const host = fakeHost(inboxOf([waiting, done], { working: 2 }));
+    host.face.page.update({ selected: "repeated:1~0" });
+    await render(host);
+    await width.resize(1200);
+    await settle();
+    host.inbox = inboxOf([waiting, { ...done, state: "ready" }], { working: 1 });
+    await perform(() => host.store.refresh());
+    await settle();
+    expect(root.querySelector("[data-notice=result]")).toBeNull();
   });
 
   test("leads each row with its status dot and starts the metadata with the status word", async () => {
@@ -458,6 +510,10 @@ describe("HistoryPage backfill", () => {
     host.face.page.update({ tab: "search" });
     await render(host);
     expect(root.textContent).toContain("Listing sessions");
+    const bar = root.querySelector("[role=progressbar]");
+    expect(bar).not.toBeNull();
+    expect(bar?.hasAttribute("aria-valuenow")).toBe(false);
+    expect(bar?.hasAttribute("aria-valuemax")).toBe(false);
     expect(button("Pause", root).disabled).toBe(false);
     await click(button("Pause", root));
     expect(host.actions).toEqual([{ action: "backfill-pause" }]);

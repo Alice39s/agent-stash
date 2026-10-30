@@ -5,7 +5,7 @@
  * 与列表行的状态点一致，同一类别里较早的阶段取该色的 50%；中性的量依次取着重色、第三级文字色、着重色 50%、
  * 三级分隔线色，对卡片底色的反差逐级降低，第一个序列在明暗两种主题里都最醒目。
  */
-import type { StatsView } from "../../../shared.ts";
+import type { StatsView, TaskView } from "../../../shared.ts";
 
 /** 着重色：中性图表的第一个系列，也是单系列图表的默认颜色。 */
 export const ACCENT_COLOR = "var(--dsw-alias-state-business-primary)";
@@ -47,8 +47,8 @@ export const COVERAGE_COLORS = {
   pending: STATUS.notStarted,
 } as const satisfies Readonly<Record<CoverageState, string>>;
 
-/** 任务结果。 */
-export type Outcome = keyof StatsView["outcomes"];
+/** 任务结果：与任务视图里的结果字段同一组。 */
+export type Outcome = TaskView["outcome"];
 
 /** 任务结果的堆叠顺序，从下往上：通过检查的在底部，取消的在顶部。 */
 export const OUTCOME_ORDER = [

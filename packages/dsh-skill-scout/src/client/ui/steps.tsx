@@ -19,7 +19,7 @@ export interface Step {
 export interface StepsProps {
   readonly steps: readonly Step[];
   readonly label: string;
-  /** 条目已结束：每一步都用淡墨与空闲的点。 */
+  /** 条目已结束：整行标上 `data-closed`；每一步的状态与墨色由调用方给出的步骤决定。 */
   readonly closed?: boolean;
   /** 下一步的说明。 */
   readonly next?: ReactNode;
@@ -42,12 +42,12 @@ export function Steps({
             {index > 0 && <li className={styles.line} aria-hidden="true" />}
             <li
               className={styles.step}
-              data-state={closed ? "closed" : step.state}
+              data-state={step.state}
               data-current={step.current || undefined}
               aria-label={`${step.label}: ${step.word}`}
               aria-current={step.current ? "step" : undefined}
             >
-              <StateDot state={closed ? "idle" : step.state} appearance="step" size={16} />
+              <StateDot state={step.state} appearance="step" size={16} />
               <span className={styles.label} aria-hidden="true">
                 {step.label}
               </span>

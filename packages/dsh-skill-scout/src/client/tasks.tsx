@@ -114,7 +114,11 @@ export function TaskRow({ task, now, t, terms, pick, openSession }: TaskRowProps
       }
       status={status}
       metadata={[
-        <time key="time" dateTime={new Date(task.at).toISOString()} title={absolute(task.at)}>
+        <time
+          key="time"
+          dateTime={new Date(task.at).toISOString()}
+          title={absolute(task.at, t("chart.locale"))}
+        >
           {ago(t, task.at, now)}
         </time>,
         ...counts,

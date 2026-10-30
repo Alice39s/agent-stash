@@ -58,7 +58,7 @@ export function ItemRow({
         <time
           key="time"
           dateTime={new Date(item.updatedAt).toISOString()}
-          title={absolute(item.updatedAt)}
+          title={absolute(item.updatedAt, t("chart.locale"))}
         >
           {time}
         </time>,

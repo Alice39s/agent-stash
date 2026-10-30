@@ -175,11 +175,29 @@ describe("createInboxStore notices", () => {
     const first = host.store.watch("a");
     const second = host.store.watch("a");
     const release = host.store.hostNotices();
-    expect(host.store.getSnapshot()).toMatchObject({ viewing: ["a"], paged: true });
+    expect(host.store.getSnapshot()).toMatchObject({ viewing: ["a"], hosting: true });
     first();
     expect(host.store.getSnapshot().viewing).toEqual(["a"]);
     second();
     release();
-    expect(host.store.getSnapshot()).toMatchObject({ viewing: [], paged: false });
+    expect(host.store.getSnapshot()).toMatchObject({ viewing: [], hosting: false });
+  });
+
+  test("forgets the surfaces and the cards on screen once disposed", async () => {
+    const host = fakeHost(inboxOf([item({ state: "drafting" })], { working: 1 }));
+    await host.store.refresh();
+    host.store.watch("repeated:1~0");
+    host.store.listing(everyItem);
+    host.store.hostNotices();
+    host.store.dispose();
+    expect(host.store.getSnapshot()).toMatchObject({ viewing: [], hosting: false });
+
+    // 清干净之后，同一张卡片结束不再算「在眼前」，提示照常发出。
+    host.inbox = inboxOf([item({ state: "ready" })]);
+    await host.store.refresh();
+    expect(host.store.getSnapshot().notice).toMatchObject({
+      key: "notice.done.ready",
+      view: "repeated:1~0",
+    });
   });
 });

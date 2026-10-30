@@ -377,7 +377,7 @@ describe("StatsTab lists and tables", () => {
       "pnpm build, sessions per week, last 8 weeks",
     );
     expect(trend?.querySelector("desc")?.textContent).toBe(
-      "7 weeks ago 0, 6 weeks ago 1, 5 weeks ago 3, 4 weeks ago 2, 3 weeks ago 1, 2 weeks ago 0, 1 week ago 1, This week 1",
+      "49–55 days ago 0, 42–48 days ago 1, 35–41 days ago 3, 28–34 days ago 2, 21–27 days ago 1, 14–20 days ago 0, 7–13 days ago 1, Last 7 days 1",
     );
     await click(build);
     expect(host.face.page.getSnapshot()).toMatchObject({ tab: "search", query: "pnpm build" });

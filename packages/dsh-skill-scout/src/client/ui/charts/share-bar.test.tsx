@@ -83,6 +83,18 @@ describe("ShareBar", () => {
     expect(desc?.textContent).toBe("Summarized 6 (60%), Waiting 3 (30%), Failed 1 (10%)");
   });
 
+  test("describes the visible total after a legend category is hidden", async () => {
+    const root = await render(
+      <ShareBar segments={LEADS} label="Leads by state" empty="No leads" />,
+    );
+    await click(button(/^Waiting/u, root));
+    const bar = barOf(root);
+    const [descId = ""] = (bar.getAttribute("aria-describedby") ?? "").split(" ");
+    expect(document.getElementById(descId)?.textContent).toBe("Summarized 6 (86%), Failed 1 (14%)");
+    await focus(bar);
+    expect(tooltipText(root)).toBe("Summarized686%");
+  });
+
   test("shows one line instead of the bar when every category is zero", async () => {
     const root = await render(
       <ShareBar

@@ -153,7 +153,7 @@ function Episode({ episode, now, openSession, t }: EpisodeProps): ReactNode {
             <span className={styles.metaItem} data-ink={status?.ink ?? "tertiary"}>
               {status?.word ?? episode.outcome}
             </span>
-            <time className={styles.metaItem} title={absolute(episode.at)}>
+            <time className={styles.metaItem} title={absolute(episode.at, t("chart.locale"))}>
               {ago(t, episode.at, now)}
             </time>
             {episode.cwd !== null && (
@@ -1104,7 +1104,7 @@ function Detail({
               {entry}
             </span>
           ))}
-          <time className={styles.metaItem} title={absolute(item.updatedAt)}>
+          <time className={styles.metaItem} title={absolute(item.updatedAt, t("chart.locale"))}>
             {ago(t, item.updatedAt, now)}
           </time>
         </p>

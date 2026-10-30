@@ -227,6 +227,17 @@ describe("InboxEntry", () => {
     expect(document.activeElement).toBe(trigger());
   });
 
+  test("moves focus into the panel when it opens", async () => {
+    const host = fakeHost(inboxOf([item()]));
+    await render(host);
+    await click(trigger());
+    const dialog = panel();
+    expect(dialog).not.toBeNull();
+    expect(dialog?.contains(document.activeElement)).toBe(true);
+    await press(dialog, "Escape");
+    expect(document.activeElement).toBe(trigger());
+  });
+
   test("opens a card in the history page with the card selected", async () => {
     const host = fakeHost(inboxOf([item(), item({ id: "complex:2", state: "skipped" })]));
     await render(host);
@@ -301,7 +312,7 @@ describe("InboxEntry notices", () => {
     expect(toast()).toBeNull();
   });
 
-  test("lets the conversation view's rows carry finished work and raises the popover once the view is gone", async () => {
+  test("lets the conversation view's rows carry finished work and hosts the other notice at its top", async () => {
     const elsewhere: Partial<ItemView> = {
       id: "complex:9~0",
       title: "Rotate the signing key",
@@ -325,8 +336,10 @@ describe("InboxEntry notices", () => {
 
     host.inbox = inboxOf([item(), item(elsewhere)]);
     await perform(() => host.store.refresh());
-    expect(toast()?.textContent).toContain("Draft ready: Rotate the signing key");
-    await click(button("Close", toast() ?? document));
+    expect(toast()).toBeNull();
+    const notice = view.container.querySelector("[data-notice=result]");
+    expect(notice?.textContent).toContain("Draft ready: Rotate the signing key");
+    await click(button("Close", notice ?? view.container));
 
     // 切到对话 Tab：会话视图卸载，同一张卡片的工作结束时从标题栏入口下方弹出提示。
     view.unmount();

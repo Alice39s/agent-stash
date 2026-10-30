@@ -8,6 +8,9 @@ const MINUTE = 60 * SECOND;
 const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 
+/** 绝对时间的格式：中等日期与短时间，统计表格与行的 `title` 共用。 */
+const DATE_TIME = { dateStyle: "medium", timeStyle: "short" } as const;
+
 /** 相对时间：刚刚、N 分钟前、N 小时前、N 天前。 */
 export function ago(t: ScoutTranslate, at: number, now: number): string {
   const elapsed = Math.max(0, now - at);
@@ -17,13 +20,13 @@ export function ago(t: ScoutTranslate, at: number, now: number): string {
   return t("time.days", { count: Math.floor(elapsed / DAY) });
 }
 
-/** 一段时长：N 秒、N 分 N 秒。 */
+/** 一段时长：N 秒、N 分 N 秒，秒数不补零（design 6 的 `{s}s`、`{m}m {s}s`）。 */
 export function duration(t: ScoutTranslate, ms: number): string {
   const seconds = Math.floor(Math.max(0, ms) / SECOND);
   if (seconds < 60) return t("duration.seconds", { seconds });
   return t("duration.minutes", {
     minutes: Math.floor(seconds / 60),
-    seconds: String(seconds % 60).padStart(2, "0"),
+    seconds: seconds % 60,
   });
 }
 
@@ -138,9 +141,9 @@ export function sequenceOf(steps: readonly string[]): {
   };
 }
 
-/** 绝对时间，放在相对时间的 `title` 里。 */
-export function absolute(at: number): string {
-  return new Date(at).toLocaleString();
+/** 绝对时间，放在相对时间的 `title` 里：按界面语言（`chart.locale`）写，与统计表格同一套格式。 */
+export function absolute(at: number, locale: string): string {
+  return new Date(at).toLocaleString(locale, DATE_TIME);
 }
 
 /** 来源与规模：线索来源 · 会话数 · 同名折叠数。 */

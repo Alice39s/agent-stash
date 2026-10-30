@@ -16,7 +16,6 @@ import { groupItems, resolveItem } from "./format.ts";
 import { useNow, useSinglePane, useSnapshot } from "./hooks.ts";
 import type { ScoutTranslate } from "./locale.ts";
 import type { PageTab } from "./navigation.ts";
-import { everyItem } from "./store.ts";
 import { SearchTab } from "./search.tsx";
 import { StatsTab } from "./stats.tsx";
 import { EmptyState } from "./ui/empty-state.tsx";
@@ -96,10 +95,21 @@ export function HistoryPage(props: FaceProps): ReactNode {
   const baseId = useId();
   const [pageRef, single] = useSinglePane<HTMLDivElement>();
 
-  // 页面开着时由页面显示提示，标题栏不再弹出；建议分区列出全部卡片，后台工作结束由行表达，不出提示。
+  const view = state.inbox;
+  const suggestions = nav.tab === "suggestions" && view !== null;
+  const current = suggestions ? currentItem(view, nav.selected) : undefined;
+  const currentId = current?.id ?? null;
+
+  // 页面开着时由页面显示提示，标题栏不再弹出。
   useEffect(() => inbox.hostNotices(), [inbox]);
+  // 建议分区只有列表在眼前时列出全部卡片；单栏打开详情后列表不显示，眼前的只有详情里的那张。
   const listsAll = nav.tab === "suggestions";
-  useEffect(() => (listsAll ? inbox.listing(everyItem) : undefined), [inbox, listsAll]);
+  useEffect(() => {
+    if (!listsAll) return undefined;
+    return inbox.listing((entry) =>
+      single && nav.selected !== null ? entry.id === currentId : true,
+    );
+  }, [inbox, listsAll, single, nav.selected, currentId]);
 
   const panelId = `${baseId}-panel`;
   const tab = (value: PageTab, label: string): SegmentedTab<PageTab> => ({
@@ -108,9 +118,6 @@ export function HistoryPage(props: FaceProps): ReactNode {
     id: `${baseId}-${value}`,
     panelId,
   });
-  const view = state.inbox;
-  const suggestions = nav.tab === "suggestions" && view !== null;
-  const current = suggestions ? currentItem(view, nav.selected) : undefined;
   const notice = state.notice;
 
   return (

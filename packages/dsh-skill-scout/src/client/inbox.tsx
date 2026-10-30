@@ -61,7 +61,7 @@ export function InboxEntry(props: FaceProps): ReactNode {
     gap: 5,
     margin: 16,
   });
-  const toast = !open && !state.paged ? state.notice : null;
+  const toast = !open && !state.hosting ? state.notice : null;
   const toastPosition = useAnchoredPosition({
     open: toast !== null,
     anchorRef: triggerRef,
@@ -72,6 +72,11 @@ export function InboxEntry(props: FaceProps): ReactNode {
   });
   useDismissOnOutsidePointer(rootRef, open, setOpen, panelRef);
   useEffect(() => (open ? inbox.listing(everyItem) : undefined), [inbox, open]);
+
+  // 打开时把焦点移进面板：面板本身可聚焦，读屏随即宣告这个对话框，Tab 从面板里的第一项开始而不是走到文档末尾。
+  useEffect(() => {
+    if (open) panelRef.current?.focus();
+  }, [open]);
 
   // 收件箱开着时出现的待决定建议算看过；详情面板里等到的摘要或草稿同样算看过。
   useEffect(() => {

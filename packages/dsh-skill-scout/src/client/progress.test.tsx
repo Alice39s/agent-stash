@@ -67,7 +67,7 @@ describe("Working", () => {
     await act(async () => {
       vi.advanceTimersByTime(1_000);
     });
-    expect(root.textContent).toContain("1m 00s elapsed");
+    expect(root.textContent).toContain("1m 0s elapsed");
   });
 
   test("keeps lit bars still and lets the rest pulse in a staggered wave", async () => {

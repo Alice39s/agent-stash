@@ -10,7 +10,7 @@ import { StateDot, type StateDotState } from "@deepseek-ai/dsh-client-ui-primiti
 import { useCallback, type ReactNode } from "react";
 import type { CallLogView, InboxView, StatsView } from "../shared.ts";
 import type { ScoutFace } from "./face.ts";
-import { ago, counted, duration } from "./format.ts";
+import { absolute, ago, counted, duration } from "./format.ts";
 import { useLoaded, useNow } from "./hooks.ts";
 import type { ScoutKey, ScoutTranslate } from "./locale.ts";
 import {
@@ -73,7 +73,6 @@ type Plural =
   | "stats.leads.count"
   | "stats.ideas.count"
   | "stats.failed.count"
-  | "stats.week.ago"
   | "stats.usage.total";
 
 /** 按 `count` 取单复数，数字千位分组。 */
@@ -92,14 +91,6 @@ function when(t: ScoutTranslate, at: number, now: number): string {
   return now - at > 30 * DAY
     ? dayLabel(t, new Date(at).toISOString().slice(0, 10))
     : ago(t, at, now);
-}
-
-/** 悬停时显示的完整时间。 */
-function exactTime(t: ScoutTranslate, at: number): string {
-  return new Intl.DateTimeFormat(t("chart.locale"), {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(at);
 }
 
 /** 一次调用的结论：idea 数、理由或失败原因。 */
@@ -259,12 +250,15 @@ function Kpis({
   );
 }
 
-/** 近 8 周的会话数，最早的在前：最后一周是本周。 */
+/** 近 8 周的会话数，最早的在前：每个点是截至 `back` 周前那天的 7 天窗口，最后一个是最近 7 天。 */
 function weekPoints(t: ScoutTranslate, weeks: readonly number[]) {
   return weeks.map((value, index) => {
     const back = weeks.length - 1 - index;
     return {
-      label: back === 0 ? t("stats.week.current") : plural(t, "stats.week.ago", back),
+      label:
+        back === 0
+          ? t("stats.week.current")
+          : t("stats.week.range", { from: back * 7, to: back * 7 + 6 }),
       value,
     };
   });
@@ -418,7 +412,7 @@ function FailedSessions({ stats, face, t, now }: CardProps & { readonly now: num
             summary={entry.message}
             status={{ word: t("stats.coverage.failed"), ink: "error", shimmer: false }}
             metadata={[
-              <span key="time" title={exactTime(t, entry.at)}>
+              <span key="time" title={absolute(entry.at, t("chart.locale"))}>
                 {when(t, entry.at, now)}
               </span>,
             ]}
@@ -564,7 +558,7 @@ function callColumns(
       header: t("call.column.time"),
       cell: (call) => <span className={styles.tertiary}>{when(t, call.at, now)}</span>,
       text: (call) => when(t, call.at, now),
-      title: (call) => exactTime(t, call.at),
+      title: (call) => absolute(call.at, t("chart.locale")),
     },
   ];
 }

@@ -7,7 +7,7 @@
 import type { StateDotState } from "@deepseek-ai/dsh-client-ui-primitives";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
 import type { Action, SessionView } from "../shared.ts";
-import { Banner, dismissItem, GroupedItems } from "./cards.tsx";
+import { Banner, dismissItem, GroupedItems, noticeLinks } from "./cards.tsx";
 import { ItemDetail } from "./detail.tsx";
 import type { FaceProps } from "./face.ts";
 import { absolute, ago, cites, citing, groupItems, resolveItem } from "./format.ts";
@@ -18,7 +18,7 @@ import { ActionButton } from "./ui/action-button.tsx";
 import { EmptyState } from "./ui/empty-state.tsx";
 import { Group, GroupHeader, GroupNote } from "./ui/group-header.tsx";
 import { RowList } from "./ui/list-row.tsx";
-import { ErrorNotice } from "./ui/notice.tsx";
+import { ErrorNotice, ResultNotice } from "./ui/notice.tsx";
 import { SkeletonRows } from "./ui/skeleton.tsx";
 import { ViewHeader } from "./ui/view-header.tsx";
 import layout from "./layout.module.css";
@@ -56,7 +56,9 @@ function viewStatus(
       }),
       meta:
         value.scannedAt === null ? null : (
-          <time title={absolute(value.scannedAt)}>{ago(t, value.scannedAt, now)}</time>
+          <time title={absolute(value.scannedAt, t("chart.locale"))}>
+            {ago(t, value.scannedAt, now)}
+          </time>
         ),
     };
   }
@@ -92,7 +94,8 @@ export function SessionTab(props: SessionTabProps): ReactNode {
   const { busy, error, run } = useAction(inbox, t);
   const now = useNow(60_000);
 
-  useEffect(() => inbox.listing((item) => cites(item, sessionId)), [inbox, sessionId]);
+  // 视图开着时由视图顶部承接提示，标题栏不再弹出。
+  useEffect(() => inbox.hostNotices(), [inbox]);
 
   // 分析进度、已分析的会话与任务数变化，或本视图发起的操作结束、用户重试后，重新读取本会话的情况。
   const status = state.inbox?.status;
@@ -114,6 +117,16 @@ export function SessionTab(props: SessionTabProps): ReactNode {
   const items = citing(view?.items ?? [], sessionId);
   const groups = groupItems(items);
   const current = resolveItem(items, selected) ?? groups.review[0] ?? groups.found[0] ?? items[0];
+  const currentId = current?.id ?? null;
+  // 列表在眼前时列出的卡片由行表达后台结果；单栏打开一条后列表隐藏，眼前只剩详情里的那条。
+  useEffect(
+    () =>
+      inbox.listing((item) => {
+        if (!cites(item, sessionId)) return false;
+        return single && selected !== null ? item.id === currentId : true;
+      }),
+    [inbox, sessionId, single, selected, currentId],
+  );
   const value = session.status === "ready" ? session.value : null;
   const closed = value === null || value.state === "subagent" || value.state === "missing";
   const header = viewStatus(t, session, status?.scanning === true, now);
@@ -169,6 +182,13 @@ export function SessionTab(props: SessionTabProps): ReactNode {
       {(view !== null || error !== null || session.status === "error") && (
         <div className={layout.viewNotices}>
           {view !== null && <Banner inbox={view} t={t} />}
+          {state.notice !== null && (
+            <ResultNotice
+              text={t(state.notice.key, state.notice.params)}
+              links={noticeLinks(state.notice, props, t)}
+              close={{ label: t("notice.close"), onClick: () => inbox.clearNotice() }}
+            />
+          )}
           {error !== null && <ErrorNotice text={error} />}
           {session.status === "error" && (
             <ErrorNotice

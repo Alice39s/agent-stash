@@ -49,47 +49,48 @@ interface Position {
  * 状态本身就决定位置的卡片：当前一步的序号与状态。还没有摘要时停在摘要、未开始；摘要待确认时停在摘要、
  * 等你处理；草稿待保存时停在草稿、等你处理；已保存时没有当前一步。
  */
-const POSITIONS: Readonly<Record<Exclude<ItemView["state"], "failed" | "dismissed">, Position>> = {
+const POSITIONS: Readonly<
+  Record<Exclude<ItemView["state"], "failed" | "skipped" | "dismissed">, Position>
+> = {
   detected: { index: 1, state: "idle" },
   summarizing: { index: 1, state: "ongoing" },
-  skipped: { index: 1, state: "idle" },
   proposed: { index: 1, state: "warning" },
   drafting: { index: 2, state: "ongoing" },
   ready: { index: 2, state: "warning" },
   written: { index: ORDER.length, state: "done" },
 };
 
-/** 失败停在出错的那一步；已忽略的卡片停在摘要（还没有摘要）或草稿。 */
-function position(item: ItemView): Position {
+/** 失败停在出错的那一步；已结束的卡片（不值得保存、已忽略）没有位置。 */
+function position(item: ItemView): Position | null {
+  if (item.state === "skipped" || item.state === "dismissed") return null;
   if (item.state === "failed") {
     return { index: item.failure?.stage === "draft" ? 2 : 1, state: "error" };
-  }
-  if (item.state === "dismissed") {
-    return { index: item.decision === null || item.decision === "skip" ? 1 : 2, state: "idle" };
   }
   return POSITIONS[item.state];
 }
 
+/** 已结束卡片的一步：空闲的点，状态词是「已结束」。 */
+function quietStep(t: ScoutTranslate, id: StepId): LifecycleStep {
+  return { id, label: t(LABELS[id]), state: "idle", current: false, word: t("step.state.closed") };
+}
+
 export function lifecycleOf(t: ScoutTranslate, item: ItemView): Lifecycle {
-  const closed = item.state === "skipped" || item.state === "dismissed";
-  const { index, state } = position(item);
+  const spot = position(item);
+  if (spot === null) {
+    return { closed: true, steps: ORDER.map((id) => quietStep(t, id)) };
+  }
+  const { index, state } = spot;
   return {
-    closed,
+    closed: false,
     steps: ORDER.map((id, at) => {
-      const current = !closed && at === index;
-      const stepState: StateDotState = closed
-        ? "idle"
-        : at < index
-          ? "done"
-          : current
-            ? state
-            : "idle";
+      const current = at === index;
+      const stepState: StateDotState = at < index ? "done" : current ? state : "idle";
       return {
         id,
         label: t(LABELS[id]),
         state: stepState,
         current,
-        word: closed ? t("step.state.closed") : t(WORDS[stepState]),
+        word: t(WORDS[stepState]),
       };
     }),
   };
