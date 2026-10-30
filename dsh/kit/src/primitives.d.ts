@@ -25,6 +25,41 @@ declare module "@deepseek-ai/dsh-client-ui-primitives" {
   export const IconChevronDownOutlineRegular: Icon;
   export const IconTrashOutlineRegular: Icon;
   export const IconPlusOutlineRegular: Icon;
+  export const IconSkillOutlineRegular: Icon;
+  /** 增强提示词的预设图标可选的其余图标。 */
+  export const IconEnhanceOutlineRegular: Icon;
+  export const IconFlatListOutlineRegular: Icon;
+  export const IconChecklistOutlineRegular: Icon;
+  export const IconCompactOutlineRegular: Icon;
+  export const IconWrapLinesOutlineRegular: Icon;
+  export const IconEditOutlineRegular: Icon;
+  export const IconMicrophoneOutlineRegular: Icon;
+  export const IconThinkOutlineRegular: Icon;
+  export const IconLightOutlineRegular: Icon;
+  export const IconGoalOutlineRegular: Icon;
+  export const IconPlanOutlineRegular: Icon;
+  export const IconQuestionOutlineRegular: Icon;
+  export const IconInfoOutlineRegular: Icon;
+  export const IconSearchOutlineRegular: Icon;
+  export const IconInspectOutlineRegular: Icon;
+  export const IconCompareSplitOutlineRegular: Icon;
+  export const IconCodeOutlineRegular: Icon;
+  export const IconApiOutlineRegular: Icon;
+  export const IconDatabaseOutlineRegular: Icon;
+  export const IconBranchOutlineRegular: Icon;
+  export const IconWarningTriangleOutlineRegular: Icon;
+  export const IconShieldOutlineRegular: Icon;
+  export const IconGaugeOutlineRegular: Icon;
+  export const IconClockOutlineRegular: Icon;
+  export const IconLinkOutlineRegular: Icon;
+  export const IconGlobeOutlineRegular: Icon;
+  export const IconUserOutlineRegular: Icon;
+  export const IconUsersOutlineRegular: Icon;
+  export const IconAgentPresetOutlineRegular: Icon;
+  export const IconPersonalizationOutlineRegular: Icon;
+  export const IconDeliverDocRegular: Icon;
+  export const IconFolderOpenOutlineRegular: Icon;
+  export const IconPaperPlaneOutlineRegular: Icon;
 
   /** 悬停或聚焦锚点时显示的提示；`shortcutKeys` 以键帽显示在文字后。 */
   export function Tooltip(props: {

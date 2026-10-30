@@ -1,6 +1,11 @@
 import { describe, expect, test } from "vitest";
 import { Config, currentSettings } from "./config.ts";
-import { BUILTIN_INSTRUCTIONS, BUILTIN_PRESETS, presetInstructions } from "./presets.ts";
+import {
+  BUILTIN_INSTRUCTIONS,
+  BUILTIN_PRESETS,
+  ORGANIZE_STEPS,
+  presetInstructions,
+} from "./presets.ts";
 import { DEFAULT_SETTINGS, parseSettings } from "./settings-value.ts";
 
 describe("enhance Config", () => {
@@ -22,7 +27,15 @@ describe("enhance Config", () => {
   });
 
   test("keeps profile overrides, including custom presets", () => {
-    const presets = [{ id: "custom-1", title: "Translate", description: "", prompt: "Translate." }];
+    const presets = [
+      {
+        id: "custom-1",
+        title: "Translate",
+        description: "",
+        prompt: "Translate.",
+        icon: "globe-outline",
+      },
+    ];
     const config = Config({
       provider: "deepseek",
       model: "flash",
@@ -71,28 +84,36 @@ describe("enhance settings in the browser", () => {
     expect(
       parseSettings({ presets: [{ id: "concise" }, { id: "steps", prompt: "List it." }] }).presets,
     ).toEqual([
-      { id: "concise", title: "", description: "", prompt: "" },
-      { id: "steps", title: "", description: "", prompt: "List it." },
+      { id: "concise", title: "", description: "", prompt: "", icon: "" },
+      { id: "steps", title: "", description: "", prompt: "List it.", icon: "" },
     ]);
     expect(currentSettings(Config({ presets: [{ id: "concise" }] })).presets).toEqual([
-      { id: "concise", title: "", description: "", prompt: "" },
+      { id: "concise", title: "", description: "", prompt: "", icon: "" },
     ]);
   });
 });
 
 describe("preset instructions", () => {
   test("uses the built-in instructions while a built-in preset has none of its own", () => {
-    expect(presetInstructions({ id: "polish", title: "", description: "", prompt: "" })).toBe(
-      BUILTIN_INSTRUCTIONS.polish,
-    );
-    expect(
-      presetInstructions({ id: "polish", title: "", description: "", prompt: " Mine. " }),
-    ).toBe("Mine.");
+    const polish = { id: "polish", title: "", description: "", prompt: "", icon: "" };
+    expect(presetInstructions(polish)).toBe(BUILTIN_INSTRUCTIONS.polish);
+    expect(presetInstructions({ ...polish, prompt: " Mine. " })).toBe("Mine.");
+  });
+
+  test("polishes after the structure steps and includes the writing references", () => {
+    const { polish, structure } = BUILTIN_INSTRUCTIONS;
+    expect(structure).toContain(ORGANIZE_STEPS);
+    const organize = polish.indexOf(`<step name="structure">\n${ORGANIZE_STEPS}\n</step>`);
+    expect(organize).toBeGreaterThan(-1);
+    expect(polish.indexOf('<step name="expand">')).toBeGreaterThan(organize);
+    for (const name of ["humanizer", "no-ai-slop", "no-negative-echo"]) {
+      expect(polish).toContain(`<include ref="${name}" />`);
+    }
   });
 
   test("has no instructions for a custom preset left empty", () => {
     expect(
-      presetInstructions({ id: "custom-1", title: "X", description: "", prompt: "" }),
+      presetInstructions({ id: "custom-1", title: "X", description: "", prompt: "", icon: "" }),
     ).toBeUndefined();
   });
 });

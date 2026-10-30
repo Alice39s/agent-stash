@@ -44,6 +44,18 @@ export const media = {
     width: 758,
     height: 1184,
   },
+  "enhance-preset-editor": {
+    image: "/media/enhance-preset-editor.png",
+    video: undefined,
+    width: 758,
+    height: 899,
+  },
+  "enhance-preset-editor-en": {
+    image: "/media/enhance-preset-editor-en.png",
+    video: undefined,
+    width: 758,
+    height: 899,
+  },
   "kit-settings": {
     image: "/media/kit-settings.png",
     video: "/media/kit-settings.mp4",

@@ -60,6 +60,10 @@ window.__ModuleLoader__.load({
 			else dataset.issues = [issue];
 		}
 		/* @__NO_SIDE_EFFECTS__ */
+		function _isValidObjectKey(object$1, key) {
+			return Object.prototype.hasOwnProperty.call(object$1, key) && key !== "__proto__" && key !== "prototype" && key !== "constructor";
+		}
+		/* @__NO_SIDE_EFFECTS__ */
 		function _joinExpects(values$1, separator) {
 			const list = [...new Set(values$1)];
 			if (list.length > 1) return `(${list.join(` ${separator} `)})`;
@@ -345,6 +349,71 @@ window.__ModuleLoader__.load({
 			});
 		}
 		/* @__NO_SIDE_EFFECTS__ */
+		function record(key, value$1, message$1) {
+			return _standardSchema({
+				kind: "schema",
+				type: "record",
+				reference: record,
+				expects: "Object",
+				async: false,
+				key,
+				value: value$1,
+				message: message$1,
+				"~run"(dataset, config$1) {
+					const input = dataset.value;
+					if (input && typeof input === "object") {
+						dataset.typed = true;
+						dataset.value = {};
+						for (const entryKey in input) if (/* @__PURE__ */ _isValidObjectKey(input, entryKey)) {
+							const entryValue = input[entryKey];
+							const keyDataset = this.key["~run"]({ value: entryKey }, config$1);
+							if (keyDataset.issues) {
+								const pathItem = {
+									type: "object",
+									origin: "key",
+									input,
+									key: entryKey,
+									value: entryValue
+								};
+								for (const issue of keyDataset.issues) {
+									issue.path = [pathItem];
+									dataset.issues?.push(issue);
+								}
+								if (!dataset.issues) dataset.issues = keyDataset.issues;
+								if (config$1.abortEarly) {
+									dataset.typed = false;
+									break;
+								}
+							}
+							const valueDataset = this.value["~run"]({ value: entryValue }, config$1);
+							if (valueDataset.issues) {
+								const pathItem = {
+									type: "object",
+									origin: "value",
+									input,
+									key: entryKey,
+									value: entryValue
+								};
+								for (const issue of valueDataset.issues) {
+									if (issue.path) issue.path.unshift(pathItem);
+									else issue.path = [pathItem];
+									dataset.issues?.push(issue);
+								}
+								if (!dataset.issues) dataset.issues = valueDataset.issues;
+								if (config$1.abortEarly) {
+									dataset.typed = false;
+									break;
+								}
+							}
+							if (!keyDataset.typed || !valueDataset.typed) dataset.typed = false;
+							if (keyDataset.typed) dataset.value[keyDataset.value] = valueDataset.value;
+						}
+					} else _addIssue(this, "type", dataset, config$1);
+					return dataset;
+				}
+			});
+		}
+		/* @__NO_SIDE_EFFECTS__ */
 		function string(message$1) {
 			return _standardSchema({
 				kind: "schema",
@@ -409,141 +478,6 @@ window.__ModuleLoader__.load({
 			}, []), elements];
 		}
 		//#endregion
-		//#region dsh/enhance/src/locales.ts
-		const en = {
-			enhance: "Enhance prompt",
-			undo: "Undo enhancement",
-			cancel: "Stop enhancing",
-			context: "Linked to the last {n} turns",
-			contextOne: "Linked to the last turn",
-			working: "Enhancing…",
-			unchanged: "Already clear, nothing changed",
-			references: "Remove the reference chips to enhance this draft",
-			manage: "Manage presets…",
-			"preset.polish": "Polish prompt",
-			"preset.polish.hint": "Fuller wording that opens up the solution space",
-			"preset.structure": "Structure only",
-			"preset.structure.hint": "Reorganize for the AI without changing the meaning",
-			"preset.concise": "Make it concise",
-			"preset.concise.hint": "Keep the key points, good for dictated text",
-			"preset.untitled": "Untitled preset",
-			"error.timeout": "No result within {n} s",
-			"error.model": "The model request failed",
-			"error.truncated": "The result was cut off",
-			"error.empty": "The model returned nothing",
-			"error.invalid": "Unusable result, draft kept",
-			"error.no-model": "No model available",
-			"error.preset": "This preset has no instructions",
-			"error.context": "Could not read the session",
-			"error.network": "Could not reach DSH",
-			dismiss: "Dismiss",
-			summary: "Model, session context, shortcut, and presets",
-			unavailable: "This DSH does not expose the settings of this plugin.",
-			readOnly: "This profile is read-only.",
-			saveFailed: "Saving failed. Your changes are kept, try again.",
-			save: "Save",
-			saving: "Saving…",
-			model: "Model",
-			modelHint: "Follow the session uses the model and reasoning effort of the current conversation.",
-			modelFollow: "Follow the session",
-			modelLoading: "Loading models…",
-			modelFailed: "Could not load the model list.",
-			modelRetry: "Retry",
-			modelMissing: "{name} (unavailable)",
-			effort: "Reasoning effort",
-			effortDefault: "Model default",
-			timeout: "Timeout (seconds)",
-			contextToggle: "Include recent turns",
-			contextHint: "Helps the rewriter resolve words like “this” or “the earlier plan”. Only message text is sent, without tool output, reasoning, or recognizable secrets.",
-			contextTurns: "Turns to include",
-			shortcut: "Keyboard shortcut",
-			shortcutHint: "{keys} opens the menu, stops a running rewrite, or undoes the last one.",
-			shortcutNone: "No keys bound. Assign them on the Shortcuts settings page.",
-			presets: "Presets",
-			presetTitle: "Name",
-			presetDescription: "Description",
-			presetPrompt: "Instructions",
-			presetPromptBuiltin: "Leave empty to use the built-in instructions",
-			presetPromptCustom: "What the rewriter should do with the draft",
-			presetUp: "Move up",
-			presetDown: "Move down",
-			presetRemove: "Remove",
-			presetReset: "Restore built-in",
-			presetAdd: "Add preset",
-			presetEdit: "Edit",
-			presetDone: "Done",
-			presetNeedsPrompt: "A custom preset needs instructions.",
-			presetBuiltin: "Built-in"
-		};
-		const zh = {
-			enhance: "增强提示词",
-			undo: "撤销增强",
-			cancel: "停止增强",
-			context: "已关联前 {n} 轮上下文",
-			contextOne: "已关联上一轮上下文",
-			working: "正在增强…",
-			unchanged: "已经很清楚，无需改动",
-			references: "移除草稿里的引用块后才能增强",
-			manage: "管理预设…",
-			"preset.polish": "润色 Prompt",
-			"preset.polish.hint": "充分润色，让思路更发散",
-			"preset.structure": "仅结构化整理",
-			"preset.structure.hint": "不改原意，整理成 AI 更易理解的结构",
-			"preset.concise": "使 Prompt 更精炼",
-			"preset.concise.hint": "提炼核心要点，适合整理语音输入",
-			"preset.untitled": "未命名预设",
-			"error.timeout": "{n} 秒内没有结果",
-			"error.model": "模型请求失败",
-			"error.truncated": "结果被截断",
-			"error.empty": "模型没有返回内容",
-			"error.invalid": "结果不可用，已保留原稿",
-			"error.no-model": "没有可用的模型",
-			"error.preset": "这个预设没有改写指令",
-			"error.context": "读取会话失败",
-			"error.network": "无法连接 DSH",
-			dismiss: "关闭",
-			summary: "模型、会话上下文、快捷键与预设",
-			unavailable: "当前 DSH 没有开放本插件的配置。",
-			readOnly: "当前 profile 只读。",
-			saveFailed: "保存失败，改动已保留，请重试。",
-			save: "保存",
-			saving: "正在保存…",
-			model: "模型",
-			modelHint: "跟随会话时使用当前对话的模型与推理强度。",
-			modelFollow: "跟随会话",
-			modelLoading: "正在读取模型列表…",
-			modelFailed: "读取模型列表失败。",
-			modelRetry: "重试",
-			modelMissing: "{name}（不可用）",
-			effort: "推理强度",
-			effortDefault: "模型默认",
-			timeout: "超时（秒）",
-			contextToggle: "附带最近几轮对话",
-			contextHint: "让改写器理解「这个」「刚才的方案」指的是什么。只发送消息正文，不含工具输出、推理过程和可识别的密钥。",
-			contextTurns: "附带轮数",
-			shortcut: "快捷键",
-			shortcutHint: "按 {keys} 打开菜单；增强进行中按它停止，完成后按它撤销。",
-			shortcutNone: "未绑定按键，可在「快捷键」设置页指定。",
-			presets: "预设",
-			presetTitle: "名称",
-			presetDescription: "说明",
-			presetPrompt: "改写指令",
-			presetPromptBuiltin: "留空则使用内置指令",
-			presetPromptCustom: "改写器要怎样处理草稿",
-			presetUp: "上移",
-			presetDown: "下移",
-			presetRemove: "删除",
-			presetReset: "恢复内置",
-			presetAdd: "添加预设",
-			presetEdit: "编辑",
-			presetDone: "完成",
-			presetNeedsPrompt: "自定义预设需要填写改写指令。",
-			presetBuiltin: "内置"
-		};
-		function format(template, values) {
-			return template.replace(/\{(\w+)\}/gu, (match, name) => name in values ? String(values[name]) : match);
-		}
-		//#endregion
 		//#region dsh/enhance/src/presets.ts
 		const BUILTIN_PRESETS = [
 			"polish",
@@ -554,132 +488,156 @@ window.__ModuleLoader__.load({
 			id,
 			title: "",
 			description: "",
-			prompt: ""
+			prompt: "",
+			icon: ""
 		}));
 		function isBuiltin(id) {
 			return BUILTIN_PRESETS.includes(id);
 		}
-		//#endregion
-		//#region dsh/enhance/src/wire.ts
-		const REWRITE_PATH = "/dsh-enhance/rewrite";
-		const CONTEXT_PATH = "/dsh-enhance/context";
-		const NonEmptySchema = /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ minLength(1));
-		const SessionModelSchema = /* @__PURE__ */ object({
-			provider: NonEmptySchema,
-			model: NonEmptySchema,
-			reasoningEffort: /* @__PURE__ */ optional(NonEmptySchema)
-		});
-		const RewriteResultSchema = /* @__PURE__ */ object({
-			text: /* @__PURE__ */ string(),
-			unchanged: /* @__PURE__ */ boolean(),
-			turns: /* @__PURE__ */ number()
-		});
-		const ContextResultSchema = /* @__PURE__ */ object({ turns: /* @__PURE__ */ number() });
-		const FailureSchema = /* @__PURE__ */ object({
-			reason: /* @__PURE__ */ picklist([
-				"timeout",
-				"model",
-				"truncated",
-				"empty",
-				"invalid",
-				"no-model",
-				"preset",
-				"context"
-			]),
-			message: /* @__PURE__ */ string()
-		});
-		//#endregion
-		//#region dsh/enhance/src/request.ts
-		function relative(path) {
-			return path.slice(1);
+		const UNCHANGED = "UNCHANGED";
+		const ORGANIZE_STEPS = `- Keep every piece of information: each request, reason, example, constraint, and question.
+- Put the main request first. Group the rest by role, such as background, requirements, constraints, and expected output. Use only the groups the draft actually contains.
+- Use a numbered list for steps or anything the user ordered, and bullet points for two or more parallel items. Keep a single point as a sentence. If a lead sentence states a count, make it match the number of items.
+- Keep the order of steps whose order matters.`;
+		const BUILTIN_INSTRUCTIONS = {
+			polish: `<mode name="polish">
+<goal>First organize the draft as the structure step describes. Then polish it into a fuller prompt that helps the coding assistant think more widely about what the user asked for, while staying inside the user's intent. The result should read as if the user wrote it carefully, not as generated text.</goal>
+
+<step name="structure">
+${ORGANIZE_STEPS}
+</step>
+
+<step name="expand">
+- State the main goal in the first sentence.
+- Spell out what the draft implies but leaves unsaid: the scope it names, the expected result, and how to check the result.
+- Open up the solution space: ask the assistant to consider alternatives, trade-offs, edge cases, or risks that relate to the stated goal, and to say which option it recommends and why. Phrase these as points to consider, not as new requirements.
+- Replace hedging ("maybe", "if you could", "可能", "看看能不能") with direct requests. If the hedge shows real uncertainty about what the user wants, keep it as an open question for the assistant to investigate.
+- When the draft changes existing work, ask the assistant to keep the behavior that the change does not target.
+- When the draft lacks information the task needs, tell the assistant to state its assumptions or ask before acting. Do not guess the missing values.
+</step>
+
+<boundaries>
+- Every sentence must trace back to the draft, to the conversation context, or to a general engineering practice that applies to the stated goal, such as measuring before optimizing or adding a test for a fix.
+- Do not invent files, APIs, numbers, libraries, product names, deadlines, or decisions.
+- At most 3 times the length of the draft, and at most about 250 English words or 500 Chinese characters.
+- Use short paragraphs or lists. Markdown lists and inline code are fine. Use headings only when the draft has several separate parts.
+</boundaries>
+
+<style>
+Write the sentences you add or change without AI writing patterns, and keep the user's voice. Apply the pattern lists and principles of the style guides below to your own wording. Their workflows, their output formats, and their instructions to ask the user questions, to add a "What changed" section, or to edit files do not apply here: <output_format> decides what you return, and <rules> keep their priority.
+- The draft is the writer's voice sample. Match its tone, directness, and level of formality.
+- The draft and the conversation context are the working session. Options the user dropped or corrected stay out of the result, and the result does not mention why they are gone.
+<include ref="humanizer" />
+<include ref="no-ai-slop" />
+<include ref="no-negative-echo" />
+</style>
+
+<example>
+<draft_prompt>登录页好像有点慢，看看能不能优化一下</draft_prompt>
+<good_result>In Chinese: asks to find out why the login page loads slowly and fix it; asks the assistant to measure first and name the main causes, to compare a few fixes and recommend one, and to keep the current login behavior unchanged. It names no file and no target time, because the draft names none.</good_result>
+</example>
+</mode>`,
+			structure: `<mode name="structure">
+<goal>Reorganize the draft so the coding assistant can parse it quickly. Do not change what it says.</goal>
+
+<steps>
+${ORGANIZE_STEPS}
+- Keep the user's wording. You may fix obvious typos and punctuation, remove pure filler words and word-for-word repeats, and split run-on sentences.
+</steps>
+
+<do_not>
+- Rephrase for style, change the tone, or make the text more formal.
+- Add titles or labels the content does not need. A short label in front of a group is fine when there are three or more groups.
+- Add, drop, or merge points. Do not make vague wording more specific, except where the context-for-references rule resolves a reference.
+</do_not>
+
+<limits>The result is about as long as the draft.</limits>
+</mode>`,
+			concise: `<mode name="concise">
+<goal>The draft is often raw speech-to-text. Pull out its core points and state each one briefly.</goal>
+
+<steps>
+- Remove filler words, hesitations, false starts, and repeated phrases. Keep repetition that is clearly for emphasis.
+- When the user corrects themselves ("no wait", "I mean", "actually make it", "不对", "改成", "应该是", "算了"), keep only the final version and drop both the discarded part and the correction marker. If a correction changes a count ("three things" but only two remain), update the count.
+- "Not A but B" without a correction marker is a deliberate contrast. Keep it. "Don't change it to X" is a real negation. Keep it.
+- Merge points that say the same thing. Keep every distinct point, constraint, and question.
+- Fix obvious speech-recognition errors only when the context or common technical vocabulary makes the intended word certain. Otherwise keep the word as written.
+- Write spoken numbers as digits.
+- For one point, write one sentence. For two or more distinct points, write a lead sentence and then a list: numbered if the user gave an order, bullets otherwise. Keep requests as requests and questions as questions.
+</steps>
+
+<limits>The result is shorter than the draft. If the draft is already minimal, output ${UNCHANGED}. Add nothing that was not said.</limits>
+
+<example>
+<draft_prompt>嗯那个你帮我把 config.ts 里的超时，呃，改成 30 秒，不对，60 秒吧，然后就是那个，日志也加一下，加在 retry 那里，对，retry 那里</draft_prompt>
+<good_result>把 \`config.ts\` 里的超时改成 60 秒，并在 retry 处加日志。</good_result>
+</example>
+</mode>`
+		};
+		function editablePrompt(preset) {
+			if (preset.prompt !== "" || !isBuiltin(preset.id)) return preset.prompt;
+			return BUILTIN_INSTRUCTIONS[preset.id];
 		}
-		async function requestRewrite(payload, signal) {
-			let response;
-			try {
-				response = await fetch(relative(REWRITE_PATH), {
-					method: "POST",
-					headers: {
-						accept: "application/json",
-						"content-type": "application/json"
-					},
-					body: JSON.stringify(payload),
-					signal
-				});
-			} catch (error) {
-				if (signal.aborted) throw error;
-				return {
-					ok: false,
-					reason: "network",
-					message: `POST ${REWRITE_PATH}: ${String(error)}`
-				};
-			}
-			const body = await response.json().catch(() => void 0);
-			if (response.ok) {
-				const parsed = /* @__PURE__ */ safeParse(RewriteResultSchema, body);
-				if (parsed.success) return {
-					ok: true,
-					value: parsed.output
-				};
-				return {
-					ok: false,
-					reason: "network",
-					message: `POST ${REWRITE_PATH}: unexpected response`
-				};
-			}
-			const failure = /* @__PURE__ */ safeParse(FailureSchema, body);
-			if (failure.success) return {
-				ok: false,
-				...failure.output
-			};
-			const message = typeof body === "object" && body !== null && "message" in body ? String(body.message) : response.statusText;
-			return {
-				ok: false,
-				reason: "network",
-				message: `POST ${REWRITE_PATH} ${String(response.status)}: ${message}`
-			};
-		}
-		async function requestContextTurns(sessionId, signal) {
-			const url = `${relative(CONTEXT_PATH)}?session=${encodeURIComponent(sessionId)}`;
-			const response = await fetch(url, {
-				headers: { accept: "application/json" },
-				signal
-			});
-			if (!response.ok) throw new Error(`GET ${CONTEXT_PATH} answered ${String(response.status)}`);
-			return parse(ContextResultSchema, await response.json()).turns;
-		}
-		//#endregion
-		//#region dsh/enhance/src/state.ts
-		const IDLE = { kind: "idle" };
-		function followDraft(state, draft) {
-			if (state.kind === "running") return draft === state.source ? void 0 : IDLE;
-			if (state.kind === "note") return draft === state.draft ? void 0 : IDLE;
-			if (state.kind !== "done") return void 0;
-			if (state.applied === void 0) return draft === state.before ? void 0 : {
-				...state,
-				applied: draft
-			};
-			return draft === state.applied ? void 0 : IDLE;
+		function storedPrompt(id, text) {
+			return isBuiltin(id) && text === BUILTIN_INSTRUCTIONS[id] ? "" : text;
 		}
 		//#endregion
-		//#region dsh/enhance/src/store.ts
-		function createValueStore(initial, same = Object.is) {
-			let value = initial;
-			const listeners = /* @__PURE__ */ new Set();
-			return {
-				get: () => value,
-				set(next) {
-					if (same(value, next)) return;
-					value = next;
-					for (const listener of listeners) listener();
-				},
-				subscribe(listener) {
-					listeners.add(listener);
-					return () => listeners.delete(listener);
-				}
-			};
+		//#region dsh/enhance/src/preset-icons.ts
+		const PRESET_ICON_NAMES = [
+			"sparkle",
+			"enhance-outline",
+			"flat-list-outline",
+			"list-pen-outline",
+			"checklist-outline",
+			"compact-outline",
+			"wrap-lines-outline",
+			"edit-outline",
+			"microphone-outline",
+			"think-outline",
+			"light-outline",
+			"goal-outline",
+			"plan-outline",
+			"question-outline",
+			"info-outline",
+			"search-outline",
+			"inspect-outline",
+			"compare-split-outline",
+			"code-outline",
+			"api-outline",
+			"database-outline",
+			"branch-outline",
+			"warning-triangle-outline",
+			"shield-outline",
+			"gauge-outline",
+			"clock-outline",
+			"link-outline",
+			"globe-outline",
+			"user-outline",
+			"users-outline",
+			"skill-outline",
+			"agent-preset-outline",
+			"personalization-outline",
+			"deliver-doc",
+			"folder-open-outline",
+			"paper-plane-outline"
+		];
+		const BUILTIN_ICONS = {
+			polish: "sparkle",
+			structure: "flat-list-outline",
+			concise: "compact-outline"
+		};
+		const CUSTOM_ICON = "list-pen-outline";
+		function isPresetIcon(name) {
+			return PRESET_ICON_NAMES.includes(name);
 		}
-		function useValue(store) {
-			return (0, react.useSyncExternalStore)(store.subscribe, store.get);
+		function defaultIcon(id) {
+			return isBuiltin(id) ? BUILTIN_ICONS[id] : CUSTOM_ICON;
+		}
+		function presetIcon(preset) {
+			return isPresetIcon(preset.icon) ? preset.icon : defaultIcon(preset.id);
+		}
+		function storedIcon(id, name) {
+			return name === defaultIcon(id) ? "" : name;
 		}
 		//#endregion
 		//#region dsh/enhance/src/styles.ts
@@ -705,7 +663,7 @@ ${p}-button {
   height: 28px;
   padding: 0;
   border: none;
-  border-radius: 999px;
+  border-radius: var(--dsw-radius-sm);
   background: transparent;
   color: var(--dsw-alias-label-tertiary);
   cursor: pointer;
@@ -832,6 +790,19 @@ ${p}-dismiss:focus-visible {
 }
 ${p}-menu {
   min-width: 248px;
+}
+${p}-estimate {
+  box-sizing: border-box;
+  width: 0;
+  min-width: 100%;
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-tertiary);
+}
+${p}-row-slot {
+  display: contents;
 }
 ${p}-row {
   display: flex;
@@ -1031,6 +1002,50 @@ ${p}-preset-index {
   font-variant-numeric: tabular-nums;
   color: var(--dsw-alias-label-tertiary);
 }
+${p}-preset-glyph {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  color: var(--dsw-alias-label-secondary);
+}
+${p}-icon-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 28px);
+  gap: 2px;
+  width: max-content;
+}
+${p}-icon-option {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  cursor: pointer;
+}
+@media (hover: hover) {
+  ${p}-icon-option:hover:not(:disabled) {
+    background: var(--dsw-alias-interactive-bg-hover);
+    color: var(--dsw-alias-label-primary);
+  }
+}
+${p}-icon-option[aria-checked="true"] {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: inset 0 0 0 1px var(--dsw-alias-state-business-primary);
+}
+${p}-icon-option:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+${p}-icon-option:focus-visible {
+  outline: 2px solid var(--dsw-focus-ring-color, var(--dsw-alias-state-business-primary));
+  outline-offset: 1px;
+}
 ${p}-preset-text {
   display: flex;
   flex: 1;
@@ -1122,10 +1137,13 @@ ${p}-textarea {
   outline: none;
   background: var(--dsw-alias-bg-layer-1);
   font: inherit;
-  font-size: 13px;
-  line-height: 20px;
+  font-family: var(--ds-font-family-code, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 18px;
   color: var(--dsw-alias-label-primary);
   resize: vertical;
+  field-sizing: content;
+  max-height: 480px;
 }
 ${p}-textarea:focus {
   border-color: var(--dsw-alias-state-business-primary);
@@ -1147,6 +1165,385 @@ ${p}-add {
 `;
 		}
 		//#endregion
+		//#region dsh/enhance/src/icon-picker.tsx
+		const GLYPHS = {
+			sparkle: _deepseek_ai_dsh_client_ui_primitives.IconSparkleRegular,
+			"enhance-outline": _deepseek_ai_dsh_client_ui_primitives.IconEnhanceOutlineRegular,
+			"flat-list-outline": _deepseek_ai_dsh_client_ui_primitives.IconFlatListOutlineRegular,
+			"list-pen-outline": _deepseek_ai_dsh_client_ui_primitives.IconListPenOutlineRegular,
+			"checklist-outline": _deepseek_ai_dsh_client_ui_primitives.IconChecklistOutlineRegular,
+			"compact-outline": _deepseek_ai_dsh_client_ui_primitives.IconCompactOutlineRegular,
+			"wrap-lines-outline": _deepseek_ai_dsh_client_ui_primitives.IconWrapLinesOutlineRegular,
+			"edit-outline": _deepseek_ai_dsh_client_ui_primitives.IconEditOutlineRegular,
+			"microphone-outline": _deepseek_ai_dsh_client_ui_primitives.IconMicrophoneOutlineRegular,
+			"think-outline": _deepseek_ai_dsh_client_ui_primitives.IconThinkOutlineRegular,
+			"light-outline": _deepseek_ai_dsh_client_ui_primitives.IconLightOutlineRegular,
+			"goal-outline": _deepseek_ai_dsh_client_ui_primitives.IconGoalOutlineRegular,
+			"plan-outline": _deepseek_ai_dsh_client_ui_primitives.IconPlanOutlineRegular,
+			"question-outline": _deepseek_ai_dsh_client_ui_primitives.IconQuestionOutlineRegular,
+			"info-outline": _deepseek_ai_dsh_client_ui_primitives.IconInfoOutlineRegular,
+			"search-outline": _deepseek_ai_dsh_client_ui_primitives.IconSearchOutlineRegular,
+			"inspect-outline": _deepseek_ai_dsh_client_ui_primitives.IconInspectOutlineRegular,
+			"compare-split-outline": _deepseek_ai_dsh_client_ui_primitives.IconCompareSplitOutlineRegular,
+			"code-outline": _deepseek_ai_dsh_client_ui_primitives.IconCodeOutlineRegular,
+			"api-outline": _deepseek_ai_dsh_client_ui_primitives.IconApiOutlineRegular,
+			"database-outline": _deepseek_ai_dsh_client_ui_primitives.IconDatabaseOutlineRegular,
+			"branch-outline": _deepseek_ai_dsh_client_ui_primitives.IconBranchOutlineRegular,
+			"warning-triangle-outline": _deepseek_ai_dsh_client_ui_primitives.IconWarningTriangleOutlineRegular,
+			"shield-outline": _deepseek_ai_dsh_client_ui_primitives.IconShieldOutlineRegular,
+			"gauge-outline": _deepseek_ai_dsh_client_ui_primitives.IconGaugeOutlineRegular,
+			"clock-outline": _deepseek_ai_dsh_client_ui_primitives.IconClockOutlineRegular,
+			"link-outline": _deepseek_ai_dsh_client_ui_primitives.IconLinkOutlineRegular,
+			"globe-outline": _deepseek_ai_dsh_client_ui_primitives.IconGlobeOutlineRegular,
+			"user-outline": _deepseek_ai_dsh_client_ui_primitives.IconUserOutlineRegular,
+			"users-outline": _deepseek_ai_dsh_client_ui_primitives.IconUsersOutlineRegular,
+			"skill-outline": _deepseek_ai_dsh_client_ui_primitives.IconSkillOutlineRegular,
+			"agent-preset-outline": _deepseek_ai_dsh_client_ui_primitives.IconAgentPresetOutlineRegular,
+			"personalization-outline": _deepseek_ai_dsh_client_ui_primitives.IconPersonalizationOutlineRegular,
+			"deliver-doc": _deepseek_ai_dsh_client_ui_primitives.IconDeliverDocRegular,
+			"folder-open-outline": _deepseek_ai_dsh_client_ui_primitives.IconFolderOpenOutlineRegular,
+			"paper-plane-outline": _deepseek_ai_dsh_client_ui_primitives.IconPaperPlaneOutlineRegular
+		};
+		function PresetGlyph({ name, size }) {
+			const Glyph = GLYPHS[name];
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(Glyph, { size });
+		}
+		function spoken(name) {
+			return name.replace(/-outline$/u, "").replaceAll("-", " ");
+		}
+		function step(key, index) {
+			const last = PRESET_ICON_NAMES.length - 1;
+			switch (key) {
+				case "ArrowLeft": return Math.max(0, index - 1);
+				case "ArrowRight": return Math.min(last, index + 1);
+				case "ArrowUp": return index - 9 >= 0 ? index - 9 : index;
+				case "ArrowDown": return index + 9 <= last ? index + 9 : index;
+				case "Home": return 0;
+				case "End": return last;
+				default: return;
+			}
+		}
+		function IconPicker({ value, labelledBy, disabled, onChange }) {
+			const grid = (0, react.useRef)(null);
+			const onKeyDown = (event) => {
+				const next = step(event.key, PRESET_ICON_NAMES.indexOf(value));
+				const name = next === void 0 ? void 0 : PRESET_ICON_NAMES[next];
+				if (next === void 0 || name === void 0) return;
+				event.preventDefault();
+				onChange(name);
+				grid.current?.querySelectorAll("[role=\"radio\"]")[next]?.focus();
+			};
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				ref: grid,
+				role: "radiogroup",
+				"aria-labelledby": labelledBy,
+				className: `${K}-icon-grid`,
+				onKeyDown,
+				children: PRESET_ICON_NAMES.map((name) => {
+					const checked = name === value;
+					return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("button", {
+						type: "button",
+						role: "radio",
+						"aria-checked": checked,
+						"aria-label": spoken(name),
+						tabIndex: checked ? 0 : -1,
+						disabled,
+						className: `${K}-icon-option`,
+						onClick: () => onChange(name),
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PresetGlyph, {
+							name,
+							size: 16
+						})
+					}, name);
+				})
+			});
+		}
+		//#endregion
+		//#region dsh/enhance/src/locales.ts
+		const en = {
+			enhance: "Enhance prompt",
+			undo: "Undo enhancement",
+			cancel: "Stop enhancing",
+			tip: "Click to enhance the prompt",
+			tipLinked: "Click to enhance the prompt (last {n} turns linked)",
+			tipLinkedOne: "Click to enhance the prompt (last turn linked)",
+			estimate: "This rewrite will use about {tokens} tokens",
+			estimateLinked: "This rewrite will use about {tokens} tokens, with the last {n} turns linked",
+			estimateLinkedOne: "This rewrite will use about {tokens} tokens, with the last turn linked",
+			working: "Enhancing…",
+			unchanged: "Already clear, nothing changed",
+			references: "Remove the reference chips to enhance this draft",
+			manage: "Manage presets…",
+			"preset.polish": "Polish prompt",
+			"preset.polish.hint": "Structure, then expand within your intent in a natural voice",
+			"preset.structure": "Structure only",
+			"preset.structure.hint": "Reorganize for the AI without changing the meaning",
+			"preset.concise": "Make it concise",
+			"preset.concise.hint": "Keep the key points, good for dictated text",
+			"preset.untitled": "Untitled preset",
+			"error.timeout": "No result within {n} s",
+			"error.model": "The model request failed",
+			"error.truncated": "The result was cut off",
+			"error.empty": "The model returned nothing",
+			"error.invalid": "Unusable result, draft kept",
+			"error.no-model": "No model available",
+			"error.preset": "This preset's instructions cannot be used",
+			"error.vendor": "The bundled writing references could not be read",
+			"error.context": "Could not read the session",
+			"error.network": "Could not reach DSH",
+			dismiss: "Dismiss",
+			summary: "Model, session context, shortcut, and presets",
+			unavailable: "This DSH does not expose the settings of this plugin.",
+			readOnly: "This profile is read-only.",
+			saveFailed: "Saving failed. Your changes are kept, try again.",
+			save: "Save",
+			saving: "Saving…",
+			model: "Model",
+			modelHint: "Follow the session uses the model and reasoning effort of the current conversation.",
+			modelFollow: "Follow the session",
+			modelLoading: "Loading models…",
+			modelFailed: "Could not load the model list.",
+			modelRetry: "Retry",
+			modelMissing: "{name} (unavailable)",
+			effort: "Reasoning effort",
+			effortDefault: "Model default",
+			timeout: "Timeout (seconds)",
+			contextToggle: "Include recent turns",
+			contextHint: "Helps the rewriter resolve words like “this” or “the earlier plan”. Only message text is sent, without tool output, reasoning, or recognizable secrets.",
+			contextTurns: "Turns to include",
+			shortcut: "Keyboard shortcut",
+			shortcutHint: "{keys} opens the menu, stops a running rewrite, or undoes the last one.",
+			shortcutNone: "No keys bound. Assign them on the Shortcuts settings page.",
+			presets: "Presets",
+			presetTitle: "Name",
+			presetDescription: "Description",
+			presetIcon: "Icon",
+			presetPrompt: "Instructions",
+			presetPromptCustom: "What the rewriter should do with the draft",
+			presetUp: "Move up",
+			presetDown: "Move down",
+			presetRemove: "Remove",
+			presetReset: "Restore built-in",
+			presetAdd: "Add preset",
+			presetEdit: "Edit",
+			presetDone: "Done",
+			presetNeedsPrompt: "A custom preset needs instructions.",
+			presetBuiltin: "Built-in",
+			presetBuiltinEdited: "Built-in, edited"
+		};
+		const zh = {
+			enhance: "增强提示词",
+			undo: "撤销增强",
+			cancel: "停止增强",
+			tip: "点我增强提示词",
+			tipLinked: "点我增强提示词（已关联最近 {n} 轮上下文）",
+			tipLinkedOne: "点我增强提示词（已关联最近 1 轮上下文）",
+			estimate: "本轮润色请求将消耗大约 {tokens} Tokens",
+			estimateLinked: "本轮润色请求将消耗大约 {tokens} Tokens，已关联最近 {n} 轮上下文",
+			estimateLinkedOne: "本轮润色请求将消耗大约 {tokens} Tokens，已关联最近 1 轮上下文",
+			working: "正在增强…",
+			unchanged: "已经很清楚，无需改动",
+			references: "移除草稿里的引用块后才能增强",
+			manage: "管理预设…",
+			"preset.polish": "润色 Prompt",
+			"preset.polish.hint": "先整理结构，再在原意内发散，去掉 AI 腔",
+			"preset.structure": "仅结构化整理",
+			"preset.structure.hint": "不改原意，整理成 AI 更易理解的结构",
+			"preset.concise": "使 Prompt 更精炼",
+			"preset.concise.hint": "提炼核心要点，适合整理语音输入",
+			"preset.untitled": "未命名预设",
+			"error.timeout": "{n} 秒内没有结果",
+			"error.model": "模型请求失败",
+			"error.truncated": "结果被截断",
+			"error.empty": "模型没有返回内容",
+			"error.invalid": "结果不可用，已保留原稿",
+			"error.no-model": "没有可用的模型",
+			"error.preset": "这个预设的改写指令无法使用",
+			"error.vendor": "内置写作参考读取失败",
+			"error.context": "读取会话失败",
+			"error.network": "无法连接 DSH",
+			dismiss: "关闭",
+			summary: "模型、会话上下文、快捷键与预设",
+			unavailable: "当前 DSH 没有开放本插件的配置。",
+			readOnly: "当前 profile 只读。",
+			saveFailed: "保存失败，改动已保留，请重试。",
+			save: "保存",
+			saving: "正在保存…",
+			model: "模型",
+			modelHint: "跟随会话时使用当前对话的模型与推理强度。",
+			modelFollow: "跟随会话",
+			modelLoading: "正在读取模型列表…",
+			modelFailed: "读取模型列表失败。",
+			modelRetry: "重试",
+			modelMissing: "{name}（不可用）",
+			effort: "推理强度",
+			effortDefault: "模型默认",
+			timeout: "超时（秒）",
+			contextToggle: "附带最近几轮对话",
+			contextHint: "让改写器理解「这个」「刚才的方案」指的是什么。只发送消息正文，不含工具输出、推理过程和可识别的密钥。",
+			contextTurns: "附带轮数",
+			shortcut: "快捷键",
+			shortcutHint: "按 {keys} 打开菜单；增强进行中按它停止，完成后按它撤销。",
+			shortcutNone: "未绑定按键，可在「快捷键」设置页指定。",
+			presets: "预设",
+			presetTitle: "名称",
+			presetDescription: "说明",
+			presetIcon: "图标",
+			presetPrompt: "改写指令",
+			presetPromptCustom: "改写器要怎样处理草稿",
+			presetUp: "上移",
+			presetDown: "下移",
+			presetRemove: "删除",
+			presetReset: "恢复内置",
+			presetAdd: "添加预设",
+			presetEdit: "编辑",
+			presetDone: "完成",
+			presetNeedsPrompt: "自定义预设需要填写改写指令。",
+			presetBuiltin: "内置",
+			presetBuiltinEdited: "内置 · 已修改"
+		};
+		function format(template, values) {
+			return template.replace(/\{(\w+)\}/gu, (match, name) => name in values ? String(values[name]) : match);
+		}
+		//#endregion
+		//#region dsh/enhance/src/wire.ts
+		const REWRITE_PATH = "/dsh-enhance/rewrite";
+		const CONTEXT_PATH = "/dsh-enhance/context";
+		const NonEmptySchema = /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ minLength(1));
+		const SessionModelSchema = /* @__PURE__ */ object({
+			provider: NonEmptySchema,
+			model: NonEmptySchema,
+			reasoningEffort: /* @__PURE__ */ optional(NonEmptySchema)
+		});
+		const RewriteResultSchema = /* @__PURE__ */ object({
+			text: /* @__PURE__ */ string(),
+			unchanged: /* @__PURE__ */ boolean(),
+			turns: /* @__PURE__ */ number()
+		});
+		const ContextResultSchema = /* @__PURE__ */ object({
+			turns: /* @__PURE__ */ number(),
+			tokens: /* @__PURE__ */ record(/* @__PURE__ */ string(), /* @__PURE__ */ number())
+		});
+		const FailureSchema = /* @__PURE__ */ object({
+			reason: /* @__PURE__ */ picklist([
+				"timeout",
+				"model",
+				"truncated",
+				"empty",
+				"invalid",
+				"no-model",
+				"preset",
+				"vendor",
+				"context"
+			]),
+			message: /* @__PURE__ */ string()
+		});
+		//#endregion
+		//#region dsh/enhance/src/request.ts
+		function relative(path) {
+			return path.slice(1);
+		}
+		async function requestRewrite(payload, signal) {
+			let response;
+			try {
+				response = await fetch(relative(REWRITE_PATH), {
+					method: "POST",
+					headers: {
+						accept: "application/json",
+						"content-type": "application/json"
+					},
+					body: JSON.stringify(payload),
+					signal
+				});
+			} catch (error) {
+				if (signal.aborted) throw error;
+				return {
+					ok: false,
+					reason: "network",
+					message: `POST ${REWRITE_PATH}: ${String(error)}`
+				};
+			}
+			const body = await response.json().catch(() => void 0);
+			if (response.ok) {
+				const parsed = /* @__PURE__ */ safeParse(RewriteResultSchema, body);
+				if (parsed.success) return {
+					ok: true,
+					value: parsed.output
+				};
+				return {
+					ok: false,
+					reason: "network",
+					message: `POST ${REWRITE_PATH}: unexpected response`
+				};
+			}
+			const failure = /* @__PURE__ */ safeParse(FailureSchema, body);
+			if (failure.success) return {
+				ok: false,
+				...failure.output
+			};
+			const message = typeof body === "object" && body !== null && "message" in body ? String(body.message) : response.statusText;
+			return {
+				ok: false,
+				reason: "network",
+				message: `POST ${REWRITE_PATH} ${String(response.status)}: ${message}`
+			};
+		}
+		async function requestContext(sessionId, signal) {
+			const url = `${relative(CONTEXT_PATH)}?session=${encodeURIComponent(sessionId)}`;
+			const response = await fetch(url, {
+				headers: { accept: "application/json" },
+				signal
+			});
+			if (!response.ok) throw new Error(`GET ${CONTEXT_PATH} answered ${String(response.status)}`);
+			return parse(ContextResultSchema, await response.json());
+		}
+		//#endregion
+		//#region dsh/enhance/src/state.ts
+		const IDLE = { kind: "idle" };
+		function followDraft(state, draft) {
+			if (state.kind === "running") return draft === state.source ? void 0 : IDLE;
+			if (state.kind === "note") return draft === state.draft ? void 0 : IDLE;
+			if (state.kind !== "done") return void 0;
+			if (state.applied === void 0) return draft === state.before ? void 0 : {
+				...state,
+				applied: draft
+			};
+			return draft === state.applied ? void 0 : IDLE;
+		}
+		//#endregion
+		//#region dsh/enhance/src/store.ts
+		function createValueStore(initial, same = Object.is) {
+			let value = initial;
+			const listeners = /* @__PURE__ */ new Set();
+			return {
+				get: () => value,
+				set(next) {
+					if (same(value, next)) return;
+					value = next;
+					for (const listener of listeners) listener();
+				},
+				subscribe(listener) {
+					listeners.add(listener);
+					return () => listeners.delete(listener);
+				}
+			};
+		}
+		function useValue(store) {
+			return (0, react.useSyncExternalStore)(store.subscribe, store.get);
+		}
+		//#endregion
+		//#region dsh/enhance/src/tokens.ts
+		const WIDE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+		function estimateTokens(text) {
+			const wide = text.match(WIDE)?.length ?? 0;
+			const all = text.match(/[\s\S]/gu)?.length ?? 0;
+			return Math.ceil(wide * .6 + (all - wide) * .3);
+		}
+		const GROUPED = new Intl.NumberFormat("en-US");
+		function formatTokens(tokens) {
+			return GROUPED.format(tokens);
+		}
+		//#endregion
 		//#region dsh/enhance/src/button.tsx
 		const NUMBERED = 9;
 		const INFO_MS = 4e3;
@@ -1158,9 +1555,19 @@ ${p}-add {
 				hint: preset.description.trim() !== "" ? preset.description : builtin !== void 0 && !custom ? t(`preset.${builtin}.hint`) : ""
 			};
 		}
-		function contextLabel(turns, t) {
-			if (turns === void 0 || turns === 0) return void 0;
-			return turns === 1 ? t("contextOne") : format(t("context"), { n: turns });
+		function tipLabel(turns, t) {
+			if (turns === void 0 || turns === 0) return t("tip");
+			return turns === 1 ? t("tipLinkedOne") : format(t("tipLinked"), { n: turns });
+		}
+		function estimateLabel(context, preset, draft, t) {
+			const base = preset === void 0 ? void 0 : context?.tokens[preset];
+			if (context === void 0 || base === void 0) return void 0;
+			const values = {
+				tokens: formatTokens(base + estimateTokens(draft)),
+				n: context.turns
+			};
+			if (context.turns === 0) return format(t("estimate"), values);
+			return format(t(context.turns === 1 ? "estimateLinkedOne" : "estimateLinked"), values);
 		}
 		function modelKey(view) {
 			const next = view?.next;
@@ -1169,13 +1576,13 @@ ${p}-add {
 		function parseModel(key) {
 			return key === void 0 ? void 0 : parse(SessionModelSchema, JSON.parse(key));
 		}
-		function useContextTurns(sessionId, active, key) {
-			const [turns, setTurns] = (0, react.useState)();
+		function useContext(sessionId, active, key) {
+			const [context, setContext] = (0, react.useState)();
 			const stamp = `${sessionId}:${key}`;
 			(0, react.useEffect)(() => {
 				if (!active) return void 0;
 				const controller = new AbortController();
-				requestContextTurns(sessionId, controller.signal).then((value) => setTurns({
+				requestContext(sessionId, controller.signal).then((value) => setContext({
 					key: stamp,
 					value
 				}), (error) => {
@@ -1188,7 +1595,7 @@ ${p}-add {
 				active,
 				stamp
 			]);
-			return active && turns?.key === stamp ? turns.value : void 0;
+			return active && context?.key === stamp ? context.value : void 0;
 		}
 		function focusEnd(editable) {
 			if (!editable.isConnected) return;
@@ -1218,7 +1625,14 @@ ${p}-add {
 				if (followed !== void 0) setState(followed);
 				const current = followed ?? state;
 				const empty = draft.trim() === "";
-				const linked = contextLabel(useContextTurns(sessionId, settings.context && !empty, `${String(stamp)}:${String(settings.contextTurns)}`), t);
+				const context = useContext(sessionId, !empty, JSON.stringify([
+					stamp,
+					settings.context,
+					settings.contextTurns,
+					settings.presets
+				]));
+				const [pointed, setPointed] = (0, react.useState)();
+				if (!open && pointed !== void 0) setPointed(void 0);
 				const running = current.kind === "running";
 				(0, react.useLayoutEffect)(() => {
 					if (!running || composer === void 0) return void 0;
@@ -1371,7 +1785,8 @@ ${p}-add {
 					event.preventDefault();
 					run(preset);
 				};
-				const tooltip = running ? t("cancel") : references ? t("references") : linked === void 0 ? t("enhance") : `${t("enhance")} · ${linked}`;
+				const tooltip = running ? t("cancel") : references ? t("references") : tipLabel(context?.turns, t);
+				const estimate = estimateLabel(context, pointed ?? presets[0]?.id, draft, t);
 				const trigger = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
 					label: tooltip,
 					shortcutKeys: running ? ["Esc"] : keys.length > 0 && current.kind !== "done" ? keys : void 0,
@@ -1407,18 +1822,27 @@ ${p}-add {
 				const manage = open ? shared.settingsLink() : void 0;
 				const rows = presets.map((preset, index) => {
 					const { title, hint } = presetLabel(preset, t);
-					return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.MenuItemButton, {
-						...index < NUMBERED ? { shortcut: { keys: [String(index + 1)] } } : {},
-						onSelect: () => run(preset),
-						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-							className: `${K}-row`,
-							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: `${K}-row-title`,
-								children: title
-							}), hint !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: `dsh-enhance-row-hint`,
-								children: hint
-							})]
+					return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: `${K}-row-slot`,
+						onPointerEnter: () => setPointed(preset.id),
+						onFocus: () => setPointed(preset.id),
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.MenuItemButton, {
+							icon: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PresetGlyph, {
+								name: presetIcon(preset),
+								size: 14
+							}),
+							...index < NUMBERED ? { shortcut: { keys: [String(index + 1)] } } : {},
+							onSelect: () => run(preset),
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+								className: `${K}-row`,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: `${K}-row-title`,
+									children: title
+								}), hint !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: `dsh-enhance-row-hint`,
+									children: hint
+								})]
+							})
 						})
 					}, preset.id);
 				});
@@ -1452,7 +1876,7 @@ ${p}-add {
 								})
 							})
 						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Menu, {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(_deepseek_ai_dsh_client_ui_primitives.Menu, {
 							open,
 							anchor: trigger,
 							side: "top",
@@ -1461,11 +1885,6 @@ ${p}-add {
 							autoFocus: true,
 							listClassName: MENU_CLASS,
 							onClose: closeMenu,
-							items: linked === void 0 ? [] : [{
-								type: "label",
-								id: "context",
-								text: linked
-							}],
 							footer: manage === void 0 ? [] : [{
 								id: "manage",
 								label: t("manage"),
@@ -1477,7 +1896,11 @@ ${p}-add {
 								setOpen(false);
 								manage?.();
 							},
-							children: rows
+							children: [estimate !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								className: `dsh-enhance-estimate`,
+								role: "presentation",
+								children: estimate
+							}), rows]
 						})
 					]
 				});
@@ -1486,6 +1909,8 @@ ${p}-add {
 		const DETAILED = /* @__PURE__ */ new Set([
 			"model",
 			"invalid",
+			"preset",
+			"vendor",
 			"context",
 			"network"
 		]);
@@ -1562,7 +1987,8 @@ ${p}-add {
 			id: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ minLength(1)),
 			title: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), ""),
 			description: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), ""),
-			prompt: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), "")
+			prompt: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), ""),
+			icon: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), "")
 		});
 		const SettingsSchema = /* @__PURE__ */ object({
 			provider: /* @__PURE__ */ fallback(/* @__PURE__ */ string(), DEFAULT_SETTINGS.provider),
@@ -1710,7 +2136,7 @@ ${p}-add {
 		function samePresets(left, right) {
 			return left.length === right.length && left.every((preset, index) => {
 				const other = right[index];
-				return other !== void 0 && preset.id === other.id && preset.title === other.title && preset.description === other.description && preset.prompt === other.prompt;
+				return other !== void 0 && preset.id === other.id && preset.title === other.title && preset.description === other.description && preset.prompt === other.prompt && preset.icon === other.icon;
 			});
 		}
 		function settingsOps(base, next) {
@@ -1884,7 +2310,8 @@ ${p}-add {
 					id: `custom-${crypto.randomUUID().slice(0, 8)}`,
 					title: "",
 					description: "",
-					prompt: ""
+					prompt: "",
+					icon: ""
 				};
 				stage([...presets, preset]);
 				setEditing(preset.id);
@@ -1905,6 +2332,8 @@ ${p}-add {
 							const builtin = isBuiltin(preset.id);
 							const open = editing === preset.id;
 							const missing = !builtin && preset.prompt.trim() === "";
+							const edited = builtin && (preset.title !== "" || preset.description !== "" || preset.prompt !== "" || preset.icon !== "");
+							const icon = presetIcon(preset);
 							const field = (name) => `${id}-${preset.id}-${name}`;
 							return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("li", {
 								className: `${K}-preset`,
@@ -1914,6 +2343,13 @@ ${p}-add {
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 											className: `${K}-preset-index`,
 											children: index + 1
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: `${K}-preset-glyph`,
+											children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PresetGlyph, {
+												name: icon,
+												size: 16
+											})
 										}),
 										/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
 											className: `${K}-preset-text`,
@@ -1925,7 +2361,7 @@ ${p}-add {
 														children: title
 													}), builtin && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
 														className: `dsh-enhance-preset-tag`,
-														children: t("presetBuiltin")
+														children: edited ? t("presetBuiltinEdited") : t("presetBuiltin")
 													})]
 												}),
 												hint !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
@@ -1978,6 +2414,20 @@ ${p}-add {
 								}), open && /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 									className: `dsh-enhance-preset-form`,
 									children: [
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+											className: `dsh-enhance-preset-label`,
+											id: field("icon"),
+											children: t("presetIcon")
+										}),
+										/* @__PURE__ */ (0, react_jsx_runtime.jsx)(IconPicker, {
+											value: icon,
+											labelledBy: field("icon"),
+											disabled: locked,
+											onChange: (name) => replace(index, {
+												...preset,
+												icon: storedIcon(preset.id, name)
+											})
+										}),
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("label", {
 											className: `dsh-enhance-preset-label`,
 											htmlFor: field("title"),
@@ -2016,21 +2466,22 @@ ${p}-add {
 										/* @__PURE__ */ (0, react_jsx_runtime.jsx)("textarea", {
 											id: field("prompt"),
 											className: `dsh-enhance-textarea`,
-											value: preset.prompt,
+											value: editablePrompt(preset),
 											rows: 6,
-											placeholder: builtin ? t("presetPromptBuiltin") : t("presetPromptCustom"),
+											spellCheck: false,
+											placeholder: t("presetPromptCustom"),
 											"aria-invalid": missing,
 											disabled: locked,
 											onChange: (event) => replace(index, {
 												...preset,
-												prompt: event.target.value
+												prompt: storedPrompt(preset.id, event.target.value)
 											})
 										}),
 										missing && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("p", {
 											className: `dsh-enhance-invalid`,
 											children: t("presetNeedsPrompt")
 										}),
-										builtin && (preset.title !== "" || preset.description !== "" || preset.prompt !== "") && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+										edited && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 											className: `dsh-enhance-preset-footer`,
 											children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Button, {
 												size: "sm",
@@ -2039,7 +2490,8 @@ ${p}-add {
 													id: preset.id,
 													title: "",
 													description: "",
-													prompt: ""
+													prompt: "",
+													icon: ""
 												}),
 												children: t("presetReset")
 											})

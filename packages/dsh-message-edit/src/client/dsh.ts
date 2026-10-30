@@ -57,11 +57,28 @@ export interface Locale {
   bind(namespace: string): Translate;
 }
 
-/** list 类 Slot 的登记选项；`inject` 按会话返回注入面，`locale` 让组件收到 `t`。 */
+/**
+ * `conversation.chat.turnTail` 的 owner props 里插件读取的部分。`seq` 是回合收尾助手消息的 seq：
+ * 回合没有收尾消息时等于 `turn/end` 的 seq，收尾消息是停止时没有落盘的半截回复时带小数偏移。
+ */
+export interface TurnTailOwner {
+  readonly turn: {
+    readonly turn: number;
+    readonly end: { readonly seq: number } | undefined;
+  };
+  readonly seq: number;
+}
+
+/**
+ * Slot 的登记选项；`inject` 按会话返回注入面，`locale` 让组件收到 `t`。
+ * list 类 Slot 按 `id` 区分条目；chain 类 Slot 按 `priority` 从小到大调用 `select`，第一个返回非 null 的条目渲染。
+ */
 export interface SlotRegistration {
   readonly name: string;
   readonly id: string;
   readonly order?: number;
+  readonly priority?: number;
+  readonly select?: (owner: TurnTailOwner) => number | null;
   readonly label?: string | (() => string);
   readonly locale?: string;
   readonly inject?: (sessionId: string) => object;

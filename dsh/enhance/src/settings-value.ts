@@ -44,6 +44,7 @@ const PresetSchema = v.object({
   title: v.fallback(v.string(), ""),
   description: v.fallback(v.string(), ""),
   prompt: v.fallback(v.string(), ""),
+  icon: v.fallback(v.string(), ""),
 });
 
 const SettingsSchema = v.object({

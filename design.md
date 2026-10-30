@@ -40,7 +40,9 @@ Inline ghost text:
 Composer button (Prompt enhance):
 
 - [MUST] The button sits in the composer's right control row, left of the model selector and the send button, 12px apart like the host controls. It renders nothing while the draft is empty, so an empty composer looks like the host one.
-- [MUST] Its menu is the host `Menu`, opened above the button and aligned to its right edge. Rows carry a title and a one-line hint; an optional label row on top names the linked context, and the footer holds one management link.
+- [MUST] Its menu is the host `Menu`, opened above the button and aligned to its right edge. Rows carry the preset icon, a title, and a one-line hint, and the footer holds one management link.
+- [MUST] Preset icons come only from the DSH icon library (`Icon*` primitives). Built-in presets have their own icons (polish: sparkle, structure: flat list, concise: compact); a custom preset without a choice uses the list-pen icon.
+- [MUST] A label row on top of the menu states the estimated token cost of the preset under the pointer or keyboard focus (the first preset otherwise) and the number of linked turns. The tooltip of the button names the linked turns too.
 - [MUST] Status text (running, failure, nothing to change) sits on the left of the button inside the same row and never pushes the composer wider; long text ends in an ellipsis. Failures stay inline next to the button; no toast.
 - [MUST] After a rewrite, an undo button appears left of the main button and leaves when the draft changes.
 
@@ -75,10 +77,13 @@ Keycaps:
 
 Composer button visuals:
 
-- [MUST] A 28px circle like the host `+` button, a 16px host icon in `--dsw-alias-label-tertiary`, no fill at rest. Hover, an open menu, a running rewrite, and the undo button use `--dsw-alias-interactive-bg-hover` with secondary ink. A blocked button (reference chips in the draft) is at 40% opacity and explains why in its tooltip.
+- [MUST] A 28px square with `--dsw-radius-sm` corners, the same radius as the model selector beside it, and a 16px host icon in `--dsw-alias-label-tertiary`, no fill at rest. Hover, an open menu, a running rewrite, and the undo button use `--dsw-alias-interactive-bg-hover` with secondary ink. A blocked button (reference chips in the draft) is at 40% opacity and explains why in its tooltip.
 - [MUST] While a rewrite runs, the button shows the host spinner and turns into a stop icon on hover or keyboard focus; the editable area is `inert`, `aria-busy`, and dims to 45% opacity.
 - [SHOULD] Status line: 12px / 18px, tertiary ink, error text in `--dsw-alias-state-error-primary` with a 12px warning icon and a 16px dismiss button; at most 240px wide. The running label uses the host `TextShimmer`.
 - [SHOULD] Menu rows: title 13px / 20px primary ink, hint 12px / 18px tertiary ink; the menu is at least 248px wide. Rows 1–9 show their number key.
+- [SHOULD] Preset icons are 14px in menu rows (host `MenuItemButton` icon slot) and 16px in secondary ink in the settings list, between the index and the title.
+- [MUST] The icon picker in the preset form is a radio group of 28px cells with `--dsw-radius-sm` corners, 9 per row with 2px gaps, as wide as its cells. The chosen cell has the hover fill and a 1px inset `--dsw-alias-state-business-primary` ring. Tab enters the group on the chosen cell; arrow keys, Home, and End move and choose. Choosing the default icon stores no value.
+- [SHOULD] The estimate label uses the host menu label type (11px / 15px, tertiary ink, padding 6px 8px) with tabular numerals and thousands separators. It wraps inside the width the rows set and never widens the menu.
 
 Settings page:
 

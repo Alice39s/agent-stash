@@ -6,26 +6,45 @@ icon: WandSparkles
 
 <Showcase
   name="enhance-en"
-  alt="The session already has two turns about the login page's first load. The pointer clicks the input box and a dictated draft appears in three parts. The enhance button left of the send button opens a menu headed Linked to the last 2 turns. Make it concise turns the draft into three short points. The undo button brings the draft back, and Structure only reorganizes it."
+  alt="The session already has two turns about the login page's first load. The pointer clicks the input box and a dictated draft appears in three parts. The enhance button left of the send button opens a menu headed by the estimated token cost and Linked to the last 2 turns, with an icon before each preset. Make it concise turns the draft into three short points. The undo button brings the draft back, and Structure only reorganizes it."
   caption="A dictated draft made concise, undone, then restructured without changing its meaning"
 />
 
 ## Presets
 
-| Preset          | What it does                                                                                                                                                                                                                                                                      |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Polish prompt   | States the goal, scope, expected result, and how to check it. Asks the AI to compare a few approaches and recommend one, and to state its assumptions where information is missing. At most 3 times the length of the draft and about 250 English words or 500 Chinese characters |
-| Structure only  | Puts the main request first, groups the rest into background, requirements, and constraints, and turns parallel items into lists. Keeps the wording and every point                                                                                                               |
-| Make it concise | Removes filler, repeats, and corrected slips, and keeps only the final requests, constraints, and questions. Meant for dictated text. The result is shorter than the draft                                                                                                        |
+| Preset          | Icon      | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| --------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Polish prompt   | Sparkle   | Organizes the draft with the Structure only steps, then expands it within your intent: states the goal, scope, expected result, and how to check it, asks the AI to compare a few approaches and recommend one, and to state its assumptions where information is missing. Every added sentence must trace back to the draft, the session context, or a general engineering practice that fits the goal (such as measuring before optimizing); it invents no files, APIs, numbers, or decisions. The wording follows the three writing guides below and the tone of the draft. At most 3 times the length of the draft and about 250 English words or 500 Chinese characters |
+| Structure only  | Flat list | Puts the main request first, groups the rest into background, requirements, and constraints, and turns parallel items into lists. Keeps the wording and every point                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Make it concise | Compact   | Removes filler, repeats, and corrected slips, and keeps only the final requests, constraints, and questions. Meant for dictated text. The result is shorter than the draft                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 
 All presets share one set of rules. The result is in the language of the draft. Code, commands, paths, links, and text in backticks are copied unchanged. A question stays a question and is not answered. When the draft is already clear, it stays as it is, and Already clear, nothing changed appears left of the button for a few seconds.
 
+The shared rules and the instructions of each preset are split into tagged sections such as `<role>`, `<rules>`, and `<mode>`. The settings page shows them and lets you edit them.
+
+### Writing guides
+
+The Polish prompt instructions inline the full text of three writing guides. The rewriter applies their pattern lists to the sentences it adds or changes. Their workflows, output formats, and instructions to ask the user questions do not apply; the shared rules still decide what comes back.
+
+| Guide                                                         | Content                                                                              |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [humanizer](https://github.com/blader/humanizer)              | AI writing patterns and their fixes, based on Wikipedia's Signs of AI writing        |
+| [no-ai-slop](https://github.com/petergyang/no-ai-slop)        | Editing rules that keep the writer's voice and cut stock phrases and hype            |
+| [no-negative-echo](https://github.com/LB623/no-negative-echo) | Write only the accepted result; options dropped or corrected in the session stay out |
+
+All three guides are MIT licensed and ship unchanged in `vendor/`. `vendor/manifest.json` records the upstream repository and commit of each. A scheduled sync job checks the upstreams daily and opens and merges a PR when they change.
+
+Together the guides are about 14,000 tokens, so a Polish prompt request has that much more input than the other presets, which the estimate at the top of the menu shows.
+
+Instructions of a custom preset can also include a guide with `<include ref="humanizer" />`. The available names are `humanizer`, `no-ai-slop`, and `no-negative-echo`. The Host replaces the tag with the full text before it sends the request. An unknown name makes the rewrite fail, and hovering over the failure shows the available names.
+
 ## Use
 
-- The button is hidden while the draft is empty. Click it to open the preset menu. Number keys <Kbd>1</Kbd>–<Kbd>9</Kbd> pick a preset directly.
+- The button is hidden while the draft is empty. Its tooltip reads Click to enhance the prompt and names the linked turns when session context is included. Click it to open the preset menu. Number keys <Kbd>1</Kbd>–<Kbd>9</Kbd> pick a preset directly.
+- The top of the menu states the estimated token cost of the request and the linked turns, for example This rewrite will use about 16,630 tokens, with the last turn linked. The number follows the preset under the pointer or keyboard focus, and the first preset otherwise.
 - While a rewrite runs, the draft is locked and the button turns into a stop button. Click it or press <Kbd>Esc</Kbd> to stop. The draft stays unchanged.
 - When the rewrite finishes, an undo button appears left of the button and brings back the draft. After several rewrites in a row, undo returns to the first draft. Editing or sending the draft removes the undo button.
-- A failure is shown left of the button, and the draft stays unchanged. For model errors, rejected results, a failed session read, and a failed connection to DSH, hover over the message to see the exact reason.
+- A failure is shown left of the button, and the draft stays unchanged. For model errors, rejected results, preset instructions that cannot be used, writing references that cannot be read from an incomplete install, a failed session read, and a failed connection to DSH, hover over the message to see the exact reason.
 - The button is unavailable while the draft contains reference chips for files or sessions, because a rewrite would turn them into plain text.
 
 A result goes into the input box only when it passes these checks:
@@ -33,6 +52,8 @@ A result goes into the input box only when it passes these checks:
 - It does not open like a reply ("Here is", "Sure", "以下是", "好的").
 - It uses the same script as the draft (CJK or Latin).
 - It keeps every code block, inline code span, link, and credential placeholder of the draft.
+
+The estimate counts only the input sent to the model: the system prompt, the session context, and the draft. It uses the ratios in the [DeepSeek API docs](https://api-docs.deepseek.com/quick_start/token_usage): about 0.3 token per English character and 0.6 token per Chinese character. Output and reasoning are not included; the usage the model reports is the actual count.
 
 ## Session context
 
@@ -54,14 +75,24 @@ On the Plugins page, open the details of Prompt enhance and click Configure. Man
 | Include recent turns | `context`           | See [Session context](#session-context)                                                                                                                                                     | On                 |
 | Turns to include     | `contextTurns`      | 1–10                                                                                                                                                                                        | 3                  |
 | Keyboard shortcut    | `shortcut`          | When on, opens the menu, stops a running rewrite, or undoes the last one                                                                                                                    | Off                |
-| Presets              | `presets`           | Reorder, remove, edit the name, description, and instructions, or add custom presets                                                                                                        | Three built-in     |
+| Presets              | `presets`           | Reorder, remove, edit the icon, name, description, and instructions, or add custom presets                                                                                                  | Three built-in     |
 
 <Showcase
   name="enhance-settings-page-en"
   alt="The Prompt enhance settings page. The model list has Follow the session selected. Below it are Timeout, Include recent turns, Turns to include, Keyboard shortcut, and the three built-in presets."
 />
 
-A built-in preset with empty instructions uses the built-in ones. Restore built-in clears your own name, description, and instructions. A custom preset needs instructions before it can be saved.
+Click Edit beside a preset to open its form:
+
+- Pick an icon from 36 icons of the DSH icon library, 9 per row. Arrow keys, <Kbd>Home</Kbd>, and <Kbd>End</Kbd> move through the grid and choose. Choosing the default icon again stores nothing.
+- The instructions field shows the built-in instructions, so you can edit them directly. When the text equals the built-in instructions or is empty, the preset keeps using the built-in ones that update with the plugin.
+- An edited built-in preset is tagged Built-in, edited. Restore built-in clears your own icon, name, description, and instructions.
+- A custom preset needs instructions before it can be saved. Without a chosen icon it shows the list-pen icon.
+
+<Showcase
+  name="enhance-preset-editor-en"
+  alt="The Polish prompt preset opened for editing. At the top is a grid of icons, 9 per row in 4 rows, with the sparkle icon selected. Below are the Name and Description fields and the Instructions field, which shows the built-in instructions in a monospace font."
+/>
 
 With the shortcut on, the default keys are <Keys keys={['⇧', '⌘', 'E']} /> on macOS and Ctrl+Shift+E elsewhere. Linux in a browser lets only a few key combinations through, so there are no default keys there. The default keys are also left unbound when they overlap another command. In both cases you can assign keys on the DSH Shortcuts settings page.
 
@@ -79,12 +110,15 @@ You can also set these in a profile patch. `presets` replaces the whole list. A 
       - id: steps
         title: Split into steps
         description: List what to do in order
+        icon: checklist-outline
         prompt: Rewrite the draft as a numbered list of the steps it asks for, in the order they should be done.
 ```
 
 Custom instructions come after the built-in shared rules, and the result still has to pass the checks above.
 
-The Host half of the plugin registers two routes. `GET /dsh-enhance/context` returns how many turns the next rewrite will include. `POST /dsh-enhance/rewrite` reads the session, calls the model, and checks the result. Both routes go through the DSH connection check. A draft can have at most 20,000 characters.
+`icon` takes an icon name from the DSH icon library. An empty value, or a name outside this list, shows the default icon: `sparkle`, `enhance-outline`, `flat-list-outline`, `list-pen-outline`, `checklist-outline`, `compact-outline`, `wrap-lines-outline`, `edit-outline`, `microphone-outline`, `think-outline`, `light-outline`, `goal-outline`, `plan-outline`, `question-outline`, `info-outline`, `search-outline`, `inspect-outline`, `compare-split-outline`, `code-outline`, `api-outline`, `database-outline`, `branch-outline`, `warning-triangle-outline`, `shield-outline`, `gauge-outline`, `clock-outline`, `link-outline`, `globe-outline`, `user-outline`, `users-outline`, `skill-outline`, `agent-preset-outline`, `personalization-outline`, `deliver-doc`, `folder-open-outline`, `paper-plane-outline`.
+
+The Host half of the plugin registers two routes. `GET /dsh-enhance/context` returns how many turns the next rewrite will include and, for each preset, the estimated input tokens of a request with an empty draft. `POST /dsh-enhance/rewrite` reads the session, calls the model, and checks the result. Both routes go through the DSH connection check. A draft can have at most 20,000 characters.
 
 ## Install
 

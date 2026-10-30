@@ -139,11 +139,9 @@ export const IconChevronDownOutlineRegular = icon("chevron-down");
 export const IconTrashOutlineRegular = icon("trash");
 export const IconPlusOutlineRegular = icon("plus");
 export const IconSkillOutlineRegular = icon("skill");
-export const IconEditOutlineRegular = icon("edit");
 export const IconChevronLeftOutlineRegular = icon("chevron-left");
 export const IconChevronRightOutlineRegular = icon("chevron-right");
 export const IconEllipsisOutlineRegular = icon("ellipsis");
-export const IconSearchOutlineRegular = icon("search");
 
 /** 宿主的状态点只有样式；替身用 `data-state` 与 `data-appearance` 标出状态与外观。 */
 export function StateDot(props: {
@@ -254,6 +252,39 @@ export function PathLabel({
     </span>
   );
 }
+export const IconEnhanceOutlineRegular = icon("enhance-outline");
+export const IconFlatListOutlineRegular = icon("flat-list-outline");
+export const IconChecklistOutlineRegular = icon("checklist-outline");
+export const IconCompactOutlineRegular = icon("compact-outline");
+export const IconWrapLinesOutlineRegular = icon("wrap-lines-outline");
+export const IconEditOutlineRegular = icon("edit-outline");
+export const IconMicrophoneOutlineRegular = icon("microphone-outline");
+export const IconThinkOutlineRegular = icon("think-outline");
+export const IconLightOutlineRegular = icon("light-outline");
+export const IconGoalOutlineRegular = icon("goal-outline");
+export const IconPlanOutlineRegular = icon("plan-outline");
+export const IconQuestionOutlineRegular = icon("question-outline");
+export const IconInfoOutlineRegular = icon("info-outline");
+export const IconSearchOutlineRegular = icon("search-outline");
+export const IconInspectOutlineRegular = icon("inspect-outline");
+export const IconCompareSplitOutlineRegular = icon("compare-split-outline");
+export const IconCodeOutlineRegular = icon("code-outline");
+export const IconApiOutlineRegular = icon("api-outline");
+export const IconDatabaseOutlineRegular = icon("database-outline");
+export const IconBranchOutlineRegular = icon("branch-outline");
+export const IconWarningTriangleOutlineRegular = icon("warning-triangle-outline");
+export const IconShieldOutlineRegular = icon("shield-outline");
+export const IconGaugeOutlineRegular = icon("gauge-outline");
+export const IconClockOutlineRegular = icon("clock-outline");
+export const IconLinkOutlineRegular = icon("link-outline");
+export const IconGlobeOutlineRegular = icon("globe-outline");
+export const IconUserOutlineRegular = icon("user-outline");
+export const IconUsersOutlineRegular = icon("users-outline");
+export const IconAgentPresetOutlineRegular = icon("agent-preset-outline");
+export const IconPersonalizationOutlineRegular = icon("personalization-outline");
+export const IconDeliverDocRegular = icon("deliver-doc");
+export const IconFolderOpenOutlineRegular = icon("folder-open-outline");
+export const IconPaperPlaneOutlineRegular = icon("paper-plane-outline");
 
 /** 提示文字与按键放在锚点外层的 `data-tooltip` 与 `data-tooltip-keys` 上，测试据此断言。 */
 export function Tooltip(props: {

@@ -8,6 +8,7 @@ import {
   type EnhanceHarness,
 } from "./harness.tsx";
 import type { CatalogGroup } from "./dsh.ts";
+import { BUILTIN_INSTRUCTIONS } from "./presets.ts";
 
 const CATALOG: CatalogGroup[] = [
   {
@@ -182,12 +183,47 @@ describe("enhance settings page", () => {
           op: "set",
           path: ["presets"],
           value: [
-            { id: "structure", title: "", description: "", prompt: "Rewrite as a numbered list." },
-            { id: "polish", title: "", description: "", prompt: "" },
+            {
+              id: "structure",
+              title: "",
+              description: "",
+              prompt: "Rewrite as a numbered list.",
+              icon: "",
+            },
+            { id: "polish", title: "", description: "", prompt: "", icon: "" },
           ],
         },
       ],
     ]);
+  });
+
+  test("shows the built-in instructions in the editor until they are changed", async () => {
+    const { page, settings } = await open();
+    await click(
+      [...page.querySelectorAll("button")].find((button) => button.textContent === "Edit"),
+    );
+    const textarea = page.querySelector("textarea");
+    expect(textarea?.value).toBe(BUILTIN_INSTRUCTIONS.polish);
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in");
+    await input(textarea, `${BUILTIN_INSTRUCTIONS.polish}\nKeep it under 200 words.`);
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in, edited");
+    await input(textarea, BUILTIN_INSTRUCTIONS.polish);
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in");
+    expect(save(page)?.disabled).toBe(true);
+    // 末尾只多一个空格时仍算改过，输入文字不会被打回内置版本。
+    await input(textarea, `${BUILTIN_INSTRUCTIONS.polish} `);
+    expect(textarea?.value).toBe(`${BUILTIN_INSTRUCTIONS.polish} `);
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in, edited");
+    await input(textarea, BUILTIN_INSTRUCTIONS.polish);
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in");
+    await input(textarea, "");
+    expect(textarea?.value).toBe(BUILTIN_INSTRUCTIONS.polish);
+    await input(textarea, "Polish it.");
+    await click(save(page));
+    expect(settings.writes[0]?.[0]).toMatchObject({
+      path: ["presets"],
+      value: [{ id: "polish", prompt: "Polish it." }, { id: "structure" }, { id: "concise" }],
+    });
   });
 
   test("requires instructions before a custom preset can be saved", async () => {
@@ -206,21 +242,89 @@ describe("enhance settings page", () => {
     const presets = settings.writes[0]?.[0];
     expect(presets).toMatchObject({ path: ["presets"] });
     expect(presets?.op === "set" ? presets.value : undefined).toEqual([
-      { id: "polish", title: "", description: "", prompt: "" },
-      { id: "structure", title: "", description: "", prompt: "" },
-      { id: "concise", title: "", description: "", prompt: "" },
+      { id: "polish", title: "", description: "", prompt: "", icon: "" },
+      { id: "structure", title: "", description: "", prompt: "", icon: "" },
+      { id: "concise", title: "", description: "", prompt: "", icon: "" },
       {
         id: expect.stringMatching(/^custom-/u),
         title: "Translate",
         description: "",
         prompt: "Translate the draft into English.",
+        icon: "",
       },
     ]);
   });
 
+  test("picks a preset icon from the DSH icon library", async () => {
+    const { page, settings } = await open();
+    const glyphs = () =>
+      [...page.querySelectorAll(".dsh-enhance-preset-glyph svg")].map((svg) =>
+        svg.getAttribute("data-icon"),
+      );
+    expect(glyphs()).toEqual(["sparkle", "flat-list-outline", "compact-outline"]);
+    await click(
+      [...page.querySelectorAll("button")].find((button) => button.textContent === "Edit"),
+    );
+    const group = page.querySelector('.dsh-enhance-icon-grid[role="radiogroup"]');
+    expect(group?.getAttribute("aria-labelledby")).toBe(
+      page.querySelector(".dsh-enhance-preset-form > .dsh-enhance-preset-label")?.id,
+    );
+    const radios = () => [...page.querySelectorAll<HTMLButtonElement>('[role="radio"]')];
+    const checked = () => radios().find((option) => option.getAttribute("aria-checked") === "true");
+    expect(radios()).toHaveLength(36);
+    expect(checked()?.getAttribute("aria-label")).toBe("sparkle");
+    expect(radios().filter((option) => option.tabIndex === 0)).toEqual([checked()]);
+    await click(radios().find((option) => option.getAttribute("aria-label") === "globe"));
+    expect(glyphs()[0]).toBe("globe-outline");
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in, edited");
+    await click(save(page));
+    expect(settings.writes[0]?.[0]).toMatchObject({
+      value: [{ id: "polish", icon: "globe-outline" }, { icon: "" }, { icon: "" }],
+    });
+  });
+
+  test("moves the icon choice with the arrow keys", async () => {
+    const { page } = await open();
+    await click(
+      [...page.querySelectorAll("button")].find((button) => button.textContent === "Edit"),
+    );
+    const checked = () =>
+      page.querySelector('[role="radio"][aria-checked="true"]')?.getAttribute("aria-label");
+    const press = async (key: string): Promise<void> => {
+      const target = page.querySelector<HTMLElement>('[role="radio"][aria-checked="true"]');
+      await act(async () => {
+        target?.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+      });
+    };
+    await press("ArrowRight");
+    expect(checked()).toBe("enhance");
+    expect(document.activeElement?.getAttribute("aria-label")).toBe("enhance");
+    await press("ArrowDown");
+    expect(checked()).toBe("light");
+    await press("ArrowLeft");
+    expect(checked()).toBe("think");
+    await press("ArrowUp");
+    expect(checked()).toBe("sparkle");
+    await press("ArrowUp");
+    expect(checked()).toBe("sparkle");
+    await press("End");
+    expect(checked()).toBe("paper plane");
+    await press("Home");
+    expect(checked()).toBe("sparkle");
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in");
+  });
+
   test("restores a customized built-in preset", async () => {
     const { page, settings } = await open({
-      presets: [{ id: "polish", title: "Expand", description: "", prompt: "Expand it." }],
+      presets: [
+        {
+          id: "polish",
+          title: "Expand",
+          description: "",
+          prompt: "Expand it.",
+          icon: "code-outline",
+        },
+      ],
     });
     await click(
       [...page.querySelectorAll("button")].find((button) => button.textContent === "Edit"),
@@ -235,7 +339,7 @@ describe("enhance settings page", () => {
       {
         op: "set",
         path: ["presets"],
-        value: [{ id: "polish", title: "", description: "", prompt: "" }],
+        value: [{ id: "polish", title: "", description: "", prompt: "", icon: "" }],
       },
     ]);
   });

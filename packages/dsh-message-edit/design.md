@@ -1,6 +1,6 @@
 ---
 name: dsh-message-edit-design
-description: Presentation rules for the DeepSeek Harness (DSH) Web UI surfaces that @agent-stash/dsh-message-edit renders through slots, namely a compact control cluster in the session header, a master-detail conversation view with a long list, icon buttons in the assistant message action row, and a modal dialog. Applies to DSH 0.1.0-rc.3 and 0.2.1-rc.3, light and dark themes, pointer-and-keyboard desktop readers. Every surface must read as native DSH chrome.
+description: Presentation rules for the DeepSeek Harness (DSH) Web UI surfaces that @agent-stash/dsh-message-edit renders through slots, namely a compact control cluster in the session header, a master-detail conversation view with a long list, icon buttons in the assistant message action row, an icon row at the end of a turn without a saved reply, and a modal dialog. Applies to DSH 0.1.0-rc.3 and 0.2.1-rc.3, light and dark themes, pointer-and-keyboard desktop readers. Every surface must read as native DSH chrome.
 version: 5804f07
 ---
 
@@ -20,6 +20,7 @@ A file name without a package path, such as `Modal.module.css`, is a published p
 | Header control cluster | `conversation.session.header.actions` | Compact control cluster in a host band | `ui-conversation/src/client/skeleton/ConversationRoot.module.css` `.headerActions`                                                           |
 | Conversation view      | `conversation.view`                   | Master-detail with a long list         | `ui-trajectory/src/client/views.module.css`, `TrajectoryToolbar.module.css`, `TrajectoryTable.module.css`, `TrajectoryTurnHeader.module.css` |
 | Message action buttons | `conversation.chat.assistant-actions` | Inline icon cluster in a host row      | `ui-chat/src/client/chat/MessageIconActions.module.css`                                                                                      |
+| Turn action row        | `conversation.chat.turnTail`          | Inline icon row at the end of a turn   | `ui-chat/src/client/chat/MessageIconActions.module.css` `.actions`, `TurnTailNodeView.module.css` `.actions`                                 |
 | Dialog                 | Top layer (native `<dialog>`)         | Modal dialog                           | `Modal.module.css`, `ui-primitives/src/Modal.tsx`, `ui-primitives/src/useModalLayer.ts`                                                      |
 
 This file does not apply to host-owned chrome: the session title, the view tab strip, the message row container, and the composer. It does not apply to package metadata such as the bundle icon.
@@ -58,7 +59,14 @@ Readers use laptop and desktop screens with a pointer and a keyboard. Side panel
 - [SHOULD] Register the entry with `order` above 10. Decision: the buttons then follow the host feedback pair (`ui-message-feedback/src/client/index.ts`, order 10).
 - [SHOULD] Put a button that opens a dialog before a button that acts at once.
 
-### 3.3 Conversation view (master-detail with a long list)
+### 3.3 Turn action row
+
+- [SHOULD] Render the row only for a turn without a saved closing assistant message: the owner `seq` equals the `turn/end` seq, or it is not an integer. Decision: the host renders the message action row only under a saved closing assistant message, so a turn that failed, was stopped before the reply was saved, or ended without reply text has no other place to edit or resend its user message.
+- [SHOULD] Lay out the row as the host action row: copy `MessageIconActions.module.css` `.actions` (flex, 28px high, 8px gap) and the turn tail `.actions` offset (`margin: 4px 0 0 -6px`). Put the message action buttons and the status line of 3.2 inside it.
+- [SHOULD] Offer only the user message in the edit dialog, and name the edit button after it (`Edit message`).
+- [SHOULD] Register one entry with an `id`, a `select` that returns the turn number or null, and `priority: 1`. Decision: in 0.2.1 the slot is a list keyed by `id`; in 0.1.0-rc.3 it is a chain that renders only the first entry whose `select` returns a value, tried in ascending `priority`, so the host produced-files entry (priority 0) keeps a turn that both entries claim.
+
+### 3.4 Conversation view (master-detail with a long list)
 
 First viewport, top to bottom:
 
@@ -73,7 +81,7 @@ First viewport, top to bottom:
 - [SHOULD] Do not render a page title, an intro paragraph, or an `h1`. The host tab names the view.
 - End position: the last row of each pane, then the composer clearance. Add no footer.
 
-### 3.4 Modal dialog
+### 3.5 Modal dialog
 
 - [MUST] Render the dialog as a native `<dialog>` inside the component that opens it, and open it with `showModal()`. Decision: the browser top layer keeps the card above host chrome, and no host `container-type` or transform ancestor can offset it. Both DSH versions run in Chromium-based browsers that support `showModal()`.
 - [SHOULD] Compose the card, header row, description, body, and footer as `Modal.tsx` does, with the classes of `Modal.module.css` and the 4.3 replacements. Style `::backdrop` as the host mask (4.4).
@@ -162,7 +170,7 @@ First viewport, top to bottom:
 
 - [MUST] Copy SVG artwork from `ui-primitives/src/icons/index.tsx` into plugin components, in the `Regular` weight. Color it with `currentColor` and set `aria-hidden="true"`.
 - [SHOULD] Map glyphs: open-editor actions use `IconEditOutlineRegular`; regenerate and retry use `IconRefreshOutlineRegular`; stepper steps use `IconChevronLeftOutlineRegular` and `IconChevronRightOutlineRegular`; dialog close uses `IconCloseOutlineRegular`.
-- [SHOULD] Size glyphs at 14px in the header, toolbar, and dialog close, and at 15px in message action buttons.
+- [SHOULD] Size glyphs at 14px in the header, toolbar, and dialog close, and at 15px in message action buttons and the turn action row.
 - [SHOULD] Use the `ongoing` spinner of `ui-primitives/src/StateDot.tsx` for in-progress glyphs, at the size of the glyph it replaces, in `--dsw-alias-label-tertiary`.
 
 ### 4.6 Controls and states
@@ -183,13 +191,14 @@ First viewport, top to bottom:
 
 - [SHOULD] Show the data states of each surface as the table states. Decision for the 4-second header failure label: it copies the host failed-stop hint in `ui-jobs/src/client/JobListAction.tsx` (`KILL_FAILED_MS`).
 
-| Surface                           | Loading                                                                                | Empty                                                                       | Error                                                                                                                                                        |
-| --------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Header control cluster            | Render nothing                                                                         | Render nothing                                                              | The text action shows a failure label in `--dsw-alias-state-error-primary` for 4 seconds, then returns to rest                                               |
-| Message action buttons            | Render the buttons disabled                                                            | Render nothing for a message without an action                              | One status line after the buttons, as `ui-message-feedback/src/client/MessageFeedbackActions.module.css` `.failure`, with `role="status"`                    |
-| Conversation view, no data yet    | Toolbar with disabled controls; three skeleton rows per pane                           | One line at the top of the pane in `--dsw-alias-label-tertiary`, 16px inset | One error line with a compact outline retry button, `gap: 10px`, at the top of the primary pane                                                              |
-| Conversation view, data on screen | Keep the content; spinner at the trailing end of the toolbar; `aria-busy` on the panes | Not applicable                                                              | One notice row under the toolbar: `--dsw-font-xxs-12`, `--dsw-alias-state-error-primary`, `padding: 6px 12px`, bottom hairline; keep the content             |
-| Dialog                            | Not applicable                                                                         | Not applicable                                                              | Error line under the field as `ui-workspace/src/client/rows/WorkspaceBrowser.module.css` `.renameError`, `role="alert"`; keep the dialog open with the draft |
+| Surface                           | Loading                                                                                | Empty                                                                                                | Error                                                                                                                                                        |
+| --------------------------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Header control cluster            | Render nothing                                                                         | Render nothing                                                                                       | The text action shows a failure label in `--dsw-alias-state-error-primary` for 4 seconds, then returns to rest                                               |
+| Message action buttons            | Render the buttons disabled                                                            | Render nothing for a message without an action                                                       | One status line after the buttons, as `ui-message-feedback/src/client/MessageFeedbackActions.module.css` `.failure`, with `role="status"`                    |
+| Turn action row                   | Render the buttons disabled                                                            | Render nothing for a turn without user input; omit the edit button when the user message has no text | Same as message action buttons                                                                                                                               |
+| Conversation view, no data yet    | Toolbar with disabled controls; three skeleton rows per pane                           | One line at the top of the pane in `--dsw-alias-label-tertiary`, 16px inset                          | One error line with a compact outline retry button, `gap: 10px`, at the top of the primary pane                                                              |
+| Conversation view, data on screen | Keep the content; spinner at the trailing end of the toolbar; `aria-busy` on the panes | Not applicable                                                                                       | One notice row under the toolbar: `--dsw-font-xxs-12`, `--dsw-alias-state-error-primary`, `padding: 6px 12px`, bottom hairline; keep the content             |
+| Dialog                            | Not applicable                                                                         | Not applicable                                                                                       | Error line under the field as `ui-workspace/src/client/rows/WorkspaceBrowser.module.css` `.renameError`, `role="alert"`; keep the dialog open with the draft |
 
 - [SHOULD] While a dialog operation runs, show a status line under the field as `ui-workspace/src/client/rows/WorkspaceBrowser.module.css` `.deleteStatus` with `role="status"`. Make the field read-only. Disable cancel, close, mask click, and Escape.
 - [SHOULD] Show a helper line under the field in `--dsw-font-xxs-12` and `--dsw-alias-label-tertiary` when the confirm action has a consequence that the reader must know.
@@ -231,7 +240,7 @@ First viewport, top to bottom:
 Public names are the tokens in the table, the plugin components in the table, and the `--message-edit-*` properties of 4.3. Pages use only these names and do not guess other host token names.
 
 - [MUST] Put plugin custom properties in the `--message-edit-*` namespace. Keep class names in plugin CSS Modules.
-- [MUST] Do not style host selectors or host data attributes. The only host attribute the plugin sets is `data-conversation-composer-overlay` (3.3).
+- [MUST] Do not style host selectors or host data attributes. The only host attribute the plugin sets is `data-conversation-composer-overlay` (3.4).
 - [SHOULD] Do not change the layout, type, borders, or surfaces of a plugin primitive from a surface stylesheet. Add a variant to the component.
 
 | Role                           | Implementation name or value                             | Source or path                                                                          | Usage condition                                     | Status                             |
@@ -242,7 +251,7 @@ Public names are the tokens in the table, the plugin components in the table, an
 | Radius and focus width         | `--message-edit-radius-*`, `--message-edit-focus-width`  | Plugin CSS Modules                                                                      | Every surface root                                  | To be implemented                  |
 | Header icon button             | `IconButton` variant `header`                            | `ui-schedule/src/client/ScheduleCatalogAction.module.css` `.trigger`                    | Header stepper                                      | To be implemented                  |
 | Header text action             | `QuietAction` variant `header`                           | `ui-jobs/src/client/JobListAction.module.css` `.trigger`                                | Header text actions                                 | To be implemented                  |
-| Message action button          | `IconButton` variant `row`                               | `ui-message-feedback/src/client/MessageFeedbackActions.module.css` `.action`            | Message action slot                                 | To be implemented                  |
+| Message action button          | `IconButton` variant `row`                               | `ui-message-feedback/src/client/MessageFeedbackActions.module.css` `.action`            | Message action slot, turn action row                | To be implemented                  |
 | Toolbar control                | `QuietAction` variant `toolbar`                          | `ui-trajectory/src/client/TrajectoryToolbar.module.css` `.toggle`, `.action`            | View toolbar                                        | To be implemented                  |
 | Button                         | `Button` variants `primary`, `outline`; sizes `md`, `sm` | `Button.module.css`                                                                     | `md`: dialog footer; `sm` `outline`: retry in panes | To be implemented                  |
 | Dialog                         | `Dialog`                                                 | `Modal.module.css`, `ui-primitives/src/Modal.tsx`, `ui-primitives/src/useModalLayer.ts` | Native `<dialog>` opened with `showModal()`         | To be implemented                  |
@@ -283,6 +292,7 @@ Dialog markup sketch (not runnable; literal copy in place of locale text):
 | Header control cluster       | The plugin entry in `conversation.session.header.actions`   |
 | Stepper                      | Icon button, position label, icon button, in that order     |
 | Message action button        | An icon button in `conversation.chat.assistant-actions`     |
+| Turn action row              | The plugin entry in `conversation.chat.turnTail`            |
 | Conversation view            | The plugin entry in `conversation.view`                     |
 | Toolbar row                  | The sticky row at the top of the conversation view          |
 | Primary pane, secondary pane | The leading flexible pane and the trailing fixed-width pane |

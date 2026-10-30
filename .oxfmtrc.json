@@ -8,6 +8,7 @@
     "packages/*/CHANGELOG.md",
     "dsh/*/dist/**",
     "dsh/*/CHANGELOG.md",
+    "dsh/enhance/vendor/**",
     "skills/code-styleguide/**",
     "prompts/**",
     ".tegami/**",

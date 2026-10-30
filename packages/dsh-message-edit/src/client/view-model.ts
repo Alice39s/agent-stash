@@ -11,6 +11,7 @@ import type {
   VersionSummary,
 } from "../shared.ts";
 import type { MessageEditState } from "./controller.ts";
+import type { TurnTailOwner } from "./dsh.ts";
 import type { MessageEditKey, MessageEditTranslate } from "./locale.ts";
 
 /** 后续回合策略的两个选项，按界面顺序排列。 */
@@ -88,41 +89,64 @@ export function lastTurn(timeline: MessageEditTimeline): number | undefined {
   return turns.length === 0 ? undefined : Math.max(...turns);
 }
 
-/** 聊天区一条助手消息能做的事：编辑本回合的用户消息或这条消息的块，重试本回合。 */
-export interface MessageTarget {
+/** 聊天区一行编辑与重试按钮的目标：一个由用户输入触发的回合，以及编辑时可选的块。 */
+export interface TurnTarget {
   readonly retry: RetryableTurn;
-  /** 用户消息的块在前，这条助手消息的块按块顺序在后。 */
+  /** 用户消息的块在前，助手消息的块按块顺序在后；为空时只能重试。 */
   readonly choices: readonly EditableMessageBlock[];
   /** 这一回合之后还有回合时，编辑需要选择后续回合策略。 */
   readonly hasLaterTurns: boolean;
 }
 
+/** 回合 `turn` 的目标，编辑选项是用户消息的块加上 `extra`；回合没有用户输入时返回 undefined。 */
+function targetOf(
+  timeline: MessageEditTimeline,
+  turn: number,
+  extra: readonly EditableMessageBlock[],
+): TurnTarget | undefined {
+  const retry = timeline.retryableTurns.find((candidate) => candidate.turn === turn);
+  if (retry === undefined) return undefined;
+  const users = timeline.messages.filter((block) => block.turn === turn && block.kind === "user");
+  return { retry, choices: [...users, ...extra], hasLaterTurns: lastTurn(timeline) !== turn };
+}
+
 /**
- * 找到 `messageId` 对应的助手消息。消息不在时间线里，或所在回合没有用户输入
- * （Host 无法重建这样的回合），都返回 undefined。
+ * 助手消息动作行的目标：`messageId` 所在回合，编辑选项是用户消息与这条助手消息的块。
+ * 消息不在时间线里，或所在回合没有用户输入（Host 无法重建这样的回合），都返回 undefined。
  */
 export function messageTarget(
   timeline: MessageEditTimeline,
   messageId: string,
-): MessageTarget | undefined {
+): TurnTarget | undefined {
   const own = timeline.messages.filter((block) => block.messageId === messageId);
   const turn = own[0]?.turn;
   if (turn === undefined) return undefined;
-  const retry = timeline.retryableTurns.find((candidate) => candidate.turn === turn);
-  if (retry === undefined) return undefined;
-  const users = timeline.messages.filter((block) => block.turn === turn && block.kind === "user");
-  return {
-    retry,
-    choices: [...users, ...own.toSorted((left, right) => left.blockIndex - right.blockIndex)],
-    hasLaterTurns: lastTurn(timeline) !== turn,
-  };
+  return targetOf(
+    timeline,
+    turn,
+    own.toSorted((left, right) => left.blockIndex - right.blockIndex),
+  );
 }
 
-/** Host 只重新生成由用户消息触发、带有助手文本的最后一个回合；没有这样的回合时不提供重新生成。 */
+/** 回合末尾动作行的目标：回合 `turn`，编辑选项只有用户消息的块。 */
+export function turnTarget(timeline: MessageEditTimeline, turn: number): TurnTarget | undefined {
+  return targetOf(timeline, turn, []);
+}
+
+/**
+ * 宿主只在落盘的收尾助手消息下面渲染动作行。回合报错、被停止或没有文本回复时没有这样的消息，
+ * 这时返回回合号，由插件在回合末尾补上编辑与重试；回合有落盘的收尾消息时返回 null。
+ */
+export function unansweredTurn(owner: TurnTailOwner): number | null {
+  const end = owner.turn.end;
+  if (end === undefined) return null;
+  const durableReply = Number.isInteger(owner.seq) && owner.seq !== end.seq;
+  return durableReply ? null : owner.turn.turn;
+}
+
+/** Host 按原输入重新生成最后一个由用户输入触发的回合，不论它有没有回复。 */
 export function canReroll(timeline: MessageEditTimeline): boolean {
-  return timeline.retryableTurns.some((retry) =>
-    timeline.messages.some((block) => block.turn === retry.turn && block.kind !== "user"),
-  );
+  return timeline.retryableTurns.length > 0;
 }
 
 /** 编辑对话框里说明保存后果的一行。 */
