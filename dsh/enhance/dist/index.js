@@ -2061,6 +2061,7 @@ const STATUS = {
 	invalid: 502,
 	"no-model": 409,
 	preset: 404,
+	vendor: 500,
 	context: 500
 };
 function sendFailure(res, failure) {
@@ -2082,6 +2083,17 @@ function estimatePresets(settings, turns, references) {
 	}
 	return tokens;
 }
+async function readReferences(references, res) {
+	try {
+		return await references();
+	} catch (error) {
+		sendFailure(res, {
+			reason: "vendor",
+			message: `reading the bundled writing references failed: ${error instanceof Error ? error.message : String(error)}`
+		});
+		return;
+	}
+}
 function contextHandler(ctx, config, references) {
 	return guardRoute((req) => ctx.connection.requestRejection(req), "GET", async (req, res) => {
 		const sessionId = new URL(req.url ?? "/", "http://localhost").searchParams.get("session");
@@ -2097,9 +2109,11 @@ function contextHandler(ctx, config, references) {
 			sendFailure(res, contextFailure(sessionId, error));
 			return;
 		}
+		const loaded = await readReferences(references, res);
+		if (loaded === void 0) return;
 		sendJson(res, 200, {
 			turns: countTurns(turns),
-			tokens: estimatePresets(settings, turns, await references())
+			tokens: estimatePresets(settings, turns, loaded)
 		});
 	});
 }
@@ -2112,7 +2126,9 @@ function rewriteHandler(ctx, config, references) {
 		}
 		const { session, preset: presetId, draft, model } = body.value;
 		const settings = currentSettings(config);
-		const instructions = resolveInstructions(settings, presetId, await references());
+		const loaded = await readReferences(references, res);
+		if (loaded === void 0) return;
+		const instructions = resolveInstructions(settings, presetId, loaded);
 		if (!instructions.ok) {
 			sendFailure(res, instructions.failure);
 			return;

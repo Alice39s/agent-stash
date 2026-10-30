@@ -210,6 +210,12 @@ describe("enhance settings page", () => {
     await input(textarea, BUILTIN_INSTRUCTIONS.polish);
     expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in");
     expect(save(page)?.disabled).toBe(true);
+    // 末尾只多一个空格时仍算改过，输入文字不会被打回内置版本。
+    await input(textarea, `${BUILTIN_INSTRUCTIONS.polish} `);
+    expect(textarea?.value).toBe(`${BUILTIN_INSTRUCTIONS.polish} `);
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in, edited");
+    await input(textarea, BUILTIN_INSTRUCTIONS.polish);
+    expect(page.querySelector(".dsh-enhance-preset-tag")?.textContent).toBe("Built-in");
     await input(textarea, "");
     expect(textarea?.value).toBe(BUILTIN_INSTRUCTIONS.polish);
     await input(textarea, "Polish it.");

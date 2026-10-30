@@ -476,7 +476,14 @@ interface StatusProps {
  * 失败说明之外还有具体原因的失败：供应商的报错、被拒绝的检查项、读取会话或连接的错误。
  * 这些原因原样放在提示里；其余失败的说明已经完整，不再加提示。
  */
-const DETAILED: ReadonlySet<string> = new Set(["model", "invalid", "preset", "context", "network"]);
+const DETAILED: ReadonlySet<string> = new Set([
+  "model",
+  "invalid",
+  "preset",
+  "vendor",
+  "context",
+  "network",
+]);
 
 /** 按钮左侧的一行状态：改写中、失败原因或无需改动。 */
 function Status({ state, timeout, t, onDismiss }: StatusProps): ReactNode {
