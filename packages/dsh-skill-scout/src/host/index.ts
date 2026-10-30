@@ -60,7 +60,8 @@ export async function apply(ctx: ScoutContext, config: ConfigValue): Promise<voi
       },
       session: async (id) => sessionView(id, await scout.session(id)),
       search: (query, outcome, limit) => searchView(query, scout.search(query, { outcome, limit })),
-      stats: async () => statsView(store, await scout.coverage(), Date.now()),
+      stats: async () =>
+        statsView(store, await scout.coverage(), scout.runtime().working, Date.now()),
     })) {
       yield ctx.webServer.register(route);
     }

@@ -409,19 +409,54 @@ export const StatsViewSchema = v.object({
     failed: Count,
     aborted: Count,
   }),
+  /**
+   * 线索与 idea 各自按存储里的状态计数，两者单位不同，分开统计。正在摘要的线索计入 detected，
+   * 正在生成草稿的 idea 计入它请求前的状态。
+   */
   funnel: v.object({
-    leads: Count,
-    summarized: Count,
-    skipped: Count,
-    ideas: Count,
-    drafted: Count,
-    written: Count,
-    dismissed: Count,
+    leads: v.object({
+      detected: Count,
+      summarized: Count,
+      skipped: Count,
+      failed: Count,
+      dismissed: Count,
+    }),
+    ideas: v.object({
+      proposed: Count,
+      ready: Count,
+      failed: Count,
+      written: Count,
+      dismissed: Count,
+    }),
   }),
   /** 跨会话出现最多的动作（日常动作与查看类命令除外）。 */
-  actions: v.array(v.object({ key: v.string(), label: v.string(), sessions: Count })),
+  actions: v.array(
+    v.object({
+      key: v.string(),
+      label: v.string(),
+      sessions: Count,
+      /** 近 8 周每周用到这个动作的会话数，最早的在前。 */
+      weeks: v.array(Count),
+    }),
+  ),
   /** 在多个会话里出现的同一类错误。 */
   errors: v.array(v.object({ signature: v.string(), example: v.string(), sessions: Count })),
+  /**
+   * 近 30 天每天结束的任务数（按结果分）与新出现的线索数，最早的在前；没有记录的日子也列出，各项为 0。
+   * 只统计已分析的会话（含回溯读入的）。
+   */
+  daily: v.array(
+    v.object({
+      day: v.string(),
+      verified: Count,
+      succeeded: Count,
+      unverified: Count,
+      disputed: Count,
+      failed: Count,
+      aborted: Count,
+      leads: Count,
+    }),
+  ),
   /** 近 7 天每天的模型用量，最早的在前。 */
   usage: v.array(
     v.object({

@@ -938,7 +938,7 @@ describe("model calls", () => {
     clock.now += MINUTE;
     scout.draftNow(id);
     await scout.idle();
-    const { calls } = statsView(store, await scout.coverage(), clock.now);
+    const { calls } = statsView(store, await scout.coverage(), scout.runtime().working, clock.now);
     expect(calls).toMatchObject([
       {
         at: NOW + 2 * MINUTE,
@@ -1031,7 +1031,9 @@ describe("model calls", () => {
     expect(days).toHaveLength(8);
     expect(days.at(-1)).toBe(dayKey(clock.now));
     expect(
-      statsView(store, await scout.coverage(), clock.now).usage.map((entry) => entry.day),
+      statsView(store, await scout.coverage(), scout.runtime().working, clock.now).usage.map(
+        (entry) => entry.day,
+      ),
     ).toEqual(days.slice(1));
   });
 });
@@ -1095,9 +1097,9 @@ describe("signals", () => {
       decision: "skip",
       reason: "A one-off migration of a specific table.",
     });
-    expect(statsView(store, await scout.coverage(), clock.now).calls).toMatchObject([
-      { result: "skipped", detail: "A one-off migration of a specific table." },
-    ]);
+    expect(
+      statsView(store, await scout.coverage(), scout.runtime().working, clock.now).calls,
+    ).toMatchObject([{ result: "skipped", detail: "A one-off migration of a specific table." }]);
     await scout.detect();
     scout.pump();
     await scout.idle();
@@ -1231,7 +1233,7 @@ describe("session analysis", () => {
       eventCount: null,
       error: "读取会话日志失败：disk unavailable",
     });
-    const stats = statsView(store, await scout.coverage(), NOW);
+    const stats = statsView(store, await scout.coverage(), scout.runtime().working, NOW);
     expect(stats.coverage).toMatchObject({
       analyzed: 0,
       inRange: 1,
@@ -1242,7 +1244,9 @@ describe("session analysis", () => {
     query.fail.delete("s1");
     await scout.analyzeNow("s1");
     expect(store.sessions.get(recordKey("s1"))).toMatchObject({ error: null });
-    expect(statsView(store, await scout.coverage(), NOW).coverage).toMatchObject({
+    expect(
+      statsView(store, await scout.coverage(), scout.runtime().working, NOW).coverage,
+    ).toMatchObject({
       analyzed: 1,
       failed: [],
     });
@@ -1525,7 +1529,9 @@ describe("reading older sessions", () => {
     const { scout, store, clock } = await setup(OLDER, []);
     await scout.scan();
     expect(store.sessions.get(recordKey("o1"))).toBeUndefined();
-    expect(statsView(store, await scout.coverage(), clock.now).coverage).toMatchObject({
+    expect(
+      statsView(store, await scout.coverage(), scout.runtime().working, clock.now).coverage,
+    ).toMatchObject({
       inRange: 4,
       total: 7,
       backfilled: 0,
@@ -1553,7 +1559,10 @@ describe("reading older sessions", () => {
     clock.now += 100 * DAY;
     await scout.detect();
     expect(store.sessions.get(recordKey("o2"))).toBeDefined();
-    expect(statsView(store, await scout.coverage(), clock.now).coverage.backfilled).toBe(2);
+    expect(
+      statsView(store, await scout.coverage(), scout.runtime().working, clock.now).coverage
+        .backfilled,
+    ).toBe(2);
   });
 
   test("pauses after the session being read and resumes where it stopped", async () => {
@@ -1584,6 +1593,27 @@ describe("reading older sessions", () => {
     expect(scout.runtime().backfill).toMatchObject({ state: "done", total: 3, done: 3, failed: 1 });
     expect(store.sessions.get(recordKey("o3"))?.backfilled).toBe(true);
     expect(inbox().status.backfill).toMatchObject({ state: "done" });
+  });
+
+  test("pauses while sessions are still being listed and reads none of them", async () => {
+    const { scout, query } = await setup(OLDER, []);
+    await scout.scan();
+    scout.backfill("all");
+    expect(scout.runtime().backfill?.state).toBe("listing");
+    scout.pauseBackfill();
+    await scout.idle();
+    expect(scout.runtime().backfill).toEqual({
+      range: "all",
+      state: "paused",
+      total: 3,
+      done: 0,
+      failed: 0,
+    });
+    expect(query.reads.filter((id) => id.startsWith("o"))).toEqual([]);
+
+    scout.backfill("all");
+    await scout.idle();
+    expect(scout.runtime().backfill).toMatchObject({ state: "done", total: 3, done: 3 });
   });
 });
 

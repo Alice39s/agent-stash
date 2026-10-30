@@ -60,6 +60,11 @@ const TOP_ERRORS = 8;
 const ERROR_SESSIONS = 2;
 /** 统计里的用量天数。 */
 const USAGE_DAYS = 7;
+/** 统计里按天分的任务与线索的天数。 */
+const DAILY_DAYS = 30;
+/** 统计里高频动作按周分的周数；一周是从 now 往回的 7 天。 */
+const ACTION_WEEKS = 8;
+const WEEK = 7 * 24 * 60 * 60 * 1000;
 
 /** 引擎的运行状态。 */
 export interface Runtime {
@@ -561,21 +566,53 @@ export function searchView(query: string, result: SearchResult): SearchView {
   };
 }
 
-/** 一条线索在收件箱里被忽略的卡片数：整条线索被忽略时是它的每个 idea（没有 idea 时算一张）。 */
-function dismissedCards(lead: Lead): number {
-  if (lead.state === "dismissed") return Math.max(1, lead.ideas.length);
-  return lead.ideas.filter((idea) => idea.state === "dismissed").length;
+/**
+ * 线索与 idea 各自按存储里的状态计数。正在摘要的线索计入 detected（被忽略的仍计入 dismissed）；
+ * 正在生成草稿的 idea 在存储里还是请求前的状态，照常计数。被合并显示的 idea 各算一条。
+ */
+function funnelOf(leads: readonly Lead[], working: Working): StatsView["funnel"] {
+  const funnel: StatsView["funnel"] = {
+    leads: { detected: 0, summarized: 0, skipped: 0, failed: 0, dismissed: 0 },
+    ideas: { proposed: 0, ready: 0, failed: 0, written: 0, dismissed: 0 },
+  };
+  for (const lead of leads) {
+    const summarizing = lead.state !== "dismissed" && working.get(lead.id)?.stage === "summary";
+    funnel.leads[summarizing ? "detected" : lead.state] += 1;
+    for (const idea of lead.ideas) funnel.ideas[idea.state] += 1;
+  }
+  return funnel;
 }
 
-/** 跨会话出现最多的动作：日常动作、查看类与说明不了做了什么的动作除外。 */
-function frequentActions(episodes: readonly Episode[]): StatsView["actions"] {
-  const found = new Map<string, { sigs: Map<string, number>; sessions: Set<string> }>();
+/**
+ * 一个时间落在近几周的哪一周：从 now 往回每 7 天一段，最早的一段下标为 0；更早的为 null。
+ * 晚于 now 的时间算在最近一周。
+ */
+function weekOf(time: number, now: number): number | null {
+  const ago = Math.max(0, Math.floor((now - time) / WEEK));
+  return ago < ACTION_WEEKS ? ACTION_WEEKS - 1 - ago : null;
+}
+
+/**
+ * 跨会话出现最多的动作：日常动作、查看类与说明不了做了什么的动作除外。
+ * 每个动作另外按任务结束的时间列出近 8 周每周用到它的会话数。
+ */
+function frequentActions(episodes: readonly Episode[], now: number): StatsView["actions"] {
+  const found = new Map<
+    string,
+    { sigs: Map<string, number>; sessions: Set<string>; weeks: Set<string>[] }
+  >();
   for (const episode of episodes) {
+    const week = weekOf(episode.endedAt, now);
     for (const action of procedureOf(episode)) {
       if (isRoutine(action.key) || isOpaque(action.key)) continue;
-      const entry = found.get(action.key) ?? { sigs: new Map(), sessions: new Set() };
+      const entry = found.get(action.key) ?? {
+        sigs: new Map(),
+        sessions: new Set(),
+        weeks: Array.from({ length: ACTION_WEEKS }, () => new Set<string>()),
+      };
       entry.sigs.set(action.sig, (entry.sigs.get(action.sig) ?? 0) + 1);
       entry.sessions.add(episode.sessionId);
+      if (week !== null) entry.weeks[week]?.add(episode.sessionId);
       found.set(action.key, entry);
     }
   }
@@ -584,6 +621,7 @@ function frequentActions(episodes: readonly Episode[]): StatsView["actions"] {
       key,
       label: [...entry.sigs.entries()].toSorted((a, b) => b[1] - a[1])[0]?.[0] ?? key,
       sessions: entry.sessions.size,
+      weeks: entry.weeks.map((sessions) => sessions.size),
     }))
     .toSorted((a, b) => b.sessions - a.sessions || (a.key < b.key ? -1 : 1))
     .slice(0, TOP_ACTIONS);
@@ -613,14 +651,51 @@ function repeatedErrors(episodes: readonly Episode[]): StatsView["errors"] {
 }
 
 /**
+ * 近 30 天每天结束的任务数（按结果分）与新出现的线索数，按本地日期，最早的在前；没有记录的日子各项为 0。
+ * @param episodes - 已存的任务，不含重放。
+ */
+function dailyCounts(
+  episodes: readonly Episode[],
+  leads: readonly Lead[],
+  now: number,
+): StatsView["daily"] {
+  const days = new Map(
+    recentDays(now, DAILY_DAYS).map((day) => [
+      day,
+      {
+        day,
+        verified: 0,
+        succeeded: 0,
+        unverified: 0,
+        disputed: 0,
+        failed: 0,
+        aborted: 0,
+        leads: 0,
+      },
+    ]),
+  );
+  for (const episode of episodes) {
+    const entry = days.get(dayKey(episode.endedAt));
+    if (entry !== undefined) entry[episode.outcome] += 1;
+  }
+  for (const lead of leads) {
+    const entry = days.get(dayKey(lead.detectedAt));
+    if (entry !== undefined) entry.leads += 1;
+  }
+  return [...days.values()];
+}
+
+/**
  * 组装统计视图。
  * @param store - 插件存储。
  * @param coverage - 历史范围内与全部的会话数。
+ * @param working - 正在进行的模型请求。
  * @param now - 当前时间。
  */
 export function statsView(
   store: ScoutStore,
   coverage: { readonly inRange: number; readonly total: number },
+  working: Working,
   now: number,
 ): StatsView {
   const records = [...store.sessions.entries()].map(([, record]) => record);
@@ -635,7 +710,6 @@ export function statsView(
   };
   for (const episode of episodes) outcomes[episode.outcome] += 1;
   const leads = leadsOf(store);
-  const ideas = leads.flatMap((lead) => lead.ideas);
   return {
     coverage: {
       analyzed: records.filter((record) => record.error === null).length,
@@ -651,17 +725,10 @@ export function statsView(
         .toSorted((a, b) => b.at - a.at),
     },
     outcomes,
-    funnel: {
-      leads: leads.length,
-      summarized: leads.filter((lead) => lead.summary !== null).length,
-      skipped: leads.filter((lead) => lead.summary?.summary.decision === "skip").length,
-      ideas: ideas.length,
-      drafted: ideas.filter((idea) => idea.draft !== null).length,
-      written: ideas.filter((idea) => idea.state === "written").length,
-      dismissed: leads.reduce((sum, lead) => sum + dismissedCards(lead), 0),
-    },
-    actions: frequentActions(episodes),
+    funnel: funnelOf(leads, working),
+    actions: frequentActions(episodes, now),
     errors: repeatedErrors(episodes),
+    daily: dailyCounts(episodes, leads, now),
     usage: recentDays(now, USAGE_DAYS).map((day) => {
       const usage = store.usage.get(day);
       return {

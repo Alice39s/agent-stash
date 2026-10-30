@@ -75,7 +75,8 @@ async function serve() {
     },
     session: async (id) => sessionView(id, await scout.session(id)),
     search: (query, outcome, limit) => searchView(query, scout.search(query, { outcome, limit })),
-    stats: async () => statsView(store, await scout.coverage(), T0 + 5 * DAY),
+    stats: async () =>
+      statsView(store, await scout.coverage(), scout.runtime().working, T0 + 5 * DAY),
   });
   const http = createServer((request, response) => {
     const path = new URL(request.url ?? "", "http://localhost").pathname;
