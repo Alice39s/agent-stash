@@ -1,32 +1,37 @@
 core:changelogs:
-  - content: "---\npackages:\n  \"@agent-stash/dsh-skill-scout\":\n    type: minor\n---\n\n## 经验提炼：先给摘要，同意后再生成 Skill\n\n- 模型分两步参与。发现模型先给每个候选写一份几行的方案：发现了什么、Skill 的用途、何时使用、要新建或追加到哪个 Skill、步骤提纲、风险和验证方式。你在详情里点「生成 Skill 草稿」之后，生成模型才按这份摘要写完整的 Skill；后台从不生成草稿。\n- 设置页分成「摘要」与「生成 Skill」两组，发现模型与生成模型各自选择模型、推理强度和超时，不选时都跟随 Agent 的默认模型。「后台生成摘要」默认关闭；每日次数与间隔只限制后台摘要，手动发起的请求不计入。\n- 收件箱的「待你决定」分组列出等你同意的摘要和可以保存的草稿，卡片上显示摘要里的用途说明，标题栏数字也只数这两类。详情新增「摘要」页；草稿生成期间，「Skill」页显示按 SKILL.md 排版的占位条，系统设置了减少动态效果时占位条静止。\n- 命令按动作比较：`pnpm build` 与 `npm run build`、`npx vitest` 与 `pnpm exec vitest`、`bash scripts/release.sh` 与 `./scripts/release.sh`、`git checkout -b` 与 `git switch -c`、`turbo run build` 与 `pnpm build` 这类写法算同一步；`tsx`、`ts-node` 运行的脚本按文件名比较，`bash -c` 里的命令按里面的命令算。其他 Agent 与 MCP 服务器的改文件、执行命令类工具按名字归类。\n- 重复流程的相似度按动作加权计算：`build` 与 `build:web` 这类同前缀脚本算部分相同，提交、推送、装依赖这类日常步骤权重低，两个任务至少要共有一个有区分度的步骤，共有步骤的顺序要大体一致。用不同语言描述的同一流程，共有两个以上有区分度的步骤时也会归为一组。\n- 失败恢复按动作闭合：`npm test` 失败、装好依赖后 `pnpm test` 通过也算一条恢复链。重跑时改了选项或环境变量（`pnpm test --runInBand`）算修复，只换文件、参数或选项的值不算。跨会话比较错误时，路径、版本号与平台名（`darwin-arm64`、`linux-x64-gnu`）先换成占位符。\n- 草稿只写摘要指定的那个 Skill；你在任务进行中插入的消息（每个任务最后 3 条）随证据发给模型，纠正和命令失败的原因写成前置条件、注意事项或限制。证据会话能看到名为 `skill-creator` 的 Skill 时，草稿请求带上它的 SKILL.md（脱敏后取前 20000 字符）作为写作指南，按 DSH 加载技能的格式附上，请求因此更长；摘要请求不带。\n- 草稿里的命令可以和引用的运行写法不同，动作相同、并且这个动作在证据里成功过即可通过证据核对；复现失败的步骤可以引用那次失败。\n- 内联代码（`python -c`、`node -e`）、HTTP 请求（`curl`、`wget`）和远程登录（`ssh`）从动作上看不出做了什么，在流程比较里和日常步骤一样权重低：只共有这类命令的两个任务不会归为重复流程，换一段内联代码或换一个 URL 再试也不算失败恢复。\n\n### 升级说明\n\n- 插件存储升级到新格式。升级后历史范围内的会话按新规则重新分析，建议重新生成；0.1 版写入的 Skill 文件留在原处，但不能再从收件箱撤销。\n- 0.1 版的「后台复核」开关、复核模型、推理强度、超时、每日复核次数与复核间隔不再读取。需要后台摘要时，在设置页重新打开「后台生成摘要」，并在「摘要」与「生成 Skill」两组里选择模型。\n"
-    filename: dsh-skill-scout-summary.md
+  - content: "---\npackages:\n  \"@agent-stash/dsh-message-edit\":\n    type: minor\n---\n\n## 消息编辑：报错或停止的消息也能改了重发\n\n- 回合报错、被停止或没有文字回复时，DSH 不显示消息动作行。插件在这样的回合末尾放上「编辑消息」与「重试本回合」：编辑只改本回合的用户消息，保存后从这一回合之前另开一个版本，按改后的消息重新生成。重试按原消息重发。\n- 标题栏与时间线工具栏的「重新生成」改为针对最后一个由用户消息触发的回合。这一回合报错或被停止、没有回复时，同样按原消息重新生成。\n- DSH 0.1.0-rc.3 与 Desktop 0.2.1-rc.3 都支持。\n"
+    filename: dsh-message-edit-resend.md
+    v: 0.0.0
+  - content: "---\npackages:\n  \"@agent-stash/dsh-enhance\":\n    type: minor\n---\n\n## 增强提示词：重写内置预设，菜单显示预计用量，预设可选图标\n\n- 内置预设的提示词按 `<role>`、`<rules>`、`<mode>` 等标签分节。「润色 Prompt」先按「仅结构化整理」的步骤整理，再在原意内补全，补写的每一句都要能追溯到草稿、会话上下文或通用的工程做法。\n- 「润色 Prompt」内联 humanizer、no-ai-slop、no-negative-echo 三份写作指南（MIT），去掉改写结果里的 AI 腔。指南原样随包放在 `vendor/` 里，仓库的同步任务每天对照上游更新。自定义预设可以用 `<include ref=\"名称\" />` 引用它们，名称不存在时改写失败并列出可用的名称。\n- 菜单顶部显示本轮请求预计消耗的 token 数和关联的上下文轮数，例如「本轮润色请求将消耗大约 16,630 Tokens，已关联最近 1 轮上下文」，数字跟随指针或焦点所在的预设。估算按 DeepSeek API 文档的比例：1 个英文字符约 0.3 token，1 个中文字符约 0.6 token。\n- 按钮提示改为「点我增强提示词」，关联了上下文时注明轮数。按钮的圆角与旁边的模型选择框一致。\n- 预设有了图标：润色是星光，仅结构化整理是列表，更精炼是压缩图标。配置页的预设表单新增图标选择器，可从 DSH 图标库的 36 个图标里选，方向键可在网格里移动；profile 里写在预设的 `icon` 字段。\n- 配置页的改写指令编辑框直接显示内置指令，可以在它的基础上修改；与内置指令相同或清空时继续使用随插件更新的版本，改过的内置预设标为「内置 · 已修改」。\n"
+    filename: dsh-enhance-presets.md
     v: 0.0.0
 core:packages:
   - id: npm:@agent-stash/init
     updated: false
   - id: npm:agent-stash-docs
     updated: false
+  - changelogIds:
+      - dsh-message-edit-resend.md
+    id: npm:@agent-stash/dsh-message-edit
+    updated: true
+  - id: npm:@agent-stash/dsh-skill-scout
+    updated: false
   - id: npm:@agent-stash/dsh-autosuggest
     updated: false
-  - id: npm:@agent-stash/dsh-enhance
+  - changelogIds:
+      - dsh-enhance-presets.md
+    id: npm:@agent-stash/dsh-enhance
+    updated: true
+  - id: npm:@agent-stash/dsh-stash-kit
     updated: false
   - id: npm:@agent-stash/dsh-recall
     updated: false
-  - id: npm:@agent-stash/dsh-stash-kit
-    updated: false
-  - id: npm:@agent-stash/dsh-message-edit
-    updated: false
-  - changelogIds:
-      - dsh-skill-scout-summary.md
-    id: npm:@agent-stash/dsh-skill-scout
-    updated: true
 npm:packages:
   - id: npm:@agent-stash/init
   - id: npm:agent-stash-docs
-  - id: npm:@agent-stash/dsh-autosuggest
-  - id: npm:@agent-stash/dsh-enhance
-  - id: npm:@agent-stash/dsh-recall
-  - id: npm:@agent-stash/dsh-stash-kit
   - id: npm:@agent-stash/dsh-message-edit
   - id: npm:@agent-stash/dsh-skill-scout
+  - id: npm:@agent-stash/dsh-autosuggest
+  - id: npm:@agent-stash/dsh-enhance
+  - id: npm:@agent-stash/dsh-stash-kit
+  - id: npm:@agent-stash/dsh-recall
