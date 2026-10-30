@@ -8,9 +8,18 @@ import { parse } from "yaml";
 
 /** 第一个带「发现」页、能从插件索引安装组合包的 DSH 版本。 */
 const FIRST_INDEX_DSH = "0.2.1-alpha.4";
+interface BundleCase {
+  readonly packageName: string;
+  readonly row: string;
+  readonly dsh: string;
+  /** 每个插件包都发布的文件之外，还随包发布的文件或目录。 */
+  readonly extraFiles?: readonly string[];
+}
+
 /**
  * 独立的 DSH 插件包：目录（相对 `dsh/`）到 npm 包名、插件行 id 与支持的最低 DSH 版本。
- * 增强提示词用到输入框的 `conversation.input.right` 槽位，从 0.2.1-rc.3 起支持。
+ * 增强提示词用到输入框的 `conversation.input.right` 槽位，从 0.2.1-rc.3 起支持；
+ * 它还随包发布润色预设内联的写作参考 `vendor/`。
  */
 const BUNDLES = {
   kit: { packageName: "@agent-stash/dsh-stash-kit", row: "dsh-stash-kit", dsh: FIRST_INDEX_DSH },
@@ -20,8 +29,13 @@ const BUNDLES = {
     row: "dsh-autosuggest",
     dsh: FIRST_INDEX_DSH,
   },
-  enhance: { packageName: "@agent-stash/dsh-enhance", row: "dsh-enhance", dsh: "0.2.1-rc.3" },
-};
+  enhance: {
+    packageName: "@agent-stash/dsh-enhance",
+    row: "dsh-enhance",
+    dsh: "0.2.1-rc.3",
+    extraFiles: ["vendor"],
+  },
+} satisfies Readonly<Record<string, BundleCase>>;
 /** 以 Agent Stash 框架为前置依赖的插件包。 */
 const KIT_CONSUMERS = ["recall", "autosuggest", "enhance"];
 /** 插件索引里内联图标的上限。 */
@@ -63,7 +77,8 @@ const LocaleSchema = v.object({
   meta: v.object({ title: NonEmptySchema, description: NonEmptySchema }),
 });
 
-describe.each(Object.entries(BUNDLES))("DSH bundle dsh/%s", (bundle, { packageName, row, dsh }) => {
+describe.each(Object.entries(BUNDLES))("DSH bundle dsh/%s", (bundle, bundleCase: BundleCase) => {
+  const { packageName, row, dsh, extraFiles = [] } = bundleCase;
   const root = fileURLToPath(new URL(`./${bundle}/`, import.meta.url));
   const read = async (file: string): Promise<unknown> =>
     JSON.parse(await readFile(join(root, file), "utf8"));
@@ -71,7 +86,9 @@ describe.each(Object.entries(BUNDLES))("DSH bundle dsh/%s", (bundle, { packageNa
   test("declares a public bundle with a Host and a web client half", async () => {
     const manifest = v.parse(BundleManifestSchema, await read("package.json"));
     expect(manifest.name).toBe(packageName);
-    expect(manifest.files.toSorted()).toEqual(["cordis.patch.yml", "dist", "icon.svg", "locale"]);
+    expect(manifest.files.toSorted()).toEqual(
+      ["cordis.patch.yml", "dist", "icon.svg", "locale", ...extraFiles].toSorted(),
+    );
     expect(semver.minVersion(manifest.engines.dsh)?.version).toBe(dsh);
     expect(semver.gte(dsh, FIRST_INDEX_DSH)).toBe(true);
     const files = await Promise.all(

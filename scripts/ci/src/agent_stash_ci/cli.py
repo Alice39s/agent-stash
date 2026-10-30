@@ -41,12 +41,16 @@ TOKEN_SECRET = "NPM_TOKEN"
 class SyncTarget(StrEnum):
     INIT_PROMPTS = "init-prompts"
     CODE_STYLEGUIDE = "code-styleguide"
+    ENHANCE_REFERENCES = "enhance-references"
 
 
 _SYNC_INTRO = {
     SyncTarget.INIT_PROMPTS: "Upstream `/init` prompts at their default branch heads:",
     SyncTarget.CODE_STYLEGUIDE: (
         "Regenerated `skills/code-styleguide` from the upstream style guides:"
+    ),
+    SyncTarget.ENHANCE_REFERENCES: (
+        "Upstream writing references for `dsh/enhance` at the latest commit touching each file:"
     ),
 }
 

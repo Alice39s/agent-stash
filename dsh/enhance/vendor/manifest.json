@@ -1,0 +1,40 @@
+{
+  "references": [
+    {
+      "name": "humanizer",
+      "title": "Humanizer",
+      "repository": "blader/humanizer",
+      "path": "SKILL.md",
+      "commit": "d4b81278e6604e237bf32f0f7ce5c217aee94269",
+      "license": "MIT",
+      "file": "SKILL.md",
+      "notices": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "no-ai-slop",
+      "title": "No AI Slop",
+      "repository": "petergyang/no-ai-slop",
+      "path": "skills/no-ai-slop/SKILL.md",
+      "commit": "000650b156983f5159695b441477f4e63b25dc85",
+      "license": "MIT",
+      "file": "SKILL.md",
+      "notices": [
+        "LICENSE"
+      ]
+    },
+    {
+      "name": "no-negative-echo",
+      "title": "No Negative Echo",
+      "repository": "LB623/no-negative-echo",
+      "path": "no-negative-echo/SKILL.md",
+      "commit": "9e78138504905bd7c967ce3e2d9ae7cfa2aacdbf",
+      "license": "MIT",
+      "file": "SKILL.md",
+      "notices": [
+        "LICENSE"
+      ]
+    }
+  ]
+}

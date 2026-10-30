@@ -1,0 +1,56 @@
+name: Sync enhance references
+
+on:
+  schedule:
+    - cron: "47 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-enhance-references
+  cancel-in-progress: false
+
+env:
+  UV_PROJECT: ${{ github.workspace }}/scripts/ci
+  UV_LOCKED: "1"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Fetch upstream references
+        id: sync
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: uv run ci sync enhance-references --body "${{ runner.temp }}/pr-body.md"
+      # 用 GITHUB_TOKEN 创建的 PR 不会触发其他 workflow，在这里检查。
+      - if: steps.sync.outputs.changed == 'true'
+        run: pnpm check
+      - id: pr
+        if: steps.sync.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v8
+        with:
+          branch: chore/sync-enhance-references
+          delete-branch: true
+          add-paths: dsh/enhance/vendor
+          commit-message: |
+            chore(dsh-enhance): sync upstream writing references
+
+            Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>
+          title: "chore(dsh-enhance): sync upstream writing references"
+          body-path: ${{ runner.temp }}/pr-body.md
+      # 可以立即合并时直接 squash 合并，否则开启 auto-merge，等 GitHub 算完可合并状态后自动合并。
+      - name: Merge the sync PR
+        if: steps.pr.outputs.pull-request-number != '' && steps.pr.outputs.pull-request-operation != 'closed'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.pr.outputs.pull-request-number }}
+        run: >-
+          gh pr merge "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --auto --squash --delete-branch
+          --subject "chore(dsh-enhance): sync upstream writing references (#$PR_NUMBER)"
+          --body "Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>"
