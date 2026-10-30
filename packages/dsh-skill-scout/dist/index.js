@@ -14447,6 +14447,11 @@ const TOP_ERRORS = 8;
 const ERROR_SESSIONS = 2;
 /** 统计里的用量天数。 */
 const USAGE_DAYS = 7;
+/** 统计里按天分的任务与线索的天数。 */
+const DAILY_DAYS = 30;
+/** 统计里高频动作按周分的周数；一周是从 now 往回的 7 天。 */
+const ACTION_WEEKS = 8;
+const WEEK = 6048e5;
 function episodeIndex(store) {
 	const index = /* @__PURE__ */ new Map();
 	for (const [, record] of store.sessions.entries()) for (const episode of record.episodes) index.set(episode.id, episode);
@@ -14816,28 +14821,68 @@ function searchView(query, result) {
 		indexed: result.indexed
 	};
 }
-/** 一条线索在收件箱里被忽略的卡片数：整条线索被忽略时是它的每个 idea（没有 idea 时算一张）。 */
-function dismissedCards(lead) {
-	if (lead.state === "dismissed") return Math.max(1, lead.ideas.length);
-	return lead.ideas.filter((idea) => idea.state === "dismissed").length;
+/**
+* 线索与 idea 各自按存储里的状态计数。正在摘要的线索计入 detected（被忽略的仍计入 dismissed）；
+* 正在生成草稿的 idea 在存储里还是请求前的状态，照常计数。被合并显示的 idea 各算一条。
+*/
+function funnelOf(leads, working) {
+	const funnel = {
+		leads: {
+			detected: 0,
+			summarized: 0,
+			skipped: 0,
+			failed: 0,
+			dismissed: 0
+		},
+		ideas: {
+			proposed: 0,
+			ready: 0,
+			failed: 0,
+			written: 0,
+			dismissed: 0
+		}
+	};
+	for (const lead of leads) {
+		const summarizing = lead.state !== "dismissed" && working.get(lead.id)?.stage === "summary";
+		funnel.leads[summarizing ? "detected" : lead.state] += 1;
+		for (const idea of lead.ideas) funnel.ideas[idea.state] += 1;
+	}
+	return funnel;
 }
-/** 跨会话出现最多的动作：日常动作、查看类与说明不了做了什么的动作除外。 */
-function frequentActions(episodes) {
+/**
+* 一个时间落在近几周的哪一周：从 now 往回每 7 天一段，最早的一段下标为 0；更早的为 null。
+* 晚于 now 的时间算在最近一周。
+*/
+function weekOf(time, now) {
+	const ago = Math.max(0, Math.floor((now - time) / WEEK));
+	return ago < ACTION_WEEKS ? 7 - ago : null;
+}
+/**
+* 跨会话出现最多的动作：日常动作、查看类与说明不了做了什么的动作除外。
+* 每个动作另外按任务结束的时间列出近 8 周每周用到它的会话数。
+*/
+function frequentActions(episodes, now) {
 	const found = /* @__PURE__ */ new Map();
-	for (const episode of episodes) for (const action of procedureOf(episode)) {
-		if (isRoutine(action.key) || isOpaque(action.key)) continue;
-		const entry = found.get(action.key) ?? {
-			sigs: /* @__PURE__ */ new Map(),
-			sessions: /* @__PURE__ */ new Set()
-		};
-		entry.sigs.set(action.sig, (entry.sigs.get(action.sig) ?? 0) + 1);
-		entry.sessions.add(episode.sessionId);
-		found.set(action.key, entry);
+	for (const episode of episodes) {
+		const week = weekOf(episode.endedAt, now);
+		for (const action of procedureOf(episode)) {
+			if (isRoutine(action.key) || isOpaque(action.key)) continue;
+			const entry = found.get(action.key) ?? {
+				sigs: /* @__PURE__ */ new Map(),
+				sessions: /* @__PURE__ */ new Set(),
+				weeks: Array.from({ length: ACTION_WEEKS }, () => /* @__PURE__ */ new Set())
+			};
+			entry.sigs.set(action.sig, (entry.sigs.get(action.sig) ?? 0) + 1);
+			entry.sessions.add(episode.sessionId);
+			if (week !== null) entry.weeks[week]?.add(episode.sessionId);
+			found.set(action.key, entry);
+		}
 	}
 	return [...found.entries()].map(([key, entry]) => ({
 		key,
 		label: [...entry.sigs.entries()].toSorted((a, b) => b[1] - a[1])[0]?.[0] ?? key,
-		sessions: entry.sessions.size
+		sessions: entry.sessions.size,
+		weeks: entry.weeks.map((sessions) => sessions.size)
 	})).toSorted((a, b) => b.sessions - a.sessions || (a.key < b.key ? -1 : 1)).slice(0, TOP_ACTIONS);
 }
 /** 在多个会话里出现的同一类命令错误。 */
@@ -14860,12 +14905,38 @@ function repeatedErrors(episodes) {
 	})).filter((entry) => entry.sessions >= ERROR_SESSIONS).toSorted((a, b) => b.sessions - a.sessions || (a.signature < b.signature ? -1 : 1)).slice(0, TOP_ERRORS);
 }
 /**
+* 近 30 天每天结束的任务数（按结果分）与新出现的线索数，按本地日期，最早的在前；没有记录的日子各项为 0。
+* @param episodes - 已存的任务，不含重放。
+*/
+function dailyCounts(episodes, leads, now) {
+	const days = new Map(recentDays(now, DAILY_DAYS).map((day) => [day, {
+		day,
+		verified: 0,
+		succeeded: 0,
+		unverified: 0,
+		disputed: 0,
+		failed: 0,
+		aborted: 0,
+		leads: 0
+	}]));
+	for (const episode of episodes) {
+		const entry = days.get(dayKey(episode.endedAt));
+		if (entry !== void 0) entry[episode.outcome] += 1;
+	}
+	for (const lead of leads) {
+		const entry = days.get(dayKey(lead.detectedAt));
+		if (entry !== void 0) entry.leads += 1;
+	}
+	return [...days.values()];
+}
+/**
 * 组装统计视图。
 * @param store - 插件存储。
 * @param coverage - 历史范围内与全部的会话数。
+* @param working - 正在进行的模型请求。
 * @param now - 当前时间。
 */
-function statsView(store, coverage, now) {
+function statsView(store, coverage, working, now) {
 	const records = [...store.sessions.entries()].map(([, record]) => record);
 	const episodes = records.flatMap((record) => record.episodes).filter((e) => !e.replay);
 	const outcomes = {
@@ -14878,7 +14949,6 @@ function statsView(store, coverage, now) {
 	};
 	for (const episode of episodes) outcomes[episode.outcome] += 1;
 	const leads = leadsOf(store);
-	const ideas = leads.flatMap((lead) => lead.ideas);
 	return {
 		coverage: {
 			analyzed: records.filter((record) => record.error === null).length,
@@ -14892,17 +14962,10 @@ function statsView(store, coverage, now) {
 			}]).toSorted((a, b) => b.at - a.at)
 		},
 		outcomes,
-		funnel: {
-			leads: leads.length,
-			summarized: leads.filter((lead) => lead.summary !== null).length,
-			skipped: leads.filter((lead) => lead.summary?.summary.decision === "skip").length,
-			ideas: ideas.length,
-			drafted: ideas.filter((idea) => idea.draft !== null).length,
-			written: ideas.filter((idea) => idea.state === "written").length,
-			dismissed: leads.reduce((sum, lead) => sum + dismissedCards(lead), 0)
-		},
-		actions: frequentActions(episodes),
+		funnel: funnelOf(leads, working),
+		actions: frequentActions(episodes, now),
 		errors: repeatedErrors(episodes),
+		daily: dailyCounts(episodes, leads, now),
 		usage: recentDays(now, USAGE_DAYS).map((day) => {
 			const usage = store.usage.get(day);
 			return {
@@ -14985,7 +15048,7 @@ async function apply(ctx, config) {
 				outcome,
 				limit
 			})),
-			stats: async () => statsView(store, await scout.coverage(), Date.now())
+			stats: async () => statsView(store, await scout.coverage(), scout.runtime().working, Date.now())
 		})) yield ctx.webServer.register(route);
 		yield ctx.on("session/event", (session, event) => {
 			if (event.type === "turn/end" && session.header.origin !== "subagent") scout.noteTurnEnd(session.id);
