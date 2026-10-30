@@ -1,6 +1,6 @@
 {
   "name": "@agent-stash/dsh-enhance",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Rewrite the DeepSeek Harness composer draft into a clearer prompt with one click: polish, structure, or condense",
   "keywords": [
     "dsh-plugin",
