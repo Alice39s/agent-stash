@@ -20,7 +20,7 @@ import type {
 import { isOpaque } from "./commands.ts";
 import type { Settings } from "./config.ts";
 import { errorSignature } from "./episodes.ts";
-import type { Episode, Op, Outcome } from "./model.ts";
+import type { Episode, Op } from "./model.ts";
 import type { BackfillStatus, ModelRoute, Presence, Working } from "./scout.ts";
 import type { SearchResult } from "./search.ts";
 import { isRoutine, procedureOf } from "./signals.ts";
@@ -567,8 +567,9 @@ export function searchView(query: string, result: SearchResult): SearchView {
 }
 
 /**
- * 线索与 idea 各自按存储里的状态计数。正在摘要的线索计入 detected（被忽略的仍计入 dismissed）；
- * 正在生成草稿的 idea 在存储里还是请求前的状态，照常计数。被合并显示的 idea 各算一条。
+ * 线索与 idea 各自按存储里的状态计数。整条线索被忽略时，它的 idea 一律计入 dismissed；
+ * 其余 idea 按自身状态计数。正在摘要的线索计入 detected；正在生成草稿的 idea 在存储里还是
+ * 请求前的状态，照常计数。被合并显示的 idea 各算一条。
  */
 function funnelOf(leads: readonly Lead[], working: Working): StatsView["funnel"] {
   const funnel: StatsView["funnel"] = {
@@ -578,7 +579,9 @@ function funnelOf(leads: readonly Lead[], working: Working): StatsView["funnel"]
   for (const lead of leads) {
     const summarizing = lead.state !== "dismissed" && working.get(lead.id)?.stage === "summary";
     funnel.leads[summarizing ? "detected" : lead.state] += 1;
-    for (const idea of lead.ideas) funnel.ideas[idea.state] += 1;
+    for (const idea of lead.ideas) {
+      funnel.ideas[lead.state === "dismissed" ? "dismissed" : idea.state] += 1;
+    }
   }
   return funnel;
 }
@@ -700,15 +703,6 @@ export function statsView(
 ): StatsView {
   const records = [...store.sessions.entries()].map(([, record]) => record);
   const episodes = records.flatMap((record) => record.episodes).filter((e) => !e.replay);
-  const outcomes: Record<Outcome, number> = {
-    verified: 0,
-    succeeded: 0,
-    unverified: 0,
-    disputed: 0,
-    failed: 0,
-    aborted: 0,
-  };
-  for (const episode of episodes) outcomes[episode.outcome] += 1;
   const leads = leadsOf(store);
   return {
     coverage: {
@@ -724,7 +718,6 @@ export function statsView(
         )
         .toSorted((a, b) => b.at - a.at),
     },
-    outcomes,
     funnel: funnelOf(leads, working),
     actions: frequentActions(episodes, now),
     errors: repeatedErrors(episodes),

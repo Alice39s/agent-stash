@@ -401,17 +401,9 @@ export const StatsViewSchema = v.object({
     backfilled: Count,
     failed: v.array(v.object({ sessionId: v.string(), message: v.string(), at: v.number() })),
   }),
-  outcomes: v.object({
-    verified: Count,
-    succeeded: Count,
-    unverified: Count,
-    disputed: Count,
-    failed: Count,
-    aborted: Count,
-  }),
   /**
-   * 线索与 idea 各自按存储里的状态计数，两者单位不同，分开统计。正在摘要的线索计入 detected，
-   * 正在生成草稿的 idea 计入它请求前的状态。
+   * 线索与 idea 各自按存储里的状态计数，两者单位不同，分开统计。整条线索被忽略时它的 idea 计入
+   * dismissed；正在摘要的线索计入 detected，正在生成草稿的 idea 计入它请求前的状态。
    */
   funnel: v.object({
     leads: v.object({

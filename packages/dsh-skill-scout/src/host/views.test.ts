@@ -224,7 +224,7 @@ describe("statsView", () => {
     expect(errors[0]?.example).toContain("Cannot find module");
   });
 
-  test("counts outcomes, coverage, and the funnel from leads to written ideas", async () => {
+  test("counts coverage and the funnel from leads to written ideas", async () => {
     const store = await storeWith([
       releaseSession("s1", T0, "Release widget"),
       failingSession("f1", T0 + DAY),
@@ -253,14 +253,6 @@ describe("statsView", () => {
       ].map((entry) => store.suggestions.put(recordKey(entry.id), entry)),
     );
     const stats = statsView(store, { inRange: 5, total: 9 }, IDLE, T0 + DAY);
-    expect(stats.outcomes).toEqual({
-      verified: 1,
-      succeeded: 0,
-      unverified: 0,
-      disputed: 0,
-      failed: 1,
-      aborted: 0,
-    });
     expect(stats.coverage).toEqual({
       analyzed: 2,
       inRange: 5,
@@ -270,7 +262,7 @@ describe("statsView", () => {
     });
     expect(stats.funnel).toEqual({
       leads: { detected: 1, summarized: 1, skipped: 1, failed: 0, dismissed: 1 },
-      ideas: { proposed: 2, ready: 1, failed: 0, written: 1, dismissed: 1 },
+      ideas: { proposed: 1, ready: 0, failed: 0, written: 1, dismissed: 3 },
     });
   });
 
@@ -295,9 +287,8 @@ describe("statsView", () => {
     ];
     await Promise.all(leads.map((entry) => store.suggestions.put(recordKey(entry.id), entry)));
     const working: Working = new Map([
-      // 正在重新摘要的线索计入 detected；被忽略的线索仍计入 dismissed。
+      // 正在重新摘要的线索计入 detected。
       ["again", inFlight("summary")],
-      ["gone", inFlight("summary")],
       // 正在生成草稿的 idea 计入请求前的状态。
       [ideaId("drafting", 0), inFlight("draft")],
     ]);
@@ -315,7 +306,7 @@ describe("statsView", () => {
 
     expect(statsView(store, { inRange: 0, total: 0 }, working, T0).funnel).toEqual({
       leads: { detected: 2, summarized: 3, skipped: 1, failed: 1, dismissed: 1 },
-      ideas: { proposed: 3, ready: 2, failed: 1, written: 1, dismissed: 1 },
+      ideas: { proposed: 3, ready: 1, failed: 1, written: 1, dismissed: 2 },
     });
     expect(statsView(store, { inRange: 0, total: 0 }, IDLE, T0).funnel.leads).toEqual({
       detected: 1,
@@ -324,6 +315,33 @@ describe("statsView", () => {
       failed: 1,
       dismissed: 1,
     });
+  });
+
+  test("counts a dismissed lead's ideas as dismissed and agrees with the inbox", async () => {
+    const store = storeOf(memoryDomain(SCOUT_DOMAIN));
+    await store.suggestions.put(
+      recordKey("ignored"),
+      lead("ignored", "dismissed", [ideaRecord("ready", true)]),
+    );
+    const runtime: Runtime = {
+      lead: true,
+      scanning: false,
+      waiting: 0,
+      checking: [],
+      working: IDLE,
+      lastError: null,
+      backfill: null,
+    };
+    const inbox = inboxView(store, currentSettings(Config({})), {}, runtime, T0);
+    const { funnel } = statsView(store, { inRange: 0, total: 0 }, IDLE, T0);
+    expect(funnel.ideas).toEqual({ proposed: 0, ready: 0, failed: 0, written: 0, dismissed: 1 });
+    // 统计页的「待你决定的 idea」与收件箱里等决定的卡片数一致：都不含被忽略线索的 idea。
+    const waiting = funnel.ideas.proposed + funnel.ideas.ready;
+    const cardCount = inbox.items.filter(
+      (item) => item.state === "proposed" || item.state === "ready",
+    ).length;
+    expect(waiting).toBe(cardCount);
+    expect(inbox.items.map((item) => item.state)).toEqual(["dismissed"]);
   });
 
   test("lists the last 30 local days with task outcomes and new leads, empty days included", async () => {
