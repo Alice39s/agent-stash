@@ -145,15 +145,11 @@ describe("enhance button", () => {
     await act(async () => {
       await new Promise((done) => setTimeout(done, 180));
     });
-    expect(estimate()).toBe(
-      "o200k_base input estimate: 13,004 tokens, with the last 2 turns linked",
-    );
+    expect(estimate()).toBe("Est. ~13,004 tokens (incl. last 2 turns)");
     const concise = menuItems(h)[2];
     if (!(concise instanceof HTMLElement)) throw new Error("no concise row");
     await act(async () => concise.focus());
-    expect(estimate()).toBe(
-      "o200k_base input estimate: 1,604 tokens, with the last 2 turns linked",
-    );
+    expect(estimate()).toBe("Est. ~1,604 tokens (incl. last 2 turns)");
     await click(button(h));
     await openMenu(h);
     expect(estimate()).toContain("13,004 tokens");
@@ -170,7 +166,7 @@ describe("enhance button", () => {
       await new Promise((done) => setTimeout(done, 180));
     });
     expect(h.slot().querySelector(".dsh-enhance-estimate")?.textContent).toBe(
-      "o200k_base input estimate: 13,004 tokens",
+      "Est. ~13,004 tokens",
     );
   });
 
