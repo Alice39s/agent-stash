@@ -11,6 +11,8 @@ export interface PageState {
   readonly tab: PageTab;
   /** 「建议」里选中的卡片。 */
   readonly selected: string | null;
+  /** 从页面外选中、要滚到可见处并高亮一次的卡片；页面处理后清空。 */
+  readonly reveal: string | null;
   readonly query: string;
   /** 只看某种结果的任务；null 是全部。 */
   readonly outcome: TaskView["outcome"] | null;
@@ -25,6 +27,7 @@ export interface PageStore extends Observable<PageState> {
 export const INITIAL_PAGE: PageState = {
   tab: "suggestions",
   selected: null,
+  reveal: null,
   query: "",
   outcome: null,
   picked: [],

@@ -1,0 +1,68 @@
+/* 步骤之间 12px 的 l3 细线，两侧各 8px；步骤内圆点与名称相隔 6px。 */
+.root {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.steps {
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font: var(--dsw-font-xxs-12);
+}
+
+.step {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.step[data-state="done"] {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.step[data-current] {
+  font: var(--dsw-font-xxs-strong-12);
+  color: var(--dsw-alias-label-primary);
+}
+
+.step[data-state="closed"] {
+  font: var(--dsw-font-xxs-12);
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.line {
+  flex: none;
+  width: 12px;
+  height: 1px;
+  margin: 0 8px;
+  background: var(--dsw-alias-border-l3);
+}
+
+.label {
+  white-space: nowrap;
+}
+
+.next {
+  margin: 0;
+  font: var(--dsw-font-xxs-12);
+  color: var(--dsw-alias-label-secondary);
+  overflow-wrap: anywhere;
+}
+
+.next[data-failed] {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+@container (max-width: 360px) {
+  .step:not([data-current]) .label {
+    display: none;
+  }
+}

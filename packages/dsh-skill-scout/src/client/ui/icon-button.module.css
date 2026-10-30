@@ -1,0 +1,46 @@
+/* 宿主标题栏图标按钮与 QuestionComposer .iconButton 的形状：圆形、淡墨、悬停填充。 */
+.button {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+  transition:
+    background-color var(--ds-transition-duration-fast) var(--ds-ease-in-out),
+    color var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+.button[data-size="24"] {
+  width: 24px;
+  height: 24px;
+}
+
+.button:hover:not(:disabled),
+.button[aria-pressed="true"],
+.button[aria-expanded="true"] {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 1px;
+}
+
+.button:disabled,
+.button[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .button {
+    transition: none;
+  }
+}

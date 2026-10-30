@@ -1,100 +1,238 @@
-/* 「搜索」分栏：输入框与结果过滤、索引范围与回溯、勾选后的操作条、结果列表。 */
+/* 「搜索」分区（design 3.5）：查询行（搜索框与结果筛选）、范围行、结果数、结果行与底部的选择栏。 */
 .search {
   display: flex;
-  flex: 1 1 auto;
+  flex: 1;
   flex-direction: column;
-  gap: 10px;
-  min-height: 0;
-  padding-bottom: 16px;
-  overflow-y: auto;
-  --dsh-scrollbar-thumb: var(--dsw-alias-scrollbar-bg-l2);
-  --dsh-scrollbar-thumb-hover: var(--dsw-alias-scrollbar-hover-l2);
-}
-
-.controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.input,
-.select {
-  box-sizing: border-box;
-  height: 32px;
-  padding: 0 10px;
-  border: 0;
-  border-radius: var(--dsw-radius-md);
-  background: var(--dsw-alias-bg-layer-1, var(--dsw-alias-bg-base));
-  box-shadow: 0 0 0 0.5px var(--dsw-alias-border-l2);
-  color: var(--dsw-alias-label-primary);
-  font: inherit;
-  font-size: 13px;
-}
-
-.input {
-  flex: 1 1 280px;
+  gap: 12px;
   min-width: 0;
 }
 
-.input:focus-visible,
-.select:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 1.5px var(--dsw-alias-state-business-primary);
-}
-
-/* 回溯：进度条、进度文字与按钮排成一行，窄时换行。 */
-.backfill {
+.query {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  gap: 8px 12px;
+}
+
+/* 照宿主 TaskManagerPage .searchField：36px，0.5px 的 l3 细线，悬停 l2，聚焦时强调色。 */
+.field {
+  display: flex;
+  flex: 1 1 320px;
+  align-items: center;
   gap: 8px;
-  font-size: 12px;
-  line-height: 18px;
-  color: var(--dsw-alias-label-secondary);
+  box-sizing: border-box;
+  min-width: 0;
+  height: 36px;
+  padding: 0 4px 0 10px;
+  border: 0.5px solid var(--dsw-alias-border-l3);
+  border-radius: 12px;
+  color: var(--dsw-alias-label-tertiary);
+  transition: border-color var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+.field:hover {
+  border-color: var(--dsw-alias-border-l2);
+}
+
+.field:focus-within {
+  border-color: var(--dsw-alias-state-business-primary);
+}
+
+.field > svg {
+  flex: none;
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--dsw-alias-label-primary);
+  font: var(--dsw-font-s-14);
+}
+
+.input::placeholder {
+  color: var(--dsw-alias-label-caption);
+}
+
+.input:focus-visible {
+  outline: none;
+}
+
+.input::-webkit-search-cancel-button {
+  display: none;
+}
+
+/* 结果筛选：照宿主 TaskManagerPage .filterTabs / .filterTab，28px 的筛选片，选中的用悬停填充与主墨色。 */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font: var(--dsw-font-xs-13);
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color var(--ds-transition-duration-fast) var(--ds-ease-in-out),
+    color var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+.chip:hover,
+.chip[aria-pressed="true"] {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.chip[aria-pressed="true"] {
+  color: var(--dsw-alias-label-primary);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 1px;
+}
+
+/* 范围行：索引覆盖的会话与任务、回溯进度，尾部是回溯操作。 */
+.scope {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.scopeLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.scopeText {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin: 0;
+  font: var(--dsw-font-xxs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.scopeItem + .scopeItem::before {
+  content: " · ";
+  white-space: pre;
+}
+
+.scopeItem[data-ink="error"] {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.scopeActions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
 }
 
 .meter {
-  flex: 0 1 160px;
-  height: 4px;
   overflow: hidden;
+  height: 4px;
   border-radius: 2px;
-  background: var(--dsw-alias-bg-skeleton);
+  background: var(--dsw-alias-interactive-bg-hover);
 }
 
 .meterFill {
   display: block;
   height: 100%;
+  border-radius: 2px;
   background: var(--dsw-alias-state-business-primary);
-  transition: width var(--ds-transition-duration, 200ms) var(--ds-ease-in-out, ease);
 }
 
-.backfillText {
+.results {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0 8px;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.count {
   margin: 0;
+  font: var(--dsw-font-xxs-12);
   font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-tertiary);
 }
 
-.failed {
-  color: var(--dsw-alias-state-warn-label);
-}
-
-/* 勾选了任务后出现的操作条。 */
-.picked {
+/* 继续读入：照宿主 TrajectoryTable .historyLoadButton 的整行安静按钮。 */
+.more {
   display: flex;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 32px;
+  border: 0;
+  border-radius: var(--dsw-radius-md);
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: var(--dsw-font-xxs-12);
+  cursor: pointer;
+  transition: background-color var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+.more:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  color: var(--dsw-alias-label-primary);
+}
+
+.more:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: -2px;
+}
+
+/* 选择栏：照宿主 TaskManagerPage .saveFooter，固定在滚动区底部，上方一条 l4 细线。 */
+.selection {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 8px 6px 12px;
-  border-radius: var(--dsw-radius-lg);
-  background: var(--dsw-alias-interactive-bg-hover);
-  font-size: 12px;
-  line-height: 18px;
+  margin-top: auto;
+  padding: 12px 0;
+  border-top: 0.5px solid var(--dsw-alias-border-l4);
+  background: var(--dsw-alias-bg-base);
+}
+
+.selectionCount {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  gap: 2px 8px;
+  min-width: 0;
+  margin: 0;
+  font: var(--dsw-font-xxs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-secondary);
+}
+
+.selectionLimit {
+  color: var(--dsw-alias-label-tertiary);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .meterFill {
+  .field,
+  .chip,
+  .more {
     transition: none;
   }
 }

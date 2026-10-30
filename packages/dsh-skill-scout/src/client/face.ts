@@ -25,8 +25,8 @@ export interface ScoutFace {
 /** Slot 组件收到的属性：共享对象加翻译函数。 */
 export type FaceProps = ScoutFace & { readonly t: ScoutTranslate };
 
-/** 打开页面的「建议」分栏并选中一张卡片。 */
+/** 打开页面的「建议」分栏并选中一张卡片，页面把它滚到可见处并高亮一次。 */
 export function showItem(face: Pick<ScoutFace, "page" | "openPage">, id: string | null): void {
-  face.page.update({ tab: "suggestions", selected: id });
+  face.page.update({ tab: "suggestions", selected: id, reveal: id });
   face.openPage();
 }

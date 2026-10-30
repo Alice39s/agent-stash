@@ -313,7 +313,17 @@ export const SEARCH_HITS: readonly TaskView[] = [
   }),
 ];
 
-/** 统计样例：一个分析失败的会话，近 7 天里有两天有用量，两次模型调用。 */
+/** 统计样例里近 30 天中有任务或新线索的三天，其余日子各项为 0。 */
+const ACTIVE_DAYS: Readonly<Record<string, Partial<Omit<StatsView["daily"][number], "day">>>> = {
+  "2026-10-28": { verified: 2, succeeded: 1, failed: 1, leads: 1 },
+  "2026-10-29": { verified: 1, unverified: 1, disputed: 1 },
+  "2026-10-30": { verified: 3, succeeded: 1, aborted: 1, leads: 2 },
+};
+
+/**
+ * 统计样例：一个分析失败的会话；近 30 天有三天结束了任务（共 12 个，6 个通过检查）、两天出现新线索；
+ * 近 7 天里有两天有用量，两次模型调用。
+ */
 export const STATS: StatsView = {
   coverage: {
     analyzed: 40,
@@ -323,10 +333,13 @@ export const STATS: StatsView = {
     failed: [{ sessionId: "s9", message: "日志无法解析", at: NOW - 600_000 }],
   },
   outcomes: { verified: 20, succeeded: 8, unverified: 6, disputed: 1, failed: 4, aborted: 1 },
-  funnel: { leads: 10, summarized: 6, skipped: 2, ideas: 7, drafted: 3, written: 1, dismissed: 2 },
+  funnel: {
+    leads: { detected: 2, summarized: 6, skipped: 2, failed: 1, dismissed: 1 },
+    ideas: { proposed: 3, ready: 1, failed: 1, written: 2, dismissed: 1 },
+  },
   actions: [
-    { key: "pm run build", label: "pnpm build", sessions: 9 },
-    { key: "vitest", label: "vitest run", sessions: 6 },
+    { key: "pm run build", label: "pnpm build", sessions: 9, weeks: [0, 1, 3, 2, 1, 0, 1, 1] },
+    { key: "vitest", label: "vitest run", sessions: 6, weeks: [0, 0, 1, 1, 2, 0, 1, 1] },
   ],
   errors: [
     {
@@ -335,6 +348,20 @@ export const STATS: StatsView = {
       sessions: 3,
     },
   ],
+  daily: Array.from({ length: 30 }, (_, index) => {
+    const day = new Date(NOW - (29 - index) * 86_400_000).toISOString().slice(0, 10);
+    return {
+      day,
+      verified: 0,
+      succeeded: 0,
+      unverified: 0,
+      disputed: 0,
+      failed: 0,
+      aborted: 0,
+      leads: 0,
+      ...ACTIVE_DAYS[day],
+    };
+  }),
   usage: [
     "2026-10-24",
     "2026-10-25",

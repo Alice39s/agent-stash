@@ -1,0 +1,75 @@
+/* 分组之间窗格里隔 16px、主区域隔 32px；标题行到第一行 8px。 */
+.group + .group {
+  margin-top: 16px;
+}
+
+.group[data-size="page"] + .group[data-size="page"] {
+  margin-top: 32px;
+}
+
+.group[data-size="popover"] + .group[data-size="popover"] {
+  margin-top: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  margin-bottom: 8px;
+  padding: 0 8px;
+}
+
+.head[data-sticky] {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--scout-pane-bg);
+}
+
+.title {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-s-strong-14);
+  color: var(--dsw-alias-label-primary);
+}
+
+.count {
+  flex: 1;
+  font: var(--dsw-font-xs-13);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* 浮层的分组标签：照宿主 JobListAction .sectionHeader，11px 淡墨，除第一组外上方一条细线。 */
+.head[data-size="popover"] {
+  height: auto;
+  margin: 4px 4px 1px;
+  padding: 4px 8px 3px;
+  border-top: 0.5px solid var(--dsw-alias-border-l1);
+}
+
+.group[data-size="popover"]:first-child .head {
+  margin-top: 0;
+  border-top: 0;
+}
+
+.head[data-size="popover"] .title,
+.head[data-size="popover"] .count {
+  font: var(--dsw-font-xxxs-11);
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.head[data-size="popover"] .count {
+  flex: 1;
+}
+
+.note {
+  margin: 0;
+  padding: 0 8px 8px;
+  font: var(--dsw-font-xxs-12);
+  color: var(--dsw-alias-label-tertiary);
+}

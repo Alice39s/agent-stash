@@ -1,11 +1,10 @@
 /**
- * 会话标题栏里的经验提炼入口：一个图标按钮，有新建议时带一个小计数；点开是收件箱浮层，
- * 点卡片在主区域打开「历史回溯提炼」页并选中这条。入口在第一次读取完成前不渲染，避免标题栏闪动。
+ * 会话标题栏里的经验提炼入口（design 3.7）：一个圆形图标按钮，有新建议时右上角带一个小计数；
+ * 点开是收件箱浮层，点一行在主区域打开「历史回溯提炼」页并选中这条。入口在第一次读取完成前不渲染，避免标题栏闪动。
  * 计数只算打开收件箱之后出现的、等用户决定的摘要与草稿，看过即清零；详情面板里正显示的那条在眼前，不计入。
- * 页面没开着时，提示从入口下方弹出。
+ * 页面没开着时，提示从入口下方弹出；浮层开着时它列出全部卡片，后台工作结束由行表达，不出提示（design 4.9）。
  */
 import {
-  IconCloseOutlineRegular,
   IconSkillOutlineRegular,
   TextShimmer,
   useAnchoredPosition,
@@ -21,10 +20,12 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import type { InboxView } from "../shared.ts";
-import { Banner, dismissItem, EmptyInbox, GroupedCards, NoticeBar } from "./cards.tsx";
+import { Banner, dismissItem, GroupedItems, noticeLinks } from "./cards.tsx";
 import { showItem, type FaceProps } from "./face.ts";
 import { useSnapshot } from "./hooks.ts";
 import type { SeenStore } from "./seen.ts";
+import { everyItem } from "./store.ts";
+import { ResultNotice } from "./ui/notice.tsx";
 import styles from "./inbox.module.css";
 
 const MEASURE_STYLE: CSSProperties = { visibility: "hidden", left: 0, top: 0 };
@@ -70,6 +71,7 @@ export function InboxEntry(props: FaceProps): ReactNode {
     margin: 16,
   });
   useDismissOnOutsidePointer(rootRef, open, setOpen, panelRef);
+  useEffect(() => (open ? inbox.listing(everyItem) : undefined), [inbox, open]);
 
   // 收件箱开着时出现的待决定建议算看过；详情面板里等到的摘要或草稿同样算看过。
   useEffect(() => {
@@ -107,12 +109,14 @@ export function InboxEntry(props: FaceProps): ReactNode {
     event.preventDefault();
     close();
   };
-  /** 在页面里打开一张卡片；不传 id 时只打开页面。 */
+  /** 在页面里打开一行；不传 id 时只打开页面。 */
   const openPage = (id: string | null): void => {
     setOpen(false);
     showItem(props, id);
   };
 
+  const view = state.inbox;
+  const sessions = view?.status.analyzed.sessions ?? 0;
   const panel = open
     ? createPortal(
         <div
@@ -147,15 +151,23 @@ export function InboxEntry(props: FaceProps): ReactNode {
                 </button>
               </div>
             )}
-            {state.inbox !== null && <Banner inbox={state.inbox} t={t} />}
-            {state.inbox !== null &&
-              (state.inbox.items.length === 0 ? (
-                <EmptyInbox inbox={state.inbox} t={t} />
+            {view !== null && <Banner inbox={view} t={t} />}
+            {view !== null &&
+              (view.items.length === 0 ? (
+                <div className={styles.empty}>
+                  <p className={styles.emptyTitle}>{t("panel.empty.title")}</p>
+                  <p className={styles.emptyFact}>
+                    {t(sessions === 1 ? "panel.analyzed.one" : "panel.analyzed.other", {
+                      sessions,
+                    })}
+                  </p>
+                </div>
               ) : (
-                <GroupedCards
-                  items={state.inbox.items}
+                <GroupedItems
+                  items={view.items}
                   now={now}
                   t={t}
+                  size="popover"
                   selected={null}
                   onOpen={openPage}
                   onDismiss={(id) => dismissItem(inbox, id)}
@@ -163,8 +175,11 @@ export function InboxEntry(props: FaceProps): ReactNode {
               ))}
           </div>
           {state.notice !== null && (
-            <div className={styles.notice} role="status">
-              <NoticeBar notice={state.notice} face={props} t={t} onView={() => setOpen(false)} />
+            <div className={styles.notice}>
+              <ResultNotice
+                text={t(state.notice.key, state.notice.params)}
+                links={noticeLinks(state.notice, props, t, () => setOpen(false))}
+              />
             </div>
           )}
         </div>,
@@ -176,21 +191,13 @@ export function InboxEntry(props: FaceProps): ReactNode {
     toast === null
       ? null
       : createPortal(
-          <div
-            ref={toastRef}
-            className={styles.toast}
-            style={toastPosition ?? MEASURE_STYLE}
-            role="status"
-          >
-            <NoticeBar notice={toast} face={props} t={t} />
-            <button
-              type="button"
-              className={styles.toastClose}
-              aria-label={t("notice.close")}
-              onClick={() => inbox.clearNotice()}
-            >
-              <IconCloseOutlineRegular size={12} />
-            </button>
+          <div ref={toastRef} className={styles.toast} style={toastPosition ?? MEASURE_STYLE}>
+            <ResultNotice
+              framed={false}
+              text={t(toast.key, toast.params)}
+              links={noticeLinks(toast, props, t)}
+              close={{ label: t("notice.close"), onClick: () => inbox.clearNotice() }}
+            />
           </div>,
           document.body,
         );

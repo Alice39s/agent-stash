@@ -1,9 +1,19 @@
-/** 订阅 Observable、读取 Host 路由、读取时钟与「减少动态效果」偏好的 React Hook。 */
-import { useEffect, useState, useSyncExternalStore } from "react";
+/** 订阅 Observable、读取 Host 路由、读取时钟、分栏宽度与「减少动态效果」偏好的 React Hook。 */
+import { useEffect, useState, useSyncExternalStore, type RefObject } from "react";
 import type { Action, ActionResult } from "../shared.ts";
 import type { Observable } from "./dsh.ts";
 import type { ScoutTranslate } from "./locale.ts";
 import type { InboxStore, Notice } from "./store.ts";
+import { useElementWidth } from "./ui/charts/primitives.tsx";
+
+/** 分栏容器窄于这个宽度时只显示一栏，与 layout.module.css 的 `@container scout-split (max-width: 759px)` 一致。 */
+export const SINGLE_PANE_WIDTH = 760;
+
+/** 测量分栏容器（layout.module.css 的 `.page` 或 `.split`），返回它是否窄到只显示一栏。 */
+export function useSinglePane<E extends HTMLElement>(): readonly [RefObject<E>, boolean] {
+  const [ref, width] = useElementWidth<E>(undefined);
+  return [ref, width < SINGLE_PANE_WIDTH];
+}
 
 export function useSnapshot<T>(source: Observable<T>): T {
   return useSyncExternalStore(source.subscribe, source.getSnapshot, source.getSnapshot);

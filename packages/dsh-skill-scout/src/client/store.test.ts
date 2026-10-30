@@ -1,6 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, test, vi } from "vitest";
-import { finishedItems, pollInterval } from "./store.ts";
+import type { ItemView } from "../shared.ts";
+import { everyItem, finishedItems, pollInterval } from "./store.ts";
 import { fakeHost, inboxOf, item, progress, settle, UNSUMMARIZED } from "./testing.tsx";
 
 describe("pollInterval", () => {
@@ -33,6 +34,16 @@ describe("pollInterval", () => {
   });
 });
 
+/** 没有表面列出任何卡片。 */
+function nothing(): boolean {
+  return false;
+}
+
+/** 只有 `id` 这张卡片在眼前。 */
+function showing(id: string): (entry: ItemView) => boolean {
+  return (entry) => entry.id === id;
+}
+
 describe("finishedItems", () => {
   const summarizing = item({ ...UNSUMMARIZED, state: "summarizing", progress: progress() });
 
@@ -41,7 +52,7 @@ describe("finishedItems", () => {
       item({ state: "proposed", ideaCount: 2 }),
       item({ id: "repeated:1~1", state: "proposed", ideaCount: 2 }),
     ]);
-    const done = finishedItems(inboxOf([summarizing]), after, []);
+    const done = finishedItems(inboxOf([summarizing]), after, nothing);
     expect(done.map((entry) => [entry.item.id, entry.ideas])).toEqual([["repeated:1~0", 2]]);
   });
 
@@ -55,7 +66,7 @@ describe("finishedItems", () => {
     const done = finishedItems(
       inboxOf([summarizing, drafting, { ...failed, state: "drafting", failure: null }]),
       inboxOf([item({ ...UNSUMMARIZED, state: "skipped" }), item(), failed]),
-      [],
+      nothing,
     );
     expect(done.map((entry) => [entry.item.id, entry.item.state])).toEqual([
       ["repeated:1", "skipped"],
@@ -66,10 +77,10 @@ describe("finishedItems", () => {
 
   test("leaves out the card on screen, cards still in progress, and the first read", () => {
     const after = inboxOf([item({ state: "proposed" })]);
-    expect(finishedItems(inboxOf([summarizing]), after, ["repeated:1"])).toEqual([]);
-    expect(finishedItems(inboxOf([summarizing]), after, ["repeated:1~0"])).toEqual([]);
-    expect(finishedItems(inboxOf([summarizing]), inboxOf([summarizing]), [])).toEqual([]);
-    expect(finishedItems(null, after, [])).toEqual([]);
+    expect(finishedItems(inboxOf([summarizing]), after, showing("repeated:1"))).toEqual([]);
+    expect(finishedItems(inboxOf([summarizing]), after, showing("repeated:1~0"))).toEqual([]);
+    expect(finishedItems(inboxOf([summarizing]), inboxOf([summarizing]), nothing)).toEqual([]);
+    expect(finishedItems(null, after, nothing)).toEqual([]);
   });
 });
 
@@ -125,6 +136,38 @@ describe("createInboxStore notices", () => {
     read();
     host.store.dispose();
     vi.useRealTimers();
+  });
+
+  test("raises no notice for work that ends on a card a visible surface lists", async () => {
+    const host = fakeHost(
+      inboxOf([item({ state: "drafting" }), item({ id: "complex:2~0", state: "drafting" })]),
+    );
+    await host.store.refresh();
+    const stop = host.store.listing((entry) => entry.id === "repeated:1~0");
+    host.inbox = inboxOf([
+      item({ state: "ready" }),
+      item({ id: "complex:2~0", state: "drafting" }),
+    ]);
+    await host.store.refresh();
+    expect(host.store.getSnapshot().notice).toBeNull();
+
+    stop();
+    host.inbox = inboxOf([item({ state: "ready" }), item({ id: "complex:2~0", state: "ready" })]);
+    await host.store.refresh();
+    expect(host.store.getSnapshot().notice).toMatchObject({
+      key: "notice.done.ready",
+      view: "complex:2~0",
+    });
+
+    const all = host.store.listing(everyItem);
+    host.store.clearNotice();
+    host.inbox = inboxOf([item({ state: "drafting" })], { working: 1 });
+    await host.store.refresh();
+    host.inbox = inboxOf([item({ state: "ready" })]);
+    await host.store.refresh();
+    expect(host.store.getSnapshot().notice).toBeNull();
+    all();
+    host.store.dispose();
   });
 
   test("tracks which cards are on screen and whether the page shows notices", () => {

@@ -1,7 +1,9 @@
 // @vitest-environment happy-dom
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import type { ItemView } from "../shared.ts";
 import { InboxEntry } from "./inbox.tsx";
 import { HistoryPage } from "./page.tsx";
+import { SessionTab } from "./session.tsx";
 import {
   button,
   click,
@@ -39,7 +41,16 @@ function panel(): HTMLElement | null {
 
 /** 标题栏入口下方弹出的提示。 */
 function toast(): HTMLElement | null {
-  return document.body.querySelector<HTMLElement>(":scope > [role=status]");
+  return document.body.querySelector<HTMLElement>(":scope > div > [data-notice=result]");
+}
+
+/** 一行的元信息各项，第一项是状态词。 */
+function rowMeta(id: string): string[] {
+  const status = panel()
+    ?.querySelector(`[data-item='${id}']`)
+    ?.closest("li")
+    ?.querySelector("[data-status]");
+  return [...(status?.parentElement?.children ?? [])].map((entry) => entry.textContent ?? "");
 }
 
 beforeEach(() => {
@@ -91,7 +102,18 @@ describe("InboxEntry", () => {
     expect(decide).toContain("Draft ready");
     expect(decide).toContain("Summary ready");
     expect(sections[1]?.textContent).toContain("No summary yet");
-    expect(panel()?.textContent).toContain("Repeated workflow · 2 sessions · 1 min ago");
+    expect(rowMeta("repeated:1~0")).toEqual([
+      "Draft ready",
+      "Repeated workflow",
+      "2 sessions",
+      "1 min ago",
+    ]);
+    expect(
+      panel()
+        ?.querySelector("[data-item='repeated:1~0']")
+        ?.closest("li")
+        ?.getAttribute("data-variant"),
+    ).toBe("popover");
     expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions");
     expect(trigger().querySelector("span")).toBeNull();
   });
@@ -105,9 +127,19 @@ describe("InboxEntry", () => {
     );
     await render(host);
     await click(trigger());
-    const text = panel()?.textContent ?? "";
-    expect(text).toContain("Session extract · 1 session · 2 more with this name · 1 min ago");
-    expect(text).toContain("Selected tasks · 3 sessions · 1 min ago");
+    expect(rowMeta("repeated:1~0")).toEqual([
+      "Draft ready",
+      "Session extract",
+      "1 session",
+      "2 more with this name",
+      "1 min ago",
+    ]);
+    expect(rowMeta("selected:ab~0")).toEqual([
+      "Draft ready",
+      "Selected tasks",
+      "3 sessions",
+      "1 min ago",
+    ]);
   });
 
   test("keeps a card in progress without a dismiss button and says which model is busy", async () => {
@@ -169,7 +201,9 @@ describe("InboxEntry", () => {
     );
     await render(host);
     await click(trigger());
-    expect(panel()?.textContent).toContain("No discovery model is available.");
+    expect(panel()?.textContent).toContain(
+      "No discovery model is available. Choose one in Skill Scout settings",
+    );
   });
 
   test("dismisses a card with an undo that restores it", async () => {
@@ -178,7 +212,7 @@ describe("InboxEntry", () => {
     await click(trigger());
     await click(button("Dismiss: Cut a local patch release"));
     expect(host.actions).toEqual([{ action: "dismiss", id: "repeated:1~0", similar: false }]);
-    expect(panel()?.querySelector("[role=status]")?.textContent).toContain("Dismissed");
+    expect(panel()?.querySelector("[data-notice=result]")?.textContent).toContain("Dismissed");
 
     await click(button("Undo", panel() ?? document));
     expect(host.actions.at(-1)).toEqual({ action: "restore", id: "repeated:1~0" });
@@ -211,17 +245,24 @@ describe("InboxEntry", () => {
     expect(host.face.page.getSnapshot().selected).toBeNull();
   });
 
-  test("keeps handled suggestions under a collapsed history", async () => {
+  test("keeps closed suggestions in a collapsed last section with quiet titles", async () => {
     const host = fakeHost(
       inboxOf([item({ state: "dismissed" }), item({ id: "complex:1", state: "skipped" })]),
     );
     await render(host);
     await click(trigger());
-    const toggle = button("History (2)");
+    const label = panel()?.querySelector("section[aria-label='History'] h3");
+    expect(label?.textContent).toBe("History");
+    const toggle = button("Expand History", panel() ?? document);
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     expect(panel()?.querySelectorAll("li")).toHaveLength(0);
     await click(toggle);
-    expect(panel()?.querySelectorAll("li")).toHaveLength(2);
+    const rows = [...(panel()?.querySelectorAll("li") ?? [])];
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.querySelector("[data-ink]")?.getAttribute("data-ink"))).toEqual([
+      "tertiary",
+      "tertiary",
+    ]);
   });
 });
 
@@ -260,7 +301,54 @@ describe("InboxEntry notices", () => {
     expect(toast()).toBeNull();
   });
 
-  test("shows notices in the open history page instead of the header, and does not count the idea the page shows", async () => {
+  test("lets the conversation view's rows carry finished work and raises the popover once the view is gone", async () => {
+    const elsewhere: Partial<ItemView> = {
+      id: "complex:9~0",
+      title: "Rotate the signing key",
+      sessions: [{ sessionId: "s3", episodeId: "s3:1", at: NOW, goal: "x", outcome: "verified" }],
+    };
+    const host = fakeHost(
+      inboxOf([item({ state: "drafting" }), item({ ...elsewhere, state: "drafting" })], {
+        working: 2,
+      }),
+    );
+    await render(host);
+    const view = await mount(<SessionTab {...host.face} sessionId="s1" t={t} />);
+    await settle();
+
+    host.inbox = inboxOf([item(), item({ ...elsewhere, state: "drafting" })], { working: 1 });
+    await perform(() => host.store.refresh());
+    expect(toast()).toBeNull();
+    expect(
+      view.container.querySelector("[data-item='repeated:1~0']")?.closest("li")?.textContent,
+    ).toContain("Draft ready");
+
+    host.inbox = inboxOf([item(), item(elsewhere)]);
+    await perform(() => host.store.refresh());
+    expect(toast()?.textContent).toContain("Draft ready: Rotate the signing key");
+    await click(button("Close", toast() ?? document));
+
+    // 切到对话 Tab：会话视图卸载，同一张卡片的工作结束时从标题栏入口下方弹出提示。
+    view.unmount();
+    host.inbox = inboxOf([item({ state: "drafting" })], { working: 1 });
+    await perform(() => host.store.refresh());
+    host.inbox = inboxOf([item()]);
+    await perform(() => host.store.refresh());
+    expect(toast()?.textContent).toContain("Draft ready: Cut a local patch release");
+  });
+
+  test("raises no popover while the open panel lists the finished card", async () => {
+    const host = fakeHost(inboxOf([item({ state: "drafting" })], { working: 1 }));
+    await render(host);
+    await click(trigger());
+    host.inbox = inboxOf([item()]);
+    await perform(() => host.store.refresh());
+    expect(toast()).toBeNull();
+    expect(panel()?.querySelector("[data-notice=result]")).toBeNull();
+    expect(rowMeta("repeated:1~0")[0]).toBe("Draft ready");
+  });
+
+  test("shows notices in the open history page instead of the header while its search section is open", async () => {
     const migrate = {
       ...UNSUMMARIZED,
       id: "complex:5",
@@ -277,7 +365,7 @@ describe("InboxEntry notices", () => {
       ),
     );
     await render(host);
-    host.face.page.update({ selected: "repeated:1" });
+    host.face.page.update({ selected: "repeated:1", tab: "search" });
     const page = await mount(<HistoryPage {...host.face} t={t} />);
     unmounts.push(page.unmount);
     await settle();
@@ -290,9 +378,31 @@ describe("InboxEntry notices", () => {
     await perform(() => host.store.refresh());
     await settle();
     await settle();
-    expect(page.container.querySelector("[aria-label='Cut a local patch release']")).not.toBeNull();
-    expect(page.container.textContent).toContain("Not worth saving: Migrate the config");
+    expect(page.container.querySelector("[data-notice=result]")?.textContent).toContain(
+      "2 requests finished",
+    );
     expect(toast()).toBeNull();
-    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions, 1 new");
+    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions, 2 new");
+  });
+
+  test("lets the suggestions section's rows carry finished work without a notice", async () => {
+    const host = fakeHost(
+      inboxOf([item({ ...UNSUMMARIZED, state: "summarizing", progress: progress() })], {
+        working: 1,
+      }),
+    );
+    await render(host);
+    host.face.page.update({ selected: "repeated:1" });
+    const page = await mount(<HistoryPage {...host.face} t={t} />);
+    unmounts.push(page.unmount);
+    await settle();
+
+    host.inbox = inboxOf([item({ state: "proposed" })]);
+    await perform(() => host.store.refresh());
+    await settle();
+    expect(page.container.querySelector("[aria-label='Cut a local patch release']")).not.toBeNull();
+    expect(page.container.querySelector("[data-notice=result]")).toBeNull();
+    expect(toast()).toBeNull();
+    expect(trigger().getAttribute("aria-label")).toBe("Skill suggestions");
   });
 });

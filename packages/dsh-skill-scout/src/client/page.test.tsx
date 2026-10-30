@@ -1,11 +1,12 @@
 // @vitest-environment happy-dom
 import { act } from "react";
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { showItem } from "./face.ts";
 import { PICK_LIMIT } from "./search.tsx";
 import { HistoryPage } from "./page.tsx";
+import { driveResize } from "./ui/charts/testing.tsx";
 import {
   button,
-  choose,
   click,
   fakeHost,
   inboxOf,
@@ -42,26 +43,31 @@ function pageTab(name: string): HTMLButtonElement {
   );
 }
 
-/** 右栏的详情面板：标题是面板里唯一的 h2。 */
+/** 右栏的详情面板。 */
 function detail(): HTMLElement | null {
-  return root.querySelector("h2")?.closest("section") ?? null;
+  return root.querySelector("section[data-state][aria-label]");
+}
+
+function page(): HTMLElement | null {
+  return root.querySelector("[data-view=page]");
 }
 
 function searchBox(): HTMLInputElement | null {
   return root.querySelector("input[type=search]");
 }
 
-/** 打开「统计」分栏。 */
-async function stats(host: FakeHost): Promise<void> {
-  host.face.page.update({ tab: "stats" });
-  await render(host);
-  await settle();
+/** 搜索结果行里的勾选框，按它的标签文字找。 */
+function pick(name: string): HTMLInputElement | null {
+  const label = [...root.querySelectorAll("label")].find((entry) => entry.textContent === name);
+  return label?.querySelector("input") ?? null;
 }
 
-function card(name: string): HTMLElement {
-  const found = root.querySelector<HTMLElement>(`section[aria-label='${name}']`);
-  if (found === null) throw new Error(`没有统计卡片 ${name}`);
-  return found;
+function chip(name: string): HTMLButtonElement {
+  return button(name, root.querySelector("[role=group][aria-label='Outcome']") ?? root);
+}
+
+function selectionBar(): HTMLElement | null {
+  return root.querySelector("[role=region][aria-label='Selected tasks']");
 }
 
 beforeEach(() => {
@@ -75,6 +81,7 @@ afterEach(() => {
   unmount = undefined;
   document.body.innerHTML = "";
   vi.useRealTimers();
+  vi.unstubAllGlobals();
 });
 
 describe("HistoryPage suggestions", () => {
@@ -87,22 +94,61 @@ describe("HistoryPage suggestions", () => {
       ]),
     );
     await render(host);
-    expect(root.querySelector("h1")?.textContent).toBe("Skill Scout History");
+    expect([...root.querySelectorAll("h1")].map((h1) => h1.textContent)).toEqual([
+      "Skill Scout History",
+    ]);
+    expect(root.querySelector("[data-window-drag] h1")).not.toBeNull();
     expect(pageTab("Suggestions").getAttribute("aria-selected")).toBe("true");
-    const groups = [...root.querySelectorAll("section[aria-label]")]
-      .map((section) => section.getAttribute("aria-label"))
-      .filter((label) => label === "Needs your decision" || label === "Found locally");
-    expect(groups).toEqual(["Needs your decision", "Found locally"]);
-    expect(button("History (1)", root)).toBeDefined();
-    expect(detail()?.getAttribute("aria-label")).toBe("Rotate the signing key");
-    expect(root.querySelector("[aria-current=true]")?.getAttribute("data-item")).toBe(
-      "complex:2~0",
+    const panel = root.querySelector("[role=tabpanel]");
+    expect(panel?.getAttribute("aria-labelledby")).toBe(pageTab("Suggestions").id);
+    const groups = [...root.querySelectorAll("section[aria-label] > div > h2")].map(
+      (title) => title.textContent,
     );
+    expect(groups).toEqual(["Needs your decision", "Found locally", "History"]);
+    expect(button("Expand History", root).getAttribute("aria-expanded")).toBe("false");
+    expect(root.querySelector("[data-item='repeated:3~0']")).toBeNull();
+    expect(detail()?.getAttribute("aria-label")).toBe("Rotate the signing key");
+    const current = root.querySelector("[aria-current=true]");
+    expect(current?.getAttribute("data-item")).toBe("complex:2~0");
+    expect(current?.closest("li")?.hasAttribute("data-selected")).toBe(true);
+    expect(page()?.hasAttribute("data-open")).toBe(false);
 
     await click(root.querySelector("[data-item='recovery:1']"));
     await settle();
     expect(host.face.page.getSnapshot().selected).toBe("recovery:1");
     expect(detail()?.getAttribute("aria-label")).toBe("Release a patch version");
+    expect(page()?.hasAttribute("data-open")).toBe(true);
+    await click(button("Back to the list", detail() ?? root));
+    expect(host.face.page.getSnapshot().selected).toBeNull();
+    expect(page()?.hasAttribute("data-open")).toBe(false);
+  });
+
+  test("leads the detail with a back button only while the page is one pane wide", async () => {
+    const width = driveResize();
+    const host = fakeHost(inboxOf([item()]));
+    host.face.page.update({ selected: "repeated:1~0" });
+    await render(host);
+    await width.resize(1440);
+    expect(detail()?.querySelector("[aria-label='Back to the list']")).toBeNull();
+    await width.resize(720);
+    await click(button("Back to the list", detail() ?? root));
+    expect(host.face.page.getSnapshot().selected).toBeNull();
+  });
+
+  test("leads each row with its status dot and starts the metadata with the status word", async () => {
+    const host = fakeHost(
+      inboxOf([
+        item({ id: "complex:2~0", state: "proposed" }),
+        item({ ...UNSUMMARIZED, id: "recovery:1", kind: "recovery" }),
+      ]),
+    );
+    await render(host);
+    const rows = [...root.querySelectorAll("[data-item]")].map((open) => open.closest("li"));
+    expect(
+      rows.map((row) => row?.querySelector("[data-state]")?.getAttribute("data-state")),
+    ).toEqual(["warning", "idle"]);
+    expect(rows[0]?.querySelector("[data-status]")?.textContent).toBe("Summary ready");
+    expect(rows[1]?.querySelector("[data-status]")?.textContent).toBe("No summary yet");
   });
 
   test("opens the card chosen elsewhere, follows a lead to its first idea, and expands history for it", async () => {
@@ -127,50 +173,81 @@ describe("HistoryPage suggestions", () => {
     host.inbox = inboxOf([item(), item({ id: "repeated:9~0", state: "dismissed", title: "Old" })]);
     await perform(() => host.store.refresh());
     await settle();
-    expect(button("Hide history", root).getAttribute("aria-expanded")).toBe("true");
+    expect(button("Collapse History", root).getAttribute("aria-expanded")).toBe("true");
     expect(detail()?.getAttribute("aria-label")).toBe("Old");
     expect(button("Restore", detail() ?? root)).toBeDefined();
   });
 
-  test("shows notices with an undo under the page header", async () => {
+  test("highlights a card opened from outside the page once", async () => {
+    const host = fakeHost(
+      inboxOf([item(), item({ id: "recovery:2~0", kind: "recovery", title: "Reinstall deps" })]),
+    );
+    await render(host);
+    await perform(() => showItem(host.face, "recovery:2~0"));
+    const revealed = root.querySelector("[data-item='recovery:2~0']")?.closest("li");
+    expect(revealed?.hasAttribute("data-highlight")).toBe(true);
+    expect(detail()?.getAttribute("aria-label")).toBe("Reinstall deps");
+    await click(root.querySelector("[data-item='repeated:1~0']"));
+    expect(root.querySelector("li[data-highlight]")).toBeNull();
+    expect(host.face.page.getSnapshot().reveal).toBeNull();
+  });
+
+  test("states the empty inbox as a fact with the analyzed sessions", async () => {
+    await render(fakeHost(inboxOf([])));
+    const empty = [...root.querySelectorAll("[data-empty]")].map((entry) => entry.textContent);
+    expect(empty).toEqual(["No suggestions4 sessions analyzed", "No suggestion selected"]);
+  });
+
+  test("shows notices with an undo under the section tabs", async () => {
     const host = fakeHost(inboxOf([item()]));
     await render(host);
     await click(button("Dismiss: Cut a local patch release", root));
-    const notice = root.querySelector("[role=status]");
+    const notice = root.querySelector("[data-notice=result]");
+    expect(notice?.getAttribute("role")).toBe("status");
     expect(notice?.textContent).toContain("Dismissed");
-    await click(button("Undo", root));
+    await click(button("Undo", notice ?? root));
     expect(host.actions.at(-1)).toEqual({ action: "restore", id: "repeated:1~0" });
   });
 });
 
 describe("HistoryPage search", () => {
-  test("searches after typing stops and right away on Enter, with the outcome filter", async () => {
+  test("searches after typing stops and right away on Enter, with the outcome chips", async () => {
     const host = fakeHost(inboxOf([]));
     await render(host);
     await click(pageTab("Search"));
-    expect(root.textContent).toContain("Searches 4 tasks from 4 analyzed sessions.");
+    expect(root.querySelector("[data-view=page]")?.getAttribute("data-tab")).toBe("search");
+    expect(root.querySelector("select")).toBeNull();
+    expect(root.textContent).toContain("Searches 4 tasks from 4 analyzed sessions");
+    expect(chip("All outcomes").getAttribute("aria-pressed")).toBe("true");
     await type(searchBox(), "npm");
     await type(searchBox(), "npm test");
     expect(host.queries).toEqual([]);
     await wait(300);
     expect(host.queries).toEqual([{ q: "npm test", outcome: null, limit: 50 }]);
 
-    await choose(root.querySelector("select"), "verified");
+    await click(chip("Check passed"));
     await settle();
+    expect(chip("Check passed").getAttribute("aria-pressed")).toBe("true");
+    expect(chip("All outcomes").getAttribute("aria-pressed")).toBe("false");
     expect(host.queries.at(-1)).toEqual({ q: "npm test", outcome: "verified", limit: 50 });
 
     await type(searchBox(), "vitest");
     await press(searchBox(), "Enter");
     await settle();
     expect(host.queries.at(-1)).toEqual({ q: "vitest", outcome: "verified", limit: 50 });
+
+    await click(button("Clear search", root));
+    expect(searchBox()?.value).toBe("");
   });
 
-  test("highlights the query in the matched commands, errors, and paths", async () => {
+  test("highlights the query in the matched lines and leads each result with a checkbox and its outcome dot", async () => {
     const host = fakeHost(inboxOf([]));
     host.face.page.update({ tab: "search", query: "npm test" });
     await render(host);
     await settle();
-    expect(root.textContent).toContain("3 matching tasks");
+    expect(root.querySelector("section[aria-label='Results'] [role=status]")?.textContent).toBe(
+      "3 matching tasks",
+    );
     const first = root.querySelector("[data-episode='s1:8']");
     expect([...(first?.querySelectorAll("mark") ?? [])].map((mark) => mark.textContent)).toEqual([
       "npm",
@@ -178,12 +255,18 @@ describe("HistoryPage search", () => {
       "npm",
       "test",
     ]);
+    expect(first?.querySelectorAll("[data-matches] code")).toHaveLength(2);
     expect(first?.textContent).toContain("Error: npm test failed");
+    expect(first?.querySelector("input[type=checkbox]")).not.toBeNull();
+    expect(first?.querySelector("[data-state]")?.getAttribute("data-state")).toBe("done");
+    expect(
+      root.querySelector("[data-episode='s3:4'] [data-state]")?.getAttribute("data-state"),
+    ).toBe("idle");
     await click(button("Open session", first ?? root));
     expect(host.sessionsOpened).toEqual(["s1"]);
   });
 
-  test("extracts the selected tasks and opens the new lead", async () => {
+  test("extracts the selected tasks from the selection bar and opens the new lead", async () => {
     const host = fakeHost(inboxOf([]));
     const lead = item({
       ...UNSUMMARIZED,
@@ -200,10 +283,11 @@ describe("HistoryPage search", () => {
     host.face.page.update({ tab: "search", query: "npm test" });
     await render(host);
     await settle();
-    await click(root.querySelector("input[aria-label='Select Release a patch version']"));
-    await click(root.querySelector("input[aria-label='Select Release another patch']"));
-    expect(root.textContent).toContain("2 selected");
-    await click(button("Extract selected", root));
+    expect(selectionBar()).toBeNull();
+    await click(pick("Select Release a patch version"));
+    await click(pick("Select Release another patch"));
+    expect(selectionBar()?.textContent).toContain("2 selected");
+    await click(button("Extract selected", selectionBar() ?? root));
     await settle();
     expect(host.actions).toEqual([{ action: "extract-selected", episodeIds: ["s1:8", "s2:8"] }]);
     expect(host.face.page.getSnapshot()).toMatchObject({
@@ -211,8 +295,15 @@ describe("HistoryPage search", () => {
       selected: "selected:0123456789abcdef",
       picked: [],
     });
-    expect(detail()?.textContent).toContain("Selected tasks · 2 sessions");
+    expect(detail()?.querySelector("[data-tone=outline]")?.textContent).toBe("Selected tasks");
+    expect(detail()?.textContent).toContain("2 sessions");
     expect(detail()?.textContent).toContain("Queued");
+    expect(
+      root
+        .querySelector("[data-item='selected:0123456789abcdef']")
+        ?.closest("li")
+        ?.hasAttribute("data-highlight"),
+    ).toBe(true);
   });
 
   test("opens the first idea of the lead the host reused, even when another selected lead is newer", async () => {
@@ -234,7 +325,7 @@ describe("HistoryPage search", () => {
     host.face.page.update({ tab: "search", query: "npm test" });
     await render(host);
     await settle();
-    await click(root.querySelector("input[aria-label='Select Release a patch version']"));
+    await click(pick("Select Release a patch version"));
     await click(button("Extract selected", root));
     await settle();
     expect(host.face.page.getSnapshot().selected).toBe("selected:aaaaaaaaaaaaaaaa");
@@ -244,7 +335,7 @@ describe("HistoryPage search", () => {
     expect(detail()?.getAttribute("aria-label")).toBe("Tag from package.json");
   });
 
-  test("stops selecting at twelve tasks and clears the selection", async () => {
+  test("stops selecting at twelve tasks, clears the selection, and reads more rows on request", async () => {
     const host = fakeHost(inboxOf([]));
     const hits = Array.from({ length: PICK_LIMIT + 1 }, (_, index) =>
       task({
@@ -263,21 +354,27 @@ describe("HistoryPage search", () => {
     await render(host);
     await settle();
     expect(root.textContent).toContain("40 matching tasks, showing the first 13");
-    expect(root.textContent).toContain("Searches 90 tasks from 30 analyzed sessions.");
+    expect(root.textContent).toContain("Searches 90 tasks from 30 analyzed sessions");
     const boxes = [...root.querySelectorAll<HTMLInputElement>("input[type=checkbox]")];
     await act(async () => {
       for (const box of boxes.slice(0, PICK_LIMIT)) box.click();
     });
-    expect(root.textContent).toContain("12 selected");
-    expect(root.textContent).toContain("Up to 12 tasks");
+    const bar = selectionBar();
+    expect(bar?.textContent).toContain("12 selected");
+    expect(bar?.textContent).toContain("Up to 12 tasks");
     expect(boxes.at(-1)?.disabled).toBe(true);
     expect(boxes[0]?.disabled).toBe(false);
-    await click(button("Clear", root));
+    await click(button("Clear", bar ?? root));
     expect(host.face.page.getSnapshot().picked).toEqual([]);
     expect(boxes.at(-1)?.disabled).toBe(false);
+    expect(selectionBar()).toBeNull();
+
+    await click(button("Show more", root));
+    await settle();
+    expect(host.queries.at(-1)).toEqual({ q: "task", outcome: null, limit: 100 });
   });
 
-  test("says when nothing matches", async () => {
+  test("names the query when nothing matches", async () => {
     const host = fakeHost(inboxOf([]));
     host.answerSearch = (query) => ({
       query: query.q,
@@ -288,8 +385,28 @@ describe("HistoryPage search", () => {
     host.face.page.update({ tab: "search", query: "kubectl" });
     await render(host);
     await settle();
-    expect(root.textContent).toContain("No matching tasks.");
+    expect(root.querySelector("[data-empty]")?.textContent).toBe('No tasks match "kubectl"');
     expect(root.querySelectorAll("[data-episode]")).toHaveLength(0);
+  });
+
+  test("reports a failed search with a retry under the query row", async () => {
+    const host = fakeHost(inboxOf([]));
+    const answer = host.answerSearch;
+    let fail = true;
+    host.answerSearch = (query) => {
+      if (fail) throw new Error("index busy");
+      return answer(query);
+    };
+    host.face.page.update({ tab: "search", query: "npm test" });
+    await render(host);
+    await settle();
+    const alert = root.querySelector("[role=alert]");
+    expect(alert?.textContent).toContain("Search failed: index busy");
+    fail = false;
+    await click(button("Retry", alert ?? root));
+    await settle();
+    expect(root.querySelector("[role=alert]")).toBeNull();
+    expect(root.querySelectorAll("[data-episode]")).toHaveLength(3);
   });
 });
 
@@ -306,7 +423,7 @@ describe("HistoryPage backfill", () => {
     ]);
   });
 
-  test("shows real progress and pauses, then resumes the same range", async () => {
+  test("shows real progress in the scope line and pauses, then resumes the same range", async () => {
     const running = { range: "all", state: "running", total: 40, done: 12, failed: 2 } as const;
     const host = fakeHost(inboxOf([], { backfill: running }));
     host.face.page.update({ tab: "search" });
@@ -334,163 +451,15 @@ describe("HistoryPage backfill", () => {
     expect(button("Read past 90 days", root)).toBeDefined();
   });
 
-  test("shows the listing step before the total is known", async () => {
+  test("shows the listing step before the total is known and can pause it", async () => {
     const host = fakeHost(
       inboxOf([], { backfill: { range: "90d", state: "listing", total: 0, done: 0, failed: 0 } }),
     );
     host.face.page.update({ tab: "search" });
     await render(host);
     expect(root.textContent).toContain("Listing sessions");
-    expect(button("Pause", root)).toBeDefined();
-  });
-});
-
-describe("HistoryPage stats", () => {
-  test("shows coverage and opens a session whose analysis failed", async () => {
-    const host = fakeHost(inboxOf([]));
-    await stats(host);
-    const coverage = card("Coverage");
-    expect([...coverage.querySelectorAll("dt")].map((dt) => dt.textContent)).toEqual([
-      "Analyzed",
-      "In range",
-      "All sessions",
-      "Read by backfill",
-    ]);
-    expect([...coverage.querySelectorAll("dd")].map((dd) => dd.textContent)).toEqual([
-      "40",
-      "48",
-      "120",
-      "12",
-    ]);
-    const failed = coverage.querySelector("[data-session='s9']");
-    expect(failed?.textContent).toContain("日志无法解析");
-    expect(failed?.textContent).toContain("10 min ago");
-    await click(button("Open session", failed ?? root));
-    expect(host.sessionsOpened).toEqual(["s9"]);
-  });
-
-  test("shows sessions not listed yet in the coverage", async () => {
-    const host = fakeHost(inboxOf([]));
-    host.stats = {
-      ...host.stats,
-      coverage: { ...host.stats.coverage, inRange: null, total: null, failed: [] },
-    };
-    await stats(host);
-    expect([...card("Coverage").querySelectorAll("dd")].map((dd) => dd.textContent)).toEqual([
-      "40",
-      "not listed yet",
-      "not listed yet",
-      "12",
-    ]);
-  });
-
-  test("breaks down task outcomes and the lead and idea funnel", async () => {
-    const host = fakeHost(inboxOf([]));
-    await stats(host);
-    const outcomes = [...card("Task outcomes").querySelectorAll("li")].map((li) => li.textContent);
-    expect(outcomes).toEqual([
-      "Check passed20",
-      "Succeeded8",
-      "Unverified6",
-      "User disagreed1",
-      "Failed4",
-      "Cancelled1",
-    ]);
-    const segments = [...card("Task outcomes").querySelectorAll<HTMLElement>("[data-segment]")]
-      .filter((element) => element.style.width !== "")
-      .map((element) => [element.getAttribute("data-segment"), element.style.width]);
-    expect(segments[0]).toEqual(["verified", "50%"]);
-    const funnel = [...card("Leads and ideas").querySelectorAll("[data-step]")].map(
-      (step) => step.textContent,
-    );
-    expect(funnel).toEqual([
-      "Leads10",
-      "Summarized6",
-      "Not worth saving2",
-      "Ideas7",
-      "Drafted3",
-      "Saved1",
-      "Dismissed2",
-    ]);
-  });
-
-  test("jumps from a frequent action or a recurring error to a search for it", async () => {
-    const host = fakeHost(inboxOf([]));
-    await stats(host);
-    expect(card("Frequent actions").textContent).toContain("pnpm build9 sessions");
-    await click(button("Search for pnpm build", root));
-    expect(host.face.page.getSnapshot()).toMatchObject({ tab: "search", query: "pnpm build" });
-    expect(searchBox()?.value).toBe("pnpm build");
-    await wait(300);
-    expect(host.queries.at(-1)).toMatchObject({ q: "pnpm build" });
-
-    await perform(() => host.face.page.update({ tab: "stats" }));
-    await click(button("Search for Cannot find module 'vite'", root));
-    expect(host.face.page.getSnapshot().query).toBe("Cannot find module 'vite'");
-  });
-
-  test("shows seven days of usage with cache reads and writes", async () => {
-    const host = fakeHost(inboxOf([]));
-    await stats(host);
-    const usage = card("Model usage, last 7 days");
-    const days = [...usage.querySelectorAll("[data-day]")];
-    expect(days.map((day) => day.getAttribute("data-day"))).toEqual([
-      "2026-10-24",
-      "2026-10-25",
-      "2026-10-26",
-      "2026-10-27",
-      "2026-10-28",
-      "2026-10-29",
-      "2026-10-30",
-    ]);
-    const today = days.at(-1)?.textContent ?? "";
-    expect(today).toContain("10-30");
-    expect(today).toContain("Input 1.2K · Cache read 3.4K · Cache write 600 · Output 500");
-    expect(today).toContain("2 background · 1 requested · 1 failed");
-    expect(days[0]?.textContent).toBe("10-24");
-  });
-
-  test("lists recent model calls and opens the card a call worked on", async () => {
-    const host = fakeHost(inboxOf([item()]));
-    await stats(host);
-    const calls = card("Recent model calls");
-    const rows = [...calls.querySelectorAll("button")];
-    expect(rows[0]?.textContent).toContain("Cut a local patch release");
-    expect(rows[0]?.textContent).toContain(
-      "Draft · deepseek-pro · 42s · 5.2K in · 500 out · 1 min ago",
-    );
-    expect(rows[1]?.textContent).toContain("Not worth saving: A one-off migration");
-    await click(rows[0]);
-    expect(host.face.page.getSnapshot()).toMatchObject({
-      tab: "suggestions",
-      selected: "repeated:1~0",
-    });
-    expect(detail()?.getAttribute("aria-label")).toBe("Cut a local patch release");
-  });
-
-  test("names the idea count of a call that proposed ideas", async () => {
-    const host = fakeHost(inboxOf([]));
-    const [first] = host.stats.calls;
-    if (first === undefined) throw new Error("没有调用记录");
-    host.stats = {
-      ...host.stats,
-      calls: [{ ...first, stage: "summary", result: "proposed", detail: "2" }],
-    };
-    await stats(host);
-    expect(card("Recent model calls").textContent).toContain("2 ideas");
-  });
-
-  test("uses the singular for one idea", async () => {
-    const host = fakeHost(inboxOf([]));
-    const [first] = host.stats.calls;
-    if (first === undefined) throw new Error("没有调用记录");
-    host.stats = {
-      ...host.stats,
-      calls: [{ ...first, stage: "summary", result: "proposed", detail: "1" }],
-    };
-    await stats(host);
-    const text = card("Recent model calls").textContent ?? "";
-    expect(text).toContain("1 idea");
-    expect(text).not.toContain("1 ideas");
+    expect(button("Pause", root).disabled).toBe(false);
+    await click(button("Pause", root));
+    expect(host.actions).toEqual([{ action: "backfill-pause" }]);
   });
 });

@@ -1,85 +1,14 @@
-/* 任务行：勾选框、用户请求、结果与数量、命中片段或前几步。 */
-.task {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 10px;
-}
-
-@media (hover: hover) {
-  .task:hover {
-    background: var(--dsw-alias-interactive-bg-hover);
-  }
-}
-
+/* 勾选框放在 16px 的标记列里，它的文字标签只留给读屏；行标题已经写明任务。 */
 .pick {
-  flex: none;
-  margin: 3px 0 0;
-  accent-color: var(--dsw-alias-state-business-primary);
+  position: relative;
+  width: 16px;
 }
 
-.body {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.goal {
-  display: -webkit-box;
-  margin: 0;
+.pick > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
   overflow: hidden;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  font-size: 13px;
-  line-height: 18px;
-  overflow-wrap: anywhere;
-}
-
-.meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px 8px;
-  margin: 0;
-  font-size: 11px;
-  line-height: 16px;
-  color: var(--dsw-alias-label-tertiary);
-}
-
-.outcome {
-  color: var(--dsw-alias-label-secondary);
-}
-
-.task[data-outcome="failed"] .outcome,
-.task[data-outcome="disputed"] .outcome {
-  color: var(--dsw-alias-state-warn-label);
-}
-
-.path {
-  font-family: var(--dsw-font-family-mono, ui-monospace, monospace);
-}
-
-.lines {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  margin: 2px 0 0;
-  padding: 0;
-  list-style: none;
-  font-size: 11px;
-  line-height: 16px;
-}
-
-.lines code {
-  font-family: var(--dsw-font-family-mono, ui-monospace, monospace);
-  color: var(--dsw-alias-label-secondary);
-  overflow-wrap: anywhere;
-}
-
-.task mark {
-  border-radius: 2px;
-  background: var(--dsw-alias-state-warn-tertiary);
-  color: inherit;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

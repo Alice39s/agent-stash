@@ -1,63 +1,89 @@
 /**
- * 卡片列表：收件箱浮层、「历史回溯提炼」页与会话 Tab 共用。卡片以 idea 为单位，还没有 idea 的线索一张卡；
- * 按待你决定、本地发现、历史分组，历史默认收起。
+ * 建议的列表：收件箱浮层、「历史回溯提炼」页与会话视图共用。每行一个 idea，还没有 idea 的线索一行；
+ * 按待你决定、本地发现、历史分组，历史默认收起。行的标记列是状态点，元信息行以状态词开头。
  */
-import { IconCloseOutlineRegular, TextShimmer } from "@deepseek-ai/dsh-client-ui-primitives";
+import { IconCloseOutlineRegular, StateDot } from "@deepseek-ai/dsh-client-ui-primitives";
 import { useState, type ReactNode } from "react";
 import type { InboxView, ItemView } from "../shared.ts";
 import { showItem, type ScoutFace } from "./face.ts";
-import { groupItems, inFlight, metaOf, stateLabel, titleOf } from "./format.ts";
+import { absolute, groupItems, inFlight, itemStatus, metaItems, titleOf } from "./format.ts";
 import type { ScoutTranslate } from "./locale.ts";
 import type { InboxStore, Notice } from "./store.ts";
-import styles from "./cards.module.css";
+import { Group, GroupHeader } from "./ui/group-header.tsx";
+import { IconButton } from "./ui/icon-button.tsx";
+import { ListRow, RowList } from "./ui/list-row.tsx";
+import { LimitNotice, type ResultLink } from "./ui/notice.tsx";
 
-interface CardProps {
+/** 行的尺寸：主区域列表、窗格、浮层。 */
+export type RowSize = "page" | "pane" | "popover";
+
+interface ItemRowProps {
   readonly item: ItemView;
   readonly now: number;
   readonly t: ScoutTranslate;
+  readonly size: RowSize;
   readonly selected: boolean;
+  readonly highlight: boolean;
   readonly onOpen: (id: string) => void;
   readonly onDismiss?: ((id: string) => void) | undefined;
 }
 
-export function Card({ item, now, t, selected, onOpen, onDismiss }: CardProps): ReactNode {
+/** 一条建议：状态点、标题、摘要、以状态词开头的元信息，悬停时行尾出现忽略按钮。 */
+export function ItemRow({
+  item,
+  now,
+  t,
+  size,
+  selected,
+  highlight,
+  onOpen,
+  onDismiss,
+}: ItemRowProps): ReactNode {
   const title = titleOf(item);
+  const status = itemStatus(t, item);
+  const [source, ...rest] = metaItems(t, item, now);
+  const time = rest.pop() ?? "";
   return (
-    <li className={styles.card} data-state={item.state} data-stage={item.failure?.stage}>
-      <button
-        type="button"
-        className={styles.open}
-        data-item={item.id}
-        aria-current={selected || undefined}
-        onClick={() => onOpen(item.id)}
-      >
-        <span className={styles.cardTitle}>{title}</span>
-        {item.description !== null && item.state !== "written" && (
-          <span className={styles.cardSummary}>{item.description}</span>
-        )}
-        <span className={styles.cardMeta}>
-          <span className={styles.state}>
-            <TextShimmer active={inFlight(item)}>{stateLabel(t, item)}</TextShimmer>
-          </span>
-          <span>{metaOf(t, item, now)}</span>
-        </span>
-      </button>
-      {onDismiss !== undefined && (
-        <button
-          type="button"
-          className={styles.dismiss}
-          aria-label={`${t("action.dismiss")}: ${title}`}
-          title={t("action.dismiss")}
-          onClick={() => onDismiss(item.id)}
+    <ListRow
+      variant={size === "popover" ? "popover" : "item"}
+      size={size === "page" ? "page" : "pane"}
+      marker={<StateDot state={status.dot} />}
+      title={title}
+      titleInk={status.title}
+      summary={item.description !== null && item.state !== "written" ? item.description : undefined}
+      status={status}
+      metadata={[
+        source,
+        ...rest,
+        <time
+          key="time"
+          dateTime={new Date(item.updatedAt).toISOString()}
+          title={absolute(item.updatedAt)}
         >
-          <IconCloseOutlineRegular size={12} />
-        </button>
-      )}
-    </li>
+          {time}
+        </time>,
+      ]}
+      selected={selected}
+      highlight={highlight}
+      itemId={item.id}
+      onOpen={() => onOpen(item.id)}
+      rowData={{ "data-state": item.state, "data-stage": item.failure?.stage }}
+      actions={
+        onDismiss === undefined ? undefined : (
+          <IconButton
+            size={24}
+            label={`${t("action.dismiss")}: ${title}`}
+            onClick={() => onDismiss(item.id)}
+          >
+            <IconCloseOutlineRegular size={12} />
+          </IconButton>
+        )
+      }
+    />
   );
 }
 
-/** 没有可用模型、分析关闭或由另一个窗口分析时的一行说明。 */
+/** 限制当前区域的条件：没有可用模型、分析关闭、由另一个窗口分析。 */
 export function Banner({
   inbox,
   t,
@@ -72,19 +98,22 @@ export function Banner({
   else if (status.models.summary === null && pending) key = "banner.noModel";
   else if (!status.lead) key = "banner.secondary";
   if (key === null) return null;
-  return <p className={styles.banner}>{t(key)}</p>;
+  return <LimitNotice text={t(key)} />;
 }
 
-export interface CardListProps {
+export interface ItemListProps {
   readonly items: readonly ItemView[];
   readonly now: number;
   readonly t: ScoutTranslate;
+  readonly size: RowSize;
   readonly selected: string | null;
+  /** 从别处选中、要高亮一次的行。 */
+  readonly highlight?: string | null;
   readonly onOpen: (id: string) => void;
   readonly onDismiss: (id: string) => void;
 }
 
-/** 从卡片上忽略一条，提示里带撤销。 */
+/** 从行上忽略一条，提示里带撤销。 */
 export function dismissItem(inbox: InboxStore, id: string): void {
   void inbox.act(
     { action: "dismiss", id, similar: false },
@@ -92,7 +121,7 @@ export function dismissItem(inbox: InboxStore, id: string): void {
   );
 }
 
-/** 可以从卡片上直接忽略：不在等模型，也还没有结论。 */
+/** 可以从行上直接忽略：不在等模型，也还没有结论。 */
 function dismissable(item: ItemView): boolean {
   return (
     !inFlight(item) &&
@@ -102,129 +131,112 @@ function dismissable(item: ItemView): boolean {
   );
 }
 
-/** 一组卡片，不分组。 */
-export function CardList({ items, now, t, selected, onOpen, onDismiss }: CardListProps): ReactNode {
+/** 一组行，不分组。 */
+export function ItemList({
+  items,
+  now,
+  t,
+  size,
+  selected,
+  highlight = null,
+  onOpen,
+  onDismiss,
+}: ItemListProps): ReactNode {
   return (
-    <ul className={styles.list}>
+    <RowList>
       {items.map((item) => (
-        <Card
+        <ItemRow
           key={item.id}
           item={item}
           now={now}
           t={t}
+          size={size}
           selected={item.id === selected}
+          highlight={item.id === highlight}
           onOpen={onOpen}
           onDismiss={dismissable(item) ? onDismiss : undefined}
         />
       ))}
-    </ul>
+    </RowList>
   );
 }
 
-/** 按状态分组的卡片；历史默认收起，选中的卡片在历史里时展开，用户点过之后按用户的选择。 */
-export function GroupedCards(props: CardListProps): ReactNode {
-  const { items, selected, t } = props;
+/** 按状态分组的行；历史默认收起，选中的行在历史里时展开，用户点过之后按用户的选择。 */
+export function GroupedItems(props: ItemListProps & { readonly sticky?: boolean }): ReactNode {
+  const { items, selected, t, size, sticky = false } = props;
   const groups = groupItems(items);
-  /** 用户展开或收起过历史；为 null 时跟随选中的卡片。 */
+  /** 用户展开或收起过历史；为 null 时跟随选中的行。 */
   const [expanded, setExpanded] = useState<boolean | null>(null);
   const history = expanded ?? groups.history.some((item) => item.id === selected);
-  const section = (
+  const group = (
     key: "section.review" | "section.found",
     entries: readonly ItemView[],
   ): ReactNode =>
     entries.length === 0 ? null : (
-      <section className={styles.section} aria-label={t(key)}>
-        <h3 className={styles.sectionTitle}>{t(key)}</h3>
-        <CardList {...props} items={entries} />
-      </section>
+      <Group title={t(key)} size={size}>
+        <GroupHeader title={t(key)} count={entries.length} size={size} sticky={sticky} />
+        <ItemList {...props} items={entries} />
+      </Group>
     );
   return (
     <>
-      {section("section.review", groups.review)}
-      {section("section.found", groups.found)}
+      {group("section.review", groups.review)}
+      {group("section.found", groups.found)}
       {groups.history.length > 0 && (
-        <section className={styles.section}>
-          <button
-            type="button"
-            className={styles.historyToggle}
-            aria-expanded={history}
-            onClick={() => setExpanded(!history)}
-          >
-            {history ? t("history.hide") : t("history.show", { count: groups.history.length })}
-          </button>
-          {history && <CardList {...props} items={groups.history} />}
-        </section>
+        <Group title={t("section.history")} size={size}>
+          <GroupHeader
+            title={t("section.history")}
+            count={groups.history.length}
+            size={size}
+            sticky={sticky}
+            toggle={{
+              expanded: history,
+              label: t(history ? "group.collapse" : "group.expand", {
+                group: t("section.history"),
+              }),
+              onToggle: () => setExpanded(!history),
+            }}
+          />
+          {history && <ItemList {...props} items={groups.history} />}
+        </Group>
       )}
     </>
   );
 }
 
-/** 没有任何卡片时的说明。 */
-export function EmptyInbox({
-  inbox,
-  t,
-}: {
-  readonly inbox: InboxView;
-  readonly t: ScoutTranslate;
-}): ReactNode {
-  return (
-    <div className={styles.empty}>
-      <p className={styles.emptyTitle}>{t("panel.empty.title")}</p>
-      <p className={styles.emptyBody}>{t("panel.empty.body")}</p>
-      <p className={styles.caption}>
-        {t(inbox.status.analyzed.sessions === 1 ? "panel.analyzed.one" : "panel.analyzed.other", {
-          sessions: inbox.status.analyzed.sessions,
-        })}
-      </p>
-    </div>
-  );
-}
-
-/** 一条提示的正文与按钮：查看、撤销、关闭。 */
-export function NoticeBar({
-  notice,
-  face,
-  t,
-  onView,
-}: {
-  readonly notice: Notice;
-  readonly face: Pick<ScoutFace, "inbox" | "page" | "openPage">;
-  readonly t: ScoutTranslate;
-  readonly onView?: () => void;
-}): ReactNode {
+/** 一条提示的查看与撤销链接。 */
+export function noticeLinks(
+  notice: Notice,
+  face: Pick<ScoutFace, "inbox" | "page" | "openPage">,
+  t: ScoutTranslate,
+  onView?: () => void,
+): ResultLink[] {
   const { inbox } = face;
-  return (
-    <>
-      <span className={styles.noticeText}>{t(notice.key, notice.params)}</span>
-      <span className={styles.noticeActions}>
-        {notice.view !== null && (
-          <button
-            type="button"
-            className={styles.link}
-            onClick={() => {
-              const target = notice.view;
+  const view = notice.view;
+  const undo = notice.undo;
+  return [
+    ...(view === null
+      ? []
+      : [
+          {
+            label: t("notice.view"),
+            onClick: () => {
               inbox.clearNotice();
               onView?.();
-              showItem(face, target);
-            }}
-          >
-            {t("notice.view")}
-          </button>
-        )}
-        {notice.undo !== null && (
-          <button
-            type="button"
-            className={styles.link}
-            onClick={() => {
-              const action = notice.undo;
+              showItem(face, view);
+            },
+          },
+        ]),
+    ...(undo === null
+      ? []
+      : [
+          {
+            label: t("notice.undo"),
+            onClick: () => {
               inbox.clearNotice();
-              if (action !== null) void inbox.act(action);
-            }}
-          >
-            {t("notice.undo")}
-          </button>
-        )}
-      </span>
-    </>
-  );
+              void inbox.act(undo);
+            },
+          },
+        ]),
+  ];
 }

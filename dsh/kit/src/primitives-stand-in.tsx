@@ -2,6 +2,7 @@ import {
   useEffect,
   type ButtonHTMLAttributes,
   type CSSProperties,
+  type HTMLAttributes,
   type InputHTMLAttributes,
   type ReactElement,
   type ReactNode,
@@ -136,6 +137,121 @@ export const IconChevronDownOutlineRegular = icon("chevron-down");
 export const IconTrashOutlineRegular = icon("trash");
 export const IconPlusOutlineRegular = icon("plus");
 export const IconSkillOutlineRegular = icon("skill");
+export const IconEditOutlineRegular = icon("edit");
+export const IconChevronLeftOutlineRegular = icon("chevron-left");
+export const IconChevronRightOutlineRegular = icon("chevron-right");
+export const IconEllipsisOutlineRegular = icon("ellipsis");
+export const IconSearchOutlineRegular = icon("search");
+
+/** 宿主的状态点只有样式；替身用 `data-state` 与 `data-appearance` 标出状态与外观。 */
+export function StateDot(props: {
+  state: "done" | "warning" | "ongoing" | "error" | "idle";
+  size?: number | undefined;
+  className?: string | undefined;
+  appearance?: "dot" | "step";
+}): ReactNode {
+  if (props.state === "ongoing") {
+    return <svg data-state="ongoing" className={props.className} aria-hidden="true" />;
+  }
+  return (
+    <span
+      data-state={props.state}
+      data-appearance={props.appearance ?? "dot"}
+      className={props.className}
+      aria-hidden="true"
+    />
+  );
+}
+
+/** 与宿主相同的 tablist 语义：选中的 Tab 可聚焦，左右键与 Home、End 切换。 */
+export function SegmentedTabs<Value extends string>(props: {
+  items: readonly { value: Value; label: ReactNode; id: string; panelId: string }[];
+  value: Value;
+  onChange: (value: Value) => void;
+  label: string;
+  className?: string | undefined;
+}): ReactNode {
+  const { items } = props;
+  const move = (index: number, key: string): void => {
+    const next =
+      key === "ArrowLeft"
+        ? (index + items.length - 1) % items.length
+        : key === "ArrowRight"
+          ? (index + 1) % items.length
+          : key === "Home"
+            ? 0
+            : key === "End"
+              ? items.length - 1
+              : null;
+    const item = next === null ? undefined : items[next];
+    if (item !== undefined) props.onChange(item.value);
+  };
+  return (
+    <div role="tablist" aria-label={props.label} className={props.className}>
+      {items.map((item, index) => (
+        <button
+          key={item.value}
+          id={item.id}
+          type="button"
+          role="tab"
+          aria-selected={item.value === props.value}
+          aria-controls={item.panelId}
+          tabIndex={item.value === props.value ? 0 : -1}
+          onClick={() => props.onChange(item.value)}
+          onKeyDown={(event) => move(index, event.key)}
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+/** 与宿主相同：标签包住原生复选框，标签文字就是无障碍名称。 */
+export function Checkbox(props: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+  disabled?: boolean;
+  title?: string | undefined;
+  className?: string | undefined;
+}): ReactNode {
+  return (
+    <label className={props.className} title={props.title}>
+      <input
+        type="checkbox"
+        checked={props.checked}
+        disabled={props.disabled}
+        onChange={(event) => props.onChange(event.target.checked)}
+      />
+      <span>{props.label}</span>
+    </label>
+  );
+}
+
+export function Tag(props: {
+  tone?: string;
+  className?: string | undefined;
+  children?: ReactNode;
+}): ReactNode {
+  return (
+    <span data-tone={props.tone ?? "outline"} className={props.className}>
+      {props.children}
+    </span>
+  );
+}
+
+/** 宿主按宽度淡出目录；替身输出完整路径，`title` 同宿主。 */
+export function PathLabel({
+  path,
+  ...attributes
+}: { path: string } & Omit<HTMLAttributes<HTMLSpanElement>, "children" | "title">): ReactNode {
+  return (
+    <span {...attributes} title={path} data-path-label="">
+      {path}
+    </span>
+  );
+}
 
 /** 提示文字与按键放在锚点外层的 `data-tooltip` 与 `data-tooltip-keys` 上，测试据此断言。 */
 export function Tooltip(props: {
@@ -156,11 +272,20 @@ export function Tooltip(props: {
 }
 
 type Entry =
-  | { id: string; label: ReactNode; disabled?: boolean; icon?: ReactNode }
+  | { id: string; label: ReactNode; disabled?: boolean; icon?: ReactNode; danger?: boolean }
   | { type: "label"; id: string; text: string }
   | { type: "separator"; id: string };
 
-function MenuEntryRow({ entry, onSelect }: { entry: Entry; onSelect?: (id: string) => void }) {
+/** 宿主用行尾的勾标出选中行；替身在传入 `selectedId` 时用 `data-selected` 标出。 */
+function MenuEntryRow({
+  entry,
+  onSelect,
+  selectedId,
+}: {
+  entry: Entry;
+  onSelect?: (id: string) => void;
+  selectedId?: string | undefined;
+}) {
   if ("type" in entry) {
     return entry.type === "label" ? <div role="presentation">{entry.text}</div> : <hr />;
   }
@@ -169,6 +294,8 @@ function MenuEntryRow({ entry, onSelect }: { entry: Entry; onSelect?: (id: strin
       type="button"
       role="menuitem"
       disabled={entry.disabled}
+      data-selected={selectedId === undefined ? undefined : entry.id === selectedId}
+      data-danger={entry.danger === true ? "" : undefined}
       onClick={() => onSelect?.(entry.id)}
     >
       {entry.icon}
@@ -183,6 +310,7 @@ export function Menu(props: {
   items?: readonly Entry[];
   children?: ReactNode;
   footer?: readonly Entry[];
+  selectedId?: string | undefined;
   onSelect?: (id: string) => void;
   onClose: () => void;
   listClassName?: string | undefined;
@@ -199,7 +327,12 @@ export function Menu(props: {
           }}
         >
           {props.items?.map((entry) => (
-            <MenuEntryRow key={entry.id} entry={entry} {...pick(props.onSelect)} />
+            <MenuEntryRow
+              key={entry.id}
+              entry={entry}
+              selectedId={props.selectedId}
+              {...pick(props.onSelect)}
+            />
           ))}
           {props.children}
           {props.footer?.map((entry) => (
@@ -218,7 +351,9 @@ function pick(onSelect: ((id: string) => void) | undefined): { onSelect?: (id: s
 export function MenuItemButton(props: {
   children: ReactNode;
   shortcut?: { keys: readonly string[] };
+  icon?: ReactNode;
   disabled?: boolean;
+  danger?: boolean;
   onSelect: () => void;
 }): ReactNode {
   return (
@@ -226,9 +361,11 @@ export function MenuItemButton(props: {
       type="button"
       role="menuitem"
       disabled={props.disabled}
+      data-danger={props.danger === true ? "" : undefined}
       aria-keyshortcuts={props.shortcut?.keys.join("+")}
       onClick={props.onSelect}
     >
+      {props.icon}
       {props.children}
     </button>
   );

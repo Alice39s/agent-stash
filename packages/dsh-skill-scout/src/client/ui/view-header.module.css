@@ -1,0 +1,65 @@
+/* 48px 的视图头部，底部一条 l2 细线；窄时动作换行，元信息先隐藏。 */
+.header {
+  container-type: inline-size;
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 4px;
+  box-sizing: border-box;
+  min-height: 48px;
+  padding: 0 16px;
+  border-bottom: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.status {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+  height: 48px;
+}
+
+.dot {
+  display: inline-flex;
+  flex: none;
+  justify-content: center;
+  width: 16px;
+}
+
+.title {
+  flex: none;
+  font: var(--dsw-font-s-strong-14);
+  color: var(--dsw-alias-label-primary);
+}
+
+.meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xxs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+@container (max-width: 480px) {
+  .meta {
+    display: none;
+  }
+
+  .actions {
+    padding-bottom: 10px;
+  }
+}

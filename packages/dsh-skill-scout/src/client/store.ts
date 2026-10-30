@@ -53,6 +53,11 @@ export interface InboxStore extends Observable<InboxState> {
   clearNotice(): void;
   /** 详情开始显示一张卡片；返回停止显示的函数。 */
   watch(id: string): () => void;
+  /**
+   * 一个看得见的插件表面（会话视图、页面的建议分区、打开的浮层）开始列出 `lists` 认得的卡片：
+   * 这些卡片的后台工作结束时由行里的圆点和状态词表达，不再弹出提示（design 4.9）。返回停止列出的函数。
+   */
+  listing(lists: (item: ItemView) => boolean): () => void;
   /** 页面开始承接提示；返回交还的函数。 */
   hostNotices(): () => void;
   /** 停止计时器与监听。 */
@@ -87,6 +92,11 @@ export function pollInterval(inbox: InboxView | null): number {
   return IDLE_INTERVAL;
 }
 
+/** 列出全部卡片的表面（页面的建议分区、打开的浮层）交给 `listing` 的判断。 */
+export function everyItem(): boolean {
+  return true;
+}
+
 /** 请求结束后会提示的状态。 */
 const SETTLED = new Set<ItemView["state"]>(["proposed", "skipped", "ready", "failed"]);
 
@@ -98,18 +108,18 @@ interface Finished {
 
 /**
  * 上一份收件箱里在等模型、这一份里结束了的卡片。线索的摘要给出 idea 后，原来的线索卡片换成 idea 卡片，
- * 结果记在第一个 idea 上。正在详情里显示的卡片不算：用户就在看着它。
+ * 结果记在第一个 idea 上。`shown` 认得的卡片不算：它正在详情里显示，或者列在看得见的插件表面上。
  * @internal 导出供测试使用。
  */
 export function finishedItems(
   before: InboxView | null,
   after: InboxView,
-  viewing: readonly string[],
+  shown: (item: ItemView) => boolean,
 ): Finished[] {
   if (before === null) return [];
   const results: Finished[] = [];
   for (const previous of before.items) {
-    if (!inFlight(previous) || viewing.includes(previous.id)) continue;
+    if (!inFlight(previous) || shown(previous)) continue;
     const same = after.items.find((entry) => entry.id === previous.id);
     const ideas =
       same === undefined && previous.ideaIndex === null
@@ -118,7 +128,7 @@ export function finishedItems(
           )
         : [];
     const next = same ?? ideas[0];
-    if (next === undefined || !SETTLED.has(next.state) || viewing.includes(next.id)) continue;
+    if (next === undefined || !SETTLED.has(next.state) || shown(next)) continue;
     results.push({ item: next, ideas: ideas.length });
   }
   return results;
@@ -158,7 +168,13 @@ export function createInboxStore(transport: InboxTransport): InboxStore {
   let generation = 0;
   /** 每张卡片被几个详情显示着。 */
   const watching = new Map<string, number>();
+  /** 看得见的插件表面各自列出哪些卡片。 */
+  const surfaces = new Set<{ readonly lists: (item: ItemView) => boolean }>();
   let hosts = 0;
+
+  /** 卡片正在详情里显示，或者列在看得见的插件表面上。 */
+  const shown = (item: ItemView): boolean =>
+    watching.has(item.id) || [...surfaces].some((surface) => surface.lists(item));
 
   const set = (next: InboxState): void => {
     state = next;
@@ -188,7 +204,7 @@ export function createInboxStore(transport: InboxTransport): InboxStore {
 
   /** 换上新的收件箱；有请求结束时发出提示。 */
   const receive = (inbox: InboxView): void => {
-    const notice = finishedNotice(finishedItems(state.inbox, inbox, state.viewing));
+    const notice = finishedNotice(finishedItems(state.inbox, inbox, shown));
     set({ ...state, status: "ready", inbox, error: null });
     if (notice !== null) showNotice(notice);
   };
@@ -253,6 +269,13 @@ export function createInboxStore(transport: InboxTransport): InboxStore {
         if (count === 0) watching.delete(id);
         else watching.set(id, count);
         set({ ...state, viewing: [...watching.keys()] });
+      };
+    },
+    listing(lists) {
+      const surface = { lists };
+      surfaces.add(surface);
+      return () => {
+        surfaces.delete(surface);
       };
     },
     hostNotices() {
