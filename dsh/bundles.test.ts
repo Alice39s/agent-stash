@@ -14,6 +14,8 @@ interface BundleCase {
   readonly dsh: string;
   /** 每个插件包都发布的文件之外，还随包发布的文件或目录。 */
   readonly extraFiles?: readonly string[];
+  /** 需要包内资源定位的依赖保留给 Node 加载。 */
+  readonly hostExternals?: readonly string[];
 }
 
 /**
@@ -34,6 +36,7 @@ const BUNDLES = {
     row: "dsh-enhance",
     dsh: "0.2.1-rc.3",
     extraFiles: ["vendor"],
+    hostExternals: ["tiktoken"],
   },
 } satisfies Readonly<Record<string, BundleCase>>;
 /** 以 Agent Stash 框架为前置依赖的插件包。 */
@@ -78,7 +81,7 @@ const LocaleSchema = v.object({
 });
 
 describe.each(Object.entries(BUNDLES))("DSH bundle dsh/%s", (bundle, bundleCase: BundleCase) => {
-  const { packageName, row, dsh, extraFiles = [] } = bundleCase;
+  const { packageName, row, dsh, extraFiles = [], hostExternals = [] } = bundleCase;
   const root = fileURLToPath(new URL(`./${bundle}/`, import.meta.url));
   const read = async (file: string): Promise<unknown> =>
     JSON.parse(await readFile(join(root, file), "utf8"));
@@ -117,12 +120,20 @@ describe.each(Object.entries(BUNDLES))("DSH bundle dsh/%s", (bundle, bundleCase:
     expect(Buffer.byteLength(icon)).toBeLessThanOrEqual(INLINE_ICON_BYTES);
   });
 
-  test("imports only Node built-ins from its Host half", async () => {
+  test("imports only Node built-ins and declared resource dependencies from its Host half", async () => {
     const host = await readFile(join(root, "dist/index.js"), "utf8");
     const specifiers = [...host.matchAll(/^import .* from "([^"]+)";$/gmu)].map(
       (match) => match[1],
     );
-    expect(specifiers.filter((specifier) => !specifier?.startsWith("node:"))).toEqual([]);
+    expect(specifiers.filter((specifier) => !specifier?.startsWith("node:"))).toEqual(
+      hostExternals,
+    );
+    const manifest = v.parse(
+      v.object({ dependencies: v.optional(v.record(v.string(), v.string())) }),
+      await read("package.json"),
+    );
+    for (const dependency of hostExternals)
+      expect(manifest.dependencies?.[dependency]).toBeDefined();
   });
 
   test("wraps the client half in the DSH module loader under the package name", async () => {

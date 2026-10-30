@@ -13,12 +13,14 @@ import { presetInstructions } from "./presets.ts";
 import { expandIncludes, loadReferences, type References } from "./references.ts";
 import { buildPrompt, runRewrite, type LlmView, type ModelRoute } from "./rewrite.ts";
 import type { EnhanceSettings } from "./settings-value.ts";
-import { estimateTokens } from "./tokens.ts";
+import { estimateTokens, freeTokenEncoder } from "./tokens.ts";
 import {
   CONTEXT_PATH,
   type ContextResult,
   RewriteRequestSchema,
   REWRITE_PATH,
+  TOKENS_PATH,
+  TokensRequestSchema,
   type Failure,
   type RewriteResult,
   type SessionModel,
@@ -261,11 +263,28 @@ export function rewriteHandler(
 
 /** 注册改写与上下文两条路由，插件卸载时一并移除。 */
 export function registerRoutes(ctx: EnhanceHostContext, config: ConfigValue): void {
+  ctx.effect(() => freeTokenEncoder, "dsh-enhance: token encoder");
   let loading: Promise<References> | undefined;
   const references: ReferenceSource = () => (loading ??= loadReferences());
   const routes: DshWebRoute[] = [
     { kind: "exact", path: REWRITE_PATH, handler: rewriteHandler(ctx, config, references) },
     { kind: "exact", path: CONTEXT_PATH, handler: contextHandler(ctx, config, references) },
+    {
+      kind: "exact",
+      path: TOKENS_PATH,
+      handler: guardRoute(
+        (req) => ctx.connection.requestRejection(req),
+        "POST",
+        async (req, res) => {
+          const body = await readJsonBody(req, TokensRequestSchema);
+          if (!body.ok) {
+            sendJson(res, body.status, { message: body.message });
+            return;
+          }
+          sendJson(res, 200, { tokens: estimateTokens(body.value.draft) });
+        },
+      ),
+    },
   ];
   for (const route of routes) {
     ctx.effect(() => ctx.webServer.register(route), `dsh-enhance: ${route.path}`);

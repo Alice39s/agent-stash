@@ -34,14 +34,14 @@ icon: WandSparkles
 
 三份指南都是 MIT 许可，原样随包放在 `vendor/` 里，`vendor/manifest.json` 记录每份的上游仓库与提交。仓库的同步任务每天检查上游，有更新时开 PR 并自动合并。
 
-三份指南合计约 1.4 万 tokens，所以润色一次的输入比另外两个预设多出这么多，菜单顶部的预计用量会把差别显示出来。
+润色预设内联三份指南，输入比另外两个预设更多；菜单顶部按 o200k_base 编码显示各预设的输入估算。
 
 自定义预设的指令也可以写 `<include ref="humanizer" />` 引用这些指南，可用的名称是 `humanizer`、`no-ai-slop` 和 `no-negative-echo`。Host 发出请求前把它换成指南全文；名称不存在时改写失败，把指针移到失败说明上可以看到可用的名称。
 
 ## 使用
 
 - 草稿为空时按钮不显示。把指针移到按钮上，提示写着「点我增强提示词」，关联了会话上下文时注明轮数。点按钮打开预设菜单，数字键 <Kbd>1</Kbd>–<Kbd>9</Kbd> 直接选择对应的预设。
-- 菜单顶部写着本轮请求预计消耗的 token 数和关联的上下文轮数，例如「本轮润色请求将消耗大约 16,630 Tokens，已关联最近 1 轮上下文」。数字按指针或键盘焦点所在的预设计算，没有指向预设时按第一个预设。
+- 菜单顶部显示 o200k_base 输入估算和关联的上下文轮数。数字按指针或键盘焦点所在的预设计算，没有指向预设时按第一个预设。
 - 改写进行中，草稿锁定、不能编辑，按钮变成停止按钮。点它或按 <Kbd>Esc</Kbd> 停止，草稿保持原样。
 - 改写完成后，按钮左侧出现撤销按钮，点它回到原稿。连续用几个预设改写时，撤销回到最早那份草稿。改动草稿或发送后，撤销按钮消失。
 - 失败原因显示在按钮左侧，草稿不变。模型报错、结果被检查拒绝、预设的指令无法使用、随包分发的写作参考读不出来、读取会话失败和无法连接 DSH 时，把指针移到说明上可以看到具体原因。
@@ -53,7 +53,7 @@ icon: WandSparkles
 - 与草稿使用同一种文字（中日韩文字或拉丁字母）。
 - 草稿里的代码块、行内代码、链接和凭据占位符全部保留。
 
-预计用量只算发给模型的输入：系统提示、会话上下文和草稿，按 [DeepSeek API 文档](https://api-docs.deepseek.com/quick_start/token_usage)给出的比例换算，1 个英文字符约 0.3 token，1 个中文字符约 0.6 token。模型的输出和推理不计在内，实际用量以模型返回为准。
+预计用量使用 [tiktoken](https://github.com/dqbd/tiktoken) 的 `o200k_base` 编码器，分别编码系统提示、会话上下文与草稿后相加。它只是输入文本估算，不是所选模型的 tokenizer 或计费结果；分段边界、协议开销、输出和推理均可能使实际用量不同。实际用量以模型返回为准。
 
 ## 会话上下文
 
@@ -118,7 +118,7 @@ icon: WandSparkles
 
 `icon` 取 DSH 图标库里的图标名，留空时用默认图标，写了不在下面范围里的名称也用默认图标：`sparkle`、`enhance-outline`、`flat-list-outline`、`list-pen-outline`、`checklist-outline`、`compact-outline`、`wrap-lines-outline`、`edit-outline`、`microphone-outline`、`think-outline`、`light-outline`、`goal-outline`、`plan-outline`、`question-outline`、`info-outline`、`search-outline`、`inspect-outline`、`compare-split-outline`、`code-outline`、`api-outline`、`database-outline`、`branch-outline`、`warning-triangle-outline`、`shield-outline`、`gauge-outline`、`clock-outline`、`link-outline`、`globe-outline`、`user-outline`、`users-outline`、`skill-outline`、`agent-preset-outline`、`personalization-outline`、`deliver-doc`、`folder-open-outline`、`paper-plane-outline`。
 
-插件的 Host 半部注册两条路由：`GET /dsh-enhance/context` 返回下一次改写会附带的轮数，以及每个预设在草稿为空时的预计输入 token 数；`POST /dsh-enhance/rewrite` 读取会话、调用模型并检查结果。两条路由都经过 DSH 的连接校验，草稿最多 20000 个字符。
+插件的 Host 半部注册三条路由：`GET /dsh-enhance/context` 返回下一次改写会附带的轮数，以及每个预设在草稿为空时的预计输入 token 数；`POST /dsh-enhance/tokens` 估算草稿的 o200k_base token 数；`POST /dsh-enhance/rewrite` 读取会话、调用模型并检查结果。路由都经过 DSH 的连接校验，草稿最多 20000 个字符。菜单打开时，草稿估算防抖 150 ms，关闭或编辑后取消旧请求。编码器留在 Host，首次需要时创建并复用，插件卸载时释放；浏览器不加载 WASM。
 
 ## 安装
 

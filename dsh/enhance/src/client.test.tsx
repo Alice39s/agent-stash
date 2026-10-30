@@ -21,10 +21,15 @@ const pending: Pending[] = [];
 const contextReads: string[] = [];
 const TOKENS = { polish: 13_000, structure: 1500, concise: 1600 };
 let contextTurns = 2;
+const tokenReads: string[] = [];
 
 beforeEach(() => {
   contextTurns = 2;
   vi.stubGlobal("fetch", (url: string, init?: RequestInit) => {
+    if (url === "dsh-enhance/tokens") {
+      tokenReads.push(typeof init?.body === "string" ? init.body : "");
+      return Promise.resolve(Response.json({ tokens: 4 }));
+    }
     if (url.startsWith("dsh-enhance/context")) {
       contextReads.push(url);
       return Promise.resolve(Response.json({ turns: contextTurns, tokens: TOKENS }));
@@ -55,6 +60,7 @@ afterEach(() => {
   harness = undefined;
   pending.length = 0;
   contextReads.length = 0;
+  tokenReads.length = 0;
   vi.unstubAllGlobals();
 });
 
@@ -95,6 +101,22 @@ async function choose(h: EnhanceHarness, title: string): Promise<Pending> {
 }
 
 describe("enhance button", () => {
+  test("debounces draft estimates and cancels them when the menu closes", async () => {
+    const h = await mount();
+    await h.type("first draft");
+    await openMenu(h);
+    await click(button(h));
+    await act(async () => {
+      await new Promise((done) => setTimeout(done, 180));
+    });
+    expect(tokenReads).toHaveLength(0);
+    await openMenu(h);
+    await act(async () => {
+      await new Promise((done) => setTimeout(done, 180));
+    });
+    expect(tokenReads).toEqual([JSON.stringify({ draft: "first draft" })]);
+  });
+
   test("stays hidden while the draft is empty", async () => {
     const h = await mount();
     expect(button(h)).toBeNull();
@@ -116,23 +138,25 @@ describe("enhance button", () => {
 
   test("estimates the tokens of the preset under focus in the menu", async () => {
     const h = await mount();
-    // 18 个拉丁字符，约 6 token。
     await h.type("do what we planned");
     await act(async () => {});
     await openMenu(h);
     const estimate = () => h.slot().querySelector(".dsh-enhance-estimate")?.textContent;
+    await act(async () => {
+      await new Promise((done) => setTimeout(done, 180));
+    });
     expect(estimate()).toBe(
-      "This rewrite will use about 13,006 tokens, with the last 2 turns linked",
+      "o200k_base input estimate: 13,004 tokens, with the last 2 turns linked",
     );
     const concise = menuItems(h)[2];
     if (!(concise instanceof HTMLElement)) throw new Error("no concise row");
     await act(async () => concise.focus());
     expect(estimate()).toBe(
-      "This rewrite will use about 1,606 tokens, with the last 2 turns linked",
+      "o200k_base input estimate: 1,604 tokens, with the last 2 turns linked",
     );
     await click(button(h));
     await openMenu(h);
-    expect(estimate()).toContain("13,006 tokens");
+    expect(estimate()).toContain("13,004 tokens");
   });
 
   test("leaves the turns out when no context is linked", async () => {
@@ -142,8 +166,11 @@ describe("enhance button", () => {
     await act(async () => {});
     expect(button(h)?.parentElement?.dataset["tooltip"]).toBe("Click to enhance the prompt");
     await openMenu(h);
+    await act(async () => {
+      await new Promise((done) => setTimeout(done, 180));
+    });
     expect(h.slot().querySelector(".dsh-enhance-estimate")?.textContent).toBe(
-      "This rewrite will use about 13,006 tokens",
+      "o200k_base input estimate: 13,004 tokens",
     );
   });
 

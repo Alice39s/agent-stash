@@ -17,7 +17,7 @@ import type { ReferenceSource } from "./host.ts";
 import { buildPrompt, type LlmView, type ModelRoute, type StreamChunkView } from "./rewrite.ts";
 import { DEFAULT_SETTINGS } from "./settings-value.ts";
 import { estimateTokens } from "./tokens.ts";
-import { CONTEXT_PATH, REWRITE_PATH } from "./wire.ts";
+import { CONTEXT_PATH, REWRITE_PATH, TOKENS_PATH } from "./wire.ts";
 
 const EVENTS: SurfaceEvent[] = [
   {
@@ -371,6 +371,45 @@ describe("context route", () => {
 });
 
 describe("route registration", () => {
+  test("counts bounded drafts on the Host and enforces the connection check", async () => {
+    const routes: DshWebRoute[] = [];
+    const disposers: (() => void)[] = [];
+    const { ctx } = harness({});
+    registerRoutes(
+      {
+        ...ctx,
+        webServer: {
+          register: (route) => {
+            routes.push(route);
+            return () => {};
+          },
+        },
+        effect: (run) => {
+          disposers.push(run());
+        },
+      },
+      Config({}),
+    );
+    const route = routes.find((candidate) => candidate.path === TOKENS_PATH);
+    if (route === undefined) throw new Error("missing token route");
+    const base = await serve(route.handler);
+    const post = (draft: string, headers: Record<string, string> = {}) =>
+      fetch(`${base}${TOKENS_PATH}`, {
+        method: "POST",
+        headers: { "content-type": "application/json", ...headers },
+        body: JSON.stringify({ draft }),
+      });
+    expect(await (await post("hello world 中文 😀")).json()).toEqual({
+      tokens: estimateTokens("hello world 中文 😀"),
+    });
+    expect(await (await post("")).json()).toEqual({ tokens: 0 });
+    expect((await post("a".repeat(20_001))).status).toBe(400);
+    expect((await post("x", { "x-reject": "1" })).status).toBe(403);
+    expect((await fetch(`${base}${TOKENS_PATH}`)).status).toBe(405);
+    for (const dispose of disposers) dispose();
+    expect(estimateTokens("hello world")).toBe(2);
+  });
+
   test("registers both routes as effects", () => {
     const paths: string[] = [];
     const { ctx } = harness({});
@@ -386,7 +425,7 @@ describe("route registration", () => {
       },
       Config({}),
     );
-    expect(paths).toEqual([REWRITE_PATH, CONTEXT_PATH]);
+    expect(paths).toEqual([REWRITE_PATH, CONTEXT_PATH, TOKENS_PATH]);
   });
 });
 

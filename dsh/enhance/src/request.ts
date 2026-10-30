@@ -5,6 +5,8 @@ import {
   FailureSchema,
   RewriteResultSchema,
   REWRITE_PATH,
+  TOKENS_PATH,
+  TokensResultSchema,
   type ContextResult,
   type Failure,
   type RewriteRequest,
@@ -23,6 +25,18 @@ export type RewriteResponse =
 /** 文档相对路径：DSH 可能挂在子路径下。 */
 function relative(path: string): string {
   return path.slice(1);
+}
+
+/** 只向当前 DSH Host 发送草稿，返回 o200k_base 输入文本估算。 */
+export async function requestTokens(draft: string, signal: AbortSignal): Promise<number> {
+  const response = await fetch(relative(TOKENS_PATH), {
+    method: "POST",
+    headers: { accept: "application/json", "content-type": "application/json" },
+    body: JSON.stringify({ draft }),
+    signal,
+  });
+  if (!response.ok) throw new Error(`POST ${TOKENS_PATH} answered ${String(response.status)}`);
+  return v.parse(TokensResultSchema, await response.json()).tokens;
 }
 
 /** 请求 Host 改写草稿；`signal` 中止时抛出 AbortError，由调用方忽略。 */

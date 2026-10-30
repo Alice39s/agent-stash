@@ -34,14 +34,14 @@ The Polish prompt instructions inline the full text of three writing guides. The
 
 All three guides are MIT licensed and ship unchanged in `vendor/`. `vendor/manifest.json` records the upstream repository and commit of each. A scheduled sync job checks the upstreams daily and opens and merges a PR when they change.
 
-Together the guides are about 14,000 tokens, so a Polish prompt request has that much more input than the other presets, which the estimate at the top of the menu shows.
+The Polish prompt preset includes all three guides and uses more input than the other presets. The menu shows an o200k_base input estimate for each preset.
 
 Instructions of a custom preset can also include a guide with `<include ref="humanizer" />`. The available names are `humanizer`, `no-ai-slop`, and `no-negative-echo`. The Host replaces the tag with the full text before it sends the request. An unknown name makes the rewrite fail, and hovering over the failure shows the available names.
 
 ## Use
 
 - The button is hidden while the draft is empty. Its tooltip reads Click to enhance the prompt and names the linked turns when session context is included. Click it to open the preset menu. Number keys <Kbd>1</Kbd>–<Kbd>9</Kbd> pick a preset directly.
-- The top of the menu states the estimated token cost of the request and the linked turns, for example This rewrite will use about 16,630 tokens, with the last turn linked. The number follows the preset under the pointer or keyboard focus, and the first preset otherwise.
+- The top of the menu states the o200k_base input estimate and the linked turns. The number follows the preset under the pointer or keyboard focus, and the first preset otherwise.
 - While a rewrite runs, the draft is locked and the button turns into a stop button. Click it or press <Kbd>Esc</Kbd> to stop. The draft stays unchanged.
 - When the rewrite finishes, an undo button appears left of the button and brings back the draft. After several rewrites in a row, undo returns to the first draft. Editing or sending the draft removes the undo button.
 - A failure is shown left of the button, and the draft stays unchanged. For model errors, rejected results, preset instructions that cannot be used, writing references that cannot be read from an incomplete install, a failed session read, and a failed connection to DSH, hover over the message to see the exact reason.
@@ -53,7 +53,7 @@ A result goes into the input box only when it passes these checks:
 - It uses the same script as the draft (CJK or Latin).
 - It keeps every code block, inline code span, link, and credential placeholder of the draft.
 
-The estimate counts only the input sent to the model: the system prompt, the session context, and the draft. It uses the ratios in the [DeepSeek API docs](https://api-docs.deepseek.com/quick_start/token_usage): about 0.3 token per English character and 0.6 token per Chinese character. Output and reasoning are not included; the usage the model reports is the actual count.
+The estimate uses [tiktoken](https://github.com/dqbd/tiktoken) with `o200k_base`, encoding the system prompt, session context, and draft separately and adding the counts. It is an input text estimate, not the selected model's tokenizer or billing result. Segment boundaries, protocol overhead, output, and reasoning can make actual usage differ; use the model's reported usage for actual counts.
 
 ## Session context
 
@@ -118,7 +118,7 @@ Custom instructions come after the built-in shared rules, and the result still h
 
 `icon` takes an icon name from the DSH icon library. An empty value, or a name outside this list, shows the default icon: `sparkle`, `enhance-outline`, `flat-list-outline`, `list-pen-outline`, `checklist-outline`, `compact-outline`, `wrap-lines-outline`, `edit-outline`, `microphone-outline`, `think-outline`, `light-outline`, `goal-outline`, `plan-outline`, `question-outline`, `info-outline`, `search-outline`, `inspect-outline`, `compare-split-outline`, `code-outline`, `api-outline`, `database-outline`, `branch-outline`, `warning-triangle-outline`, `shield-outline`, `gauge-outline`, `clock-outline`, `link-outline`, `globe-outline`, `user-outline`, `users-outline`, `skill-outline`, `agent-preset-outline`, `personalization-outline`, `deliver-doc`, `folder-open-outline`, `paper-plane-outline`.
 
-The Host half of the plugin registers two routes. `GET /dsh-enhance/context` returns how many turns the next rewrite will include and, for each preset, the estimated input tokens of a request with an empty draft. `POST /dsh-enhance/rewrite` reads the session, calls the model, and checks the result. Both routes go through the DSH connection check. A draft can have at most 20,000 characters.
+The Host half registers three routes. `GET /dsh-enhance/context` returns the linked turns and each preset's estimated input with an empty draft. `POST /dsh-enhance/tokens` estimates the draft's o200k_base tokens. `POST /dsh-enhance/rewrite` reads the session, calls the model, and checks the result. All routes use the DSH connection check; drafts are limited to 20,000 characters. While the menu is open, draft estimates are debounced by 150 ms and cancelled when edited or closed. The Host lazily creates and reuses the encoder, freeing it when the plugin unloads. The browser does not load WASM.
 
 ## Install
 

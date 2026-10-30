@@ -1,19 +1,19 @@
-/** 中日韩文字：按中文字符计价。 */
-const WIDE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+import { get_encoding, type Tiktoken } from "tiktoken";
+
+let encoder: Tiktoken | undefined;
 
 /**
- * 估算一段文字的 token 数。按 DeepSeek API 文档给出的换算：1 个英文字符约 0.3 token，
- * 1 个中文字符约 0.6 token；中日韩文字按中文算，其余字符按英文算。实际用量以模型返回为准。
+ * Host 复用 o200k_base 编码器；只估算输入文本，不代表所选模型的实际计费。
+ * 特殊 token 的字面文本也作为普通草稿编码，避免用户输入导致估算抛错。
  */
 export function estimateTokens(text: string): number {
-  const wide = text.match(WIDE)?.length ?? 0;
-  const all = text.match(/[\s\S]/gu)?.length ?? 0;
-  return Math.ceil(wide * 0.6 + (all - wide) * 0.3);
+  if (text === "") return 0;
+  encoder ??= get_encoding("o200k_base");
+  return encoder.encode(text, [], []).length;
 }
 
-const GROUPED = new Intl.NumberFormat("en-US");
-
-/** 带千位分隔符的 token 数，例如 `12,345`。 */
-export function formatTokens(tokens: number): string {
-  return GROUPED.format(tokens);
+/** 插件卸载时释放 WASM 编码器；重新启用后按需创建。 */
+export function freeTokenEncoder(): void {
+  encoder?.free();
+  encoder = undefined;
 }

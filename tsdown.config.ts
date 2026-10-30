@@ -53,7 +53,8 @@ function nodeEntry(
     target: "node24",
     fixedExtension: false,
     dts: false,
-    deps: { alwaysBundle: [...bundled], onlyBundle: [...bundled] },
+    // tiktoken 的 Node 入口自行定位包内 WASM，须保留为运行时依赖。
+    deps: { alwaysBundle: [...bundled], onlyBundle: [...bundled], neverBundle: ["tiktoken"] },
     // Cline 加载插件时会把 JSDoc 里的 `import('unist')` 当成依赖去解析。
     outputOptions: { comments: { jsdoc: false } },
   };
