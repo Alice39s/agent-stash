@@ -1,5 +1,7 @@
 import {
   useEffect,
+  useLayoutEffect,
+  useState,
   type ButtonHTMLAttributes,
   type CSSProperties,
   type HTMLAttributes,
@@ -405,9 +407,31 @@ export function DiffBlock(props: {
   );
 }
 
-/** 宿主按锚点测量浮层位置；替身在打开时给出固定坐标。 */
+/** 替身给出坐标前等待的毫秒数；null 表示打开后的下一帧就有坐标。 */
+let anchoredPositionDelay: number | null = null;
+
+/** 测试可切换：让位置在给定的毫秒后到手，模拟宿主首次测量前面板还没有坐标；传 null 恢复。 */
+export function setAnchoredPositionDelay(ms: number | null): void {
+  anchoredPositionDelay = ms;
+}
+
+/**
+ * 宿主按锚点测量浮层位置，首次测量完成前返回 null。替身默认在打开时直接给出坐标；
+ * 切换了延时就先返回 null，等计时器到点再给出，模拟宿主首帧还没有坐标的那一帧。
+ */
 export function useAnchoredPosition(options: { open: boolean }): CSSProperties | null {
-  return options.open ? { left: 0, top: 0 } : null;
+  const [placed, setPlaced] = useState(false);
+  useLayoutEffect(() => {
+    if (anchoredPositionDelay === null) return undefined;
+    if (!options.open) {
+      // 关闭后异步复位，下一次打开仍从没有坐标的一帧开始。
+      const reset = setTimeout(() => setPlaced(false), 0);
+      return () => clearTimeout(reset);
+    }
+    const timer = setTimeout(() => setPlaced(true), anchoredPositionDelay);
+    return () => clearTimeout(timer);
+  }, [options.open]);
+  return options.open && (anchoredPositionDelay === null || placed) ? { left: 0, top: 0 } : null;
 }
 
 /** 与宿主相同：打开期间，指针按在根元素与浮层之外时关闭。 */

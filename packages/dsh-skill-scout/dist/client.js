@@ -3511,7 +3511,8 @@ window.__ModuleLoader__.load({
 			error: null,
 			notice: null,
 			viewing: [],
-			hosting: false
+			hosting: false,
+			overlay: false
 		};
 		/**
 		* 下一次读取的间隔：模型调用进行中最短；分析会话、回溯或写入后核对 DSH 能否发现时居中；其余时候最长。
@@ -3598,6 +3599,8 @@ window.__ModuleLoader__.load({
 			/** 看得见的插件表面各自列出哪些卡片。 */
 			const surfaces = /* @__PURE__ */ new Set();
 			let hosts = 0;
+			/** 打开着的标题栏浮层数。 */
+			let overlays = 0;
 			/** 卡片正在详情里显示，或者列在看得见的插件表面上。 */
 			const shown = (item) => watching.has(item.id) || [...surfaces].some((surface) => surface.lists(item));
 			const set = (next) => {
@@ -3724,6 +3727,20 @@ window.__ModuleLoader__.load({
 						});
 					};
 				},
+				overlay() {
+					overlays += 1;
+					set({
+						...state,
+						overlay: true
+					});
+					return () => {
+						overlays -= 1;
+						set({
+							...state,
+							overlay: overlays > 0
+						});
+					};
+				},
 				dispose() {
 					clearTimeout(timer);
 					clearTimeout(noticeTimer);
@@ -3732,10 +3749,12 @@ window.__ModuleLoader__.load({
 					surfaces.clear();
 					watching.clear();
 					hosts = 0;
+					overlays = 0;
 					set({
 						...state,
 						viewing: [],
-						hosting: false
+						hosting: false,
+						overlay: false
 					});
 				}
 			};
@@ -3783,6 +3802,8 @@ window.__ModuleLoader__.load({
 			left: 0,
 			top: 0
 		};
+		/** 面板里可以按 Tab 到的元素；与宿主浮层的选择器一致。 */
+		const FOCUSABLE = "button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href], [tabindex=\"0\"]";
 		/** 等用户决定的摘要与草稿。 */
 		function awaiting(inbox) {
 			return (inbox?.items ?? []).filter((item) => item.state === "proposed" || item.state === "ready").map((item) => item.id);
@@ -3790,6 +3811,16 @@ window.__ModuleLoader__.load({
 		/** 新建议数：等用户决定、还没看过，也不在打开的详情里。 */
 		function unseen(inbox, seen, viewing) {
 			return awaiting(inbox).filter((id) => !viewing.includes(id) && !seen.has(id)).length;
+		}
+		/** 浮层底部的操作结果；「查看」先关闭浮层，焦点跟着回到入口。 */
+		function PanelNotice(props) {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+				className: inbox_module_css_default.notice,
+				children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ResultNotice, {
+					text: props.t(props.notice.key, props.notice.params),
+					links: noticeLinks(props.notice, props.face, props.t, props.onView)
+				})
+			});
 		}
 		/** 标题栏入口、收件箱浮层与弹出提示。 */
 		function InboxEntry(props) {
@@ -3802,6 +3833,8 @@ window.__ModuleLoader__.load({
 			const triggerRef = (0, react.useRef)(null);
 			const panelRef = (0, react.useRef)(null);
 			const toastRef = (0, react.useRef)(null);
+			/** 这一轮打开后是否已经把焦点放进过面板。 */
+			const focusedRef = (0, react.useRef)(false);
 			const position = (0, _deepseek_ai_dsh_client_ui_primitives.useAnchoredPosition)({
 				open,
 				anchorRef: triggerRef,
@@ -3821,9 +3854,17 @@ window.__ModuleLoader__.load({
 			});
 			(0, _deepseek_ai_dsh_client_ui_primitives.useDismissOnOutsidePointer)(rootRef, open, setOpen, panelRef);
 			(0, react.useEffect)(() => open ? inbox.listing(everyItem) : void 0, [inbox, open]);
+			(0, react.useEffect)(() => open ? inbox.overlay() : void 0, [inbox, open]);
+			const placed = position !== null;
 			(0, react.useEffect)(() => {
-				if (open) panelRef.current?.focus();
-			}, [open]);
+				if (!open) {
+					focusedRef.current = false;
+					return;
+				}
+				if (!placed || focusedRef.current) return;
+				panelRef.current?.focus();
+				focusedRef.current = true;
+			}, [open, placed]);
 			(0, react.useEffect)(() => {
 				if (state.inbox === null) return;
 				const ids = awaiting(state.inbox).filter((id) => open || state.viewing.includes(id));
@@ -3855,12 +3896,31 @@ window.__ModuleLoader__.load({
 			};
 			const onKeyDown = (event) => {
 				if (event.key !== "Escape" || !open) return;
+				if (event.target instanceof Node && panelRef.current?.contains(event.target) === true) return;
 				event.preventDefault();
 				close();
 			};
-			/** 在页面里打开一行；不传 id 时只打开页面。 */
+			/** 面板里的按键：Escape 关闭；Tab 在面板内循环，不把焦点漏到文档末尾。 */
+			const onPanelKeyDown = (event) => {
+				if (event.key === "Escape") {
+					event.preventDefault();
+					close();
+					return;
+				}
+				if (event.key !== "Tab") return;
+				const panel = panelRef.current;
+				if (panel === null) return;
+				const focusables = [...panel.querySelectorAll(FOCUSABLE)].filter((element) => !element.closest("[inert], [hidden]"));
+				const first = focusables[0] ?? panel;
+				const last = focusables.at(-1) ?? panel;
+				const active = document.activeElement;
+				if (!(active === panel || !panel.contains(active) || (event.shiftKey ? active === first : active === last))) return;
+				event.preventDefault();
+				(event.shiftKey ? last : first).focus();
+			};
+			/** 在页面里打开一行；不传 id 时只打开页面。与关闭一样把焦点交还入口，键盘用户不会落到 body。 */
 			const openPage = (id) => {
-				setOpen(false);
+				close();
 				showItem(props, id);
 			};
 			const view = state.inbox;
@@ -3870,9 +3930,10 @@ window.__ModuleLoader__.load({
 				className: inbox_module_css_default.panel,
 				style: position ?? MEASURE_STYLE,
 				role: "dialog",
+				"aria-modal": "true",
 				"aria-label": t("panel.title"),
 				tabIndex: -1,
-				onKeyDown,
+				onKeyDown: onPanelKeyDown,
 				children: [
 					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 						className: inbox_module_css_default.head,
@@ -3935,12 +3996,11 @@ window.__ModuleLoader__.load({
 							}))
 						]
 					}),
-					state.notice !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-						className: inbox_module_css_default.notice,
-						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ResultNotice, {
-							text: t(state.notice.key, state.notice.params),
-							links: noticeLinks(state.notice, props, t, () => setOpen(false))
-						})
+					state.notice !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(PanelNotice, {
+						notice: state.notice,
+						face: props,
+						t,
+						onView: close
 					})
 				]
 			}), document.body) : null;
@@ -7837,7 +7897,8 @@ window.__ModuleLoader__.load({
 		/**
 		* 占比条（design.md 4.8）：一个整体在至多六个类别间的分布，画成一条 8px 的 100% 横条，轨道是悬停底色。
 		* 图例在上方，只列有值的类别并带各自的数量，可以开关类别；不显示图例时（例如放在 KPI 卡片里）
-		* 读屏仍能从描述里读到每一类的数量与占比。指针或方向键选中一段时弹出提示并淡化其他段。
+		* 读屏仍能从描述里读到每一类的数量与占比。图例把有值的类别全部关掉时与没有值一样显示一行说明，
+		* 图例仍留在原地，用户可以再打开某一类。指针或方向键选中一段时弹出提示并淡化其他段。
 		*/
 		/** 一条占比条至多的类别数。 */
 		const MAX_SEGMENTS = 6;
@@ -7874,54 +7935,50 @@ window.__ModuleLoader__.load({
 					}
 				});
 			}
-			return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+			return /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
 				className: charts_module_css_default.chart,
 				"data-chart": "share",
-				children: present.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ChartEmpty, {
+				children: [present.length > 0 && legend && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ChartLegend, {
+					items: present.map((segment) => ({
+						key: segment.key,
+						label: segment.label,
+						color: segment.color,
+						total: formatLegend(segment.value)
+					})),
+					hidden,
+					onToggle: toggle,
+					onEmphasis: setEmphasis
+				}), visible.length === 0 ? /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ChartEmpty, {
 					height: legend ? 36 : 20,
 					text: empty
-				}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [
-					legend && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ChartLegend, {
-						items: present.map((segment) => ({
-							key: segment.key,
-							label: segment.label,
-							color: segment.color,
-							total: formatLegend(segment.value)
-						})),
-						hidden,
-						onToggle: toggle,
-						onEmphasis: setEmphasis
-					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
-						className: charts_module_css_default.plot,
-						children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
-							className: charts_module_css_default.shareBar,
-							role: "img",
-							"aria-label": label,
-							"aria-describedby": tooltip === null ? descId : `${descId} ${tipId}`,
-							tabIndex: 0,
-							onFocus: enter,
-							onBlur: clear,
-							onKeyDown: keys,
-							onPointerLeave: clear,
-							children: visible.map((segment, index) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: `${charts_module_css_default.shareSegment} ${charts_module_css_default.series}`,
-								"data-segment": segment.key,
-								"data-faded": fadedBy(focused, segment.key),
-								style: {
-									width: `${String(share(segment.value) * 100)}%`,
-									background: segment.color
-								},
-								onPointerMove: () => point(index)
-							}, segment.key))
-						}), tooltip]
-					}),
-					/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-						id: descId,
-						className: charts_module_css_default.srOnly,
-						children: visible.map((segment) => `${segment.label} ${formatValue(segment.value)} (${formatPercent(share(segment.value))})`).join(", ")
-					})
-				] })
+				}) : /* @__PURE__ */ (0, react_jsx_runtime.jsxs)(react_jsx_runtime.Fragment, { children: [/* @__PURE__ */ (0, react_jsx_runtime.jsxs)("div", {
+					className: charts_module_css_default.plot,
+					children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: charts_module_css_default.shareBar,
+						role: "img",
+						"aria-label": label,
+						"aria-describedby": tooltip === null ? descId : `${descId} ${tipId}`,
+						tabIndex: 0,
+						onFocus: enter,
+						onBlur: clear,
+						onKeyDown: keys,
+						onPointerLeave: clear,
+						children: visible.map((segment, index) => /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+							className: `${charts_module_css_default.shareSegment} ${charts_module_css_default.series}`,
+							"data-segment": segment.key,
+							"data-faded": fadedBy(focused, segment.key),
+							style: {
+								width: `${String(share(segment.value) * 100)}%`,
+								background: segment.color
+							},
+							onPointerMove: () => point(index)
+						}, segment.key))
+					}), tooltip]
+				}), /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+					id: descId,
+					className: charts_module_css_default.srOnly,
+					children: visible.map((segment) => `${segment.label} ${formatValue(segment.value)} (${formatPercent(share(segment.value))})`).join(", ")
+				})] })]
 			});
 		}
 		//#endregion
@@ -9145,7 +9202,7 @@ window.__ModuleLoader__.load({
 										reveal: null
 									})
 								}),
-								notice !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								notice !== null && !state.overlay && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
 									className: layout_module_css_default.noticeRow,
 									children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ResultNotice, {
 										text: t(notice.key, notice.params),
@@ -9423,7 +9480,7 @@ window.__ModuleLoader__.load({
 								inbox: view,
 								t
 							}),
-							state.notice !== null && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ResultNotice, {
+							state.notice !== null && !state.overlay && /* @__PURE__ */ (0, react_jsx_runtime.jsx)(ResultNotice, {
 								text: t(state.notice.key, state.notice.params),
 								links: noticeLinks(state.notice, props, t),
 								close: {

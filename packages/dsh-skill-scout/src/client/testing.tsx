@@ -544,13 +544,22 @@ export async function type(
 }
 
 /** 在元素上按一个键并等待随后的渲染。 */
-export async function press(element: Element | null | undefined, key: string): Promise<void> {
+export async function press(
+  element: Element | null | undefined,
+  key: string,
+  modifiers: KeyboardEventInit = {},
+): Promise<void> {
   if (element === null || element === undefined) throw new Error("没有可按键的元素");
   await act(async () => {
-    element.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true }));
+    element.dispatchEvent(
+      new KeyboardEvent("keydown", { key, bubbles: true, cancelable: true, ...modifiers }),
+    );
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
 }
+
+/** 让替身像真实宿主一样先渲染一帧没有坐标的面板；传 null 恢复同步给出坐标。 */
+export { setAnchoredPositionDelay } from "../../../../dsh/kit/src/primitives-stand-in.tsx";
 
 /** 按可访问名称找按钮。 */
 export function button(name: string | RegExp, root: ParentNode = document): HTMLButtonElement {

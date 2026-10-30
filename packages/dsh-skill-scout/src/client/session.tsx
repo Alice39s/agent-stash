@@ -94,7 +94,7 @@ export function SessionTab(props: SessionTabProps): ReactNode {
   const { busy, error, run } = useAction(inbox, t);
   const now = useNow(60_000);
 
-  // 视图开着时由视图顶部承接提示，标题栏不再弹出。
+  // 视图开着时由视图顶部承接提示，标题栏不再弹出；挂载即置位，与下面提示区块的渲染条件成对，详见那里的注释。
   useEffect(() => inbox.hostNotices(), [inbox]);
 
   // 分析进度、已分析的会话与任务数变化，或本视图发起的操作结束、用户重试后，重新读取本会话的情况。
@@ -179,10 +179,12 @@ export function SessionTab(props: SessionTabProps): ReactNode {
           </>
         }
       />
+      {/* 与上面的 hostNotices 成对：视图挂载即接住提示，所以这里要覆盖所有会出现提示的状态（有数据、读取失败、会话读取失败）。
+          浮层开着时同样让给浮层底部，视图不再重复同一条。 */}
       {(view !== null || error !== null || session.status === "error") && (
         <div className={layout.viewNotices}>
           {view !== null && <Banner inbox={view} t={t} />}
-          {state.notice !== null && (
+          {state.notice !== null && !state.overlay && (
             <ResultNotice
               text={t(state.notice.key, state.notice.params)}
               links={noticeLinks(state.notice, props, t)}

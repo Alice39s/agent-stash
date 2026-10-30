@@ -36,6 +36,8 @@ export interface InboxState {
   readonly viewing: readonly string[];
   /** 有可见的插件表面（页面、会话视图）承接提示：提示显示在那里，标题栏不再弹出。 */
   readonly hosting: boolean;
+  /** 标题栏浮层开着：提示显示在浮层底部，页面与会话视图不再重复同一条。 */
+  readonly overlay: boolean;
 }
 
 /** 收件箱依赖的读取与写入；测试里换成本地实现。 */
@@ -60,6 +62,8 @@ export interface InboxStore extends Observable<InboxState> {
   listing(lists: (item: ItemView) => boolean): () => void;
   /** 一个可见的插件表面开始承接提示；返回交还的函数。 */
   hostNotices(): () => void;
+  /** 标题栏浮层开始承接提示；返回浮层关闭的函数。 */
+  overlay(): () => void;
   /** 停止计时器与监听。 */
   dispose(): void;
 }
@@ -71,6 +75,7 @@ const INITIAL: InboxState = {
   notice: null,
   viewing: [],
   hosting: false,
+  overlay: false,
 };
 
 /**
@@ -171,6 +176,8 @@ export function createInboxStore(transport: InboxTransport): InboxStore {
   /** 看得见的插件表面各自列出哪些卡片。 */
   const surfaces = new Set<{ readonly lists: (item: ItemView) => boolean }>();
   let hosts = 0;
+  /** 打开着的标题栏浮层数。 */
+  let overlays = 0;
 
   /** 卡片正在详情里显示，或者列在看得见的插件表面上。 */
   const shown = (item: ItemView): boolean =>
@@ -286,6 +293,14 @@ export function createInboxStore(transport: InboxTransport): InboxStore {
         set({ ...state, hosting: hosts > 0 });
       };
     },
+    overlay() {
+      overlays += 1;
+      set({ ...state, overlay: true });
+      return () => {
+        overlays -= 1;
+        set({ ...state, overlay: overlays > 0 });
+      };
+    },
     dispose() {
       clearTimeout(timer);
       clearTimeout(noticeTimer);
@@ -294,7 +309,8 @@ export function createInboxStore(transport: InboxTransport): InboxStore {
       surfaces.clear();
       watching.clear();
       hosts = 0;
-      set({ ...state, viewing: [], hosting: false });
+      overlays = 0;
+      set({ ...state, viewing: [], hosting: false, overlay: false });
     },
   };
 }

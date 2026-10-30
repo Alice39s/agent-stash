@@ -1,7 +1,8 @@
 /**
  * 占比条（design.md 4.8）：一个整体在至多六个类别间的分布，画成一条 8px 的 100% 横条，轨道是悬停底色。
  * 图例在上方，只列有值的类别并带各自的数量，可以开关类别；不显示图例时（例如放在 KPI 卡片里）
- * 读屏仍能从描述里读到每一类的数量与占比。指针或方向键选中一段时弹出提示并淡化其他段。
+ * 读屏仍能从描述里读到每一类的数量与占比。图例把有值的类别全部关掉时与没有值一样显示一行说明，
+ * 图例仍留在原地，用户可以再打开某一类。指针或方向键选中一段时弹出提示并淡化其他段。
  */
 import { useId, useState, type ReactNode } from "react";
 import styles from "./charts.module.css";
@@ -92,23 +93,23 @@ export function ShareBar({
 
   return (
     <div className={styles.chart} data-chart="share">
-      {present.length === 0 ? (
+      {present.length > 0 && legend && (
+        <ChartLegend
+          items={present.map((segment) => ({
+            key: segment.key,
+            label: segment.label,
+            color: segment.color,
+            total: formatLegend(segment.value),
+          }))}
+          hidden={hidden}
+          onToggle={toggle}
+          onEmphasis={setEmphasis}
+        />
+      )}
+      {visible.length === 0 ? (
         <ChartEmpty height={legend ? 36 : 20} text={empty} />
       ) : (
         <>
-          {legend && (
-            <ChartLegend
-              items={present.map((segment) => ({
-                key: segment.key,
-                label: segment.label,
-                color: segment.color,
-                total: formatLegend(segment.value),
-              }))}
-              hidden={hidden}
-              onToggle={toggle}
-              onEmphasis={setEmphasis}
-            />
-          )}
           <div className={styles.plot}>
             <div
               className={styles.shareBar}

@@ -175,12 +175,18 @@ describe("createInboxStore notices", () => {
     const first = host.store.watch("a");
     const second = host.store.watch("a");
     const release = host.store.hostNotices();
-    expect(host.store.getSnapshot()).toMatchObject({ viewing: ["a"], hosting: true });
+    const over = host.store.overlay();
+    expect(host.store.getSnapshot()).toMatchObject({
+      viewing: ["a"],
+      hosting: true,
+      overlay: true,
+    });
     first();
     expect(host.store.getSnapshot().viewing).toEqual(["a"]);
     second();
+    over();
     release();
-    expect(host.store.getSnapshot()).toMatchObject({ viewing: [], hosting: false });
+    expect(host.store.getSnapshot()).toMatchObject({ viewing: [], hosting: false, overlay: false });
   });
 
   test("forgets the surfaces and the cards on screen once disposed", async () => {
@@ -189,8 +195,9 @@ describe("createInboxStore notices", () => {
     host.store.watch("repeated:1~0");
     host.store.listing(everyItem);
     host.store.hostNotices();
+    host.store.overlay();
     host.store.dispose();
-    expect(host.store.getSnapshot()).toMatchObject({ viewing: [], hosting: false });
+    expect(host.store.getSnapshot()).toMatchObject({ viewing: [], hosting: false, overlay: false });
 
     // 清干净之后，同一张卡片结束不再算「在眼前」，提示照常发出。
     host.inbox = inboxOf([item({ state: "ready" })]);

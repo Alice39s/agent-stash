@@ -107,6 +107,21 @@ describe("ShareBar", () => {
     expect(root.querySelector("[role=img]")).toBeNull();
   });
 
+  test("falls back to the empty line when the legend hides every category, and brings the bar back", async () => {
+    const root = await render(
+      <ShareBar segments={LEADS} label="Leads by state" empty="No leads" />,
+    );
+    await click(button(/^Summarized/u, root));
+    await click(button(/^Waiting/u, root));
+    await click(button(/^Failed/u, root));
+    expect(root.textContent).toContain("No leads");
+    expect(root.querySelector("[role=img]")).toBeNull();
+    // 图例留在原地，用户可以把某一类再打开。
+    expect(root.querySelectorAll("[data-legend]")).toHaveLength(3);
+    await click(button(/^Summarized/u, root));
+    expect(widths(root)).toEqual([["summarized", "100%"]]);
+  });
+
   test("walks the categories with the arrow keys and fades the others", async () => {
     const root = await render(
       <ShareBar segments={LEADS} label="Leads by state" empty="No leads" />,

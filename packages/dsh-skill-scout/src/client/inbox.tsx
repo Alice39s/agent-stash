@@ -21,14 +21,19 @@ import {
 import { createPortal } from "react-dom";
 import type { InboxView } from "../shared.ts";
 import { Banner, dismissItem, GroupedItems, noticeLinks } from "./cards.tsx";
-import { showItem, type FaceProps } from "./face.ts";
+import { showItem, type FaceProps, type ScoutFace } from "./face.ts";
 import { useSnapshot } from "./hooks.ts";
+import type { ScoutTranslate } from "./locale.ts";
 import type { SeenStore } from "./seen.ts";
-import { everyItem } from "./store.ts";
+import { everyItem, type Notice } from "./store.ts";
 import { ResultNotice } from "./ui/notice.tsx";
 import styles from "./inbox.module.css";
 
 const MEASURE_STYLE: CSSProperties = { visibility: "hidden", left: 0, top: 0 };
+
+/** 面板里可以按 Tab 到的元素；与宿主浮层的选择器一致。 */
+const FOCUSABLE =
+  'button:not(:disabled), input:not(:disabled), textarea:not(:disabled), select:not(:disabled), a[href], [tabindex="0"]';
 
 /** 等用户决定的摘要与草稿。 */
 function awaiting(inbox: InboxView | null): string[] {
@@ -42,6 +47,23 @@ function unseen(inbox: InboxView | null, seen: SeenStore, viewing: readonly stri
   return awaiting(inbox).filter((id) => !viewing.includes(id) && !seen.has(id)).length;
 }
 
+/** 浮层底部的操作结果；「查看」先关闭浮层，焦点跟着回到入口。 */
+function PanelNotice(props: {
+  readonly notice: Notice;
+  readonly face: Pick<ScoutFace, "inbox" | "page" | "openPage">;
+  readonly t: ScoutTranslate;
+  readonly onView: () => void;
+}): ReactNode {
+  return (
+    <div className={styles.notice}>
+      <ResultNotice
+        text={props.t(props.notice.key, props.notice.params)}
+        links={noticeLinks(props.notice, props.face, props.t, props.onView)}
+      />
+    </div>
+  );
+}
+
 /** 标题栏入口、收件箱浮层与弹出提示。 */
 export function InboxEntry(props: FaceProps): ReactNode {
   const { inbox, seen, t } = props;
@@ -53,6 +75,8 @@ export function InboxEntry(props: FaceProps): ReactNode {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const toastRef = useRef<HTMLDivElement>(null);
+  /** 这一轮打开后是否已经把焦点放进过面板。 */
+  const focusedRef = useRef(false);
   const position = useAnchoredPosition({
     open,
     anchorRef: triggerRef,
@@ -72,11 +96,22 @@ export function InboxEntry(props: FaceProps): ReactNode {
   });
   useDismissOnOutsidePointer(rootRef, open, setOpen, panelRef);
   useEffect(() => (open ? inbox.listing(everyItem) : undefined), [inbox, open]);
+  // 浮层开着时提示显示在浮层底部，页面与会话视图不再重复同一条提示。
+  useEffect(() => (open ? inbox.overlay() : undefined), [inbox, open]);
 
   // 打开时把焦点移进面板：面板本身可聚焦，读屏随即宣告这个对话框，Tab 从面板里的第一项开始而不是走到文档末尾。
+  // 真实宿主首次测量前没有坐标，此时面板是 visibility: hidden，focus() 是空操作，所以等位置到手再聚焦；
+  // 只看 placed 而不是坐标本身，滚动或缩放让坐标变化时不会重复抢焦点。
+  const placed = position !== null;
   useEffect(() => {
-    if (open) panelRef.current?.focus();
-  }, [open]);
+    if (!open) {
+      focusedRef.current = false;
+      return;
+    }
+    if (!placed || focusedRef.current) return;
+    panelRef.current?.focus();
+    focusedRef.current = true;
+  }, [open, placed]);
 
   // 收件箱开着时出现的待决定建议算看过；详情面板里等到的摘要或草稿同样算看过。
   useEffect(() => {
@@ -111,12 +146,39 @@ export function InboxEntry(props: FaceProps): ReactNode {
   };
   const onKeyDown = (event: KeyboardEvent<HTMLElement>): void => {
     if (event.key !== "Escape" || !open) return;
+    // 面板经 portal 渲染，但仍是这个根元素的 React 子节点，面板里的按键也会冒泡到这里；
+    // Escape 由面板那层关闭一次，这里跳过面板内的事件，免得 close() 执行两次。
+    if (event.target instanceof Node && panelRef.current?.contains(event.target) === true) return;
     event.preventDefault();
     close();
   };
-  /** 在页面里打开一行；不传 id 时只打开页面。 */
+  /** 面板里的按键：Escape 关闭；Tab 在面板内循环，不把焦点漏到文档末尾。 */
+  const onPanelKeyDown = (event: KeyboardEvent<HTMLElement>): void => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      close();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const panel = panelRef.current;
+    if (panel === null) return;
+    const focusables = [...panel.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+      (element) => !element.closest("[inert], [hidden]"),
+    );
+    const first = focusables[0] ?? panel;
+    const last = focusables.at(-1) ?? panel;
+    const active = document.activeElement;
+    const wrapping =
+      active === panel ||
+      !panel.contains(active) ||
+      (event.shiftKey ? active === first : active === last);
+    if (!wrapping) return;
+    event.preventDefault();
+    (event.shiftKey ? last : first).focus();
+  };
+  /** 在页面里打开一行；不传 id 时只打开页面。与关闭一样把焦点交还入口，键盘用户不会落到 body。 */
   const openPage = (id: string | null): void => {
-    setOpen(false);
+    close();
     showItem(props, id);
   };
 
@@ -129,9 +191,10 @@ export function InboxEntry(props: FaceProps): ReactNode {
           className={styles.panel}
           style={position ?? MEASURE_STYLE}
           role="dialog"
+          aria-modal="true"
           aria-label={t("panel.title")}
           tabIndex={-1}
-          onKeyDown={onKeyDown}
+          onKeyDown={onPanelKeyDown}
         >
           <div className={styles.head}>
             <h2 className={styles.title}>{t("panel.title")}</h2>
@@ -180,12 +243,7 @@ export function InboxEntry(props: FaceProps): ReactNode {
               ))}
           </div>
           {state.notice !== null && (
-            <div className={styles.notice}>
-              <ResultNotice
-                text={t(state.notice.key, state.notice.params)}
-                links={noticeLinks(state.notice, props, t, () => setOpen(false))}
-              />
-            </div>
+            <PanelNotice notice={state.notice} face={props} t={t} onView={close} />
           )}
         </div>,
         document.body,

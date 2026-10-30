@@ -145,7 +145,8 @@ export function HistoryPage(props: FaceProps): ReactNode {
               value={nav.tab}
               onChange={(next) => page.update({ tab: next, reveal: null })}
             />
-            {notice !== null && (
+            {/* 浮层开着时由浮层底部显示提示，页面不再重复同一条。 */}
+            {notice !== null && !state.overlay && (
               <div className={layout.noticeRow}>
                 <ResultNotice
                   text={t(notice.key, notice.params)}

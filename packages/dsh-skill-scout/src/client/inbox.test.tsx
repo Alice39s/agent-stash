@@ -15,10 +15,12 @@ import {
   press,
   progress,
   perform,
+  setAnchoredPositionDelay,
   settle,
   STATUS,
   translator,
   UNSUMMARIZED,
+  wait,
   type FakeHost,
 } from "./testing.tsx";
 
@@ -238,6 +240,59 @@ describe("InboxEntry", () => {
     expect(document.activeElement).toBe(trigger());
   });
 
+  test("takes focus only after the panel is placed, and gives it back to the entry on close", async () => {
+    setAnchoredPositionDelay(30);
+    try {
+      const host = fakeHost(inboxOf([item()]));
+      await render(host);
+      await click(trigger());
+      const dialog = panel();
+      expect(dialog).not.toBeNull();
+      // 首次测量前宿主没有坐标：面板隐藏，focus() 在浏览器里是空操作。
+      expect(dialog?.style.visibility).toBe("hidden");
+      expect(dialog?.contains(document.activeElement)).toBe(false);
+      await wait(80);
+      expect(panel()?.style.visibility).toBe("");
+      expect(panel()?.contains(document.activeElement)).toBe(true);
+      await press(panel(), "Escape");
+      expect(document.activeElement).toBe(trigger());
+    } finally {
+      setAnchoredPositionDelay(null);
+    }
+  });
+
+  test("closes once on a single Escape even though the panel's key event also reaches the header root", async () => {
+    const host = fakeHost(inboxOf([item()]));
+    await render(host);
+    await click(trigger());
+    const entry = trigger();
+    const focus = vi.spyOn(entry, "focus");
+    await press(panel(), "Escape");
+    expect(panel()).toBeNull();
+    expect(focus).toHaveBeenCalledTimes(1);
+    focus.mockRestore();
+  });
+
+  test("keeps Tab inside the panel and marks it as a modal dialog", async () => {
+    const host = fakeHost(inboxOf([item()]));
+    await render(host);
+    await click(trigger());
+    const dialog = panel();
+    expect(dialog?.getAttribute("aria-modal")).toBe("true");
+    const controls = [...(dialog?.querySelectorAll<HTMLElement>("button") ?? [])];
+    const first = controls[0];
+    const last = controls.at(-1);
+    expect(last).not.toBe(first);
+    await press(dialog, "Tab");
+    expect(document.activeElement).toBe(first);
+    last?.focus();
+    await press(dialog, "Tab");
+    expect(document.activeElement).toBe(first);
+    first?.focus();
+    await press(dialog, "Tab", { shiftKey: true });
+    expect(document.activeElement).toBe(last);
+  });
+
   test("opens a card in the history page with the card selected", async () => {
     const host = fakeHost(inboxOf([item(), item({ id: "complex:2", state: "skipped" })]));
     await render(host);
@@ -245,6 +300,7 @@ describe("InboxEntry", () => {
     await click(panel()?.querySelector("[data-item='repeated:1~0']"));
     expect(panel()).toBeNull();
     expect(host.pagesOpened).toBe(1);
+    expect(document.activeElement).toBe(trigger());
     expect(host.face.page.getSnapshot()).toMatchObject({
       tab: "suggestions",
       selected: "repeated:1~0",
@@ -253,6 +309,7 @@ describe("InboxEntry", () => {
     await click(trigger());
     await click(button("Skill Scout History", panel() ?? document));
     expect(host.pagesOpened).toBe(2);
+    expect(document.activeElement).toBe(trigger());
     expect(host.face.page.getSnapshot().selected).toBeNull();
   });
 
@@ -299,6 +356,41 @@ describe("InboxEntry notices", () => {
     expect(toast()).toBeNull();
     expect(host.pagesOpened).toBe(1);
     expect(host.face.page.getSnapshot().selected).toBe("repeated:1~0");
+  });
+
+  test("returns focus to the entry when View in the open panel opens the card", async () => {
+    const host = fakeHost(inboxOf([item({ state: "drafting" })], { working: 1 }));
+    await render(host);
+    host.inbox = inboxOf([item()]);
+    await perform(() => host.store.refresh());
+    await settle();
+    expect(toast()?.textContent).toContain("Draft ready");
+
+    await click(trigger());
+    const notice = panel()?.querySelector("[data-notice=result]");
+    expect(notice?.textContent).toContain("Draft ready");
+    await click(button("View", notice ?? document));
+    expect(panel()).toBeNull();
+    expect(host.pagesOpened).toBe(1);
+    expect(document.activeElement).toBe(trigger());
+  });
+
+  test("keeps one copy of the result notice while the open panel covers the conversation view", async () => {
+    const host = fakeHost(inboxOf([item()]));
+    await render(host);
+    const view = await mount(<SessionTab {...host.face} sessionId="s1" t={t} />);
+    unmounts.push(view.unmount);
+    await settle();
+
+    await click(trigger());
+    await click(button("Dismiss: Cut a local patch release", panel() ?? document));
+    expect(panel()?.querySelector("[data-notice=result]")?.textContent).toContain("Dismissed");
+    expect(view.container.querySelector("[data-notice=result]")).toBeNull();
+
+    await press(panel(), "Escape");
+    expect(view.container.querySelector("[data-notice=result]")?.textContent).toContain(
+      "Dismissed",
+    );
   });
 
   test("closes a popped-up notice", async () => {
