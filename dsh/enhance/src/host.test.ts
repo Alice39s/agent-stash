@@ -1,18 +1,21 @@
 import { createServer, type Server } from "node:http";
 import { afterEach, describe, expect, test } from "vitest";
 import type { DshWebRoute } from "../../shared/host/http.ts";
-import { Config } from "./config.ts";
-import type { SurfaceEvent } from "./context.ts";
+import { Config, currentSettings } from "./config.ts";
+import { projectTurns, selectTurns, type SurfaceEvent } from "./context.ts";
 import {
   contextHandler,
+  estimatePresets,
   registerRoutes,
+  resolveInstructions,
   resolveRoute,
   rewriteHandler,
   type EnhanceHostContext,
 } from "./host.ts";
 import { loadReferences } from "./references.ts";
-import type { LlmView, ModelRoute, StreamChunkView } from "./rewrite.ts";
+import { buildPrompt, type LlmView, type ModelRoute, type StreamChunkView } from "./rewrite.ts";
 import { DEFAULT_SETTINGS } from "./settings-value.ts";
+import { estimateTokens } from "./tokens.ts";
 import { CONTEXT_PATH, REWRITE_PATH } from "./wire.ts";
 
 const EVENTS: SurfaceEvent[] = [
@@ -283,21 +286,62 @@ describe("rewrite route", () => {
   });
 });
 
+async function context(h: Harness, config: Record<string, unknown> = {}): Promise<unknown> {
+  const base = await serve(contextHandler(h.ctx, Config(config), loadReferences));
+  const response = await fetch(`${base}${CONTEXT_PATH}?session=s1`);
+  return response.json();
+}
+
 describe("context route", () => {
-  test("counts the turns the next rewrite would send", async () => {
-    const base = await serve(contextHandler(harness({}).ctx, Config({})));
-    const response = await fetch(`${base}${CONTEXT_PATH}?session=s1`);
-    expect(await response.json()).toEqual({ turns: 1 });
+  test("counts the turns the next rewrite would send and estimates each preset", async () => {
+    const settings = currentSettings(Config({}));
+    const turns = selectTurns(projectTurns(EVENTS), settings.contextTurns);
+    expect(await context(harness({}))).toEqual({
+      turns: 1,
+      tokens: estimatePresets(settings, turns, await loadReferences()),
+    });
   });
 
-  test("counts nothing when session context is off", async () => {
-    const base = await serve(contextHandler(harness({}).ctx, Config({ context: false })));
-    const response = await fetch(`${base}${CONTEXT_PATH}?session=s1`);
-    expect(await response.json()).toEqual({ turns: 0 });
+  test("prices the system prompt and the conversation of each preset", async () => {
+    const references = await loadReferences();
+    const settings = currentSettings(Config({}));
+    const turns = selectTurns(projectTurns(EVENTS), settings.contextTurns);
+    const tokens = estimatePresets(settings, turns, references);
+    const instructions = resolveInstructions(settings, "concise", references);
+    if (!instructions.ok) throw new Error(instructions.failure.message);
+    const prompt = buildPrompt("", instructions.text, turns);
+    expect(tokens["concise"]).toBe(estimateTokens(prompt.system) + estimateTokens(prompt.input));
+    // 润色内联了三份写作参考，比只整理结构的预设贵得多。
+    expect(tokens["polish"]).toBeGreaterThan((tokens["structure"] ?? 0) * 5);
+    expect(estimatePresets(settings, [], references)["concise"]).toBeLessThan(
+      tokens["concise"] ?? 0,
+    );
+  });
+
+  test("leaves out a preset whose instructions cannot be expanded", async () => {
+    const presets = [
+      { id: "concise", title: "", description: "", prompt: "" },
+      { id: "custom-1", title: "", description: "", prompt: '<include ref="style" />' },
+    ];
+    expect(await context(harness({}), { presets })).toEqual({
+      turns: 1,
+      tokens: { concise: expect.any(Number) },
+    });
+  });
+
+  test("counts no turns when session context is off", async () => {
+    expect(await context(harness({}), { context: false })).toMatchObject({ turns: 0 });
+  });
+
+  test("reports an unreadable session", async () => {
+    expect(await context(harness({ events: new Error("session/not-found") }))).toEqual({
+      reason: "context",
+      message: 'reading session "s1" failed: session/not-found',
+    });
   });
 
   test("requires the session parameter and the DSH connection check", async () => {
-    const base = await serve(contextHandler(harness({}).ctx, Config({})));
+    const base = await serve(contextHandler(harness({}).ctx, Config({}), loadReferences));
     expect((await fetch(`${base}${CONTEXT_PATH}`)).status).toBe(400);
     const rejected = await fetch(`${base}${CONTEXT_PATH}?session=s1`, {
       headers: { "x-reject": "1" },

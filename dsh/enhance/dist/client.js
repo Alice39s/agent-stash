@@ -60,6 +60,10 @@ window.__ModuleLoader__.load({
 			else dataset.issues = [issue];
 		}
 		/* @__NO_SIDE_EFFECTS__ */
+		function _isValidObjectKey(object$1, key) {
+			return Object.prototype.hasOwnProperty.call(object$1, key) && key !== "__proto__" && key !== "prototype" && key !== "constructor";
+		}
+		/* @__NO_SIDE_EFFECTS__ */
 		function _joinExpects(values$1, separator) {
 			const list = [...new Set(values$1)];
 			if (list.length > 1) return `(${list.join(` ${separator} `)})`;
@@ -345,6 +349,71 @@ window.__ModuleLoader__.load({
 			});
 		}
 		/* @__NO_SIDE_EFFECTS__ */
+		function record(key, value$1, message$1) {
+			return _standardSchema({
+				kind: "schema",
+				type: "record",
+				reference: record,
+				expects: "Object",
+				async: false,
+				key,
+				value: value$1,
+				message: message$1,
+				"~run"(dataset, config$1) {
+					const input = dataset.value;
+					if (input && typeof input === "object") {
+						dataset.typed = true;
+						dataset.value = {};
+						for (const entryKey in input) if (/* @__PURE__ */ _isValidObjectKey(input, entryKey)) {
+							const entryValue = input[entryKey];
+							const keyDataset = this.key["~run"]({ value: entryKey }, config$1);
+							if (keyDataset.issues) {
+								const pathItem = {
+									type: "object",
+									origin: "key",
+									input,
+									key: entryKey,
+									value: entryValue
+								};
+								for (const issue of keyDataset.issues) {
+									issue.path = [pathItem];
+									dataset.issues?.push(issue);
+								}
+								if (!dataset.issues) dataset.issues = keyDataset.issues;
+								if (config$1.abortEarly) {
+									dataset.typed = false;
+									break;
+								}
+							}
+							const valueDataset = this.value["~run"]({ value: entryValue }, config$1);
+							if (valueDataset.issues) {
+								const pathItem = {
+									type: "object",
+									origin: "value",
+									input,
+									key: entryKey,
+									value: entryValue
+								};
+								for (const issue of valueDataset.issues) {
+									if (issue.path) issue.path.unshift(pathItem);
+									else issue.path = [pathItem];
+									dataset.issues?.push(issue);
+								}
+								if (!dataset.issues) dataset.issues = valueDataset.issues;
+								if (config$1.abortEarly) {
+									dataset.typed = false;
+									break;
+								}
+							}
+							if (!keyDataset.typed || !valueDataset.typed) dataset.typed = false;
+							if (keyDataset.typed) dataset.value[keyDataset.value] = valueDataset.value;
+						}
+					} else _addIssue(this, "type", dataset, config$1);
+					return dataset;
+				}
+			});
+		}
+		/* @__NO_SIDE_EFFECTS__ */
 		function string(message$1) {
 			return _standardSchema({
 				kind: "schema",
@@ -414,8 +483,12 @@ window.__ModuleLoader__.load({
 			enhance: "Enhance prompt",
 			undo: "Undo enhancement",
 			cancel: "Stop enhancing",
-			context: "Linked to the last {n} turns",
-			contextOne: "Linked to the last turn",
+			tip: "Click to enhance the prompt",
+			tipLinked: "Click to enhance the prompt (last {n} turns linked)",
+			tipLinkedOne: "Click to enhance the prompt (last turn linked)",
+			estimate: "This rewrite will use about {tokens} tokens",
+			estimateLinked: "This rewrite will use about {tokens} tokens, with the last {n} turns linked",
+			estimateLinkedOne: "This rewrite will use about {tokens} tokens, with the last turn linked",
 			working: "Enhancing…",
 			unchanged: "Already clear, nothing changed",
 			references: "Remove the reference chips to enhance this draft",
@@ -433,7 +506,7 @@ window.__ModuleLoader__.load({
 			"error.empty": "The model returned nothing",
 			"error.invalid": "Unusable result, draft kept",
 			"error.no-model": "No model available",
-			"error.preset": "This preset has no instructions",
+			"error.preset": "This preset's instructions cannot be used",
 			"error.context": "Could not read the session",
 			"error.network": "Could not reach DSH",
 			dismiss: "Dismiss",
@@ -479,8 +552,12 @@ window.__ModuleLoader__.load({
 			enhance: "增强提示词",
 			undo: "撤销增强",
 			cancel: "停止增强",
-			context: "已关联前 {n} 轮上下文",
-			contextOne: "已关联上一轮上下文",
+			tip: "点我增强提示词",
+			tipLinked: "点我增强提示词（已关联最近 {n} 轮上下文）",
+			tipLinkedOne: "点我增强提示词（已关联最近 1 轮上下文）",
+			estimate: "本轮润色请求将消耗大约 {tokens} Tokens",
+			estimateLinked: "本轮润色请求将消耗大约 {tokens} Tokens，已关联最近 {n} 轮上下文",
+			estimateLinkedOne: "本轮润色请求将消耗大约 {tokens} Tokens，已关联最近 1 轮上下文",
 			working: "正在增强…",
 			unchanged: "已经很清楚，无需改动",
 			references: "移除草稿里的引用块后才能增强",
@@ -498,7 +575,7 @@ window.__ModuleLoader__.load({
 			"error.empty": "模型没有返回内容",
 			"error.invalid": "结果不可用，已保留原稿",
 			"error.no-model": "没有可用的模型",
-			"error.preset": "这个预设没有改写指令",
+			"error.preset": "这个预设的改写指令无法使用",
 			"error.context": "读取会话失败",
 			"error.network": "无法连接 DSH",
 			dismiss: "关闭",
@@ -661,7 +738,10 @@ ${ORGANIZE_STEPS}
 			unchanged: /* @__PURE__ */ boolean(),
 			turns: /* @__PURE__ */ number()
 		});
-		const ContextResultSchema = /* @__PURE__ */ object({ turns: /* @__PURE__ */ number() });
+		const ContextResultSchema = /* @__PURE__ */ object({
+			turns: /* @__PURE__ */ number(),
+			tokens: /* @__PURE__ */ record(/* @__PURE__ */ string(), /* @__PURE__ */ number())
+		});
 		const FailureSchema = /* @__PURE__ */ object({
 			reason: /* @__PURE__ */ picklist([
 				"timeout",
@@ -725,14 +805,14 @@ ${ORGANIZE_STEPS}
 				message: `POST ${REWRITE_PATH} ${String(response.status)}: ${message}`
 			};
 		}
-		async function requestContextTurns(sessionId, signal) {
+		async function requestContext(sessionId, signal) {
 			const url = `${relative(CONTEXT_PATH)}?session=${encodeURIComponent(sessionId)}`;
 			const response = await fetch(url, {
 				headers: { accept: "application/json" },
 				signal
 			});
 			if (!response.ok) throw new Error(`GET ${CONTEXT_PATH} answered ${String(response.status)}`);
-			return parse(ContextResultSchema, await response.json()).turns;
+			return parse(ContextResultSchema, await response.json());
 		}
 		//#endregion
 		//#region dsh/enhance/src/state.ts
@@ -919,6 +999,19 @@ ${p}-dismiss:focus-visible {
 }
 ${p}-menu {
   min-width: 248px;
+}
+${p}-estimate {
+  box-sizing: border-box;
+  width: 0;
+  min-width: 100%;
+  padding: 6px 8px;
+  font-size: 11px;
+  line-height: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-tertiary);
+}
+${p}-row-slot {
+  display: contents;
 }
 ${p}-row {
   display: flex;
@@ -1237,6 +1330,18 @@ ${p}-add {
 `;
 		}
 		//#endregion
+		//#region dsh/enhance/src/tokens.ts
+		const WIDE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+		function estimateTokens(text) {
+			const wide = text.match(WIDE)?.length ?? 0;
+			const all = text.match(/[\s\S]/gu)?.length ?? 0;
+			return Math.ceil(wide * .6 + (all - wide) * .3);
+		}
+		const GROUPED = new Intl.NumberFormat("en-US");
+		function formatTokens(tokens) {
+			return GROUPED.format(tokens);
+		}
+		//#endregion
 		//#region dsh/enhance/src/button.tsx
 		const NUMBERED = 9;
 		const INFO_MS = 4e3;
@@ -1248,9 +1353,19 @@ ${p}-add {
 				hint: preset.description.trim() !== "" ? preset.description : builtin !== void 0 && !custom ? t(`preset.${builtin}.hint`) : ""
 			};
 		}
-		function contextLabel(turns, t) {
-			if (turns === void 0 || turns === 0) return void 0;
-			return turns === 1 ? t("contextOne") : format(t("context"), { n: turns });
+		function tipLabel(turns, t) {
+			if (turns === void 0 || turns === 0) return t("tip");
+			return turns === 1 ? t("tipLinkedOne") : format(t("tipLinked"), { n: turns });
+		}
+		function estimateLabel(context, preset, draft, t) {
+			const base = preset === void 0 ? void 0 : context?.tokens[preset];
+			if (context === void 0 || base === void 0) return void 0;
+			const values = {
+				tokens: formatTokens(base + estimateTokens(draft)),
+				n: context.turns
+			};
+			if (context.turns === 0) return format(t("estimate"), values);
+			return format(t(context.turns === 1 ? "estimateLinkedOne" : "estimateLinked"), values);
 		}
 		function modelKey(view) {
 			const next = view?.next;
@@ -1259,13 +1374,13 @@ ${p}-add {
 		function parseModel(key) {
 			return key === void 0 ? void 0 : parse(SessionModelSchema, JSON.parse(key));
 		}
-		function useContextTurns(sessionId, active, key) {
-			const [turns, setTurns] = (0, react.useState)();
+		function useContext(sessionId, active, key) {
+			const [context, setContext] = (0, react.useState)();
 			const stamp = `${sessionId}:${key}`;
 			(0, react.useEffect)(() => {
 				if (!active) return void 0;
 				const controller = new AbortController();
-				requestContextTurns(sessionId, controller.signal).then((value) => setTurns({
+				requestContext(sessionId, controller.signal).then((value) => setContext({
 					key: stamp,
 					value
 				}), (error) => {
@@ -1278,7 +1393,7 @@ ${p}-add {
 				active,
 				stamp
 			]);
-			return active && turns?.key === stamp ? turns.value : void 0;
+			return active && context?.key === stamp ? context.value : void 0;
 		}
 		function focusEnd(editable) {
 			if (!editable.isConnected) return;
@@ -1308,7 +1423,14 @@ ${p}-add {
 				if (followed !== void 0) setState(followed);
 				const current = followed ?? state;
 				const empty = draft.trim() === "";
-				const linked = contextLabel(useContextTurns(sessionId, settings.context && !empty, `${String(stamp)}:${String(settings.contextTurns)}`), t);
+				const context = useContext(sessionId, !empty, JSON.stringify([
+					stamp,
+					settings.context,
+					settings.contextTurns,
+					settings.presets
+				]));
+				const [pointed, setPointed] = (0, react.useState)();
+				if (!open && pointed !== void 0) setPointed(void 0);
 				const running = current.kind === "running";
 				(0, react.useLayoutEffect)(() => {
 					if (!running || composer === void 0) return void 0;
@@ -1461,7 +1583,8 @@ ${p}-add {
 					event.preventDefault();
 					run(preset);
 				};
-				const tooltip = running ? t("cancel") : references ? t("references") : linked === void 0 ? t("enhance") : `${t("enhance")} · ${linked}`;
+				const tooltip = running ? t("cancel") : references ? t("references") : tipLabel(context?.turns, t);
+				const estimate = estimateLabel(context, pointed ?? presets[0]?.id, draft, t);
 				const trigger = /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Tooltip, {
 					label: tooltip,
 					shortcutKeys: running ? ["Esc"] : keys.length > 0 && current.kind !== "done" ? keys : void 0,
@@ -1497,18 +1620,23 @@ ${p}-add {
 				const manage = open ? shared.settingsLink() : void 0;
 				const rows = presets.map((preset, index) => {
 					const { title, hint } = presetLabel(preset, t);
-					return /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.MenuItemButton, {
-						...index < NUMBERED ? { shortcut: { keys: [String(index + 1)] } } : {},
-						onSelect: () => run(preset),
-						children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
-							className: `${K}-row`,
-							children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: `${K}-row-title`,
-								children: title
-							}), hint !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
-								className: `dsh-enhance-row-hint`,
-								children: hint
-							})]
+					return /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+						className: `${K}-row-slot`,
+						onPointerEnter: () => setPointed(preset.id),
+						onFocus: () => setPointed(preset.id),
+						children: /* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.MenuItemButton, {
+							...index < NUMBERED ? { shortcut: { keys: [String(index + 1)] } } : {},
+							onSelect: () => run(preset),
+							children: /* @__PURE__ */ (0, react_jsx_runtime.jsxs)("span", {
+								className: `${K}-row`,
+								children: [/* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: `${K}-row-title`,
+									children: title
+								}), hint !== "" && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("span", {
+									className: `dsh-enhance-row-hint`,
+									children: hint
+								})]
+							})
 						})
 					}, preset.id);
 				});
@@ -1542,7 +1670,7 @@ ${p}-add {
 								})
 							})
 						}),
-						/* @__PURE__ */ (0, react_jsx_runtime.jsx)(_deepseek_ai_dsh_client_ui_primitives.Menu, {
+						/* @__PURE__ */ (0, react_jsx_runtime.jsxs)(_deepseek_ai_dsh_client_ui_primitives.Menu, {
 							open,
 							anchor: trigger,
 							side: "top",
@@ -1551,11 +1679,6 @@ ${p}-add {
 							autoFocus: true,
 							listClassName: MENU_CLASS,
 							onClose: closeMenu,
-							items: linked === void 0 ? [] : [{
-								type: "label",
-								id: "context",
-								text: linked
-							}],
 							footer: manage === void 0 ? [] : [{
 								id: "manage",
 								label: t("manage"),
@@ -1567,7 +1690,11 @@ ${p}-add {
 								setOpen(false);
 								manage?.();
 							},
-							children: rows
+							children: [estimate !== void 0 && /* @__PURE__ */ (0, react_jsx_runtime.jsx)("div", {
+								className: `dsh-enhance-estimate`,
+								role: "presentation",
+								children: estimate
+							}), rows]
 						})
 					]
 				});
@@ -1576,6 +1703,7 @@ ${p}-add {
 		const DETAILED = /* @__PURE__ */ new Set([
 			"model",
 			"invalid",
+			"preset",
 			"context",
 			"network"
 		]);

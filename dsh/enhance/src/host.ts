@@ -13,8 +13,10 @@ import { presetInstructions } from "./presets.ts";
 import { expandIncludes, loadReferences, type References } from "./references.ts";
 import { buildPrompt, runRewrite, type LlmView, type ModelRoute } from "./rewrite.ts";
 import type { EnhanceSettings } from "./settings-value.ts";
+import { estimateTokens } from "./tokens.ts";
 import {
   CONTEXT_PATH,
+  type ContextResult,
   RewriteRequestSchema,
   REWRITE_PATH,
   type Failure,
@@ -123,10 +125,27 @@ function contextFailure(sessionId: string, error: unknown): Failure {
   return { reason: "context", message: `reading session "${sessionId}" failed: ${detail}` };
 }
 
-/** `GET ?session=<id>`：下一次改写会关联几轮对话。 */
+/** 每个预设在草稿为空时的预计输入 token 数；指令无法展开的预设不计。 */
+export function estimatePresets(
+  settings: EnhanceSettings,
+  turns: readonly ContextTurn[],
+  references: References,
+): Record<string, number> {
+  const tokens: Record<string, number> = {};
+  for (const preset of settings.presets) {
+    const instructions = resolveInstructions(settings, preset.id, references);
+    if (!instructions.ok) continue;
+    const prompt = buildPrompt("", instructions.text, turns);
+    tokens[preset.id] = estimateTokens(prompt.system) + estimateTokens(prompt.input);
+  }
+  return tokens;
+}
+
+/** `GET ?session=<id>`：下一次改写会关联几轮对话，以及各预设的预计用量。 */
 export function contextHandler(
   ctx: EnhanceHostContext,
   config: ConfigValue,
+  references: ReferenceSource,
 ): DshWebRoute["handler"] {
   return guardRoute(
     (req) => ctx.connection.requestRejection(req),
@@ -137,12 +156,19 @@ export function contextHandler(
         sendJson(res, 400, { message: "the session query parameter is required" });
         return;
       }
+      const settings = currentSettings(config);
+      let turns: ContextTurn[];
       try {
-        const turns = await contextTurns(ctx, currentSettings(config), sessionId);
-        sendJson(res, 200, { turns: countTurns(turns) });
+        turns = await contextTurns(ctx, settings, sessionId);
       } catch (error) {
         sendFailure(res, contextFailure(sessionId, error));
+        return;
       }
+      const result: ContextResult = {
+        turns: countTurns(turns),
+        tokens: estimatePresets(settings, turns, await references()),
+      };
+      sendJson(res, 200, result);
     },
   );
 }
@@ -217,7 +243,7 @@ export function registerRoutes(ctx: EnhanceHostContext, config: ConfigValue): vo
   const references: ReferenceSource = () => (loading ??= loadReferences());
   const routes: DshWebRoute[] = [
     { kind: "exact", path: REWRITE_PATH, handler: rewriteHandler(ctx, config, references) },
-    { kind: "exact", path: CONTEXT_PATH, handler: contextHandler(ctx, config) },
+    { kind: "exact", path: CONTEXT_PATH, handler: contextHandler(ctx, config, references) },
   ];
   for (const route of routes) {
     ctx.effect(() => ctx.webServer.register(route), `dsh-enhance: ${route.path}`);

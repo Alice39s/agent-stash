@@ -5,6 +5,7 @@ import {
   FailureSchema,
   RewriteResultSchema,
   REWRITE_PATH,
+  type ContextResult,
   type Failure,
   type RewriteRequest,
   type RewriteResult,
@@ -60,10 +61,13 @@ export async function requestRewrite(
   };
 }
 
-/** 读取下一次改写会关联几轮对话。 */
-export async function requestContextTurns(sessionId: string, signal: AbortSignal): Promise<number> {
+/** 读取下一次改写会关联几轮对话，以及各预设的预计用量。 */
+export async function requestContext(
+  sessionId: string,
+  signal: AbortSignal,
+): Promise<ContextResult> {
   const url = `${relative(CONTEXT_PATH)}?session=${encodeURIComponent(sessionId)}`;
   const response = await fetch(url, { headers: { accept: "application/json" }, signal });
   if (!response.ok) throw new Error(`GET ${CONTEXT_PATH} answered ${String(response.status)}`);
-  return v.parse(ContextResultSchema, await response.json()).turns;
+  return v.parse(ContextResultSchema, await response.json());
 }

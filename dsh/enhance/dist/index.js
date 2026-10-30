@@ -1976,6 +1976,15 @@ async function runRewrite(llm, route, prompt, original, options) {
 	return settleOutput(raw, prompt, original, label);
 }
 //#endregion
+//#region dsh/enhance/src/tokens.ts
+const WIDE = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+function estimateTokens(text) {
+	const wide = text.match(WIDE)?.length ?? 0;
+	const all = text.match(/[\s\S]/gu)?.length ?? 0;
+	return Math.ceil(wide * .6 + (all - wide) * .3);
+}
+new Intl.NumberFormat("en-US");
+//#endregion
 //#region dsh/enhance/src/wire.ts
 const REWRITE_PATH = "/dsh-enhance/rewrite";
 const CONTEXT_PATH = "/dsh-enhance/context";
@@ -2060,18 +2069,35 @@ function contextFailure(sessionId, error) {
 		message: `reading session "${sessionId}" failed: ${error instanceof Error ? error.message : String(error)}`
 	};
 }
-function contextHandler(ctx, config) {
+function estimatePresets(settings, turns, references) {
+	const tokens = {};
+	for (const preset of settings.presets) {
+		const instructions = resolveInstructions(settings, preset.id, references);
+		if (!instructions.ok) continue;
+		const prompt = buildPrompt("", instructions.text, turns);
+		tokens[preset.id] = estimateTokens(prompt.system) + estimateTokens(prompt.input);
+	}
+	return tokens;
+}
+function contextHandler(ctx, config, references) {
 	return guardRoute((req) => ctx.connection.requestRejection(req), "GET", async (req, res) => {
 		const sessionId = new URL(req.url ?? "/", "http://localhost").searchParams.get("session");
 		if (sessionId === null || sessionId === "") {
 			sendJson(res, 400, { message: "the session query parameter is required" });
 			return;
 		}
+		const settings = currentSettings(config);
+		let turns;
 		try {
-			sendJson(res, 200, { turns: countTurns(await contextTurns(ctx, currentSettings(config), sessionId)) });
+			turns = await contextTurns(ctx, settings, sessionId);
 		} catch (error) {
 			sendFailure(res, contextFailure(sessionId, error));
+			return;
 		}
+		sendJson(res, 200, {
+			turns: countTurns(turns),
+			tokens: estimatePresets(settings, turns, await references())
+		});
 	});
 }
 function rewriteHandler(ctx, config, references) {
@@ -2137,7 +2163,7 @@ function registerRoutes(ctx, config) {
 	}, {
 		kind: "exact",
 		path: CONTEXT_PATH,
-		handler: contextHandler(ctx, config)
+		handler: contextHandler(ctx, config, references)
 	}];
 	for (const route of routes) ctx.effect(() => ctx.webServer.register(route), `dsh-enhance: ${route.path}`);
 }
