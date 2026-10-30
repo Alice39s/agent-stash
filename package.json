@@ -45,6 +45,7 @@
   "scripts": {
     "bundle": "tsdown",
     "sync:code-styleguide": "node scripts/sync-code-styleguide.ts",
+    "sync:enhance-references": "node scripts/sync-enhance-references.ts",
     "sync:init-prompts": "node scripts/sync-init-prompts.ts",
     "tegami": "node scripts/tegami.ts",
     "test": "vitest run",
