@@ -120,7 +120,7 @@ describe("enhance button", () => {
     await h.type("x");
     await openMenu(h);
     expect(menuItems(h).map((item) => item.textContent)).toEqual([
-      "Polish promptFuller wording that opens up the solution space",
+      "Polish promptStructure, then expand within your intent in a natural voice",
       "Structure onlyReorganize for the AI without changing the meaning",
       "Make it conciseKeep the key points, good for dictated text",
       "Manage presets…",
