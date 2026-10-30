@@ -164,11 +164,11 @@ export function editablePrompt(preset: Preset): string {
 }
 
 /**
- * 编辑框里的指令要存下的值。内置预设的指令与内置版本相同时存空，继续使用随插件更新的内置版本；
- * 清空编辑框同样回到内置版本。
+ * 编辑框里的指令要存下的值。内置预设的指令与内置版本逐字相同时存空，继续使用随插件更新的内置版本；
+ * 清空编辑框同样回到内置版本。只差末尾空白的文字算用户写过的指令，不会在输入时被吞掉。
  */
 export function storedPrompt(id: string, text: string): string {
-  return isBuiltin(id) && text.trim() === BUILTIN_INSTRUCTIONS[id].trim() ? "" : text;
+  return isBuiltin(id) && text === BUILTIN_INSTRUCTIONS[id] ? "" : text;
 }
 
 /** 一个预设实际使用的模式说明：自定义指令优先，内置预设留空时用内置版本。 */

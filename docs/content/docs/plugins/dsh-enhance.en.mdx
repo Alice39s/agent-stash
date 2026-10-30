@@ -44,7 +44,7 @@ Instructions of a custom preset can also include a guide with `<include ref="hum
 - The top of the menu states the estimated token cost of the request and the linked turns, for example This rewrite will use about 16,630 tokens, with the last turn linked. The number follows the preset under the pointer or keyboard focus, and the first preset otherwise.
 - While a rewrite runs, the draft is locked and the button turns into a stop button. Click it or press <Kbd>Esc</Kbd> to stop. The draft stays unchanged.
 - When the rewrite finishes, an undo button appears left of the button and brings back the draft. After several rewrites in a row, undo returns to the first draft. Editing or sending the draft removes the undo button.
-- A failure is shown left of the button, and the draft stays unchanged. For model errors, rejected results, preset instructions that cannot be used, a failed session read, and a failed connection to DSH, hover over the message to see the exact reason.
+- A failure is shown left of the button, and the draft stays unchanged. For model errors, rejected results, preset instructions that cannot be used, writing references that cannot be read from an incomplete install, a failed session read, and a failed connection to DSH, hover over the message to see the exact reason.
 - The button is unavailable while the draft contains reference chips for files or sessions, because a rewrite would turn them into plain text.
 
 A result goes into the input box only when it passes these checks:

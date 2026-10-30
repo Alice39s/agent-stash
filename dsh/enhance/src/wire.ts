@@ -59,7 +59,8 @@ export type ContextResult = v.InferOutput<typeof ContextResultSchema>;
  * - `empty`：模型没有返回文字。
  * - `invalid`：结果没有通过检查（像在回答草稿、换了语言，或丢了草稿里的代码与链接）。
  * - `no-model`：没有配置模型，会话与 DSH 也都没有选定模型。
- * - `preset`：预设不存在或没有改写指令。
+ * - `preset`：预设不存在、没有改写指令，或指令引用了没有随包分发的写作参考。
+ * - `vendor`：随包分发的写作参考读不出来，安装不完整。
  * - `context`：读取会话上下文失败。
  */
 export const FAILURE_REASONS = [
@@ -70,6 +71,7 @@ export const FAILURE_REASONS = [
   "invalid",
   "no-model",
   "preset",
+  "vendor",
   "context",
 ] as const;
 

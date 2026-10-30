@@ -13,6 +13,7 @@ import {
   type EnhanceHostContext,
 } from "./host.ts";
 import { loadReferences } from "./references.ts";
+import type { ReferenceSource } from "./host.ts";
 import { buildPrompt, type LlmView, type ModelRoute, type StreamChunkView } from "./rewrite.ts";
 import { DEFAULT_SETTINGS } from "./settings-value.ts";
 import { estimateTokens } from "./tokens.ts";
@@ -101,8 +102,9 @@ async function rewrite(
   h: Harness,
   body: unknown,
   config: Record<string, unknown> = {},
+  references: ReferenceSource = loadReferences,
 ): Promise<{ status: number; body: unknown }> {
-  const base = await serve(rewriteHandler(h.ctx, Config(config), loadReferences));
+  const base = await serve(rewriteHandler(h.ctx, Config(config), references));
   const response = await fetch(`${base}${REWRITE_PATH}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -227,6 +229,24 @@ describe("rewrite route", () => {
       },
     });
     expect(h.calls).toEqual([]);
+  });
+
+  test("reports a broken install instead of hanging on the writing references", async () => {
+    const result = await rewrite(
+      harness({}),
+      { session: "s1", preset: "polish", draft: "do it", model: SESSION_MODEL },
+      {},
+      async () => {
+        throw new Error("ENOENT: vendor/manifest.json");
+      },
+    );
+    expect(result).toEqual({
+      status: 500,
+      body: {
+        reason: "vendor",
+        message: "reading the bundled writing references failed: ENOENT: vendor/manifest.json",
+      },
+    });
   });
 
   test("answers 404 for an unknown preset", async () => {

@@ -113,6 +113,7 @@ const STATUS: Readonly<Record<Failure["reason"], number>> = {
   invalid: 502,
   "no-model": 409,
   preset: 404,
+  vendor: 500,
   context: 500,
 };
 
@@ -141,6 +142,23 @@ export function estimatePresets(
   return tokens;
 }
 
+/** 读取随包分发的写作参考；读不出来时回一条失败，不让请求一直挂着。 */
+async function readReferences(
+  references: ReferenceSource,
+  res: ServerResponse,
+): Promise<References | undefined> {
+  try {
+    return await references();
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    sendFailure(res, {
+      reason: "vendor",
+      message: `reading the bundled writing references failed: ${detail}`,
+    });
+    return undefined;
+  }
+}
+
 /** `GET ?session=<id>`：下一次改写会关联几轮对话，以及各预设的预计用量。 */
 export function contextHandler(
   ctx: EnhanceHostContext,
@@ -164,9 +182,11 @@ export function contextHandler(
         sendFailure(res, contextFailure(sessionId, error));
         return;
       }
+      const loaded = await readReferences(references, res);
+      if (loaded === undefined) return;
       const result: ContextResult = {
         turns: countTurns(turns),
-        tokens: estimatePresets(settings, turns, await references()),
+        tokens: estimatePresets(settings, turns, loaded),
       };
       sendJson(res, 200, result);
     },
@@ -190,7 +210,9 @@ export function rewriteHandler(
       }
       const { session, preset: presetId, draft, model } = body.value;
       const settings = currentSettings(config);
-      const instructions = resolveInstructions(settings, presetId, await references());
+      const loaded = await readReferences(references, res);
+      if (loaded === undefined) return;
+      const instructions = resolveInstructions(settings, presetId, loaded);
       if (!instructions.ok) {
         sendFailure(res, instructions.failure);
         return;

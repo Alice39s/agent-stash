@@ -579,7 +579,7 @@ ${ORGANIZE_STEPS}
 			return BUILTIN_INSTRUCTIONS[preset.id];
 		}
 		function storedPrompt(id, text) {
-			return isBuiltin(id) && text.trim() === BUILTIN_INSTRUCTIONS[id].trim() ? "" : text;
+			return isBuiltin(id) && text === BUILTIN_INSTRUCTIONS[id] ? "" : text;
 		}
 		//#endregion
 		//#region dsh/enhance/src/preset-icons.ts
@@ -1288,6 +1288,7 @@ ${p}-add {
 			"error.invalid": "Unusable result, draft kept",
 			"error.no-model": "No model available",
 			"error.preset": "This preset's instructions cannot be used",
+			"error.vendor": "The bundled writing references could not be read",
 			"error.context": "Could not read the session",
 			"error.network": "Could not reach DSH",
 			dismiss: "Dismiss",
@@ -1358,6 +1359,7 @@ ${p}-add {
 			"error.invalid": "结果不可用，已保留原稿",
 			"error.no-model": "没有可用的模型",
 			"error.preset": "这个预设的改写指令无法使用",
+			"error.vendor": "内置写作参考读取失败",
 			"error.context": "读取会话失败",
 			"error.network": "无法连接 DSH",
 			dismiss: "关闭",
@@ -1431,6 +1433,7 @@ ${p}-add {
 				"invalid",
 				"no-model",
 				"preset",
+				"vendor",
 				"context"
 			]),
 			message: /* @__PURE__ */ string()
@@ -1907,6 +1910,7 @@ ${p}-add {
 			"model",
 			"invalid",
 			"preset",
+			"vendor",
 			"context",
 			"network"
 		]);
