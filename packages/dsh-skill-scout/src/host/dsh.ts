@@ -55,7 +55,13 @@ export type DshStreamChunk =
   | { readonly type: "text-delta"; readonly index: number; readonly text: string }
   | {
       readonly type: "usage";
-      readonly usage: { readonly inputTokens: number; readonly outputTokens: number };
+      readonly usage: {
+        /** 未命中缓存的输入。 */
+        readonly inputTokens: number;
+        readonly outputTokens: number;
+        readonly cacheReadTokens?: number;
+        readonly cacheWriteTokens?: number;
+      };
     }
   | {
       readonly type: "finish";
@@ -64,7 +70,8 @@ export type DshStreamChunk =
         readonly failure?: { readonly code: string; readonly message: string };
       };
     }
-  | { readonly type: "block-start" | "block-end" | "reasoning-delta" | "tool-call-delta" };
+  | { readonly type: "reasoning-delta" }
+  | { readonly type: "block-start" | "block-end" | "tool-call-delta" };
 
 /** 一次独立的模型请求。 */
 export interface DshGenerateOptions {

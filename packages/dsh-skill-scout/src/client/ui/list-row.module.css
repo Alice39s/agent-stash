@@ -1,0 +1,240 @@
+/* 照宿主 TaskManagerPage .listRows / .row 与 ScheduleCatalogAction .row：行间 2px，悬停填充，选中行用 active 填充。 */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  --scout-row-title: var(--dsw-font-xs-strong-13);
+  --scout-row-text: var(--dsw-font-xxs-12);
+  position: relative;
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  column-gap: 8px;
+  padding: 8px;
+  border-radius: var(--dsw-radius-md);
+  color: var(--dsw-alias-label-primary);
+  transition: background-color var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+.row[data-size="page"] {
+  --scout-row-title: var(--dsw-font-s-strong-14);
+  --scout-row-text: var(--dsw-font-xs-13);
+  column-gap: 12px;
+}
+
+/* 浮层里的行：ScheduleCatalogAction .row 的内边距与 10px 圆角，标题用浮层行的 13px 常规字重。 */
+.row[data-variant="popover"] {
+  --scout-row-title: var(--dsw-font-xs-13);
+  padding: 10px 12px;
+  border-radius: 10px;
+}
+
+.row[data-openable]:hover,
+.row[data-variant="select"]:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.row[data-selected] {
+  background: var(--dsw-alias-interactive-bg-active);
+}
+
+/* 标记列：与标题行同高，状态点或勾选框在里面居中；勾选框的文字标签只留给读屏。 */
+.marker {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 1lh;
+  overflow: hidden;
+  font: var(--scout-row-title);
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.titleLine {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font: var(--scout-row-title);
+  color: var(--dsw-alias-label-primary);
+}
+
+.titleLine[data-ink="secondary"] {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.titleLine[data-ink="tertiary"] {
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* 已结束的行在悬停或选中时回到正常墨色，照宿主 .endedRow。 */
+.row:hover .titleLine[data-ink="tertiary"],
+.row[data-selected] .titleLine[data-ink="tertiary"] {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.titleDot {
+  display: inline-flex;
+  flex: none;
+}
+
+.title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.open {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* 标题按钮的点击区铺满整行；尾部动作在它上面。 */
+.open::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--dsw-radius-md);
+}
+
+.row[data-variant="popover"] .open::after {
+  border-radius: 10px;
+}
+
+.open:focus-visible {
+  outline: none;
+}
+
+.open:focus-visible::after {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: -2px;
+}
+
+.summary {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  font: var(--scout-row-text);
+  color: var(--dsw-alias-label-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* 元信息只占一行：各项保持完整宽度，路径一项占满剩下的宽度，放不下时 PathLabel 淡出开头的目录。 */
+.meta {
+  display: flex;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font: var(--dsw-font-xxs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.metaItem {
+  flex: none;
+}
+
+.metaItem[data-fill] {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* 没有路径的行在窄栏里放不下时，最后一项以省略号收尾。 */
+.metaItem:last-child:not([data-fill]) {
+  flex-shrink: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metaItem + .metaItem::before {
+  content: " · ";
+  flex: none;
+  white-space: pre;
+}
+
+.metaItem[data-ink="secondary"] {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.metaItem[data-ink="error"] {
+  color: var(--dsw-alias-state-error-primary);
+}
+
+/* 尾部动作：悬停或焦点在行内时出现，没有悬停的设备上一直显示。 */
+.actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  align-self: start;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+.row:hover .actions,
+.row:focus-within .actions {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .actions {
+    opacity: 1;
+  }
+}
+
+.row mark {
+  border-radius: 2px;
+  background: var(--dsw-alias-state-warn-tertiary);
+  color: inherit;
+}
+
+/* 从别处选中后高亮一次，照宿主插件页的 dsh-plugin-highlight。 */
+.row[data-highlight] {
+  animation: scout-row-highlight 2400ms ease-out;
+}
+
+@keyframes scout-row-highlight {
+  0%,
+  55% {
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--dsw-alias-state-business-primary) 40%, transparent);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row,
+  .actions {
+    transition: none;
+  }
+
+  .row[data-highlight] {
+    animation: none;
+    box-shadow: 0 0 0 2px
+      color-mix(in srgb, var(--dsw-alias-state-business-primary) 40%, transparent);
+  }
+}

@@ -1,0 +1,50 @@
+/* 代码字体的 12px 行，次要墨色；命令之间是 10px 的淡色箭头，其余步数写成 +N。 */
+.line {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font: var(--dsw-font-xxs-12);
+  font-family: var(--ds-font-family-code);
+  color: var(--dsw-alias-label-secondary);
+}
+
+.step {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font: inherit;
+}
+
+.step:first-child {
+  flex: none;
+}
+
+.arrow {
+  display: inline-flex;
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.more {
+  flex: none;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.matches {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.match {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--dsw-font-xxs-12);
+  font-family: var(--ds-font-family-code);
+  color: var(--dsw-alias-label-secondary);
+}

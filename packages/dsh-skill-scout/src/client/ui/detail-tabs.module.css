@@ -1,0 +1,92 @@
+/* 照宿主 TaskManagerPage .detailTabsBar / .detailTabs / .detailTab。 */
+.bar {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  box-sizing: border-box;
+  height: 44px;
+  min-height: 44px;
+  padding: 0 var(--scout-gutter);
+  border-bottom: 0.5px solid var(--dsw-alias-border-l2);
+}
+
+.bar[data-size="pane"] {
+  height: 37px;
+  min-height: 37px;
+}
+
+.tabs {
+  display: flex;
+  flex: 1 1 auto;
+  align-self: flex-end;
+  gap: 36px;
+  min-width: 0;
+  margin-bottom: -1px;
+  padding-bottom: 1px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  position: relative;
+  flex: none;
+  padding: 0 0 13px;
+  border: 0;
+  background: transparent;
+  font: var(--dsw-font-xs-strong-13);
+  color: var(--dsw-alias-label-tertiary);
+  cursor: pointer;
+  transition: color var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+.bar[data-size="pane"] .tab {
+  padding-bottom: 9px;
+}
+
+.tab::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: transparent;
+}
+
+.tab:hover {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.tab[aria-selected="true"] {
+  color: var(--dsw-alias-state-business-primary);
+}
+
+.tab[aria-selected="true"]::after {
+  background: var(--dsw-alias-state-business-primary);
+}
+
+.tab:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  margin-right: -8px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
+  }
+}

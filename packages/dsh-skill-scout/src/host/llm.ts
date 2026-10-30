@@ -1,14 +1,15 @@
 /**
  * 两段模型调用：
- * - 摘要：把候选的证据整理成有预算上限的 JSON 证据包，请模型判断值不值得保存；值得时只给方案：
- *   标题、发现、用途、触发条件、Skill 名称、步骤提纲、风险与验证方式，不写 Skill 本身；
- * - 草稿：用户同意摘要之后，按摘要的范围写出完整的 Skill，或给已有 Skill 追加的一节。
+ * - 摘要：把线索的证据整理成有预算上限的 JSON 证据包，请模型判断值不值得保存；值得时给出一个或几个
+ *   互不重叠的 idea，每个 idea 只是方案：标题、发现、用途、触发条件、Skill 名称、步骤提纲、风险与验证方式，
+ *   不写 Skill 本身；
+ * - 草稿：用户同意其中一个 idea 之后，按它的范围写出完整的 Skill，或给已有 Skill 追加的一节。
  * 两次请求都不经过任何会话，模型没有工具可用；回复都用 schema 与证据引用核对。
  */
 import * as v from "valibot";
 import { parseCommand } from "./commands.ts";
 import type { DshLlm, DshModelSelection, DshSkillSummary } from "./dsh.ts";
-import type { Candidate, Episode, Op } from "./model.ts";
+import { isRequested, type Candidate, type Episode, type LeadKind, type Op } from "./model.ts";
 import { clip, containsSecret, redact } from "./redact.ts";
 
 /** 发给模型的 Skill 名称规则，与 DSH 的 Skill 名称校验一致。 */
@@ -29,9 +30,8 @@ const PlanEntries = {
   verification: Text(240),
 };
 
-/** 摘要的结构：值得保存时给出方案，说明发现了什么、Skill 做什么、打算写哪些步骤。 */
-export const SummarySchema = v.variant("decision", [
-  v.object({ decision: v.literal("skip"), reason: Text(400), refs: Refs }),
+/** 一个 idea 的方案：新建一个 Skill，或给已有 Skill 追加内容；说明发现了什么、Skill 做什么、打算写哪些步骤。 */
+export const ProposalSchema = v.variant("decision", [
   v.object({
     decision: v.literal("suggest_create"),
     title: Text(80),
@@ -60,9 +60,28 @@ export const SummarySchema = v.variant("decision", [
     refs: Refs,
   }),
 ]);
+export type Proposal = v.InferOutput<typeof ProposalSchema>;
+
+/** 一份摘要最多给出的 idea 数，与 `maxIdeas` 的最大值一致。 */
+const IDEA_LIMIT = 5;
+
+/**
+ * 一条线索的摘要最多给出几个 idea：规则线索 3 个，用户要求提炼的整段会话与所选任务 5 个。
+ * @param kind - 线索的来源。
+ */
+export function maxIdeas(kind: LeadKind): number {
+  return isRequested(kind) ? IDEA_LIMIT : 3;
+}
+
+/** 摘要的结构：不值得保存时给出理由；值得时给出互不重叠的 idea，Skill 名称各不相同。 */
+export const SummarySchema = v.variant("decision", [
+  v.object({ decision: v.literal("skip"), reason: Text(400), refs: Refs }),
+  v.object({
+    decision: v.literal("suggest"),
+    ideas: v.pipe(v.array(ProposalSchema), v.minLength(1), v.maxLength(IDEA_LIMIT)),
+  }),
+]);
 export type Summary = v.InferOutput<typeof SummarySchema>;
-/** 值得保存的摘要。 */
-export type Proposal = Exclude<Summary, { readonly decision: "skip" }>;
 
 /** 不带命令的步骤可以不引用证据；带命令的步骤在核对时要求引用。 */
 const StepSchema = v.object({
@@ -124,7 +143,7 @@ const EVIDENCE_RULES = `Evidence rules:
 - "matchedSteps" lists the steps the rules matched across the episodes, as one episode wrote them. The rules compare actions, not spellings: "pnpm build", "npm run build", and "yarn build" are the same step, and so are "npx vitest" and "pnpm exec vitest". Different spellings across sessions are not a sign of an inconsistent procedure.`;
 
 /** 摘要的判断标准；设置里的提示词覆盖它。证据包作为用户消息里的 JSON 数据传入。 */
-export const SUMMARY_GUIDANCE = `You screen evidence mined from a developer's finished coding-agent sessions and decide whether it contains reusable procedural knowledge worth saving as an Agent Skill. You do not write the skill now: you propose a plan in a few short lines, and the user decides whether a skill gets drafted from it. Most evidence is not worth saving; "skip" is the expected answer unless the bar below is clearly met.
+export const SUMMARY_GUIDANCE = `You screen evidence mined from a developer's finished coding-agent sessions and decide whether it contains reusable procedural knowledge worth saving as Agent Skills. You do not write skills now: for each skill worth saving you propose a plan in a few short lines (an idea), and the user decides which ideas get drafted. Most evidence is not worth saving; "skip" is the expected answer unless the bar below is clearly met.
 
 ${EVIDENCE_RULES}
 - Before deciding, check the process in EVIDENCE: what the user asked, where the user corrected or redirected the agent ("userSteering" while the task ran, "userFollowup" after it), which commands failed and why ("error", "recoveries"), and which steps tool results verified ("outcomeEvidence"). Steps the user rejected or that never succeeded are not part of the procedure.
@@ -133,24 +152,44 @@ Save only knowledge that (1) worked, as shown by tool results; (2) is procedural
 
 Choose one decision:
 - "skip": one-off work (a specific migration, a bug in specific code), the ordinary edit-test-commit loop, project facts or preferences rather than procedures, thin or ambiguous evidence, steps that only work with a secret written into the skill, or content already covered by an existing skill. A step that asks the user for a code or password at run time is fine; the skill says to ask and never stores the value.
-- "suggest_create": a new skill. The plan says what you found in the sessions and which tool results show it worked, what the skill does, when it should be used, a name, an outline of its main steps, the risks of following it (destructive commands, assumptions about the environment; none is fine), and how to verify that it worked.
-- "suggest_improve": an existing skill covers this task, but the evidence adds a missing step, prerequisite, or pitfall. Name that skill and plan only the additions: when they apply, what to add, their risks, and how to verify them.
+- "suggest": one or more ideas. Each idea is one of:
+  - "suggest_create": a new skill. The plan says what you found in the sessions and which tool results show it worked, what the skill does, when it should be used, a name, an outline of its main steps, the risks of following it (destructive commands, assumptions about the environment; none is fine), and how to verify that it worked.
+  - "suggest_improve": an existing skill covers this task, but the evidence adds a missing step, prerequisite, or pitfall. Name that skill and plan only the additions: when they apply, what to add, their risks, and how to verify them.
 
-Write every text field in the language the user used in the requests. Keep each field to one sentence and each outline item to a few words: the user reads the plan in a small dialog before approving it. Skill names are lowercase kebab-case English and describe the task, not the project.`;
+Write every text field in the language the user used in the requests. Keep each field to one sentence and each outline item to a few words: the user reads each idea on a small card before approving it. Skill names are lowercase kebab-case English and describe the task, not the project.`;
 
-/** 摘要的输出格式，始终附在判断标准之后。 */
-export const SUMMARY_FORMAT = `Reply with exactly one JSON object and nothing else, in one of these shapes:
+/** 用户要求提炼的线索：说明证据是用户给定的全部任务，而不是规则匹配到的一组任务。 */
+const REQUESTED_SCOPE: Readonly<Record<"session" | "selected", string>> = {
+  session: `The user asked to extract skills from one whole session: "signal" is "session", EVIDENCE holds the tasks of that session, and "matchedSteps" is empty because no rule picked them. Look at every task, but the bar stays the same: answer "skip" when nothing in the session qualifies.`,
+  selected: `The user picked these tasks from past sessions and asked to extract skills from them: "signal" is "selected", EVIDENCE holds the chosen tasks, and "matchedSteps" is empty because no rule picked them. Look at every task, but the bar stays the same: answer "skip" when nothing in them qualifies.`,
+};
+
+/**
+ * 摘要的输出格式，始终附在判断标准之后。
+ * @param limit - 这条线索最多给出的 idea 数。
+ */
+export function summaryFormat(limit: number): string {
+  return `Reply with exactly one JSON object and nothing else, in one of these shapes:
 {"decision":"skip","reason":"...","refs":["E1.3"]}
+{"decision":"suggest","ideas":[IDEA, ...]}
+where each IDEA is one of:
 {"decision":"suggest_create","title":"...","found":"what the sessions show and the tool results that prove it worked","description":"what the skill does","trigger":"when to use it","skill":"kebab-case-name","outline":["short step","..."],"risks":["what could go wrong"],"verification":"how to confirm it worked","refs":["E1.12","E2.7"]}
-{"decision":"suggest_improve","title":"...","found":"...","description":"what the addition covers","trigger":"when the addition applies","skill":"existing-skill-name","outline":["short addition","..."],"risks":[],"verification":"how to confirm it worked","refs":["E2.7"]}`;
+{"decision":"suggest_improve","title":"...","found":"...","description":"what the addition covers","trigger":"when the addition applies","skill":"existing-skill-name","outline":["short addition","..."],"risks":[],"verification":"how to confirm it worked","refs":["E2.7"]}
+Give at most ${String(limit)} ideas. Ideas must not overlap: each covers a different procedure, is useful on its own without the others, and has a different skill name. When the evidence holds one idea, give one; never split one procedure into several ideas or pad the list.`;
+}
+
+/** 已被占用的 Skill 名称：证据包列出证据会话能看到的全部名称，新建的 Skill 不能用。 */
+const TAKEN_NAMES = `EVIDENCE.takenSkillNames lists the names of all skills the sessions can already see, sorted by name; "omittedSkillNames" counts names left out to fit the size limit. EVIDENCE.existingSkills describes the few that look most related, and may miss a skill whose name or description is in another language than the requests. Every name in either list is taken: a "suggest_create" idea must use a name that is in neither. When one of those skills already covers a procedure, propose "suggest_improve" for that skill if the evidence adds a missing step, prerequisite, or pitfall; otherwise leave the procedure out, and answer "skip" when nothing else remains.`;
 
 /**
  * 摘要的系统提示词。
  * @param guidance - 设置里的提示词；为空时用内置的判断标准。
+ * @param kind - 线索的来源，决定 idea 的上限；用户要求提炼的线索另附证据范围的说明。
  */
-export function summaryPrompt(guidance: string): string {
+export function summaryPrompt(guidance: string, kind: LeadKind): string {
   const head = guidance.trim() === "" ? SUMMARY_GUIDANCE : guidance.trim();
-  return `${head}\n\n${SUMMARY_FORMAT}`;
+  const scope = isRequested(kind) ? [REQUESTED_SCOPE[kind]] : [];
+  return [head, ...scope, TAKEN_NAMES, summaryFormat(maxIdeas(kind))].join("\n\n");
 }
 
 const DRAFT_GUIDANCE = `This is a standalone request to write one Agent Skill from a developer's finished coding-agent sessions. The user read the plan in PLAN and approved drafting it. Handle only the skill PLAN names: follow its decision, title, trigger, outline, and verification, turn its risks into prerequisites or limits, and do not widen its scope, rename it, or write about another skill.
@@ -245,7 +284,7 @@ export interface EvidencePack {
   readonly episodeRefs: ReadonlySet<string>;
 }
 
-/** 证据包的裁剪级别，从完整到最精简。 */
+/** 规则线索证据包的裁剪级别，从完整到最精简。 */
 const LEVELS = [
   { episodes: 4, ops: 60, reply: true, excerpt: 2400 },
   { episodes: 3, ops: 36, reply: true, excerpt: 1200 },
@@ -253,10 +292,44 @@ const LEVELS = [
   { episodes: 2, ops: 10, reply: false, excerpt: 0 },
 ] as const;
 
+/** 整段会话与所选任务的裁剪级别：任务更多（所选任务最多 12 个），每个任务的操作更少。 */
+const WIDE_LEVELS = [
+  { episodes: 12, ops: 30, reply: true, excerpt: 1200 },
+  { episodes: 12, ops: 16, reply: false, excerpt: 600 },
+  { episodes: 8, ops: 10, reply: false, excerpt: 0 },
+  { episodes: 6, ops: 6, reply: false, excerpt: 0 },
+] as const;
+
 /** 和候选相关的已有 Skill；最相关的一条附带正文摘录。 */
 export interface RelatedSkill {
   readonly skill: DshSkillSummary;
   readonly excerpt: string | null;
+}
+
+/** 证据包最多列出的已占用 Skill 名称数。 */
+export const TAKEN_LIMIT = 200;
+
+/**
+ * 证据包里的已占用 Skill 名称：先按上限取前面的（调用方按相关度从高到低排列），列出时按名称排序。
+ * @param count - 这次最多列出几个。
+ */
+function takenField(
+  taken: readonly string[],
+  count: number,
+): { readonly takenSkillNames?: string[]; readonly omittedSkillNames?: number } {
+  if (taken.length === 0) return {};
+  const listed = taken.slice(0, count).toSorted();
+  const omitted = taken.length - listed.length;
+  return { takenSkillNames: listed, ...(omitted > 0 ? { omittedSkillNames: omitted } : {}) };
+}
+
+/** 名称列表的裁剪：从上限开始每次减半，直到一个不留。 */
+function takenCounts(taken: readonly string[]): number[] {
+  const counts: number[] = [];
+  for (let count = Math.min(taken.length, TAKEN_LIMIT); count > 0; count = Math.floor(count / 2)) {
+    counts.push(count);
+  }
+  return [...counts, 0];
 }
 
 function packOp(ref: string, op: Op): PackedOp {
@@ -292,20 +365,31 @@ function pickOps(episode: Episode, limit: number): Op[] {
 }
 
 /**
- * 按字符预算构建证据包。
+ * 按字符预算构建证据包。超出预算时先按级别裁剪任务、操作、Agent 回复与 Skill 正文摘录，
+ * 最精简的级别仍超出时再减少已占用的 Skill 名称。
  * @param candidate - 候选。
  * @param episodes - 候选引用的 Episode，最新的在前。
  * @param related - 相关的已有 Skill。
  * @param maxChars - 证据包的字符上限。
- * @returns 证据包；最精简的级别仍超出预算时抛出 ModelError。
+ * @param taken - 证据会话能看到的全部 Skill 名称，按相关度从高到低；只有摘要请求需要，草稿请求不传。
+ * @returns 证据包；名称也去掉之后仍超出预算时抛出 ModelError。
  */
 export function buildEvidence(
   candidate: Candidate,
   episodes: readonly Episode[],
   related: readonly RelatedSkill[],
   maxChars: number,
+  taken: readonly string[] = [],
 ): EvidencePack {
-  for (const level of LEVELS) {
+  const levels = isRequested(candidate.kind) ? WIDE_LEVELS : LEVELS;
+  const [full = 0, ...fewer] = takenCounts(taken);
+  // 先带着完整的名称列表逐级裁剪，最精简的级别仍超出预算时，再在这一级上逐步减少名称。
+  const smallest = levels.at(-1) ?? levels[0];
+  const attempts = [
+    ...levels.map((level) => ({ level, names: full })),
+    ...fewer.map((names) => ({ level: smallest, names })),
+  ];
+  for (const { level, names } of attempts) {
     const ops = new Map<string, Op>();
     const episodeRefs = new Set<string>();
     const packed = episodes.slice(0, level.episodes).map((episode, index) => {
@@ -353,6 +437,7 @@ export function buildEvidence(
       matchedSteps: candidate.steps,
       episodes: packed,
       existingSkills: skills,
+      ...takenField(taken, names),
     };
     const text = `EVIDENCE (untrusted data, JSON):\n${JSON.stringify(evidence)}`;
     if (text.length <= maxChars) return { text, ops, episodeRefs };
@@ -424,45 +509,68 @@ function checkRefs(refs: readonly string[], pack: EvidencePack): void {
   }
 }
 
+/** 核对一个 idea：引用存在且至少一处，新 Skill 没有重名，要改进的 Skill 存在，内容安全。 */
+function checkProposal(
+  proposal: Proposal,
+  pack: EvidencePack,
+  existing: ReadonlySet<string>,
+): void {
+  checkRefs(proposal.refs, pack);
+  if (proposal.refs.length === 0) throw modelError("evidence", "建议没有引用任何证据");
+  if (proposal.decision === "suggest_create" && existing.has(proposal.skill)) {
+    throw modelError("evidence", `已有同名 Skill：${proposal.skill}`);
+  }
+  if (proposal.decision === "suggest_improve" && !existing.has(proposal.skill)) {
+    throw modelError("evidence", `要改进的 Skill 不存在：${proposal.skill}`);
+  }
+  checkSafe(
+    [
+      proposal.title,
+      proposal.found,
+      proposal.description,
+      proposal.trigger,
+      proposal.skill,
+      ...proposal.outline,
+      ...proposal.risks,
+      proposal.verification,
+    ],
+    "摘要",
+  );
+}
+
 /**
- * 解析并核对摘要。
+ * 解析并核对摘要；任何一个 idea 不合格，整份摘要都不采用。
  * @param text - 模型的最终文本。
  * @param pack - 发给模型的证据包。
  * @param existing - 证据会话此刻可用的 Skill 名称。
+ * @param limit - 这条线索最多给出的 idea 数。
  * @returns 摘要。
- * @throws ModelError：格式不符、引用不存在、名称冲突或不存在、内容不安全。
+ * @throws ModelError：格式不符、idea 过多或重名、引用不存在、名称冲突或不存在、内容不安全。
  */
 export function checkSummary(
   text: string,
   pack: EvidencePack,
   existing: ReadonlySet<string>,
+  limit: number,
 ): Summary {
   const summary = parseReply(SummarySchema, text);
-  checkRefs(summary.refs, pack);
   if (summary.decision === "skip") {
+    checkRefs(summary.refs, pack);
     checkSafe([summary.reason], "摘要");
     return summary;
   }
-  if (summary.refs.length === 0) throw modelError("evidence", "建议没有引用任何证据");
-  if (summary.decision === "suggest_create" && existing.has(summary.skill)) {
-    throw modelError("evidence", `已有同名 Skill：${summary.skill}`);
+  if (summary.ideas.length > limit) {
+    throw modelError(
+      "format",
+      `摘要给出了 ${String(summary.ideas.length)} 个 idea，上限是 ${String(limit)} 个`,
+    );
   }
-  if (summary.decision === "suggest_improve" && !existing.has(summary.skill)) {
-    throw modelError("evidence", `要改进的 Skill 不存在：${summary.skill}`);
+  const names = summary.ideas.map((idea) => idea.skill);
+  const repeated = names.find((name, index) => names.indexOf(name) !== index);
+  if (repeated !== undefined) {
+    throw modelError("format", `同一份摘要里有重名的 Skill：${repeated}`);
   }
-  checkSafe(
-    [
-      summary.title,
-      summary.found,
-      summary.description,
-      summary.trigger,
-      summary.skill,
-      ...summary.outline,
-      ...summary.risks,
-      summary.verification,
-    ],
-    "摘要",
-  );
+  for (const idea of summary.ideas) checkProposal(idea, pack, existing);
   return summary;
 }
 
@@ -564,9 +672,18 @@ export function checkDraft(
 /** 一次模型调用的结果与用量。 */
 export interface Completion {
   readonly text: string;
+  /** 未命中缓存的输入。 */
   readonly inputTokens: number;
+  readonly cacheReadTokens: number;
+  readonly cacheWriteTokens: number;
   readonly outputTokens: number;
 }
+
+/**
+ * 流式回复的进展：收到推理内容时为 thinking，收到正文时为 writing。
+ * @param chars - 已收到的正文字数。
+ */
+export type StreamProgress = (phase: "thinking" | "writing", chars: number) => void;
 
 /**
  * 发起一次独立的模型请求并收集文本。
@@ -575,6 +692,7 @@ export interface Completion {
  * @param prompt - 用户消息（证据包）。
  * @param maxTokens - 输出上限。
  * @param signal - 超时与插件卸载共用的取消信号。
+ * @param onProgress - 每收到一个推理或正文分块调用一次。
  * @returns 最后一个文本块与用量。
  */
 export async function complete(
@@ -584,10 +702,16 @@ export async function complete(
   prompt: string,
   maxTokens: number,
   signal: AbortSignal,
+  onProgress: StreamProgress,
 ): Promise<Completion> {
   const texts = new Map<number, string>();
-  let inputTokens = 0;
-  let outputTokens = 0;
+  let chars = 0;
+  let usage: Omit<Completion, "text"> = {
+    inputTokens: 0,
+    cacheReadTokens: 0,
+    cacheWriteTokens: 0,
+    outputTokens: 0,
+  };
   let finish: { readonly kind: string; readonly failure?: { readonly message: string } } | null =
     null;
   try {
@@ -603,9 +727,17 @@ export async function complete(
     for await (const chunk of stream) {
       if (chunk.type === "text-delta") {
         texts.set(chunk.index, (texts.get(chunk.index) ?? "") + chunk.text);
+        chars += chunk.text.length;
+        onProgress("writing", chars);
+      } else if (chunk.type === "reasoning-delta") {
+        onProgress("thinking", chars);
       } else if (chunk.type === "usage") {
-        inputTokens = chunk.usage.inputTokens;
-        outputTokens = chunk.usage.outputTokens;
+        usage = {
+          inputTokens: chunk.usage.inputTokens,
+          cacheReadTokens: chunk.usage.cacheReadTokens ?? 0,
+          cacheWriteTokens: chunk.usage.cacheWriteTokens ?? 0,
+          outputTokens: chunk.usage.outputTokens,
+        };
       } else if (chunk.type === "finish") finish = chunk.reason;
     }
   } catch (error) {
@@ -620,5 +752,5 @@ export async function complete(
   if (finish.kind === "error") throw modelError("model", finish.failure?.message ?? "模型请求失败");
   if (finish.kind === "max-tokens") throw modelError("format", "模型输出超过长度上限被截断");
   const last = [...texts.entries()].toSorted((a, b) => a[0] - b[0]).at(-1)?.[1] ?? "";
-  return { text: last, inputTokens, outputTokens };
+  return { text: last, ...usage };
 }

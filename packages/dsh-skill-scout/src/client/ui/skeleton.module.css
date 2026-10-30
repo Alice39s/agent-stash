@@ -1,0 +1,71 @@
+/* 照宿主插件页的 .skeletonFill / .skeletonBar：骨架底色，2 秒一次的明暗起伏。 */
+.fill {
+  display: block;
+  flex: none;
+  max-width: 100%;
+  border-radius: var(--dsw-radius-xs);
+  background: var(--dsw-alias-bg-skeleton);
+  animation: scout-skeleton 2s cubic-bezier(0.36, 0, 0.64, 1) infinite;
+}
+
+.fill[data-shape="block"] {
+  border-radius: var(--dsw-radius-md);
+}
+
+@keyframes scout-skeleton {
+  0% {
+    opacity: 1;
+  }
+
+  40% {
+    opacity: 0.6;
+  }
+
+  80%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fill {
+    animation: none;
+  }
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  column-gap: 8px;
+  padding: 8px;
+}
+
+/* 标记列：与列表行的状态点同样居中在标题行里。 */
+.marker {
+  align-self: center;
+  justify-self: center;
+  border-radius: 50%;
+}
+
+.lines {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font: var(--dsw-font-xs-13);
+}
+
+/* 每条占位保留一行文字的高度，较短的占位条在行内居中。 */
+.line {
+  display: flex;
+  align-items: center;
+  height: 1lh;
+}

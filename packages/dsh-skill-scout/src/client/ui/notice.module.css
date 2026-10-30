@@ -1,0 +1,65 @@
+/* 照宿主 DiscoverSection .notice：警示底色、图标在文字第一行旁、12px 文字。 */
+.limit,
+.error,
+.result {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: var(--dsw-radius-md);
+  font: var(--dsw-font-xxs-12);
+  color: var(--dsw-alias-label-secondary);
+}
+
+.limit {
+  background: var(--dsw-alias-state-warn-tertiary);
+}
+
+.limit > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--dsw-alias-state-warn-primary);
+}
+
+.error {
+  align-items: center;
+  padding: 6px 0;
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.result {
+  align-items: center;
+  padding: 4px 4px 4px 12px;
+}
+
+.result[data-framed] {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.text {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.link {
+  flex: none;
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  font: var(--dsw-font-xxs-strong-12);
+  color: var(--dsw-alias-state-business-primary);
+  cursor: pointer;
+}
+
+.link:hover {
+  text-decoration: underline;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 1px;
+}

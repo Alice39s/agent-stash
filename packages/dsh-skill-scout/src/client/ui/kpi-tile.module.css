@@ -1,0 +1,64 @@
+/*
+ * KPI 卡片：设置卡片的底色与描边，圆角 xl，内边距 12px 14px。卡片撑满所在行的高度，
+ * 标签、数值、上下文在里面自上而下顶部对齐；数值 24px，标签与上下文是第三级文字，占满卡片宽度。
+ */
+.tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 0.5px solid var(--dsw-alias-settings-card-stroke);
+  border-radius: var(--dsw-radius-xl);
+  background: var(--dsw-alias-settings-card-fill);
+}
+
+.label,
+.context {
+  margin: 0;
+  overflow: hidden;
+  font: var(--dsw-font-xxs-12);
+  color: var(--dsw-alias-label-tertiary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 带提示的上下文可以聚焦：焦点环用着重色（design 2）。 */
+.context[tabindex]:focus-visible {
+  border-radius: var(--dsw-radius-sm);
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 2px;
+}
+
+/* 数值一行：数值在起始侧，趋势线在尾侧，与数值居中对齐。 */
+.valueLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* 数值一行保持 24px 文字的行高，加载中的骨架条在行内居中。 */
+.value {
+  display: flex;
+  align-items: center;
+  height: 1lh;
+  min-width: 0;
+  margin: 0;
+  font: var(--dsw-font-xl-24);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-primary);
+  white-space: nowrap;
+}
+
+.trend {
+  flex: none;
+  width: 80px;
+}
+
+.extra {
+  min-width: 0;
+  margin-top: 8px;
+}

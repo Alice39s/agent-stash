@@ -1,0 +1,193 @@
+/* 两种外框：主区域页面（design 3.3、3.4）与会话视图（design 3.2）。
+   两者的分栏都是名为 scout-split 的尺寸容器，窄于 760px 时只显示一栏。 */
+
+/* 主区域页面：照宿主 TaskManagerPage 的 .page / .listPane / .pageScroll / .pageContent。 */
+.page {
+  container: scout-split / inline-size;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-bg-base);
+  font: var(--dsw-font-s-14);
+}
+
+.listPane {
+  --scout-pane-bg: var(--dsw-alias-bg-base);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.pageScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.pageContent {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  box-sizing: border-box;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 clamp(24px, 4vw, 48px) 48px;
+}
+
+.pageHeading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-top: 28px;
+}
+
+:global([data-platform="darwin"]) .pageHeading {
+  padding-top: calc(28px + var(--dsh-frame-top-clearance, 0px));
+}
+
+.pageTitle {
+  min-width: 0;
+  margin: 0;
+  font: var(--dsw-font-l-20);
+  color: var(--dsw-alias-label-primary);
+}
+
+/* 分区 Tab：照宿主插件页的 .pageTabList，宽度随内容、至少 240px。 */
+.pageTabs {
+  width: fit-content;
+  min-width: 240px;
+  margin-bottom: 24px;
+}
+
+.noticeRow {
+  margin-bottom: 16px;
+}
+
+.tabPanel {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* 主区域的详情栏：照宿主 TaskManagerPage .detail，左侧一条 l4 细线。 */
+.detailPane {
+  display: flex;
+  flex: 0 0 47%;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-left: 0.5px solid var(--dsw-alias-border-l4);
+  background: var(--dsw-alias-bg-base);
+}
+
+/* 会话视图：照宿主轨迹视图的 .root，整列不滚动，两栏各自滚动。 */
+.view {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  color: var(--dsw-alias-label-primary);
+  background: var(--dsw-alias-bg-layer-1);
+  font: var(--dsw-font-s-14);
+}
+
+.viewNotices {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 16px 0;
+}
+
+/* 没有提示时这一行不占位。 */
+.viewNotices:empty {
+  display: none;
+}
+
+.split {
+  container: scout-split / inline-size;
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+}
+
+/* 列表栏：照宿主轨迹视图的 .details 宽度，右侧一条 l2 细线；底部让出浮在上面的输入框。 */
+.pane {
+  --scout-pane-bg: var(--dsw-alias-bg-layer-1);
+  flex: none;
+  box-sizing: border-box;
+  width: clamp(320px, 38%, 440px);
+  min-height: 0;
+  overflow: auto;
+  padding: 0 8px calc(var(--dsh-composer-height, 152px) + 16px);
+  border-right: 0.5px solid var(--dsw-alias-border-l2);
+  scrollbar-gutter: stable;
+}
+
+.paneDetail {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  padding-bottom: calc(var(--dsh-composer-height, 152px) + 16px);
+}
+
+/* 窄于 760px 时只显示一栏：打开一行后详情替换列表。 */
+@container scout-split (max-width: 759px) {
+  .page[data-open] .listPane,
+  .split[data-open] .pane {
+    display: none;
+  }
+
+  .page:not([data-open]) .detailPane,
+  .split:not([data-open]) .paneDetail {
+    display: none;
+  }
+
+  .detailPane {
+    flex-basis: 100%;
+    border-left: 0;
+  }
+
+  .pane {
+    width: 100%;
+    border-right: 0;
+  }
+}
+
+.note {
+  margin: 0;
+  font: var(--dsw-font-xxs-12);
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.error {
+  margin: 0;
+  font: var(--dsw-font-xxs-12);
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* 列表首次加载时的占位与分组之间的距离。 */
+.loading {
+  padding-top: 8px;
+}

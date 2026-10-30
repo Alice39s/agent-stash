@@ -1,6 +1,6 @@
 /**
  * Skill Scout 的 Host 半部：打开插件存储，注册浏览器路由，监听会话的回合结束，
- * 在持有工作锁时于后台分析会话、给候选写摘要。
+ * 在持有工作锁时于后台分析会话、给规则线索写摘要。
  */
 import { join } from "pathe";
 import { currentSettings, type ConfigValue } from "./config.ts";
@@ -8,8 +8,8 @@ import type { ScoutContext } from "./dsh.ts";
 import { acquireLock, holdsLock } from "./lock.ts";
 import { scoutRoutes } from "./route.ts";
 import { createScout } from "./scout.ts";
-import { recordKey, SCOUT_DOMAIN, storeOf } from "./store.ts";
-import { detailView, inboxView } from "./views.ts";
+import { SCOUT_DOMAIN, storeOf } from "./store.ts";
+import { detailView, inboxView, searchView, sessionView, statsView } from "./views.ts";
 import { dshHome } from "./writer.ts";
 
 export { Config } from "./config.ts";
@@ -49,17 +49,19 @@ export async function apply(ctx: ScoutContext, config: ConfigValue): Promise<voi
       signal: controller.signal,
     });
     yield () => scout.dispose();
-    const inbox = () => inboxView(store, settings(), scout.routes(), scout.runtime(), Date.now());
-    const detail = (id: string) => {
-      const suggestion = store.suggestions.get(recordKey(id));
-      return suggestion === undefined ? undefined : detailView(store, suggestion, scout.runtime());
-    };
     for (const route of scoutRoutes({
       scout,
       connection: ctx.connection,
       logger: ctx.logger,
-      inbox,
-      detail,
+      inbox: () => inboxView(store, settings(), scout.routes(), scout.runtime(), Date.now()),
+      detail: async (id) => {
+        await scout.evidence(id);
+        return detailView(store, id, scout.runtime());
+      },
+      session: async (id) => sessionView(id, await scout.session(id)),
+      search: (query, outcome, limit) => searchView(query, scout.search(query, { outcome, limit })),
+      stats: async () =>
+        statsView(store, await scout.coverage(), scout.runtime().working, Date.now()),
     })) {
       yield ctx.webServer.register(route);
     }
@@ -72,10 +74,9 @@ export async function apply(ctx: ScoutContext, config: ConfigValue): Promise<voi
     const lockPath = join(dshHome(), "skill-scout", "worker.lock");
     let release: (() => Promise<void>) | null = null;
     let discovery = settings().discovery;
-    const startBackfill = (): void => {
-      scout.backfill().catch((error: unknown) => {
-        ctx.logger.warn("skill-scout: reading past sessions failed: %s", String(error));
-      });
+    // 扫描从不拒绝，失败记在工作状态里。
+    const startScan = (): void => {
+      void scout.scan();
     };
     const claim = async (): Promise<void> => {
       if (release !== null || controller.signal.aborted) return;
@@ -88,7 +89,7 @@ export async function apply(ctx: ScoutContext, config: ConfigValue): Promise<voi
       }
       release = acquired;
       scout.setLead(true);
-      startBackfill();
+      startScan();
     };
     /** 持有锁时确认锁文件仍记着本进程；没有锁时尝试获取。 */
     const keepLock = async (): Promise<void> => {
@@ -105,7 +106,7 @@ export async function apply(ctx: ScoutContext, config: ConfigValue): Promise<voi
     };
     const timer = setInterval(() => {
       const enabled = settings().discovery;
-      if (enabled && !discovery && release !== null) startBackfill();
+      if (enabled && !discovery && release !== null) startScan();
       discovery = enabled;
       keepLock().catch((error: unknown) => {
         ctx.logger.warn("skill-scout: checking the work lock failed: %s", String(error));

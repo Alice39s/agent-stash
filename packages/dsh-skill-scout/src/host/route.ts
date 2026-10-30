@@ -1,10 +1,13 @@
 /**
- * 浏览器使用的三个路由：
+ * 浏览器使用的路由：
  * - GET `INBOX_PATH`：收件箱与工作状态；
- * - GET `DETAIL_PATH?id=`：一条建议的证据与草稿；
- * - POST `ACTION_PATH`：写摘要、生成草稿、忽略、恢复、预览、写入、撤销与重新扫描。
+ * - GET `DETAIL_PATH?id=`：一张卡片（线索或 idea）的证据、摘要与草稿；
+ * - GET `SESSION_PATH?id=`：一个会话的分析情况与任务列表；
+ * - GET `SEARCH_PATH?q=&outcome=&limit=`：搜索已存的任务；
+ * - GET `STATS_PATH`：统计；
+ * - POST `ACTION_PATH`：摘要、生成草稿、忽略、恢复、预览、写入、撤销、分析与提炼会话、提炼所选任务、扫描与回溯。
  * 每个请求先经过 `ctx.connection.requestRejection` 的 Host/Origin 检查与浏览器认证。
- * 请求不合法返回 400，建议不存在返回 404，其余已知的操作失败返回 409 并附带新的收件箱。
+ * 请求不合法返回 400，卡片不存在返回 404，其余已知的操作失败返回 409 并附带新的收件箱。
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
 import * as v from "valibot";
@@ -13,13 +16,20 @@ import {
   ActionSchema,
   DETAIL_PATH,
   INBOX_PATH,
+  SEARCH_PATH,
+  SESSION_PATH,
+  STATS_PATH,
   type Action,
   type ActionResult,
   type DetailView,
   type InboxView,
   type PreviewView,
+  type SearchView,
+  type SessionView,
+  type StatsView,
 } from "../shared.ts";
 import type { DshHostConnection, DshLogger, DshWebRoute } from "./dsh.ts";
+import { OutcomeSchema, type Outcome } from "./model.ts";
 import { isActionError, type Preview, type Scout } from "./scout.ts";
 import { displayPath } from "./writer.ts";
 
@@ -29,16 +39,36 @@ export interface RouteDeps {
   readonly connection: DshHostConnection;
   readonly logger: DshLogger;
   readonly inbox: () => InboxView;
-  readonly detail: (id: string) => DetailView | undefined;
+  readonly detail: (id: string) => Promise<DetailView | undefined>;
+  readonly session: (id: string) => Promise<SessionView>;
+  readonly search: (query: string, outcome: Outcome | undefined, limit: number) => SearchView;
+  readonly stats: () => Promise<StatsView>;
 }
 
 const MAX_BODY = 256 * 1024;
 
 const ActionBodySchema = v.pipe(v.string(), v.parseJson(), ActionSchema);
 
+/** 搜索的查询参数；空字符串与缺省相同。 */
+const SearchQuerySchema = v.object({
+  q: v.optional(v.pipe(v.string(), v.maxLength(500)), ""),
+  outcome: v.optional(OutcomeSchema),
+  limit: v.optional(
+    v.pipe(v.string(), v.toNumber(), v.integer(), v.minValue(1), v.maxValue(200)),
+    "50",
+  ),
+});
+
 interface Reply {
   readonly status: number;
-  readonly body: InboxView | DetailView | ActionResult | { readonly error: string };
+  readonly body:
+    | InboxView
+    | DetailView
+    | SessionView
+    | SearchView
+    | StatsView
+    | ActionResult
+    | { readonly error: string };
 }
 
 async function readBody(request: IncomingMessage): Promise<string> {
@@ -60,6 +90,15 @@ function respond(response: ServerResponse, { status, body }: Reply, allow?: stri
   response.end(JSON.stringify(body));
 }
 
+/** 请求的查询参数；没有或为空时为 undefined。 */
+function params(request: IncomingMessage): (name: string) => string | undefined {
+  const search = new URL(request.url ?? "", "http://skill-scout.local").searchParams;
+  return (name) => {
+    const value = search.get(name);
+    return value === null || value === "" ? undefined : value;
+  };
+}
+
 /** 预览的界面形式：去掉内部字段，路径里的家目录换成 `~`。 */
 function previewView(preview: Preview): PreviewView {
   if (preview.kind === "create") {
@@ -70,18 +109,64 @@ function previewView(preview: Preview): PreviewView {
   return { ...view, path: view.path === null ? null : displayPath(view.path) };
 }
 
-/** 执行一个操作；只有 preview 返回内容。 */
-async function perform(scout: Scout, action: Action): Promise<PreviewView | undefined> {
-  if (action.action === "preview") return previewView(await scout.preview(action.id, action));
-  if (action.action === "summarize") scout.summarizeNow(action.id);
-  else if (action.action === "draft") scout.draftNow(action.id);
-  else if (action.action === "dismiss") await scout.dismiss(action.id, action.similar);
-  else if (action.action === "restore") await scout.restore(action.id);
-  else if (action.action === "write") await scout.write(action.id, action);
-  else if (action.action === "undo") await scout.undo(action.id);
-  // 扫描在后台排队，失败记在工作状态里；收件箱的 scanning 字段反映进度。
-  else void scout.backfill();
-  return undefined;
+/** 一个操作的结果：preview 返回预览，提炼会话与所选任务返回线索 id。 */
+interface Performed {
+  readonly preview?: PreviewView;
+  readonly leadId?: string;
+}
+
+/** 执行一个只改变状态的操作。 */
+async function run(
+  scout: Scout,
+  action: Exclude<Action, { readonly action: "preview" | "extract-session" | "extract-selected" }>,
+): Promise<void> {
+  switch (action.action) {
+    case "summarize":
+      scout.summarizeNow(action.id);
+      break;
+    case "draft":
+      scout.draftNow(action.id);
+      break;
+    case "dismiss":
+      await scout.dismiss(action.id, action.similar);
+      break;
+    case "restore":
+      await scout.restore(action.id);
+      break;
+    case "write":
+      await scout.write(action.id, action);
+      break;
+    case "undo":
+      await scout.undo(action.id);
+      break;
+    case "analyze-session":
+      await scout.analyzeNow(action.sessionId);
+      break;
+    case "backfill":
+      scout.backfill(action.range);
+      break;
+    case "backfill-pause":
+      scout.pauseBackfill();
+      break;
+    case "scan":
+      // 扫描在后台进行，失败记在工作状态里；收件箱的 scanning 字段反映进度。
+      void scout.scan();
+      break;
+  }
+}
+
+async function perform(scout: Scout, action: Action): Promise<Performed> {
+  switch (action.action) {
+    case "preview":
+      return { preview: previewView(await scout.preview(action.id, action)) };
+    case "extract-session":
+      return { leadId: await scout.extractSession(action.sessionId) };
+    case "extract-selected":
+      return { leadId: await scout.extractSelected(action.episodeIds) };
+    default:
+      await run(scout, action);
+      return {};
+  }
 }
 
 async function act(deps: RouteDeps, request: IncomingMessage): Promise<Reply> {
@@ -89,11 +174,12 @@ async function act(deps: RouteDeps, request: IncomingMessage): Promise<Reply> {
   if (!parsed.success)
     return { status: 400, body: { error: `请求不合法：${v.summarize(parsed.issues)}` } };
   try {
-    const preview = await perform(deps.scout, parsed.output);
+    const { preview, leadId } = await perform(deps.scout, parsed.output);
     const result: ActionResult = {
       ok: true,
       inbox: deps.inbox(),
       ...(preview === undefined ? {} : { preview }),
+      ...(leadId === undefined ? {} : { leadId }),
     };
     return { status: 200, body: result };
   } catch (error) {
@@ -142,13 +228,32 @@ export function scoutRoutes(deps: RouteDeps): DshWebRoute[] {
   return [
     guarded(deps, INBOX_PATH, "GET", async () => ({ status: 200, body: deps.inbox() })),
     guarded(deps, DETAIL_PATH, "GET", async (request) => {
-      const id = new URL(request.url ?? "", "http://skill-scout.local").searchParams.get("id");
-      if (id === null || id === "") return { status: 400, body: { error: "缺少 id 查询参数" } };
-      const detail = deps.detail(id);
+      const id = params(request)("id");
+      if (id === undefined) return { status: 400, body: { error: "缺少 id 查询参数" } };
+      const detail = await deps.detail(id);
       return detail === undefined
         ? { status: 404, body: { error: `没有这条建议：${id}` } }
         : { status: 200, body: detail };
     }),
+    guarded(deps, SESSION_PATH, "GET", async (request) => {
+      const id = params(request)("id");
+      if (id === undefined) return { status: 400, body: { error: "缺少 id 查询参数" } };
+      return { status: 200, body: await deps.session(id) };
+    }),
+    guarded(deps, SEARCH_PATH, "GET", async (request) => {
+      const param = params(request);
+      const parsed = v.safeParse(SearchQuerySchema, {
+        q: param("q"),
+        outcome: param("outcome"),
+        limit: param("limit"),
+      });
+      if (!parsed.success) {
+        return { status: 400, body: { error: `查询参数不合法：${v.summarize(parsed.issues)}` } };
+      }
+      const { q, outcome, limit } = parsed.output;
+      return { status: 200, body: deps.search(q, outcome, limit) };
+    }),
+    guarded(deps, STATS_PATH, "GET", async () => ({ status: 200, body: await deps.stats() })),
     guarded(deps, ACTION_PATH, "POST", (request) => act(deps, request)),
   ];
 }

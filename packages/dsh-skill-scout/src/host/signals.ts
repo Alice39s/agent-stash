@@ -136,6 +136,11 @@ const ROUTINE = new Set([
   "pm add",
 ]);
 
+/** 几乎每个任务都有的日常动作。 */
+export function isRoutine(key: string): boolean {
+  return ROUTINE.has(key);
+}
+
 const ROUTINE_WEIGHT = 0.35;
 const COMMON_WEIGHT = 0.6;
 /** 部分相同的两步至少要有这个相似度，才算共有这一步。 */
@@ -251,7 +256,8 @@ function fingerprint(kind: SignalKind, features: readonly string[]): string {
   return `${kind}:${digest}`;
 }
 
-function mostCommon(values: readonly (string | null)[]): string | null {
+/** 出现最多的值；全是 null 时为 null。 */
+export function mostCommon(values: readonly (string | null)[]): string | null {
   const counts = new Map<string, number>();
   for (const value of values) if (value !== null) counts.set(value, (counts.get(value) ?? 0) + 1);
   return [...counts.entries()].toSorted((a, b) => b[1] - a[1])[0]?.[0] ?? null;

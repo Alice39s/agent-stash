@@ -9,6 +9,10 @@
  *   `git checkout -b` 与 `git switch -c`；
  * - 解释器运行脚本与直接运行同一脚本：`bash scripts/release.sh` 与 `./scripts/release.sh`。
  * 参数、路径、分支名与版本号不进签名与动作。
+ *
+ * here-document 的正文与 here-string 的词是交给程序的数据，不是命令；注释在分词前去掉。
+ * 循环、条件、case 的模式与函数定义的名字这类 shell 语法不是程序，`set`、`export` 这类内建命令
+ * 也不成为动作；`${…}` 与 `$((…))` 换成占位变量后再分词。
  */
 import { parse, type ParseEntry } from "shell-quote";
 import type { CommandFamily } from "./model.ts";
@@ -181,6 +185,7 @@ const INSPECT_PROGRAMS = new Set([
   "wc",
   "which",
   "[",
+  "[[",
 ]);
 
 const INSPECT_SUBCOMMANDS = new Set([
@@ -355,6 +360,42 @@ const INTERPRETERS = new Set([
 /** 解释器的这些选项后面跟的是内联代码，不是脚本文件。 */
 const INLINE_CODE = new Set(["-c", "-e", "--eval", "-p", "--print"]);
 
+/** 出现在命令段开头、之后才是真正命令的 shell 关键字：`if cond`、`do cmd`、`! cmd`。 */
+const LEADING_KEYWORDS = new Set(["if", "then", "else", "elif", "do", "while", "until", "!", "{"]);
+
+/** 整段都不是程序调用的开头：循环与分支的头部、结束关键字，以及只改变 shell 状态的内建命令。 */
+const NON_COMMANDS = new Set([
+  "for",
+  "select",
+  "case",
+  "esac",
+  "fi",
+  "done",
+  "}",
+  ";;",
+  "function",
+  ":",
+  "set",
+  "export",
+  "local",
+  "declare",
+  "typeset",
+  "readonly",
+  "unset",
+  "shift",
+  "return",
+  "exit",
+  "break",
+  "continue",
+  "trap",
+  "wait",
+  "read",
+  "eval",
+  "alias",
+  "source",
+  ".",
+]);
+
 /** 内联代码的动作名：同一种解释器的内联代码是一个动作，`python3 -c` 与 `python -c` 相同。 */
 function inlineKey(program: string): string {
   const name = program === "python3" ? "python" : program;
@@ -512,14 +553,19 @@ function scriptSegment(sig: string, script: string): CommandSegment {
  * npm、pnpm、yarn、bun 的一段命令。
  * @param pm - 包管理器。
  * @param words - 包管理器之后的词。
+ * @param stdin - 这段命令的标准输入来自 here-document 或 here-string。
  */
-function packageSegment(pm: string, words: readonly string[]): CommandSegment | undefined {
+function packageSegment(
+  pm: string,
+  words: readonly string[],
+  stdin: boolean,
+): CommandSegment | undefined {
   // bun 直接运行脚本文件：`bun scripts/x.ts`、`bun run scripts/x.ts`。
   if (pm === "bun") {
     const direct = firstOperand(words, /\S/u);
     const file = direct?.word === "run" ? firstOperand(direct.rest, /\S/u) : direct;
     if (file !== undefined && SCRIPT_FILE.test(file.word))
-      return segmentOf([file.word, ...file.rest]);
+      return segmentOf([file.word, ...file.rest], stdin);
   }
   const first = firstOperand(words, SCRIPT_NAME);
   if (first === undefined) {
@@ -533,7 +579,7 @@ function packageSegment(pm: string, words: readonly string[]): CommandSegment | 
     const builtin = BUN_BUILTINS[word];
     if (builtin !== undefined) return { sig: `bun ${word}`, key: `bun ${word}`, family: builtin };
   }
-  if (word === "exec") return segmentOf(first.rest);
+  if (word === "exec") return segmentOf(first.rest, stdin);
   if (word === "run") {
     const script = firstOperand(first.rest, SCRIPT_NAME);
     if (script === undefined) return { sig: `${pm} run`, key: "pm run", family: "inspect" };
@@ -541,7 +587,7 @@ function packageSegment(pm: string, words: readonly string[]): CommandSegment | 
   }
   if (pm === "yarn" && word === "workspace") {
     const target = firstOperand(first.rest, /^\S+$/u);
-    if (target !== undefined) return packageSegment(pm, target.rest);
+    if (target !== undefined) return packageSegment(pm, target.rest, stdin);
   }
   if (word === "install" && operands(first.rest).length > 0) {
     return { sig: `${pm} ${first.word}`, key: "pm add", family: "install" };
@@ -550,7 +596,7 @@ function packageSegment(pm: string, words: readonly string[]): CommandSegment | 
   if (builtin !== undefined) {
     return { sig: `${pm} ${first.word}`, key: `pm ${word}`, family: builtin };
   }
-  if (PM_TOOLS.has(word)) return segmentOf([word, ...first.rest]);
+  if (PM_TOOLS.has(word)) return segmentOf([word, ...first.rest], stdin);
   if (pm === "npm" && !NPM_SCRIPT_SHORTHAND.has(word)) {
     return { sig: `npm ${first.word}`, key: `pm ${word}`, family: "run" };
   }
@@ -623,8 +669,20 @@ function familyOf(program: string, key: string, words: readonly string[]): Comma
   return "run";
 }
 
-function segmentOf(raw: readonly string[]): CommandSegment | undefined {
-  let words = unwrap(raw);
+/** 去掉段首的 shell 关键字；整段不是程序调用时返回空数组。 */
+function commandWords(raw: readonly string[]): readonly string[] {
+  let words = raw;
+  while (words[0] !== undefined && LEADING_KEYWORDS.has(words[0])) words = words.slice(1);
+  return words[0] !== undefined && NON_COMMANDS.has(words[0]) ? [] : words;
+}
+
+/**
+ * 一段命令的签名、动作与命令族。
+ * @param raw - 这段命令的词。
+ * @param stdin - 标准输入来自 here-document 或 here-string：解释器据此知道代码来自标准输入。
+ */
+function segmentOf(raw: readonly string[], stdin = false): CommandSegment | undefined {
+  let words = unwrap(commandWords(raw));
   const head = words[0];
   if (head === undefined) return undefined;
   let program = basename(head);
@@ -641,11 +699,14 @@ function segmentOf(raw: readonly string[]): CommandSegment | undefined {
     words = ["docker", "compose", ...words.slice(1)];
     program = "docker";
   }
-  if (PACKAGE_MANAGERS.has(program)) return packageSegment(program, words.slice(1));
+  if (PACKAGE_MANAGERS.has(program)) return packageSegment(program, words.slice(1), stdin);
   if (INTERPRETERS.has(program)) {
-    const script = scriptOf(words.slice(1));
+    const args = words.slice(1);
+    const script = scriptOf(args);
     if (script !== undefined) return scriptFileSegment(program, script.file, script.rest);
-    if (words.slice(1).some((word) => INLINE_CODE.has(word))) {
+    // 内联代码，或者从 here-document、here-string、显式的 `-` 读代码：`python3 - <<EOF`、`bash <<EOF`。
+    // 只带 `--version`、`--help` 这类选项时是程序本身。
+    if (stdin || args.some((word) => INLINE_CODE.has(word) || word === "-")) {
       return { sig: program, key: inlineKey(program), family: "run" };
     }
   }
@@ -667,7 +728,7 @@ function segmentOf(raw: readonly string[]): CommandSegment | undefined {
   }
   if (sig === "uv pip") return segmentOf(["pip", ...rest]);
   if (RUNNER_SUBCOMMANDS.has(sig)) {
-    const inner = segmentOf(rest);
+    const inner = segmentOf(rest, stdin);
     if (inner !== undefined) return inner;
   }
   if (sig === "deno run") {
@@ -679,7 +740,7 @@ function segmentOf(raw: readonly string[]): CommandSegment | undefined {
     if (action !== undefined) {
       sig = `${sig} ${action.word}`;
       rest = action.rest;
-      if (sig === "uv tool run") return segmentOf(rest);
+      if (sig === "uv tool run") return segmentOf(rest, stdin);
     }
   }
   const key = program === "git" ? gitKey(sig, words) : sig;
@@ -691,19 +752,233 @@ function env(key: string): string {
   return `$${key}`;
 }
 
-/** 重定向运算符不分隔命令。 */
-const REDIRECTS = new Set([">", ">>", "<", ">&"]);
+/** here-document 的起始运算符：`<<DELIM`、`<<-DELIM`、`<<'DELIM'`、`<<"DELIM"`、`<<\DELIM`。 */
+const HEREDOC = /^<<(-?)[ \t]*(?:\\([A-Za-z_][\w-]*)|(['"])([A-Za-z_][\w-]*)\3|([A-Za-z_][\w-]*))/u;
+
+/**
+ * here-document 在逻辑行里换成这段 here-string：两者都把数据交给程序的标准输入。
+ * 分段时 here-string 之后的一个词按数据跳过，程序据此知道标准输入来自命令里的数据。
+ */
+const HEREDOC_STAND_IN = " <<< _";
+
+/** 注释的 `#` 要在一个词的开头：行首、空白或运算符之后。 */
+const WORD_BOUNDARY = /[\s;&|()]/u;
+
+/**
+ * 按 shell 的规则把命令文本分成逻辑行：
+ * - 引号外的换行结束一条命令，行尾的反斜杠续行；引号里的换行属于参数（多行的提交信息）；
+ * - 单引号里没有转义，双引号与 `$'…'` 里反斜杠转义下一个字符；
+ * - 引号外一个词开头的 `#` 到行尾是注释，去掉；词中间的 `#` 是字面字符；
+ * - 引号外的 here-document 运算符换成 `HEREDOC_STAND_IN`，正文从下一行起到只有分隔符的一行为止，去掉；
+ *   正文没有结束行时去到命令末尾。
+ */
+function logicalLines(text: string): string[] {
+  const lines: string[] = [];
+  let current = "";
+  let quote: "'" | '"' | "$'" | null = null;
+  let pending: { readonly delimiter: string; readonly tabs: boolean }[] = [];
+  let index = 0;
+  while (index < text.length) {
+    const char = text[index] ?? "";
+    const next = text[index + 1];
+    if (quote === "'") {
+      current += char;
+      if (char === "'") quote = null;
+      index += 1;
+      continue;
+    }
+    if (char === "\\") {
+      // 引号外与双引号里的反斜杠加换行是续行，其余的反斜杠连同下一个字符原样保留。
+      if (next !== "\n" || quote === "$'") current += char + (next ?? "");
+      index += 2;
+      continue;
+    }
+    if (quote !== null) {
+      current += char;
+      if ((quote === '"' && char === '"') || (quote === "$'" && char === "'")) quote = null;
+      index += 1;
+      continue;
+    }
+    if (char === "'" || char === '"') {
+      quote = char;
+      current += char;
+      index += 1;
+      continue;
+    }
+    if (char === "$" && next === "'") {
+      quote = "$'";
+      current += "$'";
+      index += 2;
+      continue;
+    }
+    if (char === "#") {
+      if (current === "" || WORD_BOUNDARY.test(current.at(-1) ?? "")) {
+        const end = text.indexOf("\n", index);
+        index = end === -1 ? text.length : end;
+      } else {
+        // 词中间的 `#` 是字面字符（`a#b`、URL 的片段）；shell-quote 会把它当成注释开头，转义后再交给它。
+        current += "\\#";
+        index += 1;
+      }
+      continue;
+    }
+    const heredoc =
+      char === "<" && text[index - 1] !== "<" ? HEREDOC.exec(text.slice(index, index + 80)) : null;
+    if (heredoc !== null) {
+      pending.push({
+        delimiter: heredoc[2] ?? heredoc[4] ?? heredoc[5] ?? "",
+        tabs: heredoc[1] === "-",
+      });
+      current += HEREDOC_STAND_IN;
+      index += heredoc[0].length;
+      continue;
+    }
+    index += 1;
+    if (char !== "\n") {
+      current += char;
+      continue;
+    }
+    lines.push(current);
+    current = "";
+    // 起始行之后依次是各个 here-document 的正文。
+    for (const doc of pending) {
+      while (index < text.length) {
+        const end = text.indexOf("\n", index);
+        const line = text.slice(index, end === -1 ? text.length : end);
+        index = end === -1 ? text.length : end + 1;
+        if ((doc.tabs ? line.replace(/^\t+/u, "") : line) === doc.delimiter) break;
+      }
+    }
+    pending = [];
+  }
+  lines.push(current);
+  return lines.filter((line) => line.trim() !== "");
+}
+
+/** 跨行保留的 case 结构：所在的 case 层数，以及接下来的词是不是一个分支的模式。 */
+interface CaseState {
+  depth: number;
+  pattern: boolean;
+}
+
+/** 分词结果里的运算符；词与注释为 null。 */
+function opOf(entry: ParseEntry | undefined): string | null {
+  return entry !== undefined && typeof entry !== "string" && "op" in entry && entry.op !== "glob"
+    ? entry.op
+    : null;
+}
+
+/**
+ * 一行命令的各段。
+ * @param state - case 结构的状态，同一条命令的各行共用：模式标签 `a)` 不成为命令段。
+ */
+function lineSegments(line: string, state: CaseState): CommandSegment[] {
+  let entries = parse(line, env);
+  // shell-quote 不认识双引号里的命令替换：替换里的引号会提前结束外层引号，之后的词全部错位，
+  // 这时会出现含 `$(` 的词。改用替换之前的部分，外层命令的程序与子命令都在这一段里。
+  if (entries.some((entry) => typeof entry === "string" && entry.includes("$("))) {
+    entries = parse(line.slice(0, line.indexOf("$(")), env);
+  }
+  const segments: CommandSegment[] = [];
+  let words: string[] = [];
+  let stdin = false;
+  let data = false;
+  const flush = (): void => {
+    if (words[0] === "esac") {
+      state.depth = Math.max(0, state.depth - 1);
+      state.pattern = false;
+    }
+    segments.push(...segmentsOf(words, stdin));
+    words = [];
+    stdin = false;
+  };
+  for (let index = 0; index < entries.length; index += 1) {
+    const entry = entries[index];
+    const word = entry === undefined ? null : wordOf(entry);
+    if (word !== null) {
+      // here-string 之后的一个词是交给程序的数据。
+      if (data) {
+        data = false;
+      } else if (word === "in" && words.length === 2 && words[0] === "case") {
+        // `case <词> in` 之后是第一个分支的模式。
+        state.depth += 1;
+        state.pattern = true;
+        words = [];
+      } else {
+        words.push(word);
+      }
+      continue;
+    }
+    const op = opOf(entry);
+    if (op !== null && REDIRECTS.has(op)) {
+      if (op === "<<<") {
+        stdin = true;
+        data = true;
+      }
+      continue;
+    }
+    // 模式里的 `|` 分隔几个模式，`(` 是可选的开头，`)` 结束模式。
+    if (state.pattern && (op === "|" || op === "(")) continue;
+    if (state.pattern && op === ")") {
+      words = [];
+      state.pattern = false;
+      continue;
+    }
+    // `name() { … }` 定义函数，name 不是命令。
+    if (op === "(" && words.length === 1 && opOf(entries[index + 1]) === ")") {
+      words = [];
+      index += 1;
+      continue;
+    }
+    flush();
+    if (op === ";;" && state.depth > 0) state.pattern = true;
+  }
+  flush();
+  return segments;
+}
+
+/** 把 `$((…))` 换成占位变量；里面可以有成对的括号，没有闭合时原样保留。 */
+function maskArithmetic(command: string): string {
+  let result = "";
+  let from = 0;
+  for (;;) {
+    const start = command.indexOf("$((", from);
+    if (start === -1) return result + command.slice(from);
+    let depth = 0;
+    let end: number | null = null;
+    for (let at = start + 3; at < command.length && end === null; at += 1) {
+      const char = command[at];
+      if (char === "(") depth += 1;
+      else if (char === ")" && depth > 0) depth -= 1;
+      else if (char === ")") end = command[at + 1] === ")" ? at + 2 : -1;
+    }
+    if (end === null || end === -1) return result + command.slice(from);
+    result += `${command.slice(from, start)}$N`;
+    from = end;
+  }
+}
+
+/**
+ * 把参数展开与算术展开换成占位变量：shell-quote 不认识 `${name%%pattern}` 这类写法会抛错，
+ * `$((n+1))` 会被拆成词。嵌套的参数展开从里往外替换。剩下没有配对右括号的 `${`（存储里的命令
+ * 按字数裁剪过，可能裁在展开中间；命令本身也可能写错）同样换成占位变量。
+ */
+function maskExpansions(command: string): string {
+  let result = maskArithmetic(command);
+  for (;;) {
+    const next = result.replace(/\$\{[^{}]*\}/gu, "$V");
+    if (next === result) return result.replaceAll("${", "$V");
+    result = next;
+  }
+}
+
+/** 重定向运算符不分隔命令；`<<<` 之后的一个词是数据。 */
+const REDIRECTS = new Set([">", ">>", "<", ">&", "<&", "&>", "<<", "<<<"]);
 
 /** 分词结果里属于当前命令的词：普通词与通配符。 */
 function wordOf(entry: ParseEntry): string | null {
   if (typeof entry === "string") return entry;
   return "op" in entry && entry.op === "glob" ? entry.pattern : null;
-}
-
-/** 分词结果是否结束当前命令段：命令分隔符与注释结束，重定向不结束。 */
-function ends(entry: ParseEntry): boolean {
-  if (typeof entry === "string") return false;
-  return "comment" in entry || !REDIRECTS.has(entry.op);
 }
 
 const SHELLS = new Set(["bash", "sh", "zsh"]);
@@ -717,10 +992,10 @@ function inlineShell(words: readonly string[]): string | undefined {
 }
 
 /** 一段命令的词转换成命令段；`bash -c` 展开成里面的命令。 */
-function segmentsOf(words: readonly string[]): CommandSegment[] {
+function segmentsOf(words: readonly string[], stdin: boolean): CommandSegment[] {
   const inline = inlineShell(words);
   if (inline !== undefined) return [...parseCommand(inline).segments];
-  const segment = segmentOf(words);
+  const segment = segmentOf(words, stdin);
   return segment === undefined ? [] : [segment];
 }
 
@@ -730,39 +1005,34 @@ function segmentsOf(words: readonly string[]): CommandSegment[] {
  * @returns 各段签名、动作与主段。
  */
 export function parseCommand(command: string): ParsedCommand {
-  let entries = parse(command, env);
-  // shell-quote 不认识双引号里的命令替换：替换里的引号会提前结束外层引号，之后的词全部错位，
-  // 这时会出现含 `$(` 的词。改用替换之前的部分，外层命令的程序与子命令都在这一段里。
-  if (entries.some((entry) => typeof entry === "string" && entry.includes("$("))) {
-    entries = parse(command.slice(0, command.indexOf("$(")), env);
-  }
-  const segments: CommandSegment[] = [];
-  let words: string[] = [];
-  for (const entry of entries) {
-    const word = wordOf(entry);
-    if (word !== null) words.push(word);
-    else if (ends(entry)) {
-      segments.push(...segmentsOf(words));
-      words = [];
-    }
-  }
-  segments.push(...segmentsOf(words));
+  const state: CaseState = { depth: 0, pattern: false };
+  const segments = logicalLines(command).flatMap((line) =>
+    lineSegments(maskExpansions(line), state),
+  );
   const meaningful = segments.filter((segment) => segment.family !== "inspect");
   return { segments, main: (meaningful.length > 0 ? meaningful : segments).at(-1) };
 }
 
 /**
  * 命令里的选项名与环境变量赋值，按出现顺序去重：`--runInBand`、`-x`、`NODE_OPTIONS=...`。
- * 选项只取名字（`--filter=web` 是 `--filter`），环境变量保留取值。
+ * 选项只取名字（`--filter=web` 是 `--filter`），环境变量保留取值；here-string 的数据不算。
  * 两次运行的选项不同，才算改写了命令；只换了文件、参数或选项的值不算。
  */
 export function optionsOf(command: string): string[] {
-  const options = parse(command, env).flatMap((entry) => {
-    const word = wordOf(entry);
-    if (word === null) return [];
-    if (/^[A-Z_][A-Z0-9_]*=/u.test(word)) return [word];
-    return word.startsWith("-") ? [word.split("=")[0] ?? word] : [];
-  });
+  const options: string[] = [];
+  for (const line of logicalLines(command)) {
+    let data = false;
+    for (const entry of parse(maskExpansions(line), env)) {
+      const word = wordOf(entry);
+      if (word === null) {
+        data = opOf(entry) === "<<<";
+        continue;
+      }
+      if (data) data = false;
+      else if (/^[A-Z_][A-Z0-9_]*=/u.test(word)) options.push(word);
+      else if (word.startsWith("-")) options.push(word.split("=")[0] ?? word);
+    }
+  }
   return [...new Set(options)];
 }
 

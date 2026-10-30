@@ -1,0 +1,79 @@
+/*
+ * 统计分栏（design.md 4.11、4.12）：KPI 一行四列，全宽主图，两列各自往下排的次要卡片，全宽表格。
+ * 分栏自己是尺寸容器：窄于 720px 时 KPI 两列、两列卡片合成一列。
+ */
+.dashboard {
+  container-type: inline-size;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+/* 同排 KPI 卡片撑满同一行高，底边对齐；卡片里的内容自上而下顶部对齐。 */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 12px;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 12px;
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+@container (max-width: 720px) {
+  .kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .columns {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.error {
+  margin: 0;
+  font: var(--dsw-font-xxs-12);
+  color: var(--dsw-alias-state-error-primary);
+}
+
+.note {
+  margin: 0;
+  font: var(--dsw-font-xxs-12);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+/* 表格的名称列：状态点与一行标题。 */
+.name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.nameText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.secondary {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.tertiary {
+  color: var(--dsw-alias-label-tertiary);
+}

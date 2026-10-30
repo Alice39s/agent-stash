@@ -1,0 +1,9 @@
+/* 进行中的状态点与文字之间 6px；可聚焦但不可用的按钮用禁用外观。 */
+.button {
+  gap: 6px;
+}
+
+.button[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}

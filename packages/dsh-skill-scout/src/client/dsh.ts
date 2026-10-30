@@ -23,15 +23,21 @@ export type Translate<Key extends string = string> = (
 /** `ctx.locale`。 */
 export interface Locale {
   register(namespace: string, locale: string, dictionary: Record<string, string>): () => void;
+  /** 取一个命名空间的翻译函数，随当前语言取词。 */
+  bind(namespace: string): Translate;
 }
 
-/** list 类 Slot 的登记选项；`inject` 返回注入组件的属性，`locale` 让组件收到 `t`。 */
+/**
+ * Slot 的登记选项；`inject` 返回注入组件的属性（会话类 Slot 收到会话 id），`locale` 让组件收到 `t`。
+ * `label` 是会话 Tab 与侧栏入口的名称，语言变化时重新取。
+ */
 export interface SlotRegistration {
   readonly name: string;
   readonly id?: string;
   readonly key?: string;
   readonly order?: number;
   readonly locale: string;
+  readonly label?: () => string;
   readonly inject?: (sessionId: string) => object;
 }
 
@@ -123,12 +129,18 @@ export interface UiWorkspace {
   openSession(sessionId: string): void;
 }
 
+/** `ctx.get('layout')`：切换主区域显示的面板；`id` 未注册时抛错，null 回到会话。 */
+export interface Layout {
+  selectPanel(id: string | null): void;
+}
+
 /** 浏览器插件 `apply` 收到的 Cordis Context 里插件用到的部分。 */
 export interface ClientContext {
   readonly slots: Slots;
   readonly locale: Locale;
   readonly remote: Remote;
   get(name: "uiWorkspace"): UiWorkspace | undefined;
+  get(name: "layout"): Layout | undefined;
   on(event: "connection/reset", listener: () => void): () => void;
   effect(execute: () => () => void, label?: string): unknown;
 }

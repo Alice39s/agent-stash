@@ -1,0 +1,14 @@
+/* 勾选框放在 16px 的标记列里，它的文字标签只留给读屏；行标题已经写明任务。 */
+.pick {
+  position: relative;
+  width: 16px;
+}
+
+.pick > span {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

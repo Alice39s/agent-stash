@@ -1,6 +1,6 @@
 import { createRequire } from "node:module";
 import { mkdir, open, readFile, readdir, realpath, rename, rm, rmdir, stat, unlink, writeFile } from "node:fs/promises";
-import { createHash, randomBytes } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { homedir } from "node:os";
 //#region \0rolldown/runtime.js
 var __commonJSMin = (cb, mod) => () => (mod || (cb((mod = { exports: {} }).exports, mod), cb = null), mod.exports);
@@ -901,7 +901,7 @@ Schema.extend("tuple", (data, { list }, options, strict) => {
 	result.push(...data.slice(list.length));
 	return [result];
 });
-function merge(result, data) {
+function merge$1(result, data) {
 	for (const key in data) {
 		if (key in result) continue;
 		result[key] = data[key];
@@ -914,7 +914,7 @@ Schema.extend("object", (data, { dict }, options, strict) => {
 		const value = property(data, key, dict[key], options);
 		if (!isNullable(value) || key in data) result[key] = value;
 	}
-	if (!strict) merge(result, data);
+	if (!strict) merge$1(result, data);
 	return [result];
 });
 Schema.extend("union", (data, { list, toString }, options, strict) => {
@@ -934,10 +934,10 @@ Schema.extend("intersect", (data, { list, toString }, options, strict) => {
 		if (isNullable(value)) continue;
 		if (isNullable(result)) result = value;
 		else if (typeof result !== typeof value) throw new ValidationError(`expected ${toString()} but got ${JSON.stringify(data)}`, options);
-		else if (typeof value === "object") merge(result ??= {}, value);
+		else if (typeof value === "object") merge$1(result ??= {}, value);
 		else if (result !== value) throw new ValidationError(`expected ${toString()} but got ${JSON.stringify(data)}`, options);
 	}
-	if (!strict && isPlainObject(data)) merge(result, data);
+	if (!strict && isPlainObject(data)) merge$1(result, data);
 	return [result];
 });
 Schema.extend("transform", (data, { inner, callback, preserve }, options) => {
@@ -1237,6 +1237,22 @@ function getDotPath(issue) {
 	return null;
 }
 /* @__NO_SIDE_EFFECTS__ */
+function integer(message$1) {
+	return {
+		kind: "validation",
+		type: "integer",
+		reference: integer,
+		async: false,
+		expects: null,
+		requirement: Number.isInteger,
+		message: message$1,
+		"~run"(dataset, config$1) {
+			if (dataset.typed && !this.requirement(dataset.value)) _addIssue(this, "integer", dataset, config$1);
+			return dataset;
+		}
+	};
+}
+/* @__NO_SIDE_EFFECTS__ */
 function maxLength(requirement, message$1) {
 	return {
 		kind: "validation",
@@ -1253,6 +1269,22 @@ function maxLength(requirement, message$1) {
 	};
 }
 /* @__NO_SIDE_EFFECTS__ */
+function maxValue(requirement, message$1) {
+	return {
+		kind: "validation",
+		type: "max_value",
+		reference: maxValue,
+		async: false,
+		expects: `<=${requirement instanceof Date ? requirement.toJSON() : /* @__PURE__ */ _stringify(requirement)}`,
+		requirement,
+		message: message$1,
+		"~run"(dataset, config$1) {
+			if (dataset.typed && !(dataset.value <= this.requirement)) _addIssue(this, "value", dataset, config$1, { received: dataset.value instanceof Date ? dataset.value.toJSON() : /* @__PURE__ */ _stringify(dataset.value) });
+			return dataset;
+		}
+	};
+}
+/* @__NO_SIDE_EFFECTS__ */
 function minLength(requirement, message$1) {
 	return {
 		kind: "validation",
@@ -1264,6 +1296,22 @@ function minLength(requirement, message$1) {
 		message: message$1,
 		"~run"(dataset, config$1) {
 			if (dataset.typed && dataset.value.length < this.requirement) _addIssue(this, "length", dataset, config$1, { received: `${dataset.value.length}` });
+			return dataset;
+		}
+	};
+}
+/* @__NO_SIDE_EFFECTS__ */
+function minValue(requirement, message$1) {
+	return {
+		kind: "validation",
+		type: "min_value",
+		reference: minValue,
+		async: false,
+		expects: `>=${requirement instanceof Date ? requirement.toJSON() : /* @__PURE__ */ _stringify(requirement)}`,
+		requirement,
+		message: message$1,
+		"~run"(dataset, config$1) {
+			if (dataset.typed && !(dataset.value >= this.requirement)) _addIssue(this, "value", dataset, config$1, { received: dataset.value instanceof Date ? dataset.value.toJSON() : /* @__PURE__ */ _stringify(dataset.value) });
 			return dataset;
 		}
 	};
@@ -1302,6 +1350,29 @@ function regex(requirement, message$1) {
 		message: message$1,
 		"~run"(dataset, config$1) {
 			if (dataset.typed && !this.requirement.test(dataset.value)) _addIssue(this, "format", dataset, config$1);
+			return dataset;
+		}
+	};
+}
+/* @__NO_SIDE_EFFECTS__ */
+function toNumber(message$1) {
+	return {
+		kind: "transformation",
+		type: "to_number",
+		reference: toNumber,
+		async: false,
+		message: message$1,
+		"~run"(dataset, config$1) {
+			try {
+				dataset.value = Number(dataset.value);
+				if (isNaN(dataset.value)) {
+					_addIssue(this, "number", dataset, config$1);
+					dataset.typed = false;
+				}
+			} catch {
+				_addIssue(this, "number", dataset, config$1);
+				dataset.typed = false;
+			}
 			return dataset;
 		}
 	};
@@ -2442,7 +2513,8 @@ const INSPECT_PROGRAMS = /* @__PURE__ */ new Set([
 	"uniq",
 	"wc",
 	"which",
-	"["
+	"[",
+	"[["
 ]);
 const INSPECT_SUBCOMMANDS = /* @__PURE__ */ new Set([
 	"git status",
@@ -2623,6 +2695,50 @@ const INLINE_CODE = /* @__PURE__ */ new Set([
 	"-p",
 	"--print"
 ]);
+/** 出现在命令段开头、之后才是真正命令的 shell 关键字：`if cond`、`do cmd`、`! cmd`。 */
+const LEADING_KEYWORDS = /* @__PURE__ */ new Set([
+	"if",
+	"then",
+	"else",
+	"elif",
+	"do",
+	"while",
+	"until",
+	"!",
+	"{"
+]);
+/** 整段都不是程序调用的开头：循环与分支的头部、结束关键字，以及只改变 shell 状态的内建命令。 */
+const NON_COMMANDS = /* @__PURE__ */ new Set([
+	"for",
+	"select",
+	"case",
+	"esac",
+	"fi",
+	"done",
+	"}",
+	";;",
+	"function",
+	":",
+	"set",
+	"export",
+	"local",
+	"declare",
+	"typeset",
+	"readonly",
+	"unset",
+	"shift",
+	"return",
+	"exit",
+	"break",
+	"continue",
+	"trap",
+	"wait",
+	"read",
+	"eval",
+	"alias",
+	"source",
+	"."
+]);
 /** 内联代码的动作名：同一种解释器的内联代码是一个动作，`python3 -c` 与 `python -c` 相同。 */
 function inlineKey(program) {
 	const name = program === "python3" ? "python" : program;
@@ -2775,12 +2891,13 @@ function scriptSegment(sig, script) {
 * npm、pnpm、yarn、bun 的一段命令。
 * @param pm - 包管理器。
 * @param words - 包管理器之后的词。
+* @param stdin - 这段命令的标准输入来自 here-document 或 here-string。
 */
-function packageSegment(pm, words) {
+function packageSegment(pm, words, stdin) {
 	if (pm === "bun") {
 		const direct = firstOperand(words, /\S/u);
 		const file = direct?.word === "run" ? firstOperand(direct.rest, /\S/u) : direct;
-		if (file !== void 0 && SCRIPT_FILE.test(file.word)) return segmentOf([file.word, ...file.rest]);
+		if (file !== void 0 && SCRIPT_FILE.test(file.word)) return segmentOf([file.word, ...file.rest], stdin);
 	}
 	const first = firstOperand(words, SCRIPT_NAME);
 	if (first === void 0) return pm === "yarn" && operands(words).length === 0 ? {
@@ -2801,7 +2918,7 @@ function packageSegment(pm, words) {
 			family: builtin
 		};
 	}
-	if (word === "exec") return segmentOf(first.rest);
+	if (word === "exec") return segmentOf(first.rest, stdin);
 	if (word === "run") {
 		const script = firstOperand(first.rest, SCRIPT_NAME);
 		if (script === void 0) return {
@@ -2813,7 +2930,7 @@ function packageSegment(pm, words) {
 	}
 	if (pm === "yarn" && word === "workspace") {
 		const target = firstOperand(first.rest, /^\S+$/u);
-		if (target !== void 0) return packageSegment(pm, target.rest);
+		if (target !== void 0) return packageSegment(pm, target.rest, stdin);
 	}
 	if (word === "install" && operands(first.rest).length > 0) return {
 		sig: `${pm} ${first.word}`,
@@ -2826,7 +2943,7 @@ function packageSegment(pm, words) {
 		key: `pm ${word}`,
 		family: builtin
 	};
-	if (PM_TOOLS.has(word)) return segmentOf([word, ...first.rest]);
+	if (PM_TOOLS.has(word)) return segmentOf([word, ...first.rest], stdin);
 	if (pm === "npm" && !NPM_SCRIPT_SHORTHAND.has(word)) return {
 		sig: `npm ${first.word}`,
 		key: `pm ${word}`,
@@ -2891,8 +3008,19 @@ function familyOf(program, key, words) {
 	if (program === "git") return "vcs";
 	return "run";
 }
-function segmentOf(raw) {
-	let words = unwrap(raw);
+/** 去掉段首的 shell 关键字；整段不是程序调用时返回空数组。 */
+function commandWords(raw) {
+	let words = raw;
+	while (words[0] !== void 0 && LEADING_KEYWORDS.has(words[0])) words = words.slice(1);
+	return words[0] !== void 0 && NON_COMMANDS.has(words[0]) ? [] : words;
+}
+/**
+* 一段命令的签名、动作与命令族。
+* @param raw - 这段命令的词。
+* @param stdin - 标准输入来自 here-document 或 here-string：解释器据此知道代码来自标准输入。
+*/
+function segmentOf(raw, stdin = false) {
+	let words = unwrap(commandWords(raw));
 	const head = words[0];
 	if (head === void 0) return void 0;
 	let program = basename(head);
@@ -2913,11 +3041,12 @@ function segmentOf(raw) {
 		];
 		program = "docker";
 	}
-	if (PACKAGE_MANAGERS.has(program)) return packageSegment(program, words.slice(1));
+	if (PACKAGE_MANAGERS.has(program)) return packageSegment(program, words.slice(1), stdin);
 	if (INTERPRETERS.has(program)) {
-		const script = scriptOf(words.slice(1));
+		const args = words.slice(1);
+		const script = scriptOf(args);
 		if (script !== void 0) return scriptFileSegment(program, script.file, script.rest);
-		if (words.slice(1).some((word) => INLINE_CODE.has(word))) return {
+		if (stdin || args.some((word) => INLINE_CODE.has(word) || word === "-")) return {
 			sig: program,
 			key: inlineKey(program),
 			family: "run"
@@ -2941,7 +3070,7 @@ function segmentOf(raw) {
 	}
 	if (sig === "uv pip") return segmentOf(["pip", ...rest]);
 	if (RUNNER_SUBCOMMANDS.has(sig)) {
-		const inner = segmentOf(rest);
+		const inner = segmentOf(rest, stdin);
 		if (inner !== void 0) return inner;
 	}
 	if (sig === "deno run") {
@@ -2953,7 +3082,7 @@ function segmentOf(raw) {
 		if (action !== void 0) {
 			sig = `${sig} ${action.word}`;
 			rest = action.rest;
-			if (sig === "uv tool run") return segmentOf(rest);
+			if (sig === "uv tool run") return segmentOf(rest, stdin);
 		}
 	}
 	const key = program === "git" ? gitKey(sig, words) : sig;
@@ -2967,22 +3096,208 @@ function segmentOf(raw) {
 function env(key) {
 	return `$${key}`;
 }
-/** 重定向运算符不分隔命令。 */
+/** here-document 的起始运算符：`<<DELIM`、`<<-DELIM`、`<<'DELIM'`、`<<"DELIM"`、`<<\DELIM`。 */
+const HEREDOC = /^<<(-?)[ \t]*(?:\\([A-Za-z_][\w-]*)|(['"])([A-Za-z_][\w-]*)\3|([A-Za-z_][\w-]*))/u;
+/**
+* here-document 在逻辑行里换成这段 here-string：两者都把数据交给程序的标准输入。
+* 分段时 here-string 之后的一个词按数据跳过，程序据此知道标准输入来自命令里的数据。
+*/
+const HEREDOC_STAND_IN = " <<< _";
+/** 注释的 `#` 要在一个词的开头：行首、空白或运算符之后。 */
+const WORD_BOUNDARY = /[\s;&|()]/u;
+/**
+* 按 shell 的规则把命令文本分成逻辑行：
+* - 引号外的换行结束一条命令，行尾的反斜杠续行；引号里的换行属于参数（多行的提交信息）；
+* - 单引号里没有转义，双引号与 `$'…'` 里反斜杠转义下一个字符；
+* - 引号外一个词开头的 `#` 到行尾是注释，去掉；词中间的 `#` 是字面字符；
+* - 引号外的 here-document 运算符换成 `HEREDOC_STAND_IN`，正文从下一行起到只有分隔符的一行为止，去掉；
+*   正文没有结束行时去到命令末尾。
+*/
+function logicalLines(text) {
+	const lines = [];
+	let current = "";
+	let quote = null;
+	let pending = [];
+	let index = 0;
+	while (index < text.length) {
+		const char = text[index] ?? "";
+		const next = text[index + 1];
+		if (quote === "'") {
+			current += char;
+			if (char === "'") quote = null;
+			index += 1;
+			continue;
+		}
+		if (char === "\\") {
+			if (next !== "\n" || quote === "$'") current += char + (next ?? "");
+			index += 2;
+			continue;
+		}
+		if (quote !== null) {
+			current += char;
+			if (quote === "\"" && char === "\"" || quote === "$'" && char === "'") quote = null;
+			index += 1;
+			continue;
+		}
+		if (char === "'" || char === "\"") {
+			quote = char;
+			current += char;
+			index += 1;
+			continue;
+		}
+		if (char === "$" && next === "'") {
+			quote = "$'";
+			current += "$'";
+			index += 2;
+			continue;
+		}
+		if (char === "#") {
+			if (current === "" || WORD_BOUNDARY.test(current.at(-1) ?? "")) {
+				const end = text.indexOf("\n", index);
+				index = end === -1 ? text.length : end;
+			} else {
+				current += "\\#";
+				index += 1;
+			}
+			continue;
+		}
+		const heredoc = char === "<" && text[index - 1] !== "<" ? HEREDOC.exec(text.slice(index, index + 80)) : null;
+		if (heredoc !== null) {
+			pending.push({
+				delimiter: heredoc[2] ?? heredoc[4] ?? heredoc[5] ?? "",
+				tabs: heredoc[1] === "-"
+			});
+			current += HEREDOC_STAND_IN;
+			index += heredoc[0].length;
+			continue;
+		}
+		index += 1;
+		if (char !== "\n") {
+			current += char;
+			continue;
+		}
+		lines.push(current);
+		current = "";
+		for (const doc of pending) while (index < text.length) {
+			const end = text.indexOf("\n", index);
+			const line = text.slice(index, end === -1 ? text.length : end);
+			index = end === -1 ? text.length : end + 1;
+			if ((doc.tabs ? line.replace(/^\t+/u, "") : line) === doc.delimiter) break;
+		}
+		pending = [];
+	}
+	lines.push(current);
+	return lines.filter((line) => line.trim() !== "");
+}
+/** 分词结果里的运算符；词与注释为 null。 */
+function opOf$1(entry) {
+	return entry !== void 0 && typeof entry !== "string" && "op" in entry && entry.op !== "glob" ? entry.op : null;
+}
+/**
+* 一行命令的各段。
+* @param state - case 结构的状态，同一条命令的各行共用：模式标签 `a)` 不成为命令段。
+*/
+function lineSegments(line, state) {
+	let entries = (0, import_shell_quote.parse)(line, env);
+	if (entries.some((entry) => typeof entry === "string" && entry.includes("$("))) entries = (0, import_shell_quote.parse)(line.slice(0, line.indexOf("$(")), env);
+	const segments = [];
+	let words = [];
+	let stdin = false;
+	let data = false;
+	const flush = () => {
+		if (words[0] === "esac") {
+			state.depth = Math.max(0, state.depth - 1);
+			state.pattern = false;
+		}
+		segments.push(...segmentsOf(words, stdin));
+		words = [];
+		stdin = false;
+	};
+	for (let index = 0; index < entries.length; index += 1) {
+		const entry = entries[index];
+		const word = entry === void 0 ? null : wordOf(entry);
+		if (word !== null) {
+			if (data) data = false;
+			else if (word === "in" && words.length === 2 && words[0] === "case") {
+				state.depth += 1;
+				state.pattern = true;
+				words = [];
+			} else words.push(word);
+			continue;
+		}
+		const op = opOf$1(entry);
+		if (op !== null && REDIRECTS.has(op)) {
+			if (op === "<<<") {
+				stdin = true;
+				data = true;
+			}
+			continue;
+		}
+		if (state.pattern && (op === "|" || op === "(")) continue;
+		if (state.pattern && op === ")") {
+			words = [];
+			state.pattern = false;
+			continue;
+		}
+		if (op === "(" && words.length === 1 && opOf$1(entries[index + 1]) === ")") {
+			words = [];
+			index += 1;
+			continue;
+		}
+		flush();
+		if (op === ";;" && state.depth > 0) state.pattern = true;
+	}
+	flush();
+	return segments;
+}
+/** 把 `$((…))` 换成占位变量；里面可以有成对的括号，没有闭合时原样保留。 */
+function maskArithmetic(command) {
+	let result = "";
+	let from = 0;
+	for (;;) {
+		const start = command.indexOf("$((", from);
+		if (start === -1) return result + command.slice(from);
+		let depth = 0;
+		let end = null;
+		for (let at = start + 3; at < command.length && end === null; at += 1) {
+			const char = command[at];
+			if (char === "(") depth += 1;
+			else if (char === ")" && depth > 0) depth -= 1;
+			else if (char === ")") end = command[at + 1] === ")" ? at + 2 : -1;
+		}
+		if (end === null || end === -1) return result + command.slice(from);
+		result += `${command.slice(from, start)}$N`;
+		from = end;
+	}
+}
+/**
+* 把参数展开与算术展开换成占位变量：shell-quote 不认识 `${name%%pattern}` 这类写法会抛错，
+* `$((n+1))` 会被拆成词。嵌套的参数展开从里往外替换。剩下没有配对右括号的 `${`（存储里的命令
+* 按字数裁剪过，可能裁在展开中间；命令本身也可能写错）同样换成占位变量。
+*/
+function maskExpansions(command) {
+	let result = maskArithmetic(command);
+	for (;;) {
+		const next = result.replace(/\$\{[^{}]*\}/gu, "$V");
+		if (next === result) return result.replaceAll("${", "$V");
+		result = next;
+	}
+}
+/** 重定向运算符不分隔命令；`<<<` 之后的一个词是数据。 */
 const REDIRECTS = /* @__PURE__ */ new Set([
 	">",
 	">>",
 	"<",
-	">&"
+	">&",
+	"<&",
+	"&>",
+	"<<",
+	"<<<"
 ]);
 /** 分词结果里属于当前命令的词：普通词与通配符。 */
 function wordOf(entry) {
 	if (typeof entry === "string") return entry;
 	return "op" in entry && entry.op === "glob" ? entry.pattern : null;
-}
-/** 分词结果是否结束当前命令段：命令分隔符与注释结束，重定向不结束。 */
-function ends(entry) {
-	if (typeof entry === "string") return false;
-	return "comment" in entry || !REDIRECTS.has(entry.op);
 }
 const SHELLS = /* @__PURE__ */ new Set([
 	"bash",
@@ -2997,10 +3312,10 @@ function inlineShell(words) {
 	return flag === -1 ? void 0 : rest[flag + 1];
 }
 /** 一段命令的词转换成命令段；`bash -c` 展开成里面的命令。 */
-function segmentsOf(words) {
+function segmentsOf(words, stdin) {
 	const inline = inlineShell(words);
 	if (inline !== void 0) return [...parseCommand(inline).segments];
-	const segment = segmentOf(words);
+	const segment = segmentOf(words, stdin);
 	return segment === void 0 ? [] : [segment];
 }
 /**
@@ -3009,19 +3324,11 @@ function segmentsOf(words) {
 * @returns 各段签名、动作与主段。
 */
 function parseCommand(command) {
-	let entries = (0, import_shell_quote.parse)(command, env);
-	if (entries.some((entry) => typeof entry === "string" && entry.includes("$("))) entries = (0, import_shell_quote.parse)(command.slice(0, command.indexOf("$(")), env);
-	const segments = [];
-	let words = [];
-	for (const entry of entries) {
-		const word = wordOf(entry);
-		if (word !== null) words.push(word);
-		else if (ends(entry)) {
-			segments.push(...segmentsOf(words));
-			words = [];
-		}
-	}
-	segments.push(...segmentsOf(words));
+	const state = {
+		depth: 0,
+		pattern: false
+	};
+	const segments = logicalLines(command).flatMap((line) => lineSegments(maskExpansions(line), state));
 	const meaningful = segments.filter((segment) => segment.family !== "inspect");
 	return {
 		segments,
@@ -3030,16 +3337,24 @@ function parseCommand(command) {
 }
 /**
 * 命令里的选项名与环境变量赋值，按出现顺序去重：`--runInBand`、`-x`、`NODE_OPTIONS=...`。
-* 选项只取名字（`--filter=web` 是 `--filter`），环境变量保留取值。
+* 选项只取名字（`--filter=web` 是 `--filter`），环境变量保留取值；here-string 的数据不算。
 * 两次运行的选项不同，才算改写了命令；只换了文件、参数或选项的值不算。
 */
 function optionsOf(command) {
-	const options = (0, import_shell_quote.parse)(command, env).flatMap((entry) => {
-		const word = wordOf(entry);
-		if (word === null) return [];
-		if (/^[A-Z_][A-Z0-9_]*=/u.test(word)) return [word];
-		return word.startsWith("-") ? [word.split("=")[0] ?? word] : [];
-	});
+	const options = [];
+	for (const line of logicalLines(command)) {
+		let data = false;
+		for (const entry of (0, import_shell_quote.parse)(maskExpansions(line), env)) {
+			const word = wordOf(entry);
+			if (word === null) {
+				data = opOf$1(entry) === "<<<";
+				continue;
+			}
+			if (data) data = false;
+			else if (/^[A-Z_][A-Z0-9_]*=/u.test(word)) options.push(word);
+			else if (word.startsWith("-")) options.push(word.split("=")[0] ?? word);
+		}
+	}
 	return [...new Set(options)];
 }
 /** 测试、检查与构建：成功时可以作为任务完成的验证证据。 */
@@ -3051,6 +3366,169 @@ function scriptStem(key) {
 	if (!key.startsWith("pm run ")) return null;
 	return key.slice(7).split(/[:.]/u)[0] ?? null;
 }
+//#endregion
+//#region src/host/model.ts
+/**
+* Skill Scout 的领域数据：会话里提取出的操作、Episode，以及规则检测出的候选。
+* 这些值都已脱敏、裁剪，可以直接存进 storageDomain、放进提示词或发给浏览器。
+* 类型由 valibot schema 推导，存储层读取每条记录时用同一份 schema 校验。
+*/
+/** 命令族：决定一条命令在成功判定与信号检测里的角色。 */
+const CommandFamilySchema = /* @__PURE__ */ picklist([
+	"test",
+	"check",
+	"build",
+	"install",
+	"publish",
+	"vcs",
+	"inspect",
+	"run"
+]);
+/** 一次工具调用（含 run_code 里的子调用）的精简记录。 */
+const OpSchema = /* @__PURE__ */ object({
+	/** 结果事件的 seq，作为证据引用。 */
+	seq: /* @__PURE__ */ number(),
+	kind: /* @__PURE__ */ picklist([
+		"read",
+		"edit",
+		"exec",
+		"delegate"
+	]),
+	/** 工具名，例如 `bash`、`edit`。 */
+	tool: /* @__PURE__ */ string(),
+	/** 命令签名（exec）、文件路径（edit）或工具名。 */
+	sig: /* @__PURE__ */ string(),
+	/**
+	* 规范动作：exec 是主段命令的动作；edit 是 `edit <文件名>`，只对 package.json、CHANGELOG.md
+	* 这类有固定角色的文件带上文件名，其余为 `edit`；其他操作是工具名。
+	*/
+	key: /* @__PURE__ */ string(),
+	/** exec 命令链里各段非查看类命令，按动作去重；其他操作为空。 */
+	parts: /* @__PURE__ */ array(/* @__PURE__ */ object({
+		/** 原来写法的签名，用于展示。 */
+		sig: /* @__PURE__ */ string(),
+		/** 规范动作，等价写法相同，用于比较。 */
+		key: /* @__PURE__ */ string(),
+		family: CommandFamilySchema
+	})),
+	/** exec 的命令族；命令链里只要有一段是测试或检查，就取那一族。 */
+	family: /* @__PURE__ */ nullable(CommandFamilySchema),
+	/** exec 的命令文本，已脱敏、裁剪。 */
+	command: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
+	/** edit 的目标文件，相对会话工作目录。 */
+	target: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
+	ok: /* @__PURE__ */ boolean(),
+	/** shell 命令的退出码；不是 shell 命令或被信号终止时为 null。 */
+	exit: /* @__PURE__ */ nullable(/* @__PURE__ */ number()),
+	/** 失败时最能说明问题的一行输出（已脱敏、裁剪）或错误码。 */
+	error: /* @__PURE__ */ nullable(/* @__PURE__ */ string())
+});
+/** 一次失败经修复后在同一命令上成功。 */
+const RecoverySchema = /* @__PURE__ */ object({
+	failSeq: /* @__PURE__ */ number(),
+	okSeq: /* @__PURE__ */ number(),
+	fixSeqs: /* @__PURE__ */ array(/* @__PURE__ */ number()),
+	/** 恢复成功的命令签名。 */
+	sig: /* @__PURE__ */ string(),
+	/** 恢复成功的命令动作；失败与成功的命令写法可以不同，动作相同。 */
+	key: /* @__PURE__ */ string(),
+	/** 规范化的错误签名，跨会话比较用。 */
+	errorSig: /* @__PURE__ */ string(),
+	fixKinds: /* @__PURE__ */ array(/* @__PURE__ */ picklist([
+		"install",
+		"config",
+		"command",
+		"source"
+	])),
+	/** 修复里有安装、配置改动或命令改写，而不只是改源码。 */
+	procedural: /* @__PURE__ */ boolean()
+});
+/**
+* 任务结果，只依据工具证据：
+* - verified：最后一次改动之后，测试、检查或构建通过；
+* - succeeded：没有验证命令，但最后的有效命令成功且之后没有失败；
+* - unverified：回合正常结束，没有可核查的执行证据；
+* - disputed：工具证据显示成功，但用户随后的消息表示不对；
+* - failed：最后的验证或命令失败，或回合出错；
+* - aborted：回合被取消。
+*/
+const OutcomeSchema = /* @__PURE__ */ picklist([
+	"verified",
+	"succeeded",
+	"unverified",
+	"disputed",
+	"failed",
+	"aborted"
+]);
+/** 从一条人类消息开始、到下一条人类消息之前的一段工作。 */
+const EpisodeSchema = /* @__PURE__ */ object({
+	/** `<会话 id>:<起始 seq>`。 */
+	id: /* @__PURE__ */ string(),
+	sessionId: /* @__PURE__ */ string(),
+	cwd: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
+	startSeq: /* @__PURE__ */ number(),
+	endSeq: /* @__PURE__ */ number(),
+	startedAt: /* @__PURE__ */ number(),
+	endedAt: /* @__PURE__ */ number(),
+	/** 用户的原始请求，已脱敏、裁剪。 */
+	goal: /* @__PURE__ */ string(),
+	/** 下一条人类消息，用于识别用户否定；已脱敏、裁剪。 */
+	followup: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
+	/** 回合进行中用户插入的消息（纠正、补充要求），保留最后几条；已脱敏、裁剪。 */
+	steering: /* @__PURE__ */ array(/* @__PURE__ */ string()),
+	/** fork 出的会话重放了继承前缀里的同一请求，不算独立的一次。 */
+	replay: /* @__PURE__ */ boolean(),
+	outcome: OutcomeSchema,
+	/** 支持结果判定的操作 seq。 */
+	evidence: /* @__PURE__ */ array(/* @__PURE__ */ number()),
+	ops: /* @__PURE__ */ array(OpSchema),
+	recoveries: /* @__PURE__ */ array(RecoverySchema),
+	/** 改动过的文件，相对工作目录。 */
+	files: /* @__PURE__ */ array(/* @__PURE__ */ string()),
+	/** 各类操作数量，包含没有保留在 `ops` 里的读取。 */
+	counts: /* @__PURE__ */ object({
+		read: /* @__PURE__ */ number(),
+		edit: /* @__PURE__ */ number(),
+		exec: /* @__PURE__ */ number(),
+		delegate: /* @__PURE__ */ number()
+	}),
+	/** Agent 最后的回复。只作背景，不作成功证据。 */
+	reply: /* @__PURE__ */ nullable(/* @__PURE__ */ string())
+});
+/** 线索的来源：三种规则信号，加上用户要求提炼的整段会话（session）与所选任务（selected）。 */
+const LeadKindSchema = /* @__PURE__ */ picklist([
+	"repeated",
+	"recovery",
+	"complex",
+	"session",
+	"selected"
+]);
+/** 用户要求提炼的两种线索：没有规则匹配的步骤，证据是用户给定的全部任务。 */
+function isRequested(kind) {
+	return kind === "session" || kind === "selected";
+}
+/** 一条线索的候选：规则检测出的一组任务，或用户要求提炼的整段会话与所选任务。 */
+const CandidateSchema = /* @__PURE__ */ object({
+	/**
+	* 规则候选是指纹，同一模式在多次检测间保持不变；整段会话是 `session:<会话 id>`，
+	* 所选任务是 `selected:<任务 id 的哈希>`。
+	*/
+	id: /* @__PURE__ */ string(),
+	kind: LeadKindSchema,
+	/** 用来比较相似候选的特征：命令动作或错误签名的集合；用户要求提炼的线索为空。 */
+	features: /* @__PURE__ */ array(/* @__PURE__ */ string()),
+	/** 这组任务共有的步骤，按代表任务里的顺序，用原来写法的签名展示；用户要求提炼的线索为空。 */
+	steps: /* @__PURE__ */ array(/* @__PURE__ */ string()),
+	/** 证据 Episode，最新的在前。 */
+	episodeIds: /* @__PURE__ */ array(/* @__PURE__ */ string()),
+	/** 独立会话数。 */
+	occurrences: /* @__PURE__ */ number(),
+	score: /* @__PURE__ */ number(),
+	/** 代表性 Episode 的用户请求，已脱敏、裁剪。 */
+	goal: /* @__PURE__ */ string(),
+	/** 候选涉及的工作目录；多个时取出现最多的。 */
+	cwd: /* @__PURE__ */ nullable(/* @__PURE__ */ string())
+});
 //#endregion
 //#region src/host/redact.ts
 /**
@@ -3173,9 +3651,10 @@ function oneLine(text) {
 //#region src/host/llm.ts
 /**
 * 两段模型调用：
-* - 摘要：把候选的证据整理成有预算上限的 JSON 证据包，请模型判断值不值得保存；值得时只给方案：
-*   标题、发现、用途、触发条件、Skill 名称、步骤提纲、风险与验证方式，不写 Skill 本身；
-* - 草稿：用户同意摘要之后，按摘要的范围写出完整的 Skill，或给已有 Skill 追加的一节。
+* - 摘要：把线索的证据整理成有预算上限的 JSON 证据包，请模型判断值不值得保存；值得时给出一个或几个
+*   互不重叠的 idea，每个 idea 只是方案：标题、发现、用途、触发条件、Skill 名称、步骤提纲、风险与验证方式，
+*   不写 Skill 本身；
+* - 草稿：用户同意其中一个 idea 之后，按它的范围写出完整的 Skill，或给已有 Skill 追加的一节。
 * 两次请求都不经过任何会话，模型没有工具可用；回复都用 schema 与证据引用核对。
 */
 /** 发给模型的 Skill 名称规则，与 DSH 的 Skill 名称校验一致。 */
@@ -3193,41 +3672,51 @@ const PlanEntries = {
 	/** 怎么确认照着做成功了。 */
 	verification: Text(240)
 };
-/** 摘要的结构：值得保存时给出方案，说明发现了什么、Skill 做什么、打算写哪些步骤。 */
-const SummarySchema = /* @__PURE__ */ variant("decision", [
-	/* @__PURE__ */ object({
-		decision: /* @__PURE__ */ literal("skip"),
-		reason: Text(400),
-		refs: Refs
-	}),
-	/* @__PURE__ */ object({
-		decision: /* @__PURE__ */ literal("suggest_create"),
-		title: Text(80),
-		/** 在会话里发现了什么，以及说明它确实有效的工具结果。 */
-		found: Text(400),
-		/** Skill 做什么。 */
-		description: Text(300),
-		...PlanEntries,
-		/** 新 Skill 的名称。 */
-		skill: Name,
-		/** 打算写进 Skill 的步骤。 */
-		outline: /* @__PURE__ */ pipe(/* @__PURE__ */ array(Text(160)), /* @__PURE__ */ minLength(1), /* @__PURE__ */ maxLength(8)),
-		refs: Refs
-	}),
-	/* @__PURE__ */ object({
-		decision: /* @__PURE__ */ literal("suggest_improve"),
-		title: Text(80),
-		found: Text(400),
-		/** 追加的内容补上了什么。 */
-		description: Text(300),
-		...PlanEntries,
-		/** 要改进的已有 Skill。 */
-		skill: Name,
-		/** 打算追加的内容。 */
-		outline: /* @__PURE__ */ pipe(/* @__PURE__ */ array(Text(160)), /* @__PURE__ */ minLength(1), /* @__PURE__ */ maxLength(6)),
-		refs: Refs
-	})
-]);
+/** 一个 idea 的方案：新建一个 Skill，或给已有 Skill 追加内容；说明发现了什么、Skill 做什么、打算写哪些步骤。 */
+const ProposalSchema = /* @__PURE__ */ variant("decision", [/* @__PURE__ */ object({
+	decision: /* @__PURE__ */ literal("suggest_create"),
+	title: Text(80),
+	/** 在会话里发现了什么，以及说明它确实有效的工具结果。 */
+	found: Text(400),
+	/** Skill 做什么。 */
+	description: Text(300),
+	...PlanEntries,
+	/** 新 Skill 的名称。 */
+	skill: Name,
+	/** 打算写进 Skill 的步骤。 */
+	outline: /* @__PURE__ */ pipe(/* @__PURE__ */ array(Text(160)), /* @__PURE__ */ minLength(1), /* @__PURE__ */ maxLength(8)),
+	refs: Refs
+}), /* @__PURE__ */ object({
+	decision: /* @__PURE__ */ literal("suggest_improve"),
+	title: Text(80),
+	found: Text(400),
+	/** 追加的内容补上了什么。 */
+	description: Text(300),
+	...PlanEntries,
+	/** 要改进的已有 Skill。 */
+	skill: Name,
+	/** 打算追加的内容。 */
+	outline: /* @__PURE__ */ pipe(/* @__PURE__ */ array(Text(160)), /* @__PURE__ */ minLength(1), /* @__PURE__ */ maxLength(6)),
+	refs: Refs
+})]);
+/** 一份摘要最多给出的 idea 数，与 `maxIdeas` 的最大值一致。 */
+const IDEA_LIMIT = 5;
+/**
+* 一条线索的摘要最多给出几个 idea：规则线索 3 个，用户要求提炼的整段会话与所选任务 5 个。
+* @param kind - 线索的来源。
+*/
+function maxIdeas(kind) {
+	return isRequested(kind) ? IDEA_LIMIT : 3;
+}
+/** 摘要的结构：不值得保存时给出理由；值得时给出互不重叠的 idea，Skill 名称各不相同。 */
+const SummarySchema = /* @__PURE__ */ variant("decision", [/* @__PURE__ */ object({
+	decision: /* @__PURE__ */ literal("skip"),
+	reason: Text(400),
+	refs: Refs
+}), /* @__PURE__ */ object({
+	decision: /* @__PURE__ */ literal("suggest"),
+	ideas: /* @__PURE__ */ pipe(/* @__PURE__ */ array(ProposalSchema), /* @__PURE__ */ minLength(1), /* @__PURE__ */ maxLength(IDEA_LIMIT))
+})]);
 /** 不带命令的步骤可以不引用证据；带命令的步骤在核对时要求引用。 */
 const StepSchema = /* @__PURE__ */ object({
 	text: Text(300),
@@ -3276,7 +3765,7 @@ const EVIDENCE_RULES = `Evidence rules:
 - Cite evidence with refs such as "E1.42" (episode 1, event 42).
 - "matchedSteps" lists the steps the rules matched across the episodes, as one episode wrote them. The rules compare actions, not spellings: "pnpm build", "npm run build", and "yarn build" are the same step, and so are "npx vitest" and "pnpm exec vitest". Different spellings across sessions are not a sign of an inconsistent procedure.`;
 /** 摘要的判断标准；设置里的提示词覆盖它。证据包作为用户消息里的 JSON 数据传入。 */
-const SUMMARY_GUIDANCE = `You screen evidence mined from a developer's finished coding-agent sessions and decide whether it contains reusable procedural knowledge worth saving as an Agent Skill. You do not write the skill now: you propose a plan in a few short lines, and the user decides whether a skill gets drafted from it. Most evidence is not worth saving; "skip" is the expected answer unless the bar below is clearly met.
+const SUMMARY_GUIDANCE = `You screen evidence mined from a developer's finished coding-agent sessions and decide whether it contains reusable procedural knowledge worth saving as Agent Skills. You do not write skills now: for each skill worth saving you propose a plan in a few short lines (an idea), and the user decides which ideas get drafted. Most evidence is not worth saving; "skip" is the expected answer unless the bar below is clearly met.
 
 ${EVIDENCE_RULES}
 - Before deciding, check the process in EVIDENCE: what the user asked, where the user corrected or redirected the agent ("userSteering" while the task ran, "userFollowup" after it), which commands failed and why ("error", "recoveries"), and which steps tool results verified ("outcomeEvidence"). Steps the user rejected or that never succeeded are not part of the procedure.
@@ -3285,21 +3774,43 @@ Save only knowledge that (1) worked, as shown by tool results; (2) is procedural
 
 Choose one decision:
 - "skip": one-off work (a specific migration, a bug in specific code), the ordinary edit-test-commit loop, project facts or preferences rather than procedures, thin or ambiguous evidence, steps that only work with a secret written into the skill, or content already covered by an existing skill. A step that asks the user for a code or password at run time is fine; the skill says to ask and never stores the value.
-- "suggest_create": a new skill. The plan says what you found in the sessions and which tool results show it worked, what the skill does, when it should be used, a name, an outline of its main steps, the risks of following it (destructive commands, assumptions about the environment; none is fine), and how to verify that it worked.
-- "suggest_improve": an existing skill covers this task, but the evidence adds a missing step, prerequisite, or pitfall. Name that skill and plan only the additions: when they apply, what to add, their risks, and how to verify them.
+- "suggest": one or more ideas. Each idea is one of:
+  - "suggest_create": a new skill. The plan says what you found in the sessions and which tool results show it worked, what the skill does, when it should be used, a name, an outline of its main steps, the risks of following it (destructive commands, assumptions about the environment; none is fine), and how to verify that it worked.
+  - "suggest_improve": an existing skill covers this task, but the evidence adds a missing step, prerequisite, or pitfall. Name that skill and plan only the additions: when they apply, what to add, their risks, and how to verify them.
 
-Write every text field in the language the user used in the requests. Keep each field to one sentence and each outline item to a few words: the user reads the plan in a small dialog before approving it. Skill names are lowercase kebab-case English and describe the task, not the project.`;
-/** 摘要的输出格式，始终附在判断标准之后。 */
-const SUMMARY_FORMAT = `Reply with exactly one JSON object and nothing else, in one of these shapes:
+Write every text field in the language the user used in the requests. Keep each field to one sentence and each outline item to a few words: the user reads each idea on a small card before approving it. Skill names are lowercase kebab-case English and describe the task, not the project.`;
+/** 用户要求提炼的线索：说明证据是用户给定的全部任务，而不是规则匹配到的一组任务。 */
+const REQUESTED_SCOPE = {
+	session: `The user asked to extract skills from one whole session: "signal" is "session", EVIDENCE holds the tasks of that session, and "matchedSteps" is empty because no rule picked them. Look at every task, but the bar stays the same: answer "skip" when nothing in the session qualifies.`,
+	selected: `The user picked these tasks from past sessions and asked to extract skills from them: "signal" is "selected", EVIDENCE holds the chosen tasks, and "matchedSteps" is empty because no rule picked them. Look at every task, but the bar stays the same: answer "skip" when nothing in them qualifies.`
+};
+/**
+* 摘要的输出格式，始终附在判断标准之后。
+* @param limit - 这条线索最多给出的 idea 数。
+*/
+function summaryFormat(limit) {
+	return `Reply with exactly one JSON object and nothing else, in one of these shapes:
 {"decision":"skip","reason":"...","refs":["E1.3"]}
+{"decision":"suggest","ideas":[IDEA, ...]}
+where each IDEA is one of:
 {"decision":"suggest_create","title":"...","found":"what the sessions show and the tool results that prove it worked","description":"what the skill does","trigger":"when to use it","skill":"kebab-case-name","outline":["short step","..."],"risks":["what could go wrong"],"verification":"how to confirm it worked","refs":["E1.12","E2.7"]}
-{"decision":"suggest_improve","title":"...","found":"...","description":"what the addition covers","trigger":"when the addition applies","skill":"existing-skill-name","outline":["short addition","..."],"risks":[],"verification":"how to confirm it worked","refs":["E2.7"]}`;
+{"decision":"suggest_improve","title":"...","found":"...","description":"what the addition covers","trigger":"when the addition applies","skill":"existing-skill-name","outline":["short addition","..."],"risks":[],"verification":"how to confirm it worked","refs":["E2.7"]}
+Give at most ${String(limit)} ideas. Ideas must not overlap: each covers a different procedure, is useful on its own without the others, and has a different skill name. When the evidence holds one idea, give one; never split one procedure into several ideas or pad the list.`;
+}
+/** 已被占用的 Skill 名称：证据包列出证据会话能看到的全部名称，新建的 Skill 不能用。 */
+const TAKEN_NAMES = `EVIDENCE.takenSkillNames lists the names of all skills the sessions can already see, sorted by name; "omittedSkillNames" counts names left out to fit the size limit. EVIDENCE.existingSkills describes the few that look most related, and may miss a skill whose name or description is in another language than the requests. Every name in either list is taken: a "suggest_create" idea must use a name that is in neither. When one of those skills already covers a procedure, propose "suggest_improve" for that skill if the evidence adds a missing step, prerequisite, or pitfall; otherwise leave the procedure out, and answer "skip" when nothing else remains.`;
 /**
 * 摘要的系统提示词。
 * @param guidance - 设置里的提示词；为空时用内置的判断标准。
+* @param kind - 线索的来源，决定 idea 的上限；用户要求提炼的线索另附证据范围的说明。
 */
-function summaryPrompt(guidance) {
-	return `${guidance.trim() === "" ? SUMMARY_GUIDANCE : guidance.trim()}\n\n${SUMMARY_FORMAT}`;
+function summaryPrompt(guidance, kind) {
+	return [
+		guidance.trim() === "" ? SUMMARY_GUIDANCE : guidance.trim(),
+		...isRequested(kind) ? [REQUESTED_SCOPE[kind]] : [],
+		TAKEN_NAMES,
+		summaryFormat(maxIdeas(kind))
+	].join("\n\n");
 }
 const DRAFT_GUIDANCE = `This is a standalone request to write one Agent Skill from a developer's finished coding-agent sessions. The user read the plan in PLAN and approved drafting it. Handle only the skill PLAN names: follow its decision, title, trigger, outline, and verification, turn its risks into prerequisites or limits, and do not widen its scope, rename it, or write about another skill.
 
@@ -3365,7 +3876,7 @@ function draftMessage(proposal, pack) {
 	};
 	return `PLAN (approved by the user, JSON):\n${JSON.stringify(plan)}\n\n${pack.text}`;
 }
-/** 证据包的裁剪级别，从完整到最精简。 */
+/** 规则线索证据包的裁剪级别，从完整到最精简。 */
 const LEVELS = [
 	{
 		episodes: 4,
@@ -3392,6 +3903,52 @@ const LEVELS = [
 		excerpt: 0
 	}
 ];
+/** 整段会话与所选任务的裁剪级别：任务更多（所选任务最多 12 个），每个任务的操作更少。 */
+const WIDE_LEVELS = [
+	{
+		episodes: 12,
+		ops: 30,
+		reply: true,
+		excerpt: 1200
+	},
+	{
+		episodes: 12,
+		ops: 16,
+		reply: false,
+		excerpt: 600
+	},
+	{
+		episodes: 8,
+		ops: 10,
+		reply: false,
+		excerpt: 0
+	},
+	{
+		episodes: 6,
+		ops: 6,
+		reply: false,
+		excerpt: 0
+	}
+];
+/**
+* 证据包里的已占用 Skill 名称：先按上限取前面的（调用方按相关度从高到低排列），列出时按名称排序。
+* @param count - 这次最多列出几个。
+*/
+function takenField(taken, count) {
+	if (taken.length === 0) return {};
+	const listed = taken.slice(0, count).toSorted();
+	const omitted = taken.length - listed.length;
+	return {
+		takenSkillNames: listed,
+		...omitted > 0 ? { omittedSkillNames: omitted } : {}
+	};
+}
+/** 名称列表的裁剪：从上限开始每次减半，直到一个不留。 */
+function takenCounts(taken) {
+	const counts = [];
+	for (let count = Math.min(taken.length, 200); count > 0; count = Math.floor(count / 2)) counts.push(count);
+	return [...counts, 0];
+}
 function packOp(ref, op) {
 	if (op.kind === "edit") return {
 		ref,
@@ -3432,15 +3989,27 @@ function pickOps(episode, limit) {
 	})).toSorted((a, b) => rankOf(a.op, must) - rankOf(b.op, must) || b.index - a.index).slice(0, limit).toSorted((a, b) => a.index - b.index).map((entry) => entry.op);
 }
 /**
-* 按字符预算构建证据包。
+* 按字符预算构建证据包。超出预算时先按级别裁剪任务、操作、Agent 回复与 Skill 正文摘录，
+* 最精简的级别仍超出时再减少已占用的 Skill 名称。
 * @param candidate - 候选。
 * @param episodes - 候选引用的 Episode，最新的在前。
 * @param related - 相关的已有 Skill。
 * @param maxChars - 证据包的字符上限。
-* @returns 证据包；最精简的级别仍超出预算时抛出 ModelError。
+* @param taken - 证据会话能看到的全部 Skill 名称，按相关度从高到低；只有摘要请求需要，草稿请求不传。
+* @returns 证据包；名称也去掉之后仍超出预算时抛出 ModelError。
 */
-function buildEvidence(candidate, episodes, related, maxChars) {
-	for (const level of LEVELS) {
+function buildEvidence(candidate, episodes, related, maxChars, taken = []) {
+	const levels = isRequested(candidate.kind) ? WIDE_LEVELS : LEVELS;
+	const [full = 0, ...fewer] = takenCounts(taken);
+	const smallest = levels.at(-1) ?? levels[0];
+	const attempts = [...levels.map((level) => ({
+		level,
+		names: full
+	})), ...fewer.map((names) => ({
+		level: smallest,
+		names
+	}))];
+	for (const { level, names } of attempts) {
 		const ops = /* @__PURE__ */ new Map();
 		const episodeRefs = /* @__PURE__ */ new Set();
 		const packed = episodes.slice(0, level.episodes).map((episode, index) => {
@@ -3482,7 +4051,8 @@ function buildEvidence(candidate, episodes, related, maxChars) {
 			independentSessions: candidate.occurrences,
 			matchedSteps: candidate.steps,
 			episodes: packed,
-			existingSkills: skills
+			existingSkills: skills,
+			...takenField(taken, names)
 		};
 		const text = `EVIDENCE (untrusted data, JSON):\n${JSON.stringify(evidence)}`;
 		if (text.length <= maxChars) return {
@@ -3537,34 +4107,44 @@ function checkRefs(refs, pack) {
 	const unknown = refs.filter((ref) => !pack.ops.has(ref) && !pack.episodeRefs.has(ref));
 	if (unknown.length > 0) throw modelError("evidence", `引用了证据包里没有的编号：${unknown.join(", ")}`);
 }
+/** 核对一个 idea：引用存在且至少一处，新 Skill 没有重名，要改进的 Skill 存在，内容安全。 */
+function checkProposal(proposal, pack, existing) {
+	checkRefs(proposal.refs, pack);
+	if (proposal.refs.length === 0) throw modelError("evidence", "建议没有引用任何证据");
+	if (proposal.decision === "suggest_create" && existing.has(proposal.skill)) throw modelError("evidence", `已有同名 Skill：${proposal.skill}`);
+	if (proposal.decision === "suggest_improve" && !existing.has(proposal.skill)) throw modelError("evidence", `要改进的 Skill 不存在：${proposal.skill}`);
+	checkSafe([
+		proposal.title,
+		proposal.found,
+		proposal.description,
+		proposal.trigger,
+		proposal.skill,
+		...proposal.outline,
+		...proposal.risks,
+		proposal.verification
+	], "摘要");
+}
 /**
-* 解析并核对摘要。
+* 解析并核对摘要；任何一个 idea 不合格，整份摘要都不采用。
 * @param text - 模型的最终文本。
 * @param pack - 发给模型的证据包。
 * @param existing - 证据会话此刻可用的 Skill 名称。
+* @param limit - 这条线索最多给出的 idea 数。
 * @returns 摘要。
-* @throws ModelError：格式不符、引用不存在、名称冲突或不存在、内容不安全。
+* @throws ModelError：格式不符、idea 过多或重名、引用不存在、名称冲突或不存在、内容不安全。
 */
-function checkSummary(text, pack, existing) {
+function checkSummary(text, pack, existing, limit) {
 	const summary = parseReply(SummarySchema, text);
-	checkRefs(summary.refs, pack);
 	if (summary.decision === "skip") {
+		checkRefs(summary.refs, pack);
 		checkSafe([summary.reason], "摘要");
 		return summary;
 	}
-	if (summary.refs.length === 0) throw modelError("evidence", "建议没有引用任何证据");
-	if (summary.decision === "suggest_create" && existing.has(summary.skill)) throw modelError("evidence", `已有同名 Skill：${summary.skill}`);
-	if (summary.decision === "suggest_improve" && !existing.has(summary.skill)) throw modelError("evidence", `要改进的 Skill 不存在：${summary.skill}`);
-	checkSafe([
-		summary.title,
-		summary.found,
-		summary.description,
-		summary.trigger,
-		summary.skill,
-		...summary.outline,
-		...summary.risks,
-		summary.verification
-	], "摘要");
+	if (summary.ideas.length > limit) throw modelError("format", `摘要给出了 ${String(summary.ideas.length)} 个 idea，上限是 ${String(limit)} 个`);
+	const names = summary.ideas.map((idea) => idea.skill);
+	const repeated = names.find((name, index) => names.indexOf(name) !== index);
+	if (repeated !== void 0) throw modelError("format", `同一份摘要里有重名的 Skill：${repeated}`);
+	for (const idea of summary.ideas) checkProposal(idea, pack, existing);
 	return summary;
 }
 /** 命令替换的开头：从这里起，分词看不到里面执行了什么。 */
@@ -3643,12 +4223,18 @@ function checkDraft(text, pack, proposal) {
 * @param prompt - 用户消息（证据包）。
 * @param maxTokens - 输出上限。
 * @param signal - 超时与插件卸载共用的取消信号。
+* @param onProgress - 每收到一个推理或正文分块调用一次。
 * @returns 最后一个文本块与用量。
 */
-async function complete(llm, route, system, prompt, maxTokens, signal) {
+async function complete(llm, route, system, prompt, maxTokens, signal, onProgress) {
 	const texts = /* @__PURE__ */ new Map();
-	let inputTokens = 0;
-	let outputTokens = 0;
+	let chars = 0;
+	let usage = {
+		inputTokens: 0,
+		cacheReadTokens: 0,
+		cacheWriteTokens: 0,
+		outputTokens: 0
+	};
 	let finish = null;
 	try {
 		const stream = llm.stream({
@@ -3666,11 +4252,18 @@ async function complete(llm, route, system, prompt, maxTokens, signal) {
 			maxTokens,
 			signal
 		});
-		for await (const chunk of stream) if (chunk.type === "text-delta") texts.set(chunk.index, (texts.get(chunk.index) ?? "") + chunk.text);
-		else if (chunk.type === "usage") {
-			inputTokens = chunk.usage.inputTokens;
-			outputTokens = chunk.usage.outputTokens;
-		} else if (chunk.type === "finish") finish = chunk.reason;
+		for await (const chunk of stream) if (chunk.type === "text-delta") {
+			texts.set(chunk.index, (texts.get(chunk.index) ?? "") + chunk.text);
+			chars += chunk.text.length;
+			onProgress("writing", chars);
+		} else if (chunk.type === "reasoning-delta") onProgress("thinking", chars);
+		else if (chunk.type === "usage") usage = {
+			inputTokens: chunk.usage.inputTokens,
+			cacheReadTokens: chunk.usage.cacheReadTokens ?? 0,
+			cacheWriteTokens: chunk.usage.cacheWriteTokens ?? 0,
+			outputTokens: chunk.usage.outputTokens
+		};
+		else if (chunk.type === "finish") finish = chunk.reason;
 	} catch (error) {
 		const message = error instanceof Error ? error.message : String(error);
 		throw modelError(signal.aborted ? "timeout" : "model", message);
@@ -3681,8 +4274,7 @@ async function complete(llm, route, system, prompt, maxTokens, signal) {
 	if (finish.kind === "max-tokens") throw modelError("format", "模型输出超过长度上限被截断");
 	return {
 		text: [...texts.entries()].toSorted((a, b) => a[0] - b[0]).at(-1)?.[1] ?? "",
-		inputTokens,
-		outputTokens
+		...usage
 	};
 }
 //#endregion
@@ -3955,6 +4547,9 @@ const ROUTE_BASE = "/agent-stash-skill-scout";
 const INBOX_PATH = `${ROUTE_BASE}/inbox`;
 const DETAIL_PATH = `${ROUTE_BASE}/detail`;
 const ACTION_PATH = `${ROUTE_BASE}/action`;
+const SESSION_PATH = `${ROUTE_BASE}/session`;
+const SEARCH_PATH = `${ROUTE_BASE}/search`;
+const STATS_PATH = `${ROUTE_BASE}/stats`;
 /** 可编辑的 Skill 字段。 */
 const SkillFieldsSchema = /* @__PURE__ */ object({
 	name: /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ trim(), /* @__PURE__ */ regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/u), /* @__PURE__ */ maxLength(64)),
@@ -4002,7 +4597,24 @@ const ActionSchema = /* @__PURE__ */ variant("action", [
 		action: /* @__PURE__ */ literal("undo"),
 		id: Id
 	}),
-	/* @__PURE__ */ object({ action: /* @__PURE__ */ literal("scan") })
+	/* @__PURE__ */ object({ action: /* @__PURE__ */ literal("scan") }),
+	/* @__PURE__ */ object({
+		action: /* @__PURE__ */ literal("analyze-session"),
+		sessionId: Id
+	}),
+	/* @__PURE__ */ object({
+		action: /* @__PURE__ */ literal("extract-session"),
+		sessionId: Id
+	}),
+	/* @__PURE__ */ object({
+		action: /* @__PURE__ */ literal("extract-selected"),
+		episodeIds: /* @__PURE__ */ pipe(/* @__PURE__ */ array(Id), /* @__PURE__ */ minLength(1), /* @__PURE__ */ maxLength(12))
+	}),
+	/* @__PURE__ */ object({
+		action: /* @__PURE__ */ literal("backfill"),
+		range: /* @__PURE__ */ picklist(["90d", "all"])
+	}),
+	/* @__PURE__ */ object({ action: /* @__PURE__ */ literal("backfill-pause") })
 ]);
 //#endregion
 //#region src/host/trajectory.ts
@@ -4665,6 +5277,10 @@ const ROUTINE = /* @__PURE__ */ new Set([
 	"pm install",
 	"pm add"
 ]);
+/** 几乎每个任务都有的日常动作。 */
+function isRoutine(key) {
+	return ROUTINE.has(key);
+}
 const ROUTINE_WEIGHT = .35;
 const COMMON_WEIGHT = .6;
 /** 部分相同的两步至少要有这个相似度，才算共有这一步。 */
@@ -4763,6 +5379,7 @@ function orderAgreement(left, right) {
 function fingerprint(kind, features) {
 	return `${kind}:${createHash("sha256").update(features.join("\n")).digest("hex").slice(0, 16)}`;
 }
+/** 出现最多的值；全是 null 时为 null。 */
 function mostCommon(values) {
 	const counts = /* @__PURE__ */ new Map();
 	for (const value of values) if (value !== null) counts.set(value, (counts.get(value) ?? 0) + 1);
@@ -4961,6 +5578,147 @@ function detectCandidates(episodes, options) {
 	const found = [...repeated(profiles, options).filter((candidate) => !fixes.some((fix) => candidate.episodeIds.every((id) => fix.episodeIds.includes(id)))), ...fixes];
 	const covered = new Set(found.flatMap((candidate) => candidate.episodeIds));
 	return [...found, ...complex(successes, covered)].toSorted((a, b) => b.score - a.score);
+}
+//#endregion
+//#region src/host/search.ts
+/** 每个结果最多返回的片段数与每段的长度。 */
+const MAX_MATCHES = 3;
+const SNIPPET_CHARS = 200;
+const HAN = /\p{Script=Han}/u;
+/**
+* 查询词与索引词是否相符：完全相同；拉丁词还可以是索引词的开头（`vite` 命中 `vite.config.ts`）。
+* 汉字词已经按两字切分，只认完全相同。
+*/
+function matchesWord(word, query) {
+	return word === query || !HAN.test(query) && word.startsWith(query);
+}
+/** 一个 Episode 的可搜索文本：请求、每个操作（命令或改动的文件，加上错误行）、插话；相同的文本只取一次。 */
+function fieldsOf(episode) {
+	const fields = [{
+		text: episode.goal,
+		words: tokens(episode.goal),
+		snippet: false
+	}];
+	const seen = /* @__PURE__ */ new Set();
+	const add = (text, extra) => {
+		if (text === "" || seen.has(text)) return;
+		seen.add(text);
+		fields.push({
+			text,
+			words: tokens([text, ...extra].join(" ")),
+			snippet: true
+		});
+	};
+	for (const op of episode.ops) {
+		add(op.kind === "edit" ? op.target ?? op.sig : op.command ?? op.sig, [op.sig, op.target ?? ""]);
+		if (op.error !== null) add(op.error, []);
+	}
+	for (const text of episode.steering) add(text, []);
+	return fields;
+}
+function hitOf(doc, words) {
+	let score = 0;
+	const matches = [];
+	for (const field of doc.fields) {
+		const count = words.filter((query) => [...field.words].some((word) => matchesWord(word, query))).length;
+		score += count;
+		if (count > 0 && field.snippet && matches.length < MAX_MATCHES) matches.push(clip(field.text, SNIPPET_CHARS));
+	}
+	return {
+		episode: doc.episode,
+		score,
+		matches
+	};
+}
+/**
+* 创建搜索索引。
+* @param source - 读取全部会话记录；索引标脏后的下一次查询从这里重建。
+*/
+function createSearchIndex(source) {
+	let dirty = true;
+	let docs = [];
+	let postings = /* @__PURE__ */ new Map();
+	/** 排好序的全部索引词，按前缀查找拉丁词。 */
+	let vocabulary = [];
+	let sessions = 0;
+	function rebuild() {
+		docs = [];
+		postings = /* @__PURE__ */ new Map();
+		sessions = 0;
+		for (const record of source()) {
+			sessions += 1;
+			for (const episode of record.episodes) {
+				const position = docs.length;
+				const fields = fieldsOf(episode);
+				docs.push({
+					episode,
+					fields
+				});
+				const words = /* @__PURE__ */ new Set();
+				for (const field of fields) for (const word of field.words) words.add(word);
+				for (const word of words) {
+					const owners = postings.get(word);
+					if (owners === void 0) postings.set(word, [position]);
+					else owners.push(position);
+				}
+			}
+		}
+		vocabulary = [...postings.keys()].toSorted();
+		dirty = false;
+	}
+	/** 含某个查询词的任务：完全相同的词，拉丁词再加上以它开头的词。 */
+	function docsOf(query) {
+		const result = new Set(postings.get(query) ?? []);
+		if (HAN.test(query)) return result;
+		let low = 0;
+		let high = vocabulary.length;
+		while (low < high) {
+			const middle = Math.floor((low + high) / 2);
+			if ((vocabulary[middle] ?? "") < query) low = middle + 1;
+			else high = middle;
+		}
+		for (let index = low; index < vocabulary.length; index += 1) {
+			const word = vocabulary[index];
+			if (word === void 0 || !word.startsWith(query)) break;
+			for (const position of postings.get(word) ?? []) result.add(position);
+		}
+		return result;
+	}
+	return {
+		/** 会话记录变了：下一次查询重建索引。 */
+		invalidate() {
+			dirty = true;
+		},
+		/**
+		* 查找同时含有全部查询词的任务，按命中词数、再按时间从新到旧排列。
+		* @param query - 查询文本，与索引用同一种分词；分不出词时没有结果。
+		*/
+		search(query, options) {
+			if (dirty) rebuild();
+			const words = [...tokens(query)];
+			const indexed = {
+				sessions,
+				episodes: docs.length
+			};
+			if (words.length === 0) return {
+				total: 0,
+				hits: [],
+				indexed
+			};
+			const [smallest, ...others] = words.map(docsOf).toSorted((a, b) => a.size - b.size);
+			const hits = [...smallest ?? []].filter((position) => others.every((owners) => owners.has(position))).flatMap((position) => {
+				const doc = docs[position];
+				if (doc === void 0) return [];
+				if (options.outcome !== void 0 && doc.episode.outcome !== options.outcome) return [];
+				return [hitOf(doc, words)];
+			}).toSorted((a, b) => b.score - a.score || b.episode.endedAt - a.episode.endedAt);
+			return {
+				total: hits.length,
+				hits: hits.slice(0, options.limit),
+				indexed
+			};
+		}
+	};
 }
 //#endregion
 //#region ../../node_modules/.pnpm/yaml@2.9.1/node_modules/yaml/dist/nodes/identity.js
@@ -11729,181 +12487,59 @@ function renderImprovement(title, notes) {
 	return `## ${title}\n\n${renderSteps(notes, false)}`;
 }
 //#endregion
-//#region src/host/model.ts
-/**
-* Skill Scout 的领域数据：会话里提取出的操作、Episode，以及规则检测出的候选。
-* 这些值都已脱敏、裁剪，可以直接存进 storageDomain、放进提示词或发给浏览器。
-* 类型由 valibot schema 推导，存储层读取每条记录时用同一份 schema 校验。
-*/
-/** 命令族：决定一条命令在成功判定与信号检测里的角色。 */
-const CommandFamilySchema = /* @__PURE__ */ picklist([
-	"test",
-	"check",
-	"build",
-	"install",
-	"publish",
-	"vcs",
-	"inspect",
-	"run"
-]);
-/** 从一条人类消息开始、到下一条人类消息之前的一段工作。 */
-const EpisodeSchema = /* @__PURE__ */ object({
-	/** `<会话 id>:<起始 seq>`。 */
-	id: /* @__PURE__ */ string(),
-	sessionId: /* @__PURE__ */ string(),
-	cwd: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
-	startSeq: /* @__PURE__ */ number(),
-	endSeq: /* @__PURE__ */ number(),
-	startedAt: /* @__PURE__ */ number(),
-	endedAt: /* @__PURE__ */ number(),
-	/** 用户的原始请求，已脱敏、裁剪。 */
-	goal: /* @__PURE__ */ string(),
-	/** 下一条人类消息，用于识别用户否定；已脱敏、裁剪。 */
-	followup: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
-	/** 回合进行中用户插入的消息（纠正、补充要求），保留最后几条；已脱敏、裁剪。 */
-	steering: /* @__PURE__ */ array(/* @__PURE__ */ string()),
-	/** fork 出的会话重放了继承前缀里的同一请求，不算独立的一次。 */
-	replay: /* @__PURE__ */ boolean(),
-	outcome: /* @__PURE__ */ picklist([
-		"verified",
-		"succeeded",
-		"unverified",
-		"disputed",
-		"failed",
-		"aborted"
-	]),
-	/** 支持结果判定的操作 seq。 */
-	evidence: /* @__PURE__ */ array(/* @__PURE__ */ number()),
-	ops: /* @__PURE__ */ array(/* @__PURE__ */ object({
-		/** 结果事件的 seq，作为证据引用。 */
-		seq: /* @__PURE__ */ number(),
-		kind: /* @__PURE__ */ picklist([
-			"read",
-			"edit",
-			"exec",
-			"delegate"
-		]),
-		/** 工具名，例如 `bash`、`edit`。 */
-		tool: /* @__PURE__ */ string(),
-		/** 命令签名（exec）、文件路径（edit）或工具名。 */
-		sig: /* @__PURE__ */ string(),
-		/**
-		* 规范动作：exec 是主段命令的动作；edit 是 `edit <文件名>`，只对 package.json、CHANGELOG.md
-		* 这类有固定角色的文件带上文件名，其余为 `edit`；其他操作是工具名。
-		*/
-		key: /* @__PURE__ */ string(),
-		/** exec 命令链里各段非查看类命令，按动作去重；其他操作为空。 */
-		parts: /* @__PURE__ */ array(/* @__PURE__ */ object({
-			/** 原来写法的签名，用于展示。 */
-			sig: /* @__PURE__ */ string(),
-			/** 规范动作，等价写法相同，用于比较。 */
-			key: /* @__PURE__ */ string(),
-			family: CommandFamilySchema
-		})),
-		/** exec 的命令族；命令链里只要有一段是测试或检查，就取那一族。 */
-		family: /* @__PURE__ */ nullable(CommandFamilySchema),
-		/** exec 的命令文本，已脱敏、裁剪。 */
-		command: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
-		/** edit 的目标文件，相对会话工作目录。 */
-		target: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
-		ok: /* @__PURE__ */ boolean(),
-		/** shell 命令的退出码；不是 shell 命令或被信号终止时为 null。 */
-		exit: /* @__PURE__ */ nullable(/* @__PURE__ */ number()),
-		/** 失败时最能说明问题的一行输出（已脱敏、裁剪）或错误码。 */
-		error: /* @__PURE__ */ nullable(/* @__PURE__ */ string())
-	})),
-	recoveries: /* @__PURE__ */ array(/* @__PURE__ */ object({
-		failSeq: /* @__PURE__ */ number(),
-		okSeq: /* @__PURE__ */ number(),
-		fixSeqs: /* @__PURE__ */ array(/* @__PURE__ */ number()),
-		/** 恢复成功的命令签名。 */
-		sig: /* @__PURE__ */ string(),
-		/** 恢复成功的命令动作；失败与成功的命令写法可以不同，动作相同。 */
-		key: /* @__PURE__ */ string(),
-		/** 规范化的错误签名，跨会话比较用。 */
-		errorSig: /* @__PURE__ */ string(),
-		fixKinds: /* @__PURE__ */ array(/* @__PURE__ */ picklist([
-			"install",
-			"config",
-			"command",
-			"source"
-		])),
-		/** 修复里有安装、配置改动或命令改写，而不只是改源码。 */
-		procedural: /* @__PURE__ */ boolean()
-	})),
-	/** 改动过的文件，相对工作目录。 */
-	files: /* @__PURE__ */ array(/* @__PURE__ */ string()),
-	/** 各类操作数量，包含没有保留在 `ops` 里的读取。 */
-	counts: /* @__PURE__ */ object({
-		read: /* @__PURE__ */ number(),
-		edit: /* @__PURE__ */ number(),
-		exec: /* @__PURE__ */ number(),
-		delegate: /* @__PURE__ */ number()
-	}),
-	/** Agent 最后的回复。只作背景，不作成功证据。 */
-	reply: /* @__PURE__ */ nullable(/* @__PURE__ */ string())
-});
-/** 规则检测出的一条候选。 */
-const CandidateSchema = /* @__PURE__ */ object({
-	/** 指纹，同一模式在多次检测间保持不变。 */
-	id: /* @__PURE__ */ string(),
-	kind: /* @__PURE__ */ picklist([
-		"repeated",
-		"recovery",
-		"complex"
-	]),
-	/** 用来比较相似候选的特征：命令动作或错误签名的集合。 */
-	features: /* @__PURE__ */ array(/* @__PURE__ */ string()),
-	/** 这组任务共有的步骤，按代表任务里的顺序，用原来写法的签名展示。 */
-	steps: /* @__PURE__ */ array(/* @__PURE__ */ string()),
-	/** 证据 Episode，最新的在前。 */
-	episodeIds: /* @__PURE__ */ array(/* @__PURE__ */ string()),
-	/** 独立会话数。 */
-	occurrences: /* @__PURE__ */ number(),
-	score: /* @__PURE__ */ number(),
-	/** 代表性 Episode 的用户请求，已脱敏、裁剪。 */
-	goal: /* @__PURE__ */ string(),
-	/** 候选涉及的工作目录；多个时取出现最多的。 */
-	cwd: /* @__PURE__ */ nullable(/* @__PURE__ */ string())
-});
-//#endregion
 //#region src/host/store.ts
 /**
 * 插件状态存在 `ctx.storageDomain` 的 `skill_scout` domain 里，每条记录一个文件：
-* - sessions：每个已分析会话的进度与 Episode；
-* - suggestions：每个候选的状态、摘要、草稿、写入记录与忽略记录；
-* - usage：每天的模型调用次数与用量。
+* - sessions：每个已分析会话的进度、Episode 与分析失败的原因；
+* - suggestions：每条线索的状态、摘要与摘要给出的各个 idea（草稿、写入记录与忽略记录）；
+* - usage：每天的模型调用次数与用量；
+* - calls：最近的模型调用记录。
 * 记录在打开 domain 时逐条用 valibot 校验，结构不符的记录由 DSH 备份后跳过。
 *
-* 版本 2 的 Episode 按命令动作记录操作，建议分摘要与草稿两段保存。版本 1 的记录由 DSH 丢弃，
+* 版本 3 的一条线索可以给出多个 idea，会话记录带分析失败的原因与回溯标记。更早版本的记录由 DSH 丢弃，
 * 历史范围内的会话按新格式重新分析；已经写入的 Skill 文件留在原处。
 */
 const DOMAIN_NAME = "skill_scout";
-const DOMAIN_VERSION = 2;
-/** 一个已分析的会话。 */
+const DOMAIN_VERSION = 3;
+/** 一个已分析（或分析失败）的会话。 */
 const SessionRecordSchema = /* @__PURE__ */ object({
 	sessionId: /* @__PURE__ */ string(),
 	cwd: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
 	createdAt: /* @__PURE__ */ number(),
-	/** 分析时日志里的事件数；日志变长后才重新分析。 */
-	eventCount: /* @__PURE__ */ number(),
+	/** 分析时日志里的事件数；日志变长后才重新分析。读取日志失败时为 null，下次一定重新读取。 */
+	eventCount: /* @__PURE__ */ nullable(/* @__PURE__ */ number()),
 	scannedAt: /* @__PURE__ */ number(),
-	episodes: /* @__PURE__ */ array(EpisodeSchema)
+	episodes: /* @__PURE__ */ array(EpisodeSchema),
+	/** 最近一次分析失败的原因；成功时为 null。日志的事件数不变就不再重试。 */
+	error: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
+	/** 回溯历史范围之外的会话时读入：修剪时保留，供搜索与提炼。 */
+	backfilled: /* @__PURE__ */ boolean()
 });
 /**
-* 建议的状态：
-* - detected：规则检测到，还没有摘要；
-* - proposed：摘要认为值得保存，等待用户同意生成草稿；
+* 线索的状态：
+* - detected：还没有摘要；
+* - summarized：摘要给出了 idea，各 idea 有自己的状态；
 * - skipped：摘要认为不值得保存；
+* - failed：摘要失败，失败记录在线索上；
+* - dismissed：用户忽略了整条线索。
+*/
+const LeadStateSchema = /* @__PURE__ */ picklist([
+	"detected",
+	"summarized",
+	"skipped",
+	"failed",
+	"dismissed"
+]);
+/**
+* 一个 idea 的状态：
+* - proposed：等待用户同意生成草稿；
 * - ready：草稿已生成，等待用户审核保存；
-* - failed：最近一次模型调用失败，失败记录里的 stage 说明是摘要还是草稿；
-* - dismissed：用户忽略；
+* - failed：草稿失败，失败记录在 idea 上；
+* - dismissed：用户忽略，或与「忽略类似」的 idea 相近；
 * - written：已写入 Skill 文件。
 */
-const SuggestionStateSchema = /* @__PURE__ */ picklist([
-	"detected",
+const IdeaStateSchema = /* @__PURE__ */ picklist([
 	"proposed",
-	"skipped",
 	"ready",
 	"failed",
 	"dismissed",
@@ -11936,46 +12572,60 @@ const DraftRecordSchema = /* @__PURE__ */ object({
 	cautions: /* @__PURE__ */ array(/* @__PURE__ */ string()),
 	draft: DraftSchema
 });
-const SuggestionSchema = /* @__PURE__ */ object({
+const FailureRecordSchema = /* @__PURE__ */ object({
+	stage: StageSchema,
+	kind: FailureKindSchema,
+	message: /* @__PURE__ */ string(),
+	at: /* @__PURE__ */ number(),
+	/** 同一阶段的连续失败次数，决定下一次自动重试摘要的等待时间。 */
+	attempts: /* @__PURE__ */ number()
+});
+const WriteRecordSchema = /* @__PURE__ */ object({
+	at: /* @__PURE__ */ number(),
+	scope: /* @__PURE__ */ picklist([
+		"project",
+		"user",
+		"existing"
+	]),
+	skill: /* @__PURE__ */ string(),
+	path: /* @__PURE__ */ string(),
+	/** 写入前的文件内容；新建时为 null。 */
+	previous: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
+	/** 写入内容的 sha256，撤销前用来确认文件没有被改过。 */
+	hash: /* @__PURE__ */ string(),
+	/** 新建了 Skill 目录；撤销时目录为空就一并删除。 */
+	createdDir: /* @__PURE__ */ boolean(),
+	/** 写入后 DSH 的 Skill 列表里能找到它。 */
+	discovered: /* @__PURE__ */ boolean()
+});
+/** 忽略记录；similar 表示同时屏蔽之后出现的相近线索或 idea。 */
+const DismissalSchema = /* @__PURE__ */ object({
+	at: /* @__PURE__ */ number(),
+	similar: /* @__PURE__ */ boolean()
+});
+/** 一条线索：规则检测出的候选，或用户要求提炼的整段会话与所选任务。 */
+const LeadSchema = /* @__PURE__ */ object({
 	id: /* @__PURE__ */ string(),
 	candidate: CandidateSchema,
-	state: SuggestionStateSchema,
+	state: LeadStateSchema,
 	detectedAt: /* @__PURE__ */ number(),
 	updatedAt: /* @__PURE__ */ number(),
 	/** 上一次摘要时的证据 Episode 数；摘要判为跳过后，证据翻倍才重新摘要。 */
 	summarizedSize: /* @__PURE__ */ number(),
 	summary: /* @__PURE__ */ nullable(SummaryRecordSchema),
-	draft: /* @__PURE__ */ nullable(DraftRecordSchema),
-	failure: /* @__PURE__ */ nullable(/* @__PURE__ */ object({
-		stage: StageSchema,
-		kind: FailureKindSchema,
-		message: /* @__PURE__ */ string(),
-		at: /* @__PURE__ */ number(),
-		/** 同一阶段的连续失败次数，决定下一次自动重试摘要的等待时间。 */
-		attempts: /* @__PURE__ */ number()
+	/** 摘要给出的 idea；摘要判为跳过或还没有摘要时为空。 */
+	ideas: /* @__PURE__ */ array(/* @__PURE__ */ object({
+		state: IdeaStateSchema,
+		updatedAt: /* @__PURE__ */ number(),
+		draft: /* @__PURE__ */ nullable(DraftRecordSchema),
+		/** 最近一次草稿失败。 */
+		failure: /* @__PURE__ */ nullable(FailureRecordSchema),
+		write: /* @__PURE__ */ nullable(WriteRecordSchema),
+		dismissed: /* @__PURE__ */ nullable(DismissalSchema)
 	})),
-	write: /* @__PURE__ */ nullable(/* @__PURE__ */ object({
-		at: /* @__PURE__ */ number(),
-		scope: /* @__PURE__ */ picklist([
-			"project",
-			"user",
-			"existing"
-		]),
-		skill: /* @__PURE__ */ string(),
-		path: /* @__PURE__ */ string(),
-		/** 写入前的文件内容；新建时为 null。 */
-		previous: /* @__PURE__ */ nullable(/* @__PURE__ */ string()),
-		/** 写入内容的 sha256，撤销前用来确认文件没有被改过。 */
-		hash: /* @__PURE__ */ string(),
-		/** 新建了 Skill 目录；撤销时目录为空就一并删除。 */
-		createdDir: /* @__PURE__ */ boolean(),
-		/** 写入后 DSH 的 Skill 列表里能找到它。 */
-		discovered: /* @__PURE__ */ boolean()
-	})),
-	dismissed: /* @__PURE__ */ nullable(/* @__PURE__ */ object({
-		at: /* @__PURE__ */ number(),
-		similar: /* @__PURE__ */ boolean()
-	}))
+	/** 最近一次摘要失败。 */
+	failure: /* @__PURE__ */ nullable(FailureRecordSchema),
+	dismissed: /* @__PURE__ */ nullable(DismissalSchema)
 });
 /** 一天的模型用量；后台摘要的每日上限与间隔只看 `summaries` 与 `lastSummaryAt`。 */
 const UsageRecordSchema = /* @__PURE__ */ object({
@@ -11984,10 +12634,38 @@ const UsageRecordSchema = /* @__PURE__ */ object({
 	/** 用户发起的摘要与草稿次数。 */
 	requested: /* @__PURE__ */ number(),
 	failures: /* @__PURE__ */ number(),
+	/** 未命中缓存的输入。 */
 	inputTokens: /* @__PURE__ */ number(),
+	cacheReadTokens: /* @__PURE__ */ number(),
+	cacheWriteTokens: /* @__PURE__ */ number(),
 	outputTokens: /* @__PURE__ */ number(),
 	/** 最近一次后台摘要的时间。 */
 	lastSummaryAt: /* @__PURE__ */ number()
+});
+/** 一次模型调用的记录。 */
+const CallRecordSchema = /* @__PURE__ */ object({
+	/** 调用结束的时间。 */
+	at: /* @__PURE__ */ number(),
+	stage: StageSchema,
+	leadId: /* @__PURE__ */ string(),
+	/** 草稿调用的 idea 下标；摘要调用为 null。 */
+	ideaIndex: /* @__PURE__ */ nullable(/* @__PURE__ */ number()),
+	title: /* @__PURE__ */ string(),
+	provider: /* @__PURE__ */ string(),
+	model: /* @__PURE__ */ string(),
+	durationMs: /* @__PURE__ */ number(),
+	inputTokens: /* @__PURE__ */ number(),
+	cacheReadTokens: /* @__PURE__ */ number(),
+	cacheWriteTokens: /* @__PURE__ */ number(),
+	outputTokens: /* @__PURE__ */ number(),
+	result: /* @__PURE__ */ picklist([
+		"proposed",
+		"skipped",
+		"drafted",
+		"failed"
+	]),
+	/** 不值得保存的理由、idea 数或失败原因。 */
+	detail: /* @__PURE__ */ nullable(/* @__PURE__ */ string())
 });
 function parser(name, schema) {
 	return { parse(raw) {
@@ -12003,21 +12681,42 @@ const SCOUT_DOMAIN = {
 	invalidRecords: "backup-and-skip",
 	tables: {
 		sessions: { valueSchema: parser("sessions", SessionRecordSchema) },
-		suggestions: { valueSchema: parser("suggestions", SuggestionSchema) },
-		usage: { valueSchema: parser("usage", UsageRecordSchema) }
+		suggestions: { valueSchema: parser("suggestions", LeadSchema) },
+		usage: { valueSchema: parser("usage", UsageRecordSchema) },
+		calls: { valueSchema: parser("calls", CallRecordSchema) }
 	}
 };
-/** 从打开的 domain 取出三张表。 */
+/** 从打开的 domain 取出四张表。 */
 function storeOf(domain) {
 	return {
 		sessions: domain.table("sessions"),
 		suggestions: domain.table("suggestions"),
-		usage: domain.table("usage")
+		usage: domain.table("usage"),
+		calls: domain.table("calls")
 	};
 }
 /** storageDomain 的记录键只允许字母、数字、`_` 与 `-`；其余字符转写成 `_` 加十六进制码点。 */
 function recordKey(id) {
 	return id.replace(/[^A-Za-z0-9-]/gu, (char) => `_${(char.codePointAt(0) ?? 0).toString(16)}`);
+}
+/** idea 的 id：`<线索 id>~<下标>`。 */
+function ideaId(leadId, index) {
+	return `${leadId}~${String(index)}`;
+}
+/** 拆开 idea 的 id；不是 idea 的写法时返回 null。 */
+function splitIdeaId(id) {
+	const at = id.lastIndexOf("~");
+	const suffix = id.slice(at + 1);
+	if (at <= 0 || !/^\d+$/u.test(suffix)) return null;
+	return {
+		leadId: id.slice(0, at),
+		index: Number(suffix)
+	};
+}
+/** 摘要给出的 idea 方案；没有摘要或摘要判为跳过时为空。 */
+function proposalsOf(lead) {
+	const summary = lead.summary?.summary;
+	return summary?.decision === "suggest" ? summary.ideas : [];
 }
 function pad(value) {
 	return String(value).padStart(2, "0");
@@ -12027,12 +12726,26 @@ function dayKey(time) {
 	const date = new Date(time);
 	return `${String(date.getFullYear())}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
+/**
+* 截至今天的最近几天的日期键，最早的在前。按日历往前数，夏令时切换的那天不会重复或漏掉。
+* @param count - 天数，含今天。
+*/
+function recentDays(now, count) {
+	return Array.from({ length: count }, (_, offset) => {
+		const date = new Date(now);
+		date.setHours(12, 0, 0, 0);
+		date.setDate(date.getDate() - (count - 1 - offset));
+		return dayKey(date.getTime());
+	});
+}
 //#endregion
 //#region src/host/scout.ts
 /**
-* Skill Scout 的工作流程：会话空闲后提取 Episode，跨会话检测候选；候选先由发现模型写一段摘要
-* （后台按限额自动进行，或由用户发起），用户同意摘要后再由生成模型写 Skill 草稿，用户审核后写入
-* Skill 并核对 DSH 能发现它。后台分析串行执行，不阻塞 Agent 主循环；只有持有工作锁的进程做分析与后台摘要。
+* Skill Scout 的工作流程：会话空闲后提取 Episode，跨会话检测线索；线索先由发现模型写一段摘要
+* （规则线索在后台按限额自动进行，或由用户发起），摘要给出一个或几个互不重叠的 idea；用户同意某个 idea 后
+* 再由生成模型写 Skill 草稿，用户审核后写入 Skill 并核对 DSH 能发现它。用户还可以要求提炼一整段会话或搜索结果里
+* 选中的任务，以及回溯历史范围之外更早的会话。会话分析串行执行，不阻塞 Agent 主循环；只有持有工作锁的进程
+* 自动分析会话、发起后台摘要。
 */
 const MINUTE = 6e4;
 const DAY = 1440 * MINUTE;
@@ -12042,9 +12755,20 @@ const RETRY_DELAYS = [
 	60 * MINUTE,
 	360 * MINUTE
 ];
-/** 输出上限按推理模型留足余量：摘要只有几行，草稿是一个完整的 Skill。 */
+/**
+* 输出上限按推理模型留足余量：规则线索的摘要只有几行；整段会话与所选任务最多 5 个 idea，
+* 上限与等待时间都放宽；草稿是一个完整的 Skill。
+*/
 const SUMMARY_MAX_TOKENS = 4096;
+const EXTRACT_MAX_TOKENS = 8192;
+const EXTRACT_TIMEOUT_FACTOR = 2;
 const DRAFT_MAX_TOKENS = 8192;
+/** 各类回复通常的字数，界面据此估算进度。 */
+const EXPECTED_CHARS = {
+	summary: 900,
+	extract: 2e3,
+	draft: 1600
+};
 /** 生成草稿时一并发给模型的写作指南：证据会话能看到的这个 Skill。 */
 const CREATOR_SKILL = "skill-creator";
 /** 写作指南的字符上限；写 SKILL.md 的指导通常在开头，后面是试跑、评测与打包的流程。 */
@@ -12055,6 +12779,26 @@ const DISCOVERY_INTERVAL = 250;
 /** 轮询结束时 DSH 仍未列出的 Skill，在后台按这个间隔与次数继续核对。 */
 const RECHECK_INTERVAL = 5e3;
 const RECHECKS = 24;
+/** 模型调用记录保留的条数。 */
+const CALL_LIMIT = 100;
+/** 用量记录保留的天数：统计看近 7 天，后台摘要的间隔还要看前一天。 */
+const USAGE_DAYS$1 = 8;
+/** 「忽略类似」：标题词的 Jaccard 相似度达到这个值，或 Skill 名称相同，就算相近。 */
+const SIMILAR_TITLE = .6;
+/** 规则检测出的三种线索；后台摘要与规则检测的合并只处理它们。 */
+const RULE_KINDS = /* @__PURE__ */ new Set([
+	"repeated",
+	"recovery",
+	"complex"
+]);
+/** 调用记录里线索标题的长度上限。 */
+const TITLE_CHARS = 120;
+/** 会话页查不到会话时，重新列出全部会话的最短间隔。 */
+const RELIST_INTERVAL = 1e4;
+const BACKFILL_DAYS = {
+	"90d": 90,
+	all: Number.POSITIVE_INFINITY
+};
 function actionError(kind, message) {
 	return Object.assign(new Error(message), {
 		name: "ActionError",
@@ -12064,6 +12808,9 @@ function actionError(kind, message) {
 function isActionError(error) {
 	return error.name === "ActionError" && "kind" in error;
 }
+function asError(error) {
+	return error instanceof Error ? error : new Error(String(error));
+}
 /** 两个集合的重叠系数：交集除以较小集合的大小。 */
 function overlap(left, right) {
 	const smaller = Math.min(left.size, right.size);
@@ -12072,34 +12819,38 @@ function overlap(left, right) {
 	for (const item of left) if (right.has(item)) shared += 1;
 	return shared / smaller;
 }
-/**
-* 新候选与已有建议是同一个模式：同类且特征或证据大体重合；
-* 或者已有建议来自一次长任务，而新候选的证据包含了那次任务，即同一流程后来又在别的会话里出现。
-*/
-function sameSuggestion(candidate, suggestion) {
-	if (candidate.kind !== suggestion.candidate.kind) return suggestion.candidate.kind === "complex" && suggestion.candidate.episodeIds.some((id) => candidate.episodeIds.includes(id));
-	if (jaccard(new Set(candidate.features), new Set(suggestion.candidate.features)) >= .5) return true;
-	return overlap(new Set(candidate.episodeIds), new Set(suggestion.candidate.episodeIds)) >= .5;
+/** 线索里有已经写入 Skill 的 idea。 */
+function hasWritten(lead) {
+	return lead.ideas.some((idea) => idea.state === "written");
 }
-/** 新候选与一条「忽略类似」或已写入的建议相近。 */
-function covered(candidate, suggestion) {
-	const similarDismissal = suggestion.state === "dismissed" && suggestion.dismissed?.similar === true;
-	if (!similarDismissal && suggestion.state !== "written") return false;
-	const features = jaccard(new Set(candidate.features), new Set(suggestion.candidate.features));
-	const goals = jaccard(tokens(candidate.goal), tokens(suggestion.candidate.goal));
+/**
+* 新候选与已有规则线索是同一个模式：同类且特征或证据大体重合；
+* 或者已有线索来自一次长任务，而新候选的证据包含了那次任务，即同一流程后来又在别的会话里出现。
+*/
+function sameLead(candidate, lead) {
+	if (candidate.kind !== lead.candidate.kind) return lead.candidate.kind === "complex" && lead.candidate.episodeIds.some((id) => candidate.episodeIds.includes(id));
+	if (jaccard(new Set(candidate.features), new Set(lead.candidate.features)) >= .5) return true;
+	return overlap(new Set(candidate.episodeIds), new Set(lead.candidate.episodeIds)) >= .5;
+}
+/** 新候选与一条「忽略类似」或已写入 Skill 的规则线索相近。 */
+function covered(candidate, lead) {
+	const similarDismissal = lead.state === "dismissed" && lead.dismissed?.similar === true;
+	if (!similarDismissal && !hasWritten(lead)) return false;
+	const features = jaccard(new Set(candidate.features), new Set(lead.candidate.features));
+	const goals = jaccard(tokens(candidate.goal), tokens(lead.candidate.goal));
 	return similarDismissal ? features >= .3 || goals >= .5 : features >= .5;
 }
-/** 证据更新后，已有建议的新状态；不需要更新时返回 null。 */
-function refreshed(suggestion, candidate, now) {
-	if (suggestion.candidate.episodeIds.length === candidate.episodeIds.length && suggestion.candidate.episodeIds.every((id, index) => candidate.episodeIds[index] === id) || suggestion.state === "dismissed" || suggestion.state === "written") return null;
+/** 证据更新后，已有规则线索的新状态；不需要更新时返回 null。 */
+function refreshed(lead, candidate, now) {
+	if (lead.candidate.episodeIds.length === candidate.episodeIds.length && lead.candidate.episodeIds.every((id, index) => candidate.episodeIds[index] === id) || lead.state === "dismissed" || hasWritten(lead)) return null;
 	const next = {
-		...suggestion,
+		...lead,
 		candidate: {
 			...candidate,
-			id: suggestion.candidate.id
+			id: lead.candidate.id
 		}
 	};
-	if (suggestion.state === "skipped" && candidate.episodeIds.length >= 2 * Math.max(1, suggestion.summarizedSize)) return {
+	if (lead.state === "skipped" && candidate.episodeIds.length >= 2 * Math.max(1, lead.summarizedSize)) return {
 		...next,
 		state: "detected",
 		summary: null,
@@ -12107,17 +12858,26 @@ function refreshed(suggestion, candidate, now) {
 	};
 	return next;
 }
-/** 由已有的摘要与草稿决定的状态；恢复忽略的建议、撤销写入时使用。 */
-function settledState(suggestion) {
-	if (suggestion.draft !== null) return "ready";
-	const decision = suggestion.summary?.summary.decision;
-	if (decision === void 0) return "detected";
-	return decision === "skip" ? "skipped" : "proposed";
+/** 由摘要与失败记录决定的线索状态；恢复忽略的线索时使用。 */
+function settledLeadState(lead) {
+	const decision = lead.summary?.summary.decision;
+	if (decision === "skip") return "skipped";
+	if (decision === "suggest") return "summarized";
+	return lead.failure === null ? "detected" : "failed";
 }
-/** 摘要里值得保存的结论；没有摘要或摘要判为跳过时为 null。 */
-function proposalOf(suggestion) {
-	const summary = suggestion.summary?.summary;
-	return summary === void 0 || summary.decision === "skip" ? null : summary;
+/** 由草稿与写入记录决定的 idea 状态；恢复忽略的 idea、撤销写入时使用。 */
+function settledIdeaState(idea) {
+	if (idea.write !== null) return "written";
+	return idea.draft === null ? "proposed" : "ready";
+}
+/** 还没有任何进展的 idea：没有草稿、没有写入，也没有「忽略类似」。重新摘要可以替换它。 */
+function untouched(idea) {
+	return idea.draft === null && idea.write === null && idea.dismissed?.similar !== true;
+}
+/** 线索仍待处理：还没有摘要、摘要失败，或还有等待同意、可以保存、草稿失败的 idea。 */
+function pending(lead) {
+	if (lead.state === "detected" || lead.state === "failed") return true;
+	return lead.state === "summarized" && lead.ideas.some((idea) => idea.state === "proposed" || idea.state === "ready" || idea.state === "failed");
 }
 function failureOf(error, stage, previous, now) {
 	const kind = isModelError(error) ? error.kind : "model";
@@ -12130,7 +12890,7 @@ function failureOf(error, stage, previous, now) {
 		attempts
 	};
 }
-/** 失败的建议何时可以自动重试；次数用完时返回 null。 */
+/** 摘要失败的线索何时可以自动重试；次数用完时返回 null。 */
 function retryAt(failure) {
 	const delay = RETRY_DELAYS[failure.attempts - 1];
 	return delay === void 0 ? null : failure.at + delay;
@@ -12146,22 +12906,29 @@ function checkText(texts) {
 	if (texts.some((text) => containsSecret(text))) throw actionError("unsafe", "内容里有凭据形态的文本，请删除后再写入");
 }
 /**
-* 与候选相关的已有 Skill；最相关的一条附带脱敏后的 SKILL.md 全文。
-* @param target - 要改进的 Skill：它排在第一位，附带全文。
+* 按与候选的相关度给证据会话能看到的 Skill 排序，相关度相同时按名称。
+* @param target - 要改进的 Skill：它排在第一位。
 */
-async function relatedSkills(candidate, episodes, catalog, redactText, target) {
+function rankSkills(candidate, episodes, catalog, target) {
 	const query = tokens([
 		candidate.goal,
 		...episodes.map((e) => e.goal),
 		...candidate.steps
 	].join(" "));
-	const ranked = catalog.map((skill) => ({
+	return catalog.map((skill) => ({
 		skill,
 		score: skill.name === target ? Number.POSITIVE_INFINITY : overlap(query, tokens(`${skill.name.replaceAll("-", " ")} ${skill.description}`))
-	})).filter((entry) => entry.score >= .2).toSorted((a, b) => b.score - a.score).slice(0, 3);
-	const path = ranked[0]?.skill.path;
+	})).toSorted((a, b) => b.score - a.score || a.skill.name.localeCompare(b.skill.name));
+}
+/**
+* 与候选相关的已有 Skill，最多 3 个；最相关的一条附带脱敏后的 SKILL.md 全文。
+* @param ranked - `rankSkills` 排好的 Skill。
+*/
+async function relatedSkills(ranked, redactText) {
+	const related = ranked.filter((entry) => entry.score >= .2).slice(0, 3);
+	const path = related[0]?.skill.path;
 	const content = path === void 0 ? null : await readOptional(path);
-	return ranked.map((entry, index) => ({
+	return related.map((entry, index) => ({
 		skill: entry.skill,
 		excerpt: index === 0 && content !== null ? redactText(content) : null
 	}));
@@ -12180,26 +12947,102 @@ async function creatorGuide(catalog, redactText) {
 		text: text.length <= CREATOR_CHARS ? text : `${text.slice(0, CREATOR_CHARS)}…`
 	};
 }
+/** Episode id `<会话 id>:<起始 seq>` 里的会话 id。 */
+function sessionOfEpisode(episodeId) {
+	return episodeId.slice(0, episodeId.lastIndexOf(":"));
+}
+/**
+* 用户要求提炼的整段会话或所选任务组成的候选。
+* @param episodes - 证据任务；候选里按时间从新到旧排列。
+*/
+function requestedCandidate(kind, id, episodes) {
+	const latest = episodes.toSorted((a, b) => b.endedAt - a.endedAt);
+	const representative = kind === "session" ? latest.at(-1) : latest[0];
+	return {
+		id,
+		kind,
+		features: [],
+		steps: [],
+		episodeIds: latest.map((episode) => episode.id),
+		occurrences: new Set(episodes.map((episode) => episode.sessionId)).size,
+		score: 0,
+		goal: clip(representative?.goal ?? "", 160),
+		cwd: mostCommon(episodes.map((episode) => episode.cwd))
+	};
+}
+function newLead(candidate, now) {
+	return {
+		id: candidate.id,
+		candidate,
+		state: "detected",
+		detectedAt: now,
+		updatedAt: now,
+		summarizedSize: 0,
+		summary: null,
+		ideas: [],
+		failure: null,
+		dismissed: null
+	};
+}
+/** 一个 idea 的存储记录与摘要里的方案。 */
+function ideaOf(lead, position) {
+	const idea = lead.ideas[position];
+	const proposal = proposalsOf(lead)[position];
+	if (idea === void 0 || proposal === void 0) throw actionError("missing", `没有这条建议：${ideaId(lead.id, position)}`);
+	return {
+		idea,
+		proposal
+	};
+}
+/** 重新摘要会替换线索的全部 idea：只有 idea 都还没有进展时才可以。 */
+function checkResummary(lead) {
+	if (!lead.ideas.every(untouched)) throw actionError("invalid", "这条线索的 idea 已经在处理，不能重新摘要");
+}
+function summaryJob(lead, route, background) {
+	return {
+		key: lead.id,
+		leadId: lead.id,
+		index: null,
+		stage: "summary",
+		route,
+		background,
+		title: clip(lead.candidate.goal, TITLE_CHARS),
+		expected: isRequested(lead.candidate.kind) ? EXPECTED_CHARS.extract : EXPECTED_CHARS.summary
+	};
+}
 /**
 * 创建引擎。
 * @param deps - DSH 服务与插件存储。
 */
 function createScout(deps) {
 	const { store } = deps;
-	let lead = false;
+	/** 本进程持有工作锁。 */
+	let worker = false;
 	let scanning = 0;
-	/** 正在进行的模型调用；每条建议同一时间最多一次。 */
-	const working = /* @__PURE__ */ new Map();
+	/** 正在进行或排队的模型请求；每条线索的摘要、每个 idea 的草稿同一时间最多一次。 */
+	const progress = /* @__PURE__ */ new Map();
 	const active = /* @__PURE__ */ new Set();
+	/** 扫描与回溯的循环；它们把每个会话单独排进分析队列。 */
+	const loops = /* @__PURE__ */ new Set();
 	let lastError = null;
 	let chain = Promise.resolve();
 	const timers = /* @__PURE__ */ new Map();
-	/** 写入后仍在后台核对 DSH 能否发现的建议。 */
+	/** 写入后仍在后台核对 DSH 能否发现的 idea。 */
 	const rechecks = /* @__PURE__ */ new Map();
+	/** 最近一次列出的全部会话，供统计与会话页使用，到下一次列出前有效。 */
+	let listing = null;
+	let scanRun = null;
+	/** 补回证据时 DSH 里已经找不到的会话。 */
+	const gone = /* @__PURE__ */ new Set();
+	let backfillJob = null;
+	function sessionRecords() {
+		return [...store.sessions.entries()].map(([, record]) => record);
+	}
+	const index = createSearchIndex(sessionRecords);
 	/** 后台任务的边界：记录失败但不让它影响 Agent。 */
 	function report(label, error) {
 		if (deps.signal.aborted) return;
-		const message = error instanceof Error ? error.message : String(error);
+		const message = asError(error).message;
 		lastError = {
 			kind: "analysis",
 			message,
@@ -12207,11 +13050,22 @@ function createScout(deps) {
 		};
 		deps.logger.warn("skill-scout: %s failed: %s", label, message);
 	}
-	/** 串行执行分析任务；失败只记录，不影响后续任务，返回的 Promise 不会拒绝。 */
-	function serial(label, task) {
-		const run = chain.then(task).catch((error) => report(label, error));
-		chain = run;
+	/** 排进分析队列，返回任务自己的结果；任务失败不影响队列里后面的任务。 */
+	function enqueue(task) {
+		const run = chain.then(task);
+		chain = run.then(() => void 0, () => void 0);
 		return run;
+	}
+	/** 排进分析队列的后台任务；失败只记录，返回的 Promise 不会拒绝。 */
+	function serial(label, task) {
+		return enqueue(task).catch((error) => report(label, error));
+	}
+	/** 跟踪一个扫描或回溯循环，`idle` 等它结束。 */
+	function loop(run) {
+		loops.add(run);
+		return run.finally(() => {
+			loops.delete(run);
+		});
 	}
 	/** 设置里指定的模型；没有指定时跟随 Agent 的默认模型。 */
 	function routeOf(provider, model, effort) {
@@ -12237,22 +13091,26 @@ function createScout(deps) {
 			...draft === void 0 ? {} : { draft }
 		};
 	}
-	function suggestions() {
-		return [...store.suggestions.entries()].map(([, suggestion]) => suggestion);
+	function leads() {
+		return [...store.suggestions.entries()].map(([, lead]) => lead);
 	}
 	function episodeIndex() {
-		const index = /* @__PURE__ */ new Map();
-		for (const [, record] of store.sessions.entries()) for (const episode of record.episodes) index.set(episode.id, episode);
-		return index;
+		const found = /* @__PURE__ */ new Map();
+		for (const record of sessionRecords()) for (const episode of record.episodes) found.set(episode.id, episode);
+		return found;
+	}
+	/** 候选里仍在分析记录里的证据任务，按候选里的顺序。 */
+	function episodesOf(candidate) {
+		const found = episodeIndex();
+		return candidate.episodeIds.flatMap((id) => {
+			const episode = found.get(id);
+			return episode === void 0 ? [] : [episode];
+		});
 	}
 	/** 候选证据所在的会话，较新的在前。 */
 	function sessionsOf(candidate) {
-		const index = episodeIndex();
-		const episodes = candidate.episodeIds.flatMap((id) => {
-			const episode = index.get(id);
-			return episode === void 0 ? [] : [episode];
-		});
-		return [...new Set(episodes.toSorted((a, b) => b.endedAt - a.endedAt).map((e) => e.sessionId))];
+		const episodes = episodesOf(candidate).toSorted((a, b) => b.endedAt - a.endedAt);
+		return [...new Set(episodes.map((e) => e.sessionId))];
 	}
 	/**
 	* 证据会话的 Agent 看到的 Skill 目录：从较新的会话开始，跳过已删除的会话。
@@ -12266,129 +13124,315 @@ function createScout(deps) {
 		}
 		return null;
 	}
-	async function save(suggestion) {
-		await store.suggestions.put(recordKey(suggestion.id), suggestion);
+	async function save(lead) {
+		await store.suggestions.put(recordKey(lead.id), lead);
 	}
-	function find(id) {
-		const suggestion = store.suggestions.get(recordKey(id));
-		if (suggestion === void 0) throw actionError("missing", `没有这条建议：${id}`);
-		return suggestion;
+	async function putSession(record) {
+		await store.sessions.put(recordKey(record.sessionId), record);
+		index.invalidate();
 	}
-	/** 读取并提取一个会话；日志没有变化时跳过。 */
-	async function analyzeSession(sessionId) {
-		const settings = deps.settings();
-		const log = await deps.query.readSession(sessionId);
-		if (log.session.origin === "subagent") return false;
-		const key = recordKey(sessionId);
-		if (store.sessions.get(key)?.eventCount === log.events.length) return false;
-		const episodes = episodesOfLog(log, {
-			redact: redactor(settings),
-			keepOutput: settings.readOutput
+	function findLead(id) {
+		const lead = store.suggestions.get(recordKey(id));
+		if (lead === void 0) throw actionError("missing", `没有这条线索：${id}`);
+		return lead;
+	}
+	/** 解析线索 id 或 idea id（`<线索 id>~<下标>`）。 */
+	function locate(id) {
+		const direct = store.suggestions.get(recordKey(id));
+		if (direct !== void 0) return {
+			lead: direct,
+			index: null
+		};
+		const parts = splitIdeaId(id);
+		const owner = parts === null ? void 0 : store.suggestions.get(recordKey(parts.leadId));
+		if (parts === null || owner === void 0 || owner.ideas[parts.index] === void 0) throw actionError("missing", `没有这条建议：${id}`);
+		return {
+			lead: owner,
+			index: parts.index
+		};
+	}
+	/**
+	* 解析只针对单个 idea 的操作的 id。
+	* @param what - 操作名，用于说明。
+	*/
+	function locateIdea(id, what) {
+		const { lead, index: position } = locate(id);
+		if (position === null) throw actionError("invalid", lead.ideas.length === 0 ? "这条线索还没有可同意的摘要" : `${what}针对单个 idea`);
+		return {
+			lead,
+			position,
+			key: ideaId(lead.id, position),
+			...ideaOf(lead, position)
+		};
+	}
+	/** 按最新的线索记录替换其中一个 idea。 */
+	async function saveIdea(leadId, position, update) {
+		const current = findLead(leadId);
+		const { idea } = ideaOf(current, position);
+		await save({
+			...current,
+			ideas: current.ideas.map((entry, at) => at === position ? update(idea) : entry)
 		});
-		await store.sessions.put(key, {
+	}
+	/** 读取会话日志：会话不存在时为 null，其他失败返回错误。 */
+	async function readLog(sessionId) {
+		try {
+			return await deps.query.readSession(sessionId);
+		} catch (error) {
+			return errorCode(error) === "session/not-found" ? null : asError(error);
+		}
+	}
+	/**
+	* 读取并提取一个会话；日志的事件数没有变化时跳过，分析失败的会话同样不重试。
+	* 读取与解析日志是插件与外部数据的边界：失败记在会话记录上，不中断后续工作。
+	* 新读入的会话最近的活动早于历史范围时按回溯记录（例如用户要求分析或提炼一个很早的会话）：
+	* 修剪时保留，规则检测不用它；已有记录的回溯标记不变。
+	* @param backfilled - 回溯或补回证据时读入，不论时间一律按回溯记录。
+	*/
+	async function analyzeSession(sessionId, backfilled) {
+		const settings = deps.settings();
+		const previous = store.sessions.get(recordKey(sessionId));
+		const log = await readLog(sessionId);
+		if (log === null) return "missing";
+		const since = deps.now() - settings.historyDays * DAY;
+		const backfilledOf = (activity) => previous?.backfilled ?? (backfilled || activity < since);
+		const failed = async (base, message) => {
+			await putSession({
+				...base,
+				episodes: previous?.episodes ?? [],
+				error: message
+			});
+			deps.logger.warn("skill-scout: analyzing session %s failed: %s", sessionId, message);
+			return "failed";
+		};
+		if (log instanceof Error) {
+			const header = listing?.headers.get(sessionId);
+			const createdAt = previous?.createdAt ?? header?.createdAt ?? deps.now();
+			return failed({
+				sessionId,
+				cwd: previous?.cwd ?? header?.cwd ?? null,
+				createdAt,
+				eventCount: null,
+				scannedAt: deps.now(),
+				backfilled: backfilledOf(createdAt)
+			}, `读取会话日志失败：${log.message}`);
+		}
+		if (log.session.origin === "subagent") return "subagent";
+		if (previous?.eventCount === log.events.length) return "unchanged";
+		const base = {
 			sessionId,
 			cwd: log.session.cwd ?? null,
 			createdAt: log.session.createdAt,
 			eventCount: log.events.length,
-			scannedAt: deps.now(),
-			episodes
+			scannedAt: deps.now()
+		};
+		let episodes;
+		try {
+			episodes = episodesOfLog(log, {
+				redact: redactor(settings),
+				keepOutput: settings.readOutput
+			});
+		} catch (error) {
+			return failed({
+				...base,
+				backfilled: backfilledOf(base.createdAt)
+			}, `解析会话日志失败：${asError(error).message}`);
+		}
+		const activity = Math.max(base.createdAt, ...episodes.map((episode) => episode.endedAt));
+		await putSession({
+			...base,
+			backfilled: backfilledOf(activity),
+			episodes,
+			error: null
 		});
-		return true;
+		return "changed";
 	}
 	/**
-	* 删除历史范围之外的会话记录，以及昨天以前的用量记录（摘要间隔要看昨天的最后一次），存储不随时间增长。
-	* 仍待处理（还没有摘要、等待同意、可以保存、模型调用失败）的建议引用的会话保留，证据不会丢失。
+	* 线索的证据会话已被修剪时重新读入，按回溯记录，之后不再被修剪。只读取存储里没有的会话；
+	* DSH 里已经找不到的会话记在内存里，不再重复读取。
+	* @returns 读不回来的证据会话与原因。
+	*/
+	async function restoreEvidence(candidate) {
+		const sessions = [...new Set(candidate.episodeIds.map(sessionOfEpisode))].filter((sessionId) => store.sessions.get(recordKey(sessionId)) === void 0);
+		const lost = [];
+		for (const sessionId of sessions) {
+			if (gone.has(sessionId)) {
+				lost.push(`DSH 里找不到会话 ${sessionId}`);
+				continue;
+			}
+			if (await enqueue(() => analyzeSession(sessionId, true)) === "missing") {
+				gone.add(sessionId);
+				lost.push(`DSH 里找不到会话 ${sessionId}`);
+			}
+			const error = store.sessions.get(recordKey(sessionId))?.error;
+			if (error !== null && error !== void 0) lost.push(`会话 ${sessionId} 分析失败：${error}`);
+		}
+		return lost;
+	}
+	/**
+	* 删除历史范围之外的会话记录（回溯读入的除外），以及 `USAGE_DAYS` 天以前的用量记录，存储不随时间增长。
+	* 仍待处理的线索引用的会话保留，证据不会丢失。
 	*/
 	async function prune(since) {
-		const cited = new Set(suggestions().filter((suggestion) => suggestion.state !== "written" && suggestion.state !== "dismissed" && suggestion.state !== "skipped").flatMap((suggestion) => suggestion.candidate.episodeIds));
-		const stale = [...store.sessions.entries()].filter(([, record]) => Math.max(record.createdAt, ...record.episodes.map((episode) => episode.endedAt)) < since && !record.episodes.some((episode) => cited.has(episode.id)));
-		const kept = /* @__PURE__ */ new Set([dayKey(deps.now()), dayKey(deps.now() - DAY)]);
+		const cited = new Set(leads().filter(pending).flatMap((lead) => lead.candidate.episodeIds));
+		const stale = [...store.sessions.entries()].filter(([, record]) => !record.backfilled && Math.max(record.createdAt, ...record.episodes.map((episode) => episode.endedAt)) < since && !record.episodes.some((episode) => cited.has(episode.id)));
+		const kept = new Set(recentDays(deps.now(), USAGE_DAYS$1));
 		const usage = [...store.usage.entries()].filter(([key]) => !kept.has(key));
 		await Promise.all([...stale.map(([key]) => store.sessions.delete(key)), ...usage.map(([key]) => store.usage.delete(key))]);
+		if (stale.length > 0) index.invalidate();
 	}
-	/** 在历史范围内的全部 Episode 上运行检测，把候选合并进建议，再修剪过期记录。 */
+	/** 在历史范围内的全部 Episode 上运行检测，把候选合并进规则线索，再修剪过期记录。 */
 	async function detect() {
 		const settings = deps.settings();
 		const now = deps.now();
 		const since = now - settings.historyDays * DAY;
-		const candidates = detectCandidates([...store.sessions.entries()].flatMap(([, record]) => record.episodes).filter((episode) => episode.endedAt >= since), { minOccurrences: settings.minOccurrences });
-		const known = suggestions();
+		const candidates = detectCandidates(sessionRecords().flatMap((record) => record.episodes).filter((episode) => episode.endedAt >= since), { minOccurrences: settings.minOccurrences });
+		const known = leads().filter((lead) => RULE_KINDS.has(lead.candidate.kind));
 		const claimed = /* @__PURE__ */ new Set();
 		for (const candidate of candidates) {
-			const match = known.find((suggestion) => suggestion.id === candidate.id) ?? known.find((suggestion) => !claimed.has(suggestion.id) && sameSuggestion(candidate, suggestion));
+			const match = known.find((lead) => lead.id === candidate.id) ?? known.find((lead) => !claimed.has(lead.id) && sameLead(candidate, lead));
 			if (match !== void 0) {
 				claimed.add(match.id);
 				const next = refreshed(match, candidate, now);
 				if (next !== null) await save(next);
 				continue;
 			}
-			if (known.some((suggestion) => covered(candidate, suggestion))) continue;
-			const created = {
-				id: candidate.id,
-				candidate,
-				state: "detected",
-				detectedAt: now,
-				updatedAt: now,
-				summarizedSize: 0,
-				summary: null,
-				draft: null,
-				failure: null,
-				write: null,
-				dismissed: null
-			};
+			if (known.some((lead) => covered(candidate, lead))) continue;
+			const created = newLead(candidate, now);
 			known.push(created);
 			claimed.add(created.id);
 			await save(created);
 		}
 		await prune(since);
 	}
-	/** 分析一个会话并更新建议，然后看是否有到期的后台摘要。 */
+	/** 回合结束后的分析：分析一个会话并更新线索，然后看是否有到期的后台摘要。 */
 	function analyze(sessionId) {
 		return serial(`analyzing session ${sessionId}`, async () => {
-			if (!lead || !deps.settings().discovery) return;
+			if (!worker || !deps.settings().discovery) return;
 			scanning += 1;
 			try {
-				if (await analyzeSession(sessionId)) await detect();
+				if (await analyzeSession(sessionId, false) === "changed") await detect();
 			} finally {
 				scanning -= 1;
 			}
 			pump();
 		});
 	}
-	/**
-	* 启动时读取历史范围内尚未分析过的会话。
-	* @returns 读取完成后兑现；单个会话读取失败只记录日志。
-	*/
-	function backfill() {
-		return serial("reading past sessions", async () => {
-			const settings = deps.settings();
-			if (!lead || !settings.discovery) return;
-			scanning += 1;
-			try {
-				const since = deps.now() - settings.historyDays * DAY;
-				const pending = (await deps.query.listSessions(deps.signal)).filter(({ header }) => header.origin !== "subagent" && header.createdAt >= since && store.sessions.get(recordKey(header.id)) === void 0).slice(0, settings.maxSessions);
-				for (const { header } of pending) {
-					if (deps.signal.aborted) return;
-					try {
-						await analyzeSession(header.id);
-					} catch (error) {
-						report(`reading session ${header.id}`, error);
-					}
-					await sleep(0);
-				}
-				await detect();
-			} finally {
-				scanning -= 1;
+	/** 列出全部会话，记下来供统计与会话页使用。 */
+	async function listAll() {
+		const headers = (await deps.query.listSessions(deps.signal)).map(({ header }) => header);
+		listing = {
+			at: deps.now(),
+			headers: new Map(headers.map((header) => [header.id, header]))
+		};
+		return headers;
+	}
+	async function scanOnce() {
+		const settings = deps.settings();
+		if (!worker || !settings.discovery) return;
+		scanning += 1;
+		try {
+			const since = deps.now() - settings.historyDays * DAY;
+			const unread = (await listAll()).filter((header) => header.origin !== "subagent" && header.createdAt >= since && store.sessions.get(recordKey(header.id)) === void 0).slice(0, settings.maxSessions);
+			for (const { id } of unread) {
+				if (deps.signal.aborted) return;
+				await serial(`reading session ${id}`, async () => {
+					await analyzeSession(id, false);
+				});
+				await sleep(0);
 			}
-			pump();
+			await serial("detecting candidates", detect);
+		} catch (error) {
+			report("reading past sessions", error);
+		} finally {
+			scanning -= 1;
+		}
+		pump();
+	}
+	/**
+	* 启动时读取历史范围内尚未分析过的会话，再运行检测。同一时间只有一次扫描。
+	* @returns 读取完成后兑现，从不拒绝；失败记录在工作状态里。
+	*/
+	function scan() {
+		scanRun ??= loop(scanOnce()).finally(() => {
+			scanRun = null;
 		});
+		return scanRun;
+	}
+	/** 回溯任务仍在进行：没有被新的范围替换、没有暂停，插件也没有卸载。 */
+	function backfilling(job) {
+		return backfillJob === job && job.state === "running" && !deps.signal.aborted;
+	}
+	async function runBackfill(job) {
+		job.active = true;
+		try {
+			if (!job.listed) {
+				const now = deps.now();
+				const since = now - deps.settings().historyDays * DAY;
+				const from = now - BACKFILL_DAYS[job.range] * DAY;
+				job.queue = (await listAll()).filter((header) => header.origin !== "subagent" && header.createdAt < since && header.createdAt >= from && store.sessions.get(recordKey(header.id)) === void 0).toSorted((a, b) => b.createdAt - a.createdAt).map((header) => header.id);
+				job.total = job.queue.length;
+				job.listed = true;
+				if (job.state === "listing") job.state = "running";
+			}
+			while (backfilling(job)) {
+				const id = job.queue.shift();
+				if (id === void 0) {
+					job.state = "done";
+					break;
+				}
+				const analysis = await enqueue(() => analyzeSession(id, true));
+				job.done += 1;
+				if (analysis === "failed") job.failed += 1;
+				await sleep(0);
+			}
+		} catch (error) {
+			report("reading older sessions", error);
+			job.state = "paused";
+		} finally {
+			job.active = false;
+		}
+	}
+	/**
+	* 回溯历史范围之外更早的会话，供搜索与提炼：逐个读入并标为回溯，修剪时保留，规则检测不用它们。
+	* 立即返回，进度见工作状态。同一范围暂停后再次调用时继续；换一个范围时重新列出。
+	*/
+	function backfill(range) {
+		const current = backfillJob;
+		if (current !== null && current.range === range && current.state !== "done") {
+			if (current.state !== "paused") return;
+			current.state = current.listed ? "running" : "listing";
+			if (!current.active) loop(runBackfill(current));
+			return;
+		}
+		const job = {
+			range,
+			state: "listing",
+			total: 0,
+			done: 0,
+			failed: 0,
+			queue: [],
+			listed: false,
+			active: false
+		};
+		backfillJob = job;
+		loop(runBackfill(job));
+	}
+	/** 暂停回溯：正在读的会话读完后停下。 */
+	function pauseBackfill() {
+		const job = backfillJob;
+		if (job === null || job.state !== "running" && job.state !== "listing") throw actionError("invalid", "没有正在进行的回溯");
+		job.state = "paused";
+	}
+	function cancelTimer(sessionId) {
+		clearTimeout(timers.get(sessionId));
+		timers.delete(sessionId);
 	}
 	/** 一个会话的回合结束后，等它安静一段时间再分析；期间再有回合结束就重新计时。 */
 	function noteTurnEnd(sessionId) {
 		const settings = deps.settings();
-		if (!lead || !settings.discovery || deps.signal.aborted) return;
-		const existing = timers.get(sessionId);
-		if (existing !== void 0) clearTimeout(existing);
+		if (!worker || !settings.discovery || deps.signal.aborted) return;
+		cancelTimer(sessionId);
 		const timer = setTimeout(() => {
 			timers.delete(sessionId);
 			analyze(sessionId);
@@ -12398,174 +13442,279 @@ function createScout(deps) {
 	}
 	/** 最近一次后台摘要的时间，看今天与昨天。 */
 	function lastSummaryAt(now) {
-		const times = [dayKey(now), dayKey(now - DAY)].flatMap((day) => {
+		const times = recentDays(now, 2).flatMap((day) => {
 			const usage = store.usage.get(day);
 			return usage === void 0 || usage.lastSummaryAt === 0 ? [] : [usage.lastSummaryAt];
 		});
 		return times.length === 0 ? null : Math.max(...times);
 	}
-	/** 记一次模型调用的用量；后台摘要另外计入每日上限与间隔。 */
-	async function recordUsage(background, inputTokens, outputTokens, failed) {
+	/**
+	* 记下一次已经发出的模型请求：当天的用量（后台摘要另外计入每日上限与间隔），
+	* 以及一条调用记录，只保留最新的 `CALL_LIMIT` 条。
+	*/
+	async function recordCall(job, attempt, result, detail) {
 		const now = deps.now();
+		const used = {
+			inputTokens: attempt.completion?.inputTokens ?? 0,
+			cacheReadTokens: attempt.completion?.cacheReadTokens ?? 0,
+			cacheWriteTokens: attempt.completion?.cacheWriteTokens ?? 0,
+			outputTokens: attempt.completion?.outputTokens ?? 0
+		};
 		const day = dayKey(now);
 		const usage = store.usage.get(day) ?? {
 			summaries: 0,
 			requested: 0,
 			failures: 0,
 			inputTokens: 0,
+			cacheReadTokens: 0,
+			cacheWriteTokens: 0,
 			outputTokens: 0,
 			lastSummaryAt: 0
 		};
 		await store.usage.put(day, {
-			summaries: usage.summaries + (background ? 1 : 0),
-			requested: usage.requested + (background ? 0 : 1),
-			failures: usage.failures + (failed ? 1 : 0),
-			inputTokens: usage.inputTokens + inputTokens,
-			outputTokens: usage.outputTokens + outputTokens,
-			lastSummaryAt: background ? now : usage.lastSummaryAt
+			summaries: usage.summaries + (job.background ? 1 : 0),
+			requested: usage.requested + (job.background ? 0 : 1),
+			failures: usage.failures + (result === "failed" ? 1 : 0),
+			inputTokens: usage.inputTokens + used.inputTokens,
+			cacheReadTokens: usage.cacheReadTokens + used.cacheReadTokens,
+			cacheWriteTokens: usage.cacheWriteTokens + used.cacheWriteTokens,
+			outputTokens: usage.outputTokens + used.outputTokens,
+			lastSummaryAt: job.background ? now : usage.lastSummaryAt
+		});
+		await store.calls.put(`${now.toString(36)}-${randomUUID().slice(0, 8)}`, {
+			at: now,
+			stage: job.stage,
+			leadId: job.leadId,
+			ideaIndex: job.index,
+			title: job.title,
+			provider: job.route.provider,
+			model: job.route.model,
+			durationMs: now - (attempt.startedAt ?? now),
+			...used,
+			result,
+			detail
+		});
+		const excess = [...store.calls.entries()].toSorted(([, a], [, b]) => b.at - a.at).slice(CALL_LIMIT);
+		await Promise.all(excess.map(([key]) => store.calls.delete(key)));
+	}
+	/** 记下请求进入的阶段；收到正文时同时更新已收到的字数。 */
+	function advance(key, phase, chars) {
+		const current = progress.get(key);
+		if (current === void 0) return;
+		progress.set(key, {
+			...current,
+			phase,
+			phaseAt: current.phase === phase ? current.phaseAt : deps.now(),
+			chars: chars ?? current.chars
+		});
+	}
+	function track(job, phase) {
+		const now = deps.now();
+		progress.set(job.key, {
+			stage: job.stage,
+			phase,
+			startedAt: now,
+			phaseAt: now,
+			chars: 0,
+			expected: job.expected
 		});
 	}
 	/**
-	* 组装候选的证据包，并读取证据会话可用的 Skill。
+	* 组装候选的证据包，并读取证据会话可用的 Skill。摘要的证据包另外列出全部已占用的 Skill 名称。
 	* @param target - 要改进的 Skill，附带它的全文。
 	*/
-	async function evidenceOf(suggestion, target) {
+	async function evidenceOf(candidate, target, stage) {
 		const settings = deps.settings();
-		const index = episodeIndex();
-		const episodes = suggestion.candidate.episodeIds.flatMap((id) => {
-			const episode = index.get(id);
-			return episode === void 0 ? [] : [episode];
-		});
-		if (episodes.length === 0) throw modelError("evidence", "证据任务已不在分析记录里");
-		const catalog = await catalogOf(suggestion.candidate);
+		const lost = await restoreEvidence(candidate);
+		const episodes = episodesOf(candidate);
+		if (episodes.length === 0) throw modelError("evidence", lost.length > 0 ? `读不到证据：${lost.join("；")}` : "证据任务已不在分析记录里");
+		const catalog = await catalogOf(candidate);
 		if (catalog === null) throw modelError("evidence", "证据会话都已删除，读不到它们可用的 Skill");
-		const related = await relatedSkills(suggestion.candidate, episodes, catalog, redactor(settings), target);
+		const ranked = rankSkills(candidate, episodes, catalog, target);
+		const related = await relatedSkills(ranked, redactor(settings));
+		const taken = stage === "summary" ? ranked.map((entry) => entry.skill.name) : [];
 		return {
-			pack: buildEvidence(suggestion.candidate, episodes, related, settings.evidenceBudget),
+			pack: buildEvidence(candidate, episodes, related, settings.evidenceBudget, taken),
 			existing: new Set(catalog.map((skill) => skill.name)),
 			catalog
 		};
 	}
-	/** 请求一次模型并返回调用记录；超时与插件卸载都会取消请求。 */
-	async function call(target, system, message, maxTokens, timeout, onCalled) {
+	/** 请求一次模型并记下进度；超时与插件卸载都会取消请求。 */
+	async function call(job, attempt, system, message, maxTokens, timeout) {
 		const signal = AbortSignal.any([deps.signal, AbortSignal.timeout(timeout * 1e3)]);
-		onCalled();
-		const completion = await complete(deps.llm, target, system, message, maxTokens, signal);
-		return {
-			completion,
-			record: {
-				at: deps.now(),
-				provider: target.provider,
-				model: target.model,
-				inputTokens: completion.inputTokens,
-				outputTokens: completion.outputTokens
-			}
-		};
+		advance(job.key, "waiting");
+		attempt.startedAt = deps.now();
+		const completion = await complete(deps.llm, job.route, system, message, maxTokens, signal, (phase, chars) => advance(job.key, phase, chars));
+		attempt.completion = completion;
+		advance(job.key, "checking");
+		return completion;
 	}
-	/** 给一条建议写摘要：判断值不值得保存，值得时给出标题、发现、描述、名称与提纲。 */
-	async function summarizeOnce(suggestion, target, onCalled) {
+	/** 给一条线索写摘要：判断值不值得保存，值得时给出互不重叠的 idea。 */
+	async function summarizeOnce(job, attempt) {
 		const settings = deps.settings();
-		const { pack, existing } = await evidenceOf(suggestion, null);
-		const { completion, record } = await call(target, summaryPrompt(settings.prompt), pack.text, SUMMARY_MAX_TOKENS, settings.summaryTimeout, onCalled);
-		return {
-			...record,
-			summary: checkSummary(completion.text, pack, existing)
-		};
+		const { candidate } = findLead(job.leadId);
+		const requested = isRequested(candidate.kind);
+		const { pack, existing } = await evidenceOf(candidate, null, "summary");
+		return checkSummary((await call(job, attempt, summaryPrompt(settings.prompt, candidate.kind), pack.text, requested ? EXTRACT_MAX_TOKENS : SUMMARY_MAX_TOKENS, settings.summaryTimeout * (requested ? EXTRACT_TIMEOUT_FACTOR : 1))).text, pack, existing, maxIdeas(candidate.kind));
 	}
-	/** 按用户同意的摘要写草稿；证据会话有 skill-creator 时附上它作为写作指南。 */
-	async function draftOnce(suggestion, target, onCalled) {
+	/** 按用户同意的 idea 写草稿；证据会话有 skill-creator 时附上它作为写作指南。 */
+	async function draftOnce(job, position, attempt) {
 		const settings = deps.settings();
-		const proposal = proposalOf(suggestion);
-		if (proposal === null) throw modelError("evidence", "这条建议没有可以生成草稿的摘要");
+		const lead = findLead(job.leadId);
+		const { proposal } = ideaOf(lead, position);
 		const improve = proposal.decision === "suggest_improve" ? proposal.skill : null;
-		const { pack, existing, catalog } = await evidenceOf(suggestion, improve);
+		const { pack, existing, catalog } = await evidenceOf(lead.candidate, improve, "draft");
 		if (improve !== null && !existing.has(improve)) throw modelError("evidence", `要改进的 Skill 已不存在：${improve}`);
-		const { completion, record } = await call(target, draftPrompt(proposal, await creatorGuide(catalog, redactor(settings))), draftMessage(proposal, pack), DRAFT_MAX_TOKENS, settings.draftTimeout, onCalled);
-		const { draft, cautions } = checkDraft(completion.text, pack, proposal);
-		return {
-			...record,
-			cautions: [...cautions],
-			draft
-		};
+		return checkDraft((await call(job, attempt, draftPrompt(proposal, await creatorGuide(catalog, redactor(settings))), draftMessage(proposal, pack), DRAFT_MAX_TOKENS, settings.draftTimeout)).text, pack, proposal);
 	}
-	/** 一次摘要或草稿完成后的建议；调用期间被忽略的建议保持忽略，结果照样记下，恢复时据此回到对应状态。 */
-	function withResult(current, result) {
-		const next = "summary" in result ? {
-			...current,
-			summary: result,
-			draft: null,
-			summarizedSize: current.candidate.episodeIds.length
-		} : {
-			...current,
-			draft: result
-		};
-		return {
-			...next,
-			state: current.state === "dismissed" ? "dismissed" : settledState(next),
-			updatedAt: deps.now(),
-			failure: null
-		};
+	/** 「忽略类似」留下的屏蔽：被忽略的 idea（或被忽略的整条线索里的 idea）的 Skill 名称与标题词。 */
+	function similarBlocks(except) {
+		return leads().filter((lead) => lead.id !== except).flatMap((lead) => {
+			const whole = lead.state === "dismissed" && lead.dismissed?.similar === true;
+			return proposalsOf(lead).flatMap((proposal, position) => whole || lead.ideas[position]?.dismissed?.similar === true ? [{
+				skill: proposal.skill,
+				words: tokens(proposal.title)
+			}] : []);
+		});
 	}
-	/**
-	* 运行一次摘要或草稿并保存结果；失败记录在建议上。从不拒绝。
-	* @param background - 后台自动发起的摘要，计入每日上限与间隔。
-	*/
-	async function runModel(id, stage, target, background) {
-		let called = false;
-		const onCalled = () => {
-			called = true;
+	/** 保存一份摘要：给出的 idea 与「忽略类似」相近的直接记为忽略。调用期间被忽略的线索保持忽略。 */
+	async function saveSummary(job, summary, attempt) {
+		const current = findLead(job.leadId);
+		const now = deps.now();
+		const blocks = summary.decision === "suggest" ? similarBlocks(current.id) : [];
+		const ideas = (summary.decision === "suggest" ? summary.ideas : []).map((proposal) => {
+			const words = tokens(proposal.title);
+			const similar = blocks.some((block) => block.skill === proposal.skill || jaccard(words, block.words) >= SIMILAR_TITLE);
+			return {
+				state: similar ? "dismissed" : "proposed",
+				updatedAt: now,
+				draft: null,
+				failure: null,
+				write: null,
+				dismissed: similar ? {
+					at: now,
+					similar: true
+				} : null
+			};
+		});
+		await save({
+			...current,
+			summary: {
+				at: now,
+				provider: job.route.provider,
+				model: job.route.model,
+				inputTokens: attempt.completion?.inputTokens ?? 0,
+				outputTokens: attempt.completion?.outputTokens ?? 0,
+				summary
+			},
+			ideas,
+			summarizedSize: current.candidate.episodeIds.length,
+			failure: null,
+			updatedAt: now,
+			state: current.state === "dismissed" ? "dismissed" : summary.decision === "skip" ? "skipped" : "summarized"
+		});
+	}
+	/** 记下一次失败，返回失败记录。 */
+	async function saveFailure(job, error) {
+		const now = deps.now();
+		if (job.index === null) {
+			const current = findLead(job.leadId);
+			const failure = failureOf(error, "summary", current.failure, now);
+			await save({
+				...current,
+				state: current.state === "dismissed" ? "dismissed" : "failed",
+				summary: null,
+				ideas: [],
+				updatedAt: now,
+				failure
+			});
+			return failure;
+		}
+		const { idea } = ideaOf(findLead(job.leadId), job.index);
+		const failure = failureOf(error, "draft", idea.failure, now);
+		await saveIdea(job.leadId, job.index, (current) => ({
+			...current,
+			state: current.state === "dismissed" ? "dismissed" : "failed",
+			updatedAt: now,
+			failure
+		}));
+		return failure;
+	}
+	/** 运行一次摘要或草稿并保存结果；失败记录在线索或 idea 上。从不拒绝。 */
+	async function runModel(job) {
+		const attempt = {
+			startedAt: null,
+			completion: null
 		};
 		try {
-			const suggestion = find(id);
+			advance(job.key, "preparing");
 			try {
-				const result = stage === "summary" ? await summarizeOnce(suggestion, target, onCalled) : await draftOnce(suggestion, target, onCalled);
-				await save(withResult(find(id), result));
+				if (job.index === null) {
+					const summary = await summarizeOnce(job, attempt);
+					await saveSummary(job, summary, attempt);
+					await recordCall(job, attempt, summary.decision === "skip" ? "skipped" : "proposed", summary.decision === "skip" ? summary.reason : String(summary.ideas.length));
+				} else {
+					const { draft, cautions } = await draftOnce(job, job.index, attempt);
+					const now = deps.now();
+					await saveIdea(job.leadId, job.index, (idea) => ({
+						...idea,
+						draft: {
+							at: now,
+							provider: job.route.provider,
+							model: job.route.model,
+							inputTokens: attempt.completion?.inputTokens ?? 0,
+							outputTokens: attempt.completion?.outputTokens ?? 0,
+							cautions: [...cautions],
+							draft
+						},
+						state: idea.state === "dismissed" ? "dismissed" : "ready",
+						updatedAt: now,
+						failure: null
+					}));
+					await recordCall(job, attempt, "drafted", null);
+				}
 				lastError = null;
-				await recordUsage(background, result.inputTokens, result.outputTokens, false);
 			} catch (error) {
 				if (deps.signal.aborted) return;
-				const current = find(id);
-				const failure = failureOf(error instanceof Error ? error : new Error(String(error)), stage, current.failure, deps.now());
-				await save({
-					...current,
-					state: current.state === "dismissed" ? "dismissed" : "failed",
-					updatedAt: deps.now(),
-					failure
-				});
+				const failure = await saveFailure(job, asError(error));
 				lastError = {
 					kind: failure.kind,
 					message: failure.message,
 					at: failure.at
 				};
-				deps.logger.warn("skill-scout: %s of %s failed: %s", stage, id, failure.message);
-				if (called) await recordUsage(background, 0, 0, true);
+				deps.logger.warn("skill-scout: %s of %s failed: %s", job.stage, job.key, failure.message);
+				if (attempt.startedAt !== null) await recordCall(job, attempt, "failed", failure.message);
 			}
 		} catch (error) {
-			report(`${stage} of ${id}`, error);
+			report(`${job.stage} of ${job.key}`, error);
 		} finally {
-			working.delete(id);
+			progress.delete(job.key);
 		}
 	}
-	/** 在后台开始一次模型调用。 */
-	function start(id, stage, target, background) {
-		working.set(id, stage);
-		const run = runModel(id, stage, target, background).finally(() => {
+	/** 在后台运行一次已经登记了进度的模型请求。 */
+	function launch(job) {
+		const run = runModel(job).finally(() => {
 			active.delete(run);
 		});
 		active.add(run);
 	}
-	/** 到期可以自动写摘要的建议，按分数从高到低。只有摘要会自动重试。 */
+	function start(job) {
+		track(job, "preparing");
+		launch(job);
+	}
+	/** 到期可以自动写摘要的规则线索，按分数从高到低。只有摘要会自动重试。 */
 	function due(now) {
-		return suggestions().filter((suggestion) => {
-			if (suggestion.state === "detected") return true;
-			if (suggestion.state !== "failed" || suggestion.failure?.stage !== "summary") return false;
-			const at = retryAt(suggestion.failure);
+		return leads().filter((lead) => {
+			if (!RULE_KINDS.has(lead.candidate.kind)) return false;
+			if (lead.state === "detected") return true;
+			if (lead.state !== "failed" || lead.failure === null) return false;
+			const at = retryAt(lead.failure);
 			return at !== null && now >= at;
 		}).toSorted((a, b) => b.candidate.score - a.candidate.score || a.detectedAt - b.detectedAt);
 	}
-	/** 在限额内启动下一次后台摘要；有任何模型调用在进行时不启动。后台从不生成草稿。 */
+	/** 在限额内启动下一次后台摘要；有任何模型请求在进行时不启动。后台从不生成草稿。 */
 	function pump() {
-		if (!lead || working.size > 0 || deps.signal.aborted) return;
+		if (!worker || progress.size > 0 || deps.signal.aborted) return;
 		const settings = deps.settings();
 		if (!settings.discovery || !settings.summarize) return;
 		const now = deps.now();
@@ -12583,60 +13732,225 @@ function createScout(deps) {
 			};
 			return;
 		}
-		start(next.id, "summary", target, true);
+		start(summaryJob(next, target, true));
 	}
-	/** 用户请求的模型调用共同的前提：建议还没处理完，且这条建议没有正在进行的调用。 */
-	function requestable(id) {
-		const suggestion = find(id);
-		if (working.has(id)) throw actionError("busy", "这条建议正在处理");
-		if (suggestion.state === "written" || suggestion.state === "dismissed") throw actionError("invalid", "这条建议已经处理过");
-		return suggestion;
+	/** 线索有正在进行的模型请求：摘要，或它的任何一个 idea 的草稿。 */
+	function busy(lead) {
+		return progress.has(lead.id) || lead.ideas.some((_, position) => progress.has(ideaId(lead.id, position)));
 	}
-	/** 用户请求写摘要：不受后台开关与限额约束。 */
-	function summarizeNow(id) {
-		if (requestable(id).state === "ready") throw actionError("invalid", "这条建议已经有草稿");
+	function summaryRoute() {
 		const target = routes().summary;
 		if (target === void 0) throw actionError("no-model", "没有可用的发现模型");
-		start(id, "summary", target, false);
+		return target;
 	}
-	/** 用户同意摘要，请求生成草稿；已有草稿时重新生成。 */
+	/** 用户请求给线索写摘要：不受后台开关与限额约束。 */
+	function summarizeNow(id) {
+		const { lead, index: position } = locate(id);
+		if (position !== null) throw actionError("invalid", "摘要针对整条线索");
+		if (busy(lead)) throw actionError("busy", "这条线索正在处理");
+		if (lead.state === "dismissed") throw actionError("invalid", "这条线索已经处理过");
+		checkResummary(lead);
+		start(summaryJob(lead, summaryRoute(), false));
+	}
+	/** 用户同意一个 idea，请求生成草稿；已有草稿时重新生成。 */
 	function draftNow(id) {
-		if (proposalOf(requestable(id)) === null) throw actionError("invalid", "这条建议还没有可同意的摘要");
+		const { lead, position, key, idea, proposal } = locateIdea(id, "草稿");
+		if (progress.has(key) || progress.has(lead.id)) throw actionError("busy", "这条建议正在处理");
+		if (lead.state === "dismissed" || idea.state === "dismissed" || idea.state === "written") throw actionError("invalid", "这条建议已经处理过");
 		const target = routes().draft;
 		if (target === void 0) throw actionError("no-model", "没有可用的生成模型");
-		start(id, "draft", target, false);
+		start({
+			key,
+			leadId: lead.id,
+			index: position,
+			stage: "draft",
+			route: target,
+			background: false,
+			title: proposal.title,
+			expected: EXPECTED_CHARS.draft
+		});
 	}
+	/** 忽略一条线索或一个 idea；similar 同时屏蔽之后出现的相近线索与 idea。 */
 	async function dismiss(id, similar) {
-		const suggestion = find(id);
-		if (suggestion.state === "written") throw actionError("invalid", "已写入的建议需要先撤销");
+		const { lead, index: position } = locate(id);
 		const now = deps.now();
-		await save({
-			...suggestion,
+		if (position === null) {
+			if (hasWritten(lead)) throw actionError("invalid", "这条线索里有已写入的 Skill，需要先撤销");
+			await save({
+				...lead,
+				state: "dismissed",
+				updatedAt: now,
+				dismissed: {
+					at: now,
+					similar
+				}
+			});
+			return;
+		}
+		if (ideaOf(lead, position).idea.state === "written") throw actionError("invalid", "已写入的建议需要先撤销");
+		await saveIdea(lead.id, position, (idea) => ({
+			...idea,
 			state: "dismissed",
 			updatedAt: now,
 			dismissed: {
 				at: now,
 				similar
 			}
+		}));
+	}
+	/** 恢复忽略的线索或 idea；证据会话已被修剪时重新读入，之后的摘要与草稿照常有证据。 */
+	async function restore(id) {
+		const { lead, index: position } = locate(id);
+		const now = deps.now();
+		if (position === null) {
+			if (lead.state !== "dismissed") throw actionError("invalid", "这条线索没有被忽略");
+			const next = {
+				...lead,
+				dismissed: null
+			};
+			await save({
+				...next,
+				state: settledLeadState(next),
+				updatedAt: now
+			});
+		} else {
+			if (ideaOf(lead, position).idea.state !== "dismissed") throw actionError("invalid", "这条建议没有被忽略");
+			await saveIdea(lead.id, position, (idea) => {
+				const next = {
+					...idea,
+					dismissed: null
+				};
+				return {
+					...next,
+					state: settledIdeaState(next),
+					updatedAt: now
+				};
+			});
+		}
+		await restoreEvidence(lead.candidate);
+	}
+	/**
+	* 用户要求提炼时的线索：没有就新建；已有时换上新的证据，被忽略的随之恢复。
+	* idea 已有进展的线索不能替换，避免丢掉用户已经同意或保存的 idea。
+	*/
+	async function requestedLead(candidate) {
+		const now = deps.now();
+		const existing = store.suggestions.get(recordKey(candidate.id));
+		if (existing !== void 0) checkResummary(existing);
+		const lead = existing === void 0 ? newLead(candidate, now) : {
+			...existing,
+			candidate,
+			dismissed: null,
+			updatedAt: now,
+			state: existing.state === "dismissed" ? settledLeadState(existing) : existing.state
+		};
+		await save(lead);
+		return lead;
+	}
+	/** 用户要求提炼前的检查：有发现模型，这条线索没有在处理。 */
+	function checkRequest(id) {
+		const target = summaryRoute();
+		const existing = store.suggestions.get(recordKey(id));
+		if (progress.has(id) || existing !== void 0 && busy(existing)) throw actionError("busy", "这条线索正在处理");
+		return target;
+	}
+	/** 排队分析一个会话；会话不存在或是子代理会话时以操作失败拒绝。 */
+	function analyzeQueued(sessionId) {
+		return enqueue(async () => {
+			cancelTimer(sessionId);
+			scanning += 1;
+			try {
+				const analysis = await analyzeSession(sessionId, false);
+				if (analysis === "missing") throw actionError("missing", `没有这个会话：${sessionId}`);
+				if (analysis === "subagent") throw actionError("invalid", "子代理会话不单独分析");
+				if (analysis === "changed") await detect();
+				return analysis;
+			} finally {
+				scanning -= 1;
+			}
 		});
 	}
-	async function restore(id) {
-		const suggestion = find(id);
-		if (suggestion.state !== "dismissed") throw actionError("invalid", "这条建议没有被忽略");
-		await save({
-			...suggestion,
-			state: settledState(suggestion),
-			updatedAt: deps.now(),
-			dismissed: null
+	/** 不等静默期，立即分析一个会话；用户发起，不受发现开关约束。 */
+	async function analyzeNow(sessionId) {
+		await analyzeQueued(sessionId);
+		pump();
+	}
+	/**
+	* 提炼一整段会话：需要时先分析它，再把它的全部任务交给发现模型，最多给出 5 个 idea。
+	* 分析与线索创建完成后返回，摘要在后台进行。
+	* @returns 建立或沿用的线索 id。
+	*/
+	async function extractSession(sessionId) {
+		const id = `session:${sessionId}`;
+		const job = {
+			key: id,
+			leadId: id,
+			index: null,
+			stage: "summary",
+			route: checkRequest(id),
+			background: false,
+			title: "",
+			expected: EXPECTED_CHARS.extract
+		};
+		track(job, "queued");
+		let lead;
+		try {
+			await analyzeQueued(sessionId);
+			const record = store.sessions.get(recordKey(sessionId));
+			const episodes = record?.episodes ?? [];
+			if (episodes.length === 0) throw record?.error === null || record?.error === void 0 ? actionError("empty", "这个会话里还没有可提炼的任务") : actionError("invalid", `会话分析失败：${record.error}`);
+			lead = await requestedLead(requestedCandidate("session", id, episodes));
+		} catch (error) {
+			progress.delete(id);
+			throw error;
+		}
+		launch({
+			...job,
+			title: clip(lead.candidate.goal, TITLE_CHARS)
 		});
+		return id;
+	}
+	/**
+	* 提炼搜索结果里勾选的任务：组成一条线索交给发现模型，最多给出 5 个 idea。
+	* @returns 建立或沿用的线索 id。
+	*/
+	async function extractSelected(episodeIds) {
+		const ids = [...new Set(episodeIds)].toSorted();
+		const id = `selected:${createHash("sha256").update(ids.join("\n")).digest("hex").slice(0, 16)}`;
+		const route = checkRequest(id);
+		const found = episodeIndex();
+		const missing = ids.filter((episodeId) => !found.has(episodeId));
+		if (missing.length > 0) throw actionError("missing", `没有这些任务：${missing.join(", ")}`);
+		const candidate = requestedCandidate("selected", id, ids.flatMap((episodeId) => {
+			const episode = found.get(episodeId);
+			return episode === void 0 ? [] : [episode];
+		}));
+		const job = {
+			key: id,
+			leadId: id,
+			index: null,
+			stage: "summary",
+			route,
+			background: false,
+			title: clip(candidate.goal, TITLE_CHARS),
+			expected: EXPECTED_CHARS.extract
+		};
+		track(job, "preparing");
+		try {
+			await requestedLead(candidate);
+		} catch (error) {
+			progress.delete(id);
+			throw error;
+		}
+		launch(job);
+		return id;
 	}
 	/** 生成写入预览；不触碰文件系统以外的状态。 */
 	async function preview(id, input) {
-		const suggestion = find(id);
-		const proposal = proposalOf(suggestion);
-		const draft = suggestion.draft?.draft;
-		const cwd = suggestion.candidate.cwd;
-		if (proposal === null || draft === void 0) throw actionError("invalid", "这条建议还没有可写入的草稿");
+		const { lead, key, idea, proposal } = locateIdea(id, "预览");
+		const draft = idea.draft?.draft;
+		const cwd = lead.candidate.cwd;
+		if (draft === void 0) throw actionError("invalid", "这条建议还没有可写入的草稿");
 		if (draft.kind === "create") {
 			const fields = input.fields ?? fieldsOfDraft({
 				name: proposal.skill,
@@ -12651,13 +13965,13 @@ function createScout(deps) {
 				kind: "create",
 				scope,
 				path,
-				content: renderSkillFile(fields, suggestion.id, dayKey(deps.now())),
+				content: renderSkillFile(fields, key, dayKey(deps.now())),
 				exists: await readOptional(path) !== null,
 				fields
 			};
 		}
 		const name = proposal.skill;
-		const skill = (await catalogOf(suggestion.candidate))?.find((entry) => entry.name === name);
+		const skill = (await catalogOf(lead.candidate))?.find((entry) => entry.name === name);
 		const section = input.section ?? renderImprovement(proposal.title, draft.notes);
 		const path = skill?.path ?? null;
 		const before = path === null ? "" : await readOptional(path) ?? "";
@@ -12695,41 +14009,43 @@ function createScout(deps) {
 	}
 	/**
 	* 轮询结束时 DSH 还没列出新写入的 Skill：在后台继续核对，列出后更新写入记录。
-	* 建议被撤销或改写到别处时停止。
+	* idea 被撤销或改写到别处时停止。
 	*/
-	function recheck(id, attempt = 1) {
+	function recheck(leadId, position, attempt = 1) {
 		if (deps.signal.aborted) return;
+		const key = ideaId(leadId, position);
 		const timer = setTimeout(() => {
-			rechecks.delete(id);
-			const suggestion = store.suggestions.get(recordKey(id));
-			const record = suggestion?.write;
-			if (suggestion?.state !== "written" || record === null || record === void 0) return;
-			listed(suggestion.candidate, record.skill, record.path).then(async (found) => {
+			rechecks.delete(key);
+			const lead = store.suggestions.get(recordKey(leadId));
+			const record = lead?.ideas[position]?.write;
+			if (lead === void 0 || record === null || record === void 0) return;
+			if (lead.ideas[position]?.state !== "written") return;
+			listed(lead.candidate, record.skill, record.path).then(async (found) => {
 				if (deps.signal.aborted) return;
 				if (!found) {
-					if (attempt < RECHECKS) recheck(id, attempt + 1);
+					if (attempt < RECHECKS) recheck(leadId, position, attempt + 1);
 					return;
 				}
-				const latest = store.suggestions.get(recordKey(id));
+				const latest = store.suggestions.get(recordKey(leadId))?.ideas[position];
 				if (latest?.state !== "written" || latest.write?.path !== record.path) return;
-				await save({
-					...latest,
-					write: {
-						...latest.write,
+				await saveIdea(leadId, position, (idea) => ({
+					...idea,
+					write: idea.write === null ? null : {
+						...idea.write,
 						discovered: true
 					}
-				});
+				}));
 			}).catch((error) => report(`checking that DSH lists ${record.skill}`, error));
 		}, RECHECK_INTERVAL);
 		timer.unref();
-		rechecks.set(id, timer);
+		rechecks.set(key, timer);
 	}
-	/** 写入 Skill 文件，并核对 DSH 能发现它。 */
+	/** 写入一个 idea 的 Skill 文件，并核对 DSH 能发现它。 */
 	async function write(id, input) {
-		const suggestion = find(id);
-		if (suggestion.state !== "ready") throw actionError("invalid", "只有待处理的建议可以写入");
+		const { lead, position, idea } = locateIdea(id, "写入");
+		if (idea.state !== "ready" || lead.state === "dismissed") throw actionError("invalid", "只有待处理的建议可以写入");
 		const plan = await preview(id, input);
-		const cwd = suggestion.candidate.cwd;
+		const cwd = lead.candidate.cwd;
 		const roots = await skillRoots(cwd);
 		let record;
 		try {
@@ -12758,53 +14074,64 @@ function createScout(deps) {
 			if (error instanceof Error && isWriteError(error)) throw actionError(error.kind, error.message);
 			throw error;
 		}
-		record = {
+		const written = {
 			...record,
-			discovered: await discovered(suggestion.candidate, record.skill, record.path)
+			discovered: await discovered(lead.candidate, record.skill, record.path)
 		};
 		try {
-			await save({
-				...find(id),
+			await saveIdea(lead.id, position, (current) => ({
+				...current,
 				state: "written",
 				updatedAt: deps.now(),
-				write: record
-			});
+				write: written
+			}));
 		} catch (error) {
-			await undoSkillWrite(record);
+			await undoSkillWrite(written);
 			throw error;
 		}
-		if (!record.discovered) recheck(id);
+		if (!written.discovered) recheck(lead.id, position);
 	}
-	/** 撤销写入，建议回到待处理。 */
+	/** 撤销写入，idea 回到可以保存。 */
 	async function undo(id) {
-		const suggestion = find(id);
-		if (suggestion.state !== "written" || suggestion.write === null) throw actionError("invalid", "这条建议没有写入记录");
+		const { lead, position, key, idea } = locateIdea(id, "撤销");
+		if (idea.state !== "written" || idea.write === null) throw actionError("invalid", "这条建议没有写入记录");
 		try {
-			await undoSkillWrite(suggestion.write);
+			await undoSkillWrite(idea.write);
 		} catch (error) {
 			if (error instanceof Error && isWriteError(error)) throw actionError(error.kind, error.message);
 			throw error;
 		}
-		clearTimeout(rechecks.get(id));
-		rechecks.delete(id);
-		const current = {
-			...find(id),
-			write: null
-		};
-		await save({
-			...current,
-			state: settledState(current),
-			updatedAt: deps.now()
+		clearTimeout(rechecks.get(key));
+		rechecks.delete(key);
+		await saveIdea(lead.id, position, (current) => {
+			const next = {
+				...current,
+				write: null
+			};
+			return {
+				...next,
+				state: settledIdeaState(next),
+				updatedAt: deps.now()
+			};
 		});
+	}
+	/**
+	* 会话在 DSH 里的情况。先查最近一次列出的会话；查不到且列出已经过了一段时间时重新列出一次。
+	*/
+	async function presence(sessionId) {
+		let header = listing?.headers.get(sessionId);
+		if (header === void 0 && (listing === null || deps.now() - listing.at >= RELIST_INTERVAL)) header = (await listAll()).find((entry) => entry.id === sessionId);
+		if (header === void 0) return "missing";
+		return header.origin === "subagent" ? "subagent" : "present";
 	}
 	return {
 		/** 设置本进程是否持有工作锁。 */
 		setLead(value) {
-			lead = value;
+			worker = value;
 		},
 		noteTurnEnd,
 		analyze,
-		backfill,
+		scan,
 		detect: () => serial("detecting candidates", detect),
 		pump,
 		summarizeNow,
@@ -12814,20 +14141,70 @@ function createScout(deps) {
 		preview,
 		write,
 		undo,
+		analyzeNow,
+		extractSession,
+		extractSelected,
+		backfill,
+		pauseBackfill,
 		routes,
-		/** 等待已排队的分析与正在进行的模型调用结束；测试与卸载时使用。 */
+		/**
+		* 打开一张卡片的详情之前补回它的证据：证据会话已被修剪时重新读入。
+		* 卡片不存在时什么都不做，由详情视图报告找不到。
+		*/
+		async evidence(id) {
+			const direct = store.suggestions.get(recordKey(id));
+			const parts = direct === void 0 ? splitIdeaId(id) : null;
+			const lead = direct ?? (parts === null ? void 0 : store.suggestions.get(recordKey(parts.leadId)));
+			if (lead !== void 0) await restoreEvidence(lead.candidate);
+		},
+		/** 搜索已存的任务。 */
+		search(query, options) {
+			return index.search(query, options);
+		},
+		/** 会话页需要的会话状态：分析记录、是否在等静默期、在 DSH 里的情况。 */
+		async session(sessionId) {
+			const record = store.sessions.get(recordKey(sessionId));
+			const waiting = timers.has(sessionId);
+			return {
+				record,
+				waiting,
+				presence: record !== void 0 || waiting ? "present" : await presence(sessionId)
+			};
+		},
+		/**
+		* 历史范围内与全部不是子代理的会话数。用最近一次列出的会话，到下一次扫描前有效；
+		* 本进程还没列出过时（例如没有工作锁）先列出一次。
+		*/
+		async coverage() {
+			const headers = [...listing?.headers.values() ?? await listAll()].filter((header) => header.origin !== "subagent");
+			const since = deps.now() - deps.settings().historyDays * DAY;
+			return {
+				inRange: headers.filter((header) => header.createdAt >= since).length,
+				total: headers.length
+			};
+		},
+		/** 等待扫描、回溯、已排队的分析与正在进行的模型请求结束；测试与卸载时使用。 */
 		async idle() {
+			await Promise.all(loops);
 			await chain;
 			await Promise.all(active);
 		},
 		runtime() {
+			const job = backfillJob;
 			return {
-				lead,
+				lead: worker,
 				scanning: scanning > 0,
 				waiting: timers.size,
 				checking: [...rechecks.keys()],
-				working: new Map(working),
-				lastError
+				working: new Map(progress),
+				lastError,
+				backfill: job === null ? null : {
+					range: job.range,
+					state: job.state,
+					total: job.total,
+					done: job.done,
+					failed: job.failed
+				}
 			};
 		},
 		dispose() {
@@ -12841,6 +14218,12 @@ function createScout(deps) {
 //#region src/host/route.ts
 const MAX_BODY = 262144;
 const ActionBodySchema = /* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ parseJson(), ActionSchema);
+/** 搜索的查询参数；空字符串与缺省相同。 */
+const SearchQuerySchema = /* @__PURE__ */ object({
+	q: /* @__PURE__ */ optional(/* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ maxLength(500)), ""),
+	outcome: /* @__PURE__ */ optional(OutcomeSchema),
+	limit: /* @__PURE__ */ optional(/* @__PURE__ */ pipe(/* @__PURE__ */ string(), /* @__PURE__ */ toNumber(), /* @__PURE__ */ integer(), /* @__PURE__ */ minValue(1), /* @__PURE__ */ maxValue(200)), "50")
+});
 async function readBody(request) {
 	request.setEncoding("utf8");
 	let text = "";
@@ -12858,6 +14241,14 @@ function respond(response, { status, body }, allow) {
 	});
 	response.end(JSON.stringify(body));
 }
+/** 请求的查询参数；没有或为空时为 undefined。 */
+function params(request) {
+	const search = new URL(request.url ?? "", "http://skill-scout.local").searchParams;
+	return (name) => {
+		const value = search.get(name);
+		return value === null || value === "" ? void 0 : value;
+	};
+}
 /** 预览的界面形式：去掉内部字段，路径里的家目录换成 `~`。 */
 function previewView(preview) {
 	if (preview.kind === "create") {
@@ -12873,16 +14264,48 @@ function previewView(preview) {
 		path: view.path === null ? null : displayPath(view.path)
 	};
 }
-/** 执行一个操作；只有 preview 返回内容。 */
+/** 执行一个只改变状态的操作。 */
+async function run(scout, action) {
+	switch (action.action) {
+		case "summarize":
+			scout.summarizeNow(action.id);
+			break;
+		case "draft":
+			scout.draftNow(action.id);
+			break;
+		case "dismiss":
+			await scout.dismiss(action.id, action.similar);
+			break;
+		case "restore":
+			await scout.restore(action.id);
+			break;
+		case "write":
+			await scout.write(action.id, action);
+			break;
+		case "undo":
+			await scout.undo(action.id);
+			break;
+		case "analyze-session":
+			await scout.analyzeNow(action.sessionId);
+			break;
+		case "backfill":
+			scout.backfill(action.range);
+			break;
+		case "backfill-pause":
+			scout.pauseBackfill();
+			break;
+		case "scan": scout.scan();
+	}
+}
 async function perform(scout, action) {
-	if (action.action === "preview") return previewView(await scout.preview(action.id, action));
-	if (action.action === "summarize") scout.summarizeNow(action.id);
-	else if (action.action === "draft") scout.draftNow(action.id);
-	else if (action.action === "dismiss") await scout.dismiss(action.id, action.similar);
-	else if (action.action === "restore") await scout.restore(action.id);
-	else if (action.action === "write") await scout.write(action.id, action);
-	else if (action.action === "undo") await scout.undo(action.id);
-	else scout.backfill();
+	switch (action.action) {
+		case "preview": return { preview: previewView(await scout.preview(action.id, action)) };
+		case "extract-session": return { leadId: await scout.extractSession(action.sessionId) };
+		case "extract-selected": return { leadId: await scout.extractSelected(action.episodeIds) };
+		default:
+			await run(scout, action);
+			return {};
+	}
 }
 async function act(deps, request) {
 	const parsed = /* @__PURE__ */ safeParse(ActionBodySchema, await readBody(request));
@@ -12891,13 +14314,14 @@ async function act(deps, request) {
 		body: { error: `请求不合法：${/* @__PURE__ */ summarize(parsed.issues)}` }
 	};
 	try {
-		const preview = await perform(deps.scout, parsed.output);
+		const { preview, leadId } = await perform(deps.scout, parsed.output);
 		return {
 			status: 200,
 			body: {
 				ok: true,
 				inbox: deps.inbox(),
-				...preview === void 0 ? {} : { preview }
+				...preview === void 0 ? {} : { preview },
+				...leadId === void 0 ? {} : { leadId }
 			}
 		};
 	} catch (error) {
@@ -12952,12 +14376,12 @@ function scoutRoutes(deps) {
 			body: deps.inbox()
 		})),
 		guarded(deps, DETAIL_PATH, "GET", async (request) => {
-			const id = new URL(request.url ?? "", "http://skill-scout.local").searchParams.get("id");
-			if (id === null || id === "") return {
+			const id = params(request)("id");
+			if (id === void 0) return {
 				status: 400,
 				body: { error: "缺少 id 查询参数" }
 			};
-			const detail = deps.detail(id);
+			const detail = await deps.detail(id);
 			return detail === void 0 ? {
 				status: 404,
 				body: { error: `没有这条建议：${id}` }
@@ -12966,6 +14390,38 @@ function scoutRoutes(deps) {
 				body: detail
 			};
 		}),
+		guarded(deps, SESSION_PATH, "GET", async (request) => {
+			const id = params(request)("id");
+			if (id === void 0) return {
+				status: 400,
+				body: { error: "缺少 id 查询参数" }
+			};
+			return {
+				status: 200,
+				body: await deps.session(id)
+			};
+		}),
+		guarded(deps, SEARCH_PATH, "GET", async (request) => {
+			const param = params(request);
+			const parsed = /* @__PURE__ */ safeParse(SearchQuerySchema, {
+				q: param("q"),
+				outcome: param("outcome"),
+				limit: param("limit")
+			});
+			if (!parsed.success) return {
+				status: 400,
+				body: { error: `查询参数不合法：${/* @__PURE__ */ summarize(parsed.issues)}` }
+			};
+			const { q, outcome, limit } = parsed.output;
+			return {
+				status: 200,
+				body: deps.search(q, outcome, limit)
+			};
+		}),
+		guarded(deps, STATS_PATH, "GET", async () => ({
+			status: 200,
+			body: await deps.stats()
+		})),
 		guarded(deps, ACTION_PATH, "POST", (request) => act(deps, request))
 	];
 }
@@ -12983,22 +14439,45 @@ const ORDER = {
 	skipped: 7,
 	dismissed: 8
 };
+/** 任务概要里列出的步骤数。 */
+const TASK_STEPS = 6;
+/** 统计里列出的高频动作数与反复出现的错误数；错误至少要在这么多个会话里出现。 */
+const TOP_ACTIONS = 12;
+const TOP_ERRORS = 8;
+const ERROR_SESSIONS = 2;
+/** 统计里的用量天数。 */
+const USAGE_DAYS = 7;
+/** 统计里按天分的任务与线索的天数。 */
+const DAILY_DAYS = 30;
+/** 统计里高频动作按周分的周数；一周是从 now 往回的 7 天。 */
+const ACTION_WEEKS = 8;
+const WEEK = 6048e5;
 function episodeIndex(store) {
 	const index = /* @__PURE__ */ new Map();
 	for (const [, record] of store.sessions.entries()) for (const episode of record.episodes) index.set(episode.id, episode);
 	return index;
 }
-/** 正在进行的模型调用决定界面状态，其余与存储一致。 */
-function stateOf(suggestion, working) {
-	const stage = working.get(suggestion.id);
-	if (stage === "summary") return "summarizing";
-	if (stage === "draft") return "drafting";
-	return suggestion.state;
+function leadsOf(store) {
+	return [...store.suggestions.entries()].map(([, lead]) => lead);
 }
-function itemOf(suggestion, index, runtime) {
-	const summary = suggestion.summary?.summary;
-	const proposal = proposalOf(suggestion);
-	const sessions = suggestion.candidate.episodeIds.flatMap((id) => {
+/** 线索卡片的状态：正在摘要时为 summarizing，其余与存储一致。 */
+function leadState(lead, working) {
+	if (working.get(lead.id)?.stage === "summary") return "summarizing";
+	return lead.state === "summarized" ? "proposed" : lead.state;
+}
+/** idea 卡片的状态：整条线索被忽略时为 dismissed，正在写草稿时为 drafting，其余与存储一致。 */
+function ideaState(lead, position, idea, working) {
+	if (lead.state === "dismissed") return "dismissed";
+	if (working.get(ideaId(lead.id, position))?.stage === "draft") return "drafting";
+	return idea.state;
+}
+/** 线索只出一张卡片：还没有 idea、整条线索被忽略，或正在重新摘要。 */
+function collapsed(lead, working) {
+	return lead.ideas.length === 0 || lead.state === "dismissed" || working.get(lead.id)?.stage === "summary";
+}
+/** 线索卡片与 idea 卡片共有的字段：线索的来源与证据。 */
+function leadFields(lead, index) {
+	const sessions = lead.candidate.episodeIds.flatMap((id) => {
 		const episode = index.get(id);
 		return episode === void 0 ? [] : [{
 			sessionId: episode.sessionId,
@@ -13009,38 +14488,115 @@ function itemOf(suggestion, index, runtime) {
 		}];
 	});
 	return {
-		id: suggestion.id,
-		kind: suggestion.candidate.kind,
-		state: stateOf(suggestion, runtime.working),
-		title: proposal?.title ?? null,
-		goal: suggestion.candidate.goal,
-		steps: suggestion.candidate.steps,
-		found: proposal?.found ?? null,
-		description: proposal?.description ?? null,
-		trigger: proposal?.trigger ?? null,
-		outline: proposal?.outline ?? [],
-		risks: proposal?.risks ?? [],
-		verification: proposal?.verification ?? null,
-		reason: summary?.decision === "skip" ? summary.reason : null,
-		occurrences: suggestion.candidate.occurrences,
+		leadId: lead.id,
+		ideaCount: lead.ideas.length,
+		merged: 0,
+		kind: lead.candidate.kind,
+		goal: lead.candidate.goal,
+		steps: lead.candidate.steps,
+		occurrences: lead.candidate.occurrences,
 		sessions,
-		score: suggestion.candidate.score,
-		detectedAt: suggestion.detectedAt,
-		updatedAt: suggestion.updatedAt,
-		decision: summary?.decision ?? null,
-		skill: proposal?.skill ?? null,
-		cautions: suggestion.draft?.cautions ?? [],
-		failure: suggestion.failure,
-		write: suggestion.write === null ? null : {
-			at: suggestion.write.at,
-			scope: suggestion.write.scope,
-			skill: suggestion.write.skill,
-			path: displayPath(suggestion.write.path),
-			discovered: suggestion.write.discovered,
-			checking: runtime.checking.includes(suggestion.id)
-		},
-		dismissedSimilar: suggestion.dismissed?.similar === true
+		score: lead.candidate.score,
+		detectedAt: lead.detectedAt
 	};
+}
+/** 代表整条线索的卡片。 */
+function leadItem(lead, index, runtime) {
+	const summary = lead.summary?.summary;
+	return {
+		...leadFields(lead, index),
+		id: lead.id,
+		ideaIndex: null,
+		state: leadState(lead, runtime.working),
+		title: null,
+		found: null,
+		description: null,
+		trigger: null,
+		outline: [],
+		risks: [],
+		verification: null,
+		reason: summary?.decision === "skip" ? summary.reason : null,
+		updatedAt: lead.updatedAt,
+		decision: summary?.decision === "skip" ? "skip" : null,
+		skill: null,
+		cautions: [],
+		failure: lead.failure,
+		write: null,
+		dismissedSimilar: lead.dismissed?.similar === true,
+		progress: runtime.working.get(lead.id) ?? null
+	};
+}
+/** 一个 idea 的卡片。 */
+function ideaItem(lead, position, index, runtime) {
+	const idea = lead.ideas[position];
+	const proposal = proposalsOf(lead)[position];
+	if (idea === void 0 || proposal === void 0) throw new Error(`线索 ${lead.id} 没有第 ${String(position)} 个 idea`);
+	const id = ideaId(lead.id, position);
+	return {
+		...leadFields(lead, index),
+		id,
+		ideaIndex: position,
+		state: ideaState(lead, position, idea, runtime.working),
+		title: proposal.title,
+		found: proposal.found,
+		description: proposal.description,
+		trigger: proposal.trigger,
+		outline: proposal.outline,
+		risks: proposal.risks,
+		verification: proposal.verification,
+		reason: null,
+		updatedAt: idea.updatedAt,
+		decision: proposal.decision,
+		skill: proposal.skill,
+		cautions: idea.draft?.cautions ?? [],
+		failure: idea.failure,
+		write: idea.write === null ? null : {
+			at: idea.write.at,
+			scope: idea.write.scope,
+			skill: idea.write.skill,
+			path: displayPath(idea.write.path),
+			discovered: idea.write.discovered,
+			checking: runtime.checking.includes(id)
+		},
+		dismissedSimilar: idea.dismissed?.similar === true || lead.state === "dismissed" && lead.dismissed?.similar === true,
+		progress: runtime.working.get(id) ?? null
+	};
+}
+function cardsOf(lead, index, runtime) {
+	if (collapsed(lead, runtime.working)) return [{
+		view: leadItem(lead, index, runtime),
+		skill: null,
+		since: lead.detectedAt
+	}];
+	const since = lead.summary?.at ?? lead.detectedAt;
+	return lead.ideas.map((_, position) => {
+		const view = ideaItem(lead, position, index, runtime);
+		return {
+			view,
+			skill: view.state !== "dismissed" && view.state !== "written" ? view.skill : null,
+			since
+		};
+	});
+}
+/** 不同线索里同名、未结束的 idea 只保留最早出现的一张，其余计入它的 merged。 */
+function merge(cards) {
+	const views = [];
+	const first = /* @__PURE__ */ new Map();
+	const ordered = cards.toSorted((a, b) => a.since - b.since || a.view.detectedAt - b.view.detectedAt || (a.view.id < b.view.id ? -1 : 1));
+	for (const card of ordered) {
+		const at = card.skill === null ? void 0 : first.get(card.skill);
+		const kept = at === void 0 ? void 0 : views[at];
+		if (at !== void 0 && kept !== void 0) {
+			views[at] = {
+				...kept,
+				merged: kept.merged + 1
+			};
+			continue;
+		}
+		if (card.skill !== null) first.set(card.skill, views.length);
+		views.push(card.view);
+	}
+	return views;
 }
 function modelView(route) {
 	return route === void 0 ? null : {
@@ -13060,7 +14616,7 @@ function modelView(route) {
 */
 function inboxView(store, settings, routes, runtime, now) {
 	const index = episodeIndex(store);
-	const items = [...store.suggestions.entries()].map(([, suggestion]) => itemOf(suggestion, index, runtime)).toSorted((a, b) => ORDER[a.state] - ORDER[b.state] || b.updatedAt - a.updatedAt);
+	const items = merge(leadsOf(store).flatMap((lead) => cardsOf(lead, index, runtime))).toSorted((a, b) => ORDER[a.state] - ORDER[b.state] || b.updatedAt - a.updatedAt);
 	const usage = store.usage.get(dayKey(now));
 	let sessions = 0;
 	for (const _ of store.sessions.entries()) sessions += 1;
@@ -13083,8 +14639,11 @@ function inboxView(store, settings, routes, runtime, now) {
 				limit: settings.dailySummaries,
 				requested: usage?.requested ?? 0,
 				inputTokens: usage?.inputTokens ?? 0,
+				cacheReadTokens: usage?.cacheReadTokens ?? 0,
+				cacheWriteTokens: usage?.cacheWriteTokens ?? 0,
 				outputTokens: usage?.outputTokens ?? 0
 			},
+			backfill: runtime.backfill,
 			lastError: runtime.lastError,
 			analyzed: {
 				sessions,
@@ -13115,26 +14674,52 @@ function callView(call) {
 		outputTokens: call.outputTokens
 	};
 }
-/** 摘要与草稿引用过的证据编号。 */
-function citedRefs(suggestion) {
-	const draft = suggestion.draft?.draft;
+/** 卡片引用过的证据编号：idea 是它的方案与草稿，线索是摘要里的全部引用。 */
+function citedRefs(lead, position) {
+	const summary = lead.summary?.summary;
+	if (position === null) {
+		if (summary === void 0) return /* @__PURE__ */ new Set();
+		return new Set(summary.decision === "skip" ? summary.refs : summary.ideas.flatMap((idea) => idea.refs));
+	}
+	const draft = lead.ideas[position]?.draft?.draft;
 	const steps = draft === void 0 ? [] : draft.kind === "create" ? draft.steps : draft.notes;
-	return /* @__PURE__ */ new Set([...suggestion.summary?.summary.refs ?? [], ...steps.flatMap((step) => step.refs)]);
+	return /* @__PURE__ */ new Set([...proposalsOf(lead)[position]?.refs ?? [], ...steps.flatMap((step) => step.refs)]);
 }
 /**
-* 组装一条建议的详情：证据任务、摘要与草稿。
-* @param store - 插件存储。
-* @param suggestion - 建议。
-* @param runtime - 引擎运行状态。
+* 找到一张卡片：idea id 是那个 idea；线索 id 在线索已有可显示的 idea 时是第一个 idea，否则是线索本身。
 */
-function detailView(store, suggestion, runtime) {
+function locateItem(store, id, working) {
+	const direct = store.suggestions.get(recordKey(id));
+	if (direct !== void 0) return {
+		lead: direct,
+		position: collapsed(direct, working) ? null : 0
+	};
+	const parts = splitIdeaId(id);
+	const owner = parts === null ? void 0 : store.suggestions.get(recordKey(parts.leadId));
+	if (parts === null || owner?.ideas[parts.index] === void 0) return void 0;
+	return {
+		lead: owner,
+		position: parts.index
+	};
+}
+/**
+* 组装一张卡片的详情：证据任务、摘要与草稿，以及同一线索的全部 idea。
+* @param store - 插件存储。
+* @param id - 线索 id 或 idea id。
+* @param runtime - 引擎运行状态。
+* @returns 找不到时为 undefined。
+*/
+function detailView(store, id, runtime) {
+	const located = locateItem(store, id, runtime.working);
+	if (located === void 0) return void 0;
+	const { lead, position } = located;
 	const index = episodeIndex(store);
-	const cited = citedRefs(suggestion);
-	const episodes = suggestion.candidate.episodeIds.flatMap((id) => {
-		const episode = index.get(id);
+	const cited = citedRefs(lead, position);
+	const episodes = lead.candidate.episodeIds.flatMap((episodeId) => {
+		const episode = index.get(episodeId);
 		return episode === void 0 ? [] : [episode];
-	}).map((episode, position) => {
-		const ref = `E${String(position + 1)}`;
+	}).map((episode, at) => {
+		const ref = `E${String(at + 1)}`;
 		return {
 			ref,
 			episodeId: episode.id,
@@ -13162,26 +14747,251 @@ function detailView(store, suggestion, runtime) {
 			followup: episode.followup
 		};
 	});
-	const proposal = proposalOf(suggestion);
-	const draft = suggestion.draft?.draft;
+	const proposals = proposalsOf(lead);
+	const proposal = position === null ? void 0 : proposals[position];
+	const idea = position === null ? void 0 : lead.ideas[position];
+	const draft = idea?.draft?.draft;
 	return {
-		item: itemOf(suggestion, index, runtime),
+		item: position === null ? leadItem(lead, index, runtime) : ideaItem(lead, position, index, runtime),
+		siblings: position === null ? [] : lead.ideas.flatMap((entry, at) => {
+			const sibling = proposals[at];
+			return sibling === void 0 ? [] : [{
+				id: ideaId(lead.id, at),
+				title: sibling.title,
+				state: ideaState(lead, at, entry, runtime.working)
+			}];
+		}),
 		episodes,
-		summary: callView(suggestion.summary),
-		draftCall: callView(suggestion.draft),
-		draft: proposal !== null && draft?.kind === "create" ? fieldsOfDraft({
+		summary: callView(lead.summary),
+		draftCall: callView(idea?.draft ?? null),
+		draft: proposal !== void 0 && draft?.kind === "create" ? fieldsOfDraft({
 			name: proposal.skill,
 			title: proposal.title,
 			draft
 		}) : null,
-		section: proposal !== null && draft?.kind === "improve" ? renderImprovement(proposal.title, draft.notes) : null
+		section: proposal !== void 0 && draft?.kind === "improve" ? renderImprovement(proposal.title, draft.notes) : null
+	};
+}
+/** 任务的前几步：非查看类命令的签名与改动的文件，按出现顺序去重。 */
+function taskSteps(episode) {
+	const steps = /* @__PURE__ */ new Set();
+	for (const op of episode.ops) if (op.kind === "exec" && op.family !== "inspect") for (const part of op.parts) steps.add(part.sig);
+	else if (op.kind === "edit") steps.add(op.target ?? op.sig);
+	return [...steps].slice(0, TASK_STEPS);
+}
+/**
+* 一个任务的概要。
+* @param matches - 搜索命中的片段；不是搜索结果时为空。
+*/
+function taskView(episode, matches) {
+	return {
+		episodeId: episode.id,
+		sessionId: episode.sessionId,
+		at: episode.endedAt,
+		cwd: episode.cwd === null ? null : displayPath(episode.cwd),
+		goal: episode.goal,
+		outcome: episode.outcome,
+		commands: episode.counts.exec,
+		edits: episode.counts.edit,
+		recoveries: episode.recoveries.length,
+		steps: taskSteps(episode),
+		matches: [...matches]
+	};
+}
+/**
+* 一个会话的分析情况与任务列表，任务按会话里的顺序。
+* @param state - 分析记录、是否在等静默期，以及会话在 DSH 里的情况。
+*/
+function sessionView(sessionId, state) {
+	const { record } = state;
+	return {
+		sessionId,
+		state: record !== void 0 ? record.error === null ? "analyzed" : "failed" : state.waiting ? "waiting" : state.presence === "present" ? "pending" : state.presence,
+		scannedAt: record?.scannedAt ?? null,
+		error: record?.error ?? null,
+		tasks: (record?.episodes ?? []).toSorted((a, b) => a.startSeq - b.startSeq).map((episode) => taskView(episode, []))
+	};
+}
+/** 搜索结果视图。 */
+function searchView(query, result) {
+	return {
+		query,
+		total: result.total,
+		hits: result.hits.map((hit) => taskView(hit.episode, hit.matches)),
+		indexed: result.indexed
+	};
+}
+/**
+* 线索与 idea 各自按存储里的状态计数。整条线索被忽略时，它的 idea 一律计入 dismissed；
+* 其余 idea 按自身状态计数。正在摘要的线索计入 detected；正在生成草稿的 idea 在存储里还是
+* 请求前的状态，照常计数。被合并显示的 idea 各算一条。
+*/
+function funnelOf(leads, working) {
+	const funnel = {
+		leads: {
+			detected: 0,
+			summarized: 0,
+			skipped: 0,
+			failed: 0,
+			dismissed: 0
+		},
+		ideas: {
+			proposed: 0,
+			ready: 0,
+			failed: 0,
+			written: 0,
+			dismissed: 0
+		}
+	};
+	for (const lead of leads) {
+		const summarizing = lead.state !== "dismissed" && working.get(lead.id)?.stage === "summary";
+		funnel.leads[summarizing ? "detected" : lead.state] += 1;
+		for (const idea of lead.ideas) funnel.ideas[lead.state === "dismissed" ? "dismissed" : idea.state] += 1;
+	}
+	return funnel;
+}
+/**
+* 一个时间落在近几周的哪一周：从 now 往回每 7 天一段，最早的一段下标为 0；更早的为 null。
+* 晚于 now 的时间算在最近一周。
+*/
+function weekOf(time, now) {
+	const ago = Math.max(0, Math.floor((now - time) / WEEK));
+	return ago < ACTION_WEEKS ? 7 - ago : null;
+}
+/**
+* 跨会话出现最多的动作：日常动作、查看类与说明不了做了什么的动作除外。
+* 每个动作另外按任务结束的时间列出近 8 周每周用到它的会话数。
+*/
+function frequentActions(episodes, now) {
+	const found = /* @__PURE__ */ new Map();
+	for (const episode of episodes) {
+		const week = weekOf(episode.endedAt, now);
+		for (const action of procedureOf(episode)) {
+			if (isRoutine(action.key) || isOpaque(action.key)) continue;
+			const entry = found.get(action.key) ?? {
+				sigs: /* @__PURE__ */ new Map(),
+				sessions: /* @__PURE__ */ new Set(),
+				weeks: Array.from({ length: ACTION_WEEKS }, () => /* @__PURE__ */ new Set())
+			};
+			entry.sigs.set(action.sig, (entry.sigs.get(action.sig) ?? 0) + 1);
+			entry.sessions.add(episode.sessionId);
+			if (week !== null) entry.weeks[week]?.add(episode.sessionId);
+			found.set(action.key, entry);
+		}
+	}
+	return [...found.entries()].map(([key, entry]) => ({
+		key,
+		label: [...entry.sigs.entries()].toSorted((a, b) => b[1] - a[1])[0]?.[0] ?? key,
+		sessions: entry.sessions.size,
+		weeks: entry.weeks.map((sessions) => sessions.size)
+	})).toSorted((a, b) => b.sessions - a.sessions || (a.key < b.key ? -1 : 1)).slice(0, TOP_ACTIONS);
+}
+/** 在多个会话里出现的同一类命令错误。 */
+function repeatedErrors(episodes) {
+	const found = /* @__PURE__ */ new Map();
+	for (const episode of episodes) for (const op of episode.ops) {
+		if (op.kind !== "exec" || op.ok || op.error === null) continue;
+		const signature = errorSignature(op);
+		const entry = found.get(signature) ?? {
+			example: op.error,
+			sessions: /* @__PURE__ */ new Set()
+		};
+		entry.sessions.add(episode.sessionId);
+		found.set(signature, entry);
+	}
+	return [...found.entries()].map(([signature, entry]) => ({
+		signature,
+		example: entry.example,
+		sessions: entry.sessions.size
+	})).filter((entry) => entry.sessions >= ERROR_SESSIONS).toSorted((a, b) => b.sessions - a.sessions || (a.signature < b.signature ? -1 : 1)).slice(0, TOP_ERRORS);
+}
+/**
+* 近 30 天每天结束的任务数（按结果分）与新出现的线索数，按本地日期，最早的在前；没有记录的日子各项为 0。
+* @param episodes - 已存的任务，不含重放。
+*/
+function dailyCounts(episodes, leads, now) {
+	const days = new Map(recentDays(now, DAILY_DAYS).map((day) => [day, {
+		day,
+		verified: 0,
+		succeeded: 0,
+		unverified: 0,
+		disputed: 0,
+		failed: 0,
+		aborted: 0,
+		leads: 0
+	}]));
+	for (const episode of episodes) {
+		const entry = days.get(dayKey(episode.endedAt));
+		if (entry !== void 0) entry[episode.outcome] += 1;
+	}
+	for (const lead of leads) {
+		const entry = days.get(dayKey(lead.detectedAt));
+		if (entry !== void 0) entry.leads += 1;
+	}
+	return [...days.values()];
+}
+/**
+* 组装统计视图。
+* @param store - 插件存储。
+* @param coverage - 历史范围内与全部的会话数。
+* @param working - 正在进行的模型请求。
+* @param now - 当前时间。
+*/
+function statsView(store, coverage, working, now) {
+	const records = [...store.sessions.entries()].map(([, record]) => record);
+	const episodes = records.flatMap((record) => record.episodes).filter((e) => !e.replay);
+	const leads = leadsOf(store);
+	return {
+		coverage: {
+			analyzed: records.filter((record) => record.error === null).length,
+			inRange: coverage.inRange,
+			total: coverage.total,
+			backfilled: records.filter((record) => record.backfilled).length,
+			failed: records.flatMap((record) => record.error === null ? [] : [{
+				sessionId: record.sessionId,
+				message: record.error,
+				at: record.scannedAt
+			}]).toSorted((a, b) => b.at - a.at)
+		},
+		funnel: funnelOf(leads, working),
+		actions: frequentActions(episodes, now),
+		errors: repeatedErrors(episodes),
+		daily: dailyCounts(episodes, leads, now),
+		usage: recentDays(now, USAGE_DAYS).map((day) => {
+			const usage = store.usage.get(day);
+			return {
+				day,
+				summaries: usage?.summaries ?? 0,
+				requested: usage?.requested ?? 0,
+				failures: usage?.failures ?? 0,
+				inputTokens: usage?.inputTokens ?? 0,
+				cacheReadTokens: usage?.cacheReadTokens ?? 0,
+				cacheWriteTokens: usage?.cacheWriteTokens ?? 0,
+				outputTokens: usage?.outputTokens ?? 0
+			};
+		}),
+		calls: [...store.calls.entries()].map(([, call]) => call).toSorted((a, b) => b.at - a.at).map((call) => ({
+			at: call.at,
+			stage: call.stage,
+			itemId: call.ideaIndex === null ? call.leadId : ideaId(call.leadId, call.ideaIndex),
+			title: call.title,
+			provider: call.provider,
+			model: call.model,
+			durationMs: call.durationMs,
+			inputTokens: call.inputTokens,
+			cacheReadTokens: call.cacheReadTokens,
+			cacheWriteTokens: call.cacheWriteTokens,
+			outputTokens: call.outputTokens,
+			result: call.result,
+			detail: call.detail
+		}))
 	};
 }
 //#endregion
 //#region src/host/index.ts
 /**
 * Skill Scout 的 Host 半部：打开插件存储，注册浏览器路由，监听会话的回合结束，
-* 在持有工作锁时于后台分析会话、给候选写摘要。
+* 在持有工作锁时于后台分析会话、给规则线索写摘要。
 */
 const name = "agent-stash-skill-scout";
 /** `agentDefaultModel` 不在这里：部署可能没有它，用到时经 `ctx.get` 读取。 */
@@ -13215,17 +15025,21 @@ async function apply(ctx, config) {
 			signal: controller.signal
 		});
 		yield () => scout.dispose();
-		const inbox = () => inboxView(store, settings(), scout.routes(), scout.runtime(), Date.now());
-		const detail = (id) => {
-			const suggestion = store.suggestions.get(recordKey(id));
-			return suggestion === void 0 ? void 0 : detailView(store, suggestion, scout.runtime());
-		};
 		for (const route of scoutRoutes({
 			scout,
 			connection: ctx.connection,
 			logger: ctx.logger,
-			inbox,
-			detail
+			inbox: () => inboxView(store, settings(), scout.routes(), scout.runtime(), Date.now()),
+			detail: async (id) => {
+				await scout.evidence(id);
+				return detailView(store, id, scout.runtime());
+			},
+			session: async (id) => sessionView(id, await scout.session(id)),
+			search: (query, outcome, limit) => searchView(query, scout.search(query, {
+				outcome,
+				limit
+			})),
+			stats: async () => statsView(store, await scout.coverage(), scout.runtime().working, Date.now())
 		})) yield ctx.webServer.register(route);
 		yield ctx.on("session/event", (session, event) => {
 			if (event.type === "turn/end" && session.header.origin !== "subagent") scout.noteTurnEnd(session.id);
@@ -13233,10 +15047,8 @@ async function apply(ctx, config) {
 		const lockPath = join(dshHome(), "skill-scout", "worker.lock");
 		let release = null;
 		let discovery = settings().discovery;
-		const startBackfill = () => {
-			scout.backfill().catch((error) => {
-				ctx.logger.warn("skill-scout: reading past sessions failed: %s", String(error));
-			});
+		const startScan = () => {
+			scout.scan();
 		};
 		const claim = async () => {
 			if (release !== null || controller.signal.aborted) return;
@@ -13248,7 +15060,7 @@ async function apply(ctx, config) {
 			}
 			release = acquired;
 			scout.setLead(true);
-			startBackfill();
+			startScan();
 		};
 		/** 持有锁时确认锁文件仍记着本进程；没有锁时尝试获取。 */
 		const keepLock = async () => {
@@ -13265,7 +15077,7 @@ async function apply(ctx, config) {
 		};
 		const timer = setInterval(() => {
 			const enabled = settings().discovery;
-			if (enabled && !discovery && release !== null) startBackfill();
+			if (enabled && !discovery && release !== null) startScan();
 			discovery = enabled;
 			keepLock().catch((error) => {
 				ctx.logger.warn("skill-scout: checking the work lock failed: %s", String(error));

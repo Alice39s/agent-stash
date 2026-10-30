@@ -1,0 +1,57 @@
+/* 照宿主 QuestionComposer .pager / .progress：位置标签一行显示，不换行。 */
+.pager {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+}
+
+.position {
+  padding: 0 4px;
+  border: 0;
+  border-radius: var(--dsw-radius-sm);
+  background: transparent;
+  font: var(--dsw-font-xs-strong-13);
+  font-variant-numeric: tabular-nums;
+  color: var(--dsw-alias-label-secondary);
+  white-space: nowrap;
+  word-spacing: -2px;
+  cursor: pointer;
+  transition: background-color var(--ds-transition-duration-fast) var(--ds-ease-in-out);
+}
+
+.position:hover,
+.position[aria-expanded="true"] {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.position:focus-visible {
+  outline: 2px solid var(--dsw-alias-state-business-primary);
+  outline-offset: 1px;
+}
+
+.entry {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.entryTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.entryWord {
+  flex: none;
+  font: var(--dsw-font-xxs-12);
+  color: var(--dsw-alias-label-tertiary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .position {
+    transition: none;
+  }
+}

@@ -1,0 +1,33 @@
+/* 照宿主 PluginManagerPage .addGroup / .addPrimary / .addMore：两段 32px，中间一条半透明细线。 */
+.split {
+  display: inline-flex;
+  flex: none;
+  align-items: stretch;
+}
+
+.primary,
+.more {
+  height: 32px;
+  border-radius: var(--dsw-radius-md);
+  font: var(--dsw-font-xxs-12);
+}
+
+.primary {
+  gap: 6px;
+  padding: 0 12px;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.primary[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.more {
+  width: 32px;
+  padding: 0;
+  border-left: 0.5px solid color-mix(in srgb, var(--dsw-alias-bg-base) 30%, transparent);
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}

@@ -357,22 +357,45 @@ export function memoryDomain<T>(spec: DshDomainSpec<T>): DshDomain<T> {
   };
 }
 
-/** 按 id 提供会话日志的 sessionQuery。 */
-export function logQuery(
-  logs: readonly DshSessionLog[],
-): DshSessionQuery & { add(log: DshSessionLog): void } {
+/**
+ * 按 id 提供会话日志的 sessionQuery；会话不存在时与 DSH 一样以 `code: "session/not-found"` 拒绝。
+ * `fail` 里的会话读取时抛出给定的错误，模拟损坏的日志；`gate` 里的会话等到对应的 Promise 兑现才返回。
+ */
+export function logQuery(logs: readonly DshSessionLog[]): DshSessionQuery & {
+  add(log: DshSessionLog): void;
+  /** 删除一个会话，之后读取它与 DSH 一样以 `session/not-found` 拒绝。 */
+  remove(id: string): void;
+  readonly fail: Map<string, Error>;
+  readonly gate: Map<string, Promise<void>>;
+  readonly reads: string[];
+} {
   const byId = new Map(logs.map((log) => [log.session.id, log]));
+  const fail = new Map<string, Error>();
+  const gate = new Map<string, Promise<void>>();
+  const reads: string[] = [];
   return {
+    fail,
+    gate,
+    reads,
     add(log) {
       byId.set(log.session.id, log);
+    },
+    remove(id) {
+      byId.delete(id);
     },
     listSessions: async () =>
       [...byId.values()]
         .map((log) => ({ header: log.session, live: false }))
         .toSorted((a, b) => b.header.createdAt - a.header.createdAt),
     readSession: async (id) => {
+      reads.push(id);
+      await gate.get(id);
+      const failure = fail.get(id);
+      if (failure !== undefined) throw failure;
       const log = byId.get(id);
-      if (log === undefined) throw new Error(`没有会话 ${id}`);
+      if (log === undefined) {
+        throw Object.assign(new Error(`session "${id}" not found`), { code: "session/not-found" });
+      }
       return log;
     },
   };
@@ -381,12 +404,50 @@ export function logQuery(
 /** 模型的一次回答：返回分块序列的函数。 */
 export type Answer = (options: DshGenerateOptions) => AsyncIterable<DshStreamChunk>;
 
+/** 一次回答的用量；未命中缓存的输入与输出之外，缓存读写可以缺省。 */
+export interface AnswerUsage {
+  readonly inputTokens: number;
+  readonly outputTokens: number;
+  readonly cacheReadTokens?: number;
+  readonly cacheWriteTokens?: number;
+}
+
 /** 正常结束的文本回答。 */
-export function answerText(text: string): Answer {
+export function answerText(
+  text: string,
+  usage: AnswerUsage = { inputTokens: 1200, outputTokens: 300 },
+): Answer {
   return async function* () {
     yield { type: "text-delta", index: 0, text };
-    yield { type: "usage", usage: { inputTokens: 1200, outputTokens: 300 } };
+    yield { type: "usage", usage };
     yield { type: "finish", reason: { kind: "stop" } };
+  };
+}
+
+/**
+ * 分几步给出的回答：先推理，再分两段写正文，每一步之前等测试放行，用来观察进度。
+ * @returns 回答，以及依次放行推理、第一段正文、第二段正文与结束的函数。
+ */
+export function answerStaged(text: string): { readonly answer: Answer; release(): void } {
+  const gates = Array.from({ length: 4 }, () => Promise.withResolvers<void>());
+  let released = 0;
+  const half = Math.ceil(text.length / 2);
+  return {
+    release() {
+      gates[released]?.resolve();
+      released += 1;
+    },
+    answer: async function* () {
+      await gates[0]?.promise;
+      yield { type: "reasoning-delta" };
+      await gates[1]?.promise;
+      yield { type: "text-delta", index: 0, text: text.slice(0, half) };
+      await gates[2]?.promise;
+      yield { type: "text-delta", index: 0, text: text.slice(half) };
+      await gates[3]?.promise;
+      yield { type: "usage", usage: { inputTokens: 1000, outputTokens: 200 } };
+      yield { type: "finish", reason: { kind: "stop" } };
+    },
   };
 }
 

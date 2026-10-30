@@ -1,0 +1,32 @@
+/* 照宿主 TaskManagerPage .empty / .emptyGlyph / .emptyAction。 */
+.empty {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 20px;
+  text-align: center;
+  color: var(--dsw-alias-label-tertiary);
+}
+
+.glyph {
+  display: inline-flex;
+  margin-bottom: 12px;
+  color: var(--dsw-alias-label-caption);
+}
+
+.text {
+  margin: 0;
+  font: var(--dsw-font-s-14);
+}
+
+.detail {
+  margin: 4px 0 0;
+  font: var(--dsw-font-xxs-12);
+  font-variant-numeric: tabular-nums;
+}
+
+.action {
+  margin-top: 16px;
+}

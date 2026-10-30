@@ -1,35 +1,56 @@
 /**
- * 一条建议的详情：摘要、证据、Skill 预览与编辑、文件改动，以及生成摘要、同意生成草稿、保存、忽略、撤销。
- * 证据、摘要与草稿从 Host 读取；建议的状态跟随收件箱刷新，状态或更新时间变化时重新读取详情。
+ * 一条建议的详情面板，嵌在会话视图与「历史回溯提炼」页的详情栏（design 3.6）：
+ * 固定的标题区（标题、来源标签、元信息、同一线索的分页器、生命周期步骤与下一步说明）、内容 Tab 条
+ * （摘要、Skill、改动、证据，尾部是作用于当前 Tab 的图标按钮）、唯一滚动的正文，以及固定的底部操作栏。
+ * 证据、摘要与草稿从 Host 读取；卡片的状态跟随收件箱刷新，状态或更新时间变化时重新读取详情。
  */
 import {
-  Button,
   DiffBlock,
-  IconCheckOutlineRegular,
-  IconCloseOutlineRegular,
+  IconChevronLeftOutlineRegular,
+  IconChevronRightOutlineRegular,
+  IconEditOutlineRegular,
+  IconEllipsisOutlineRegular,
+  IconRefreshOutlineRegular,
   MarkdownText,
-  SegmentedControl,
-  TextShimmer,
+  Menu,
+  PathLabel,
+  StateDot,
+  Tag,
+  type StateDotState,
 } from "@deepseek-ai/dsh-client-ui-primitives";
-import { useEffect, useId, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useId, useMemo, useState, type ReactNode } from "react";
 import * as v from "valibot";
 import {
   SkillFieldsSchema,
   type Action,
   type DetailView,
   type EvidenceEpisode,
+  type EvidenceOp,
+  type InboxView,
   type ItemView,
   type PreviewView,
   type SkillFields,
+  type TaskView,
 } from "../shared.ts";
-import { Dialog } from "./dialog.tsx";
 import styles from "./detail.module.css";
-import { ago, sessionCount, shortPath, stateLabel, titleOf } from "./format.ts";
+import type { ScoutFace } from "./face.ts";
+import { absolute, ago, counted, itemStatus, stateLabel, taskStatus, titleOf } from "./format.ts";
+import { errorText, useLoaded, useNow, type Loaded } from "./hooks.ts";
+import { lifecycleOf } from "./lifecycle.ts";
 import type { ScoutKey, ScoutTranslate } from "./locale.ts";
+import { Working } from "./progress.tsx";
 import type { InboxStore, Notice } from "./store.ts";
+import { ActionButton } from "./ui/action-button.tsx";
+import { DetailTabs } from "./ui/detail-tabs.tsx";
+import { IconButton } from "./ui/icon-button.tsx";
+import { ErrorNotice, LimitNotice } from "./ui/notice.tsx";
+import { Pager } from "./ui/pager.tsx";
+import { Skeleton } from "./ui/skeleton.tsx";
+import { SplitButton } from "./ui/split-button.tsx";
+import { Steps } from "./ui/steps.tsx";
 
-type Tab = "summary" | "evidence" | "skill" | "changes";
-type Busy = "summarize" | "draft" | "save" | "dismiss" | "undo" | "restore" | null;
+type Tab = "summary" | "skill" | "changes" | "evidence";
+type Busy = "summarize" | "draft" | "save" | "dismiss" | "similar" | "undo" | "restore" | null;
 
 /** 两个阶段此刻使用的模型名称；没有可用模型时为 null。 */
 export interface StageModels {
@@ -38,25 +59,19 @@ export interface StageModels {
 }
 
 export interface DetailProps {
-  readonly id: string;
   readonly item: ItemView;
   readonly inbox: InboxStore;
-  /** 读取详情；`version` 标识建议的状态，变化时重新读取。 */
-  readonly loadDetail: (id: string, version: string, signal: AbortSignal) => Promise<DetailView>;
+  readonly loadDetail: (id: string, signal: AbortSignal) => Promise<DetailView>;
   readonly models: StageModels;
   readonly defaultScope: "project" | "user";
   readonly openSession: ((sessionId: string) => void) | null;
   readonly t: ScoutTranslate;
-  readonly onClose: () => void;
-}
-
-type Loaded<T> =
-  | { readonly status: "loading" }
-  | { readonly status: "ready"; readonly value: T }
-  | { readonly status: "error"; readonly error: string };
-
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+  /** 切换到同一线索的另一个 idea。 */
+  readonly onSelect: (id: string) => void;
+  /** `page`：主区域的详情栏；`pane`：会话视图的详情栏。 */
+  readonly size: "page" | "pane";
+  /** 单栏布局里回到列表；只在单栏时传入，两栏时不渲染返回按钮。 */
+  readonly onBack?: (() => void) | undefined;
 }
 
 /** Markdown 与 diff 视图的文案。 */
@@ -78,79 +93,122 @@ function useLabels(t: ScoutTranslate) {
         copied: t("code.copied"),
         collapse: t("diff.collapse"),
         collapseAria: t("diff.collapseAria"),
-        expand: (count: number) => t("diff.expand", { count }),
-        expandAria: (count: number) => t("diff.expand", { count }),
+        expand: (count: number) =>
+          t(count === 1 ? "diff.expand.one" : "diff.expand.other", { count }),
+        expandAria: (count: number) =>
+          t(count === 1 ? "diff.expand.one" : "diff.expand.other", { count }),
       },
     };
   }, [t]);
 }
 
-interface EvidenceProps {
-  readonly episode: EvidenceEpisode;
-  readonly now: number;
-  readonly openSession: ((sessionId: string) => void) | null;
-  readonly t: ScoutTranslate;
-}
-
-const ROLE_KEYS: Readonly<Record<NonNullable<EvidenceEpisode["ops"][number]["role"]>, ScoutKey>> = {
+const ROLE_KEYS: Readonly<Record<NonNullable<EvidenceOp["role"]>, ScoutKey>> = {
   verify: "role.verify",
   failure: "role.failure",
   fix: "role.fix",
   recovered: "role.recovered",
 };
 
-function Episode({ episode, now, openSession, t }: EvidenceProps): ReactNode {
-  const outcome = `outcome.${episode.outcome}`;
+const OUTCOMES: ReadonlySet<string> = new Set<TaskView["outcome"]>([
+  "verified",
+  "succeeded",
+  "unverified",
+  "disputed",
+  "failed",
+  "aborted",
+]);
+
+function isOutcome(outcome: string): outcome is TaskView["outcome"] {
+  return OUTCOMES.has(outcome);
+}
+
+/** 一次操作的状态点：失败为错误，通过检查或修复后通过为完成，其余为空闲。 */
+function opDot(op: EvidenceOp): "error" | "done" | "idle" {
+  if (!op.ok) return "error";
+  return op.role === "verify" || op.role === "recovered" ? "done" : "idle";
+}
+
+interface EpisodeProps {
+  readonly episode: EvidenceEpisode;
+  readonly now: number;
+  readonly openSession: ((sessionId: string) => void) | null;
+  readonly t: ScoutTranslate;
+}
+
+/** 证据里的一个任务：请求、结果与时间，以及按顺序列出的全部操作。 */
+function Episode({ episode, now, openSession, t }: EpisodeProps): ReactNode {
+  const status = isOutcome(episode.outcome) ? taskStatus(t, episode.outcome) : null;
   return (
     <section className={styles.episode} aria-label={episode.goal}>
       <div className={styles.episodeHead}>
-        <span className={styles.ref}>{episode.ref}</span>
+        <span className={styles.marker}>
+          <StateDot state={status?.dot ?? "idle"} />
+        </span>
         <div className={styles.episodeText}>
-          <p className={styles.goal}>{episode.goal}</p>
+          <h3 className={styles.episodeGoal}>
+            <span className={styles.ref}>{episode.ref}</span>
+            {episode.goal}
+          </h3>
           <p className={styles.meta}>
-            <span data-outcome={episode.outcome}>
-              {isKey(outcome) ? t(outcome) : episode.outcome}
+            <span className={styles.metaItem} data-ink={status?.ink ?? "tertiary"}>
+              {status?.word ?? episode.outcome}
             </span>
-            <span>{ago(t, episode.at, now)}</span>
-            {episode.cwd !== null && <span className={styles.path}>{shortPath(episode.cwd)}</span>}
+            <time className={styles.metaItem} title={absolute(episode.at, t("chart.locale"))}>
+              {ago(t, episode.at, now)}
+            </time>
+            {episode.cwd !== null && (
+              <span className={styles.metaItem} data-fill="">
+                <PathLabel path={episode.cwd} />
+              </span>
+            )}
           </p>
         </div>
         {openSession !== null && (
-          <Button size="sm" variant="ghost" onClick={() => openSession(episode.sessionId)}>
-            {t("detail.openSession")}
-          </Button>
+          <IconButton
+            size={24}
+            label={t("detail.openSession")}
+            onClick={() => openSession(episode.sessionId)}
+          >
+            <IconChevronRightOutlineRegular size={14} />
+          </IconButton>
         )}
       </div>
       <ol className={styles.ops} aria-label={t("evidence.list", { ref: episode.ref })}>
-        {episode.ops.map((op) => (
-          <li key={op.ref} className={styles.op} data-ok={op.ok} data-cited={op.cited || undefined}>
-            <span className={styles.opGlyph} aria-hidden="true">
-              {op.ok ? (
-                <IconCheckOutlineRegular size={12} />
-              ) : (
-                <IconCloseOutlineRegular size={12} />
-              )}
-            </span>
-            <span className={styles.opBody}>
-              <code className={styles.opLabel} data-kind={op.kind}>
-                {op.label}
-              </code>
-              <span className={styles.opTags}>
-                {op.role !== null && <span className={styles.tag}>{t(ROLE_KEYS[op.role])}</span>}
-                {op.cited && (
-                  <span className={styles.tag} data-cited="">
-                    {t("role.cited")}
+        {episode.ops.map((op) => {
+          const notes = [
+            ...(op.role === null ? [] : [t(ROLE_KEYS[op.role])]),
+            ...(op.cited ? [t("role.cited")] : []),
+            ...(op.exit !== null && op.exit !== 0 ? [t("evidence.exit", { code: op.exit })] : []),
+          ];
+          return (
+            <li
+              key={op.ref}
+              className={styles.op}
+              data-ok={op.ok}
+              data-cited={op.cited || undefined}
+            >
+              <span className={styles.marker}>
+                <StateDot state={opDot(op)} />
+              </span>
+              <span className={styles.opBody}>
+                <code className={styles.opLabel} data-kind={op.kind}>
+                  {op.label}
+                </code>
+                {notes.length > 0 && (
+                  <span className={styles.meta}>
+                    {notes.map((note) => (
+                      <span key={note} className={styles.metaItem}>
+                        {note}
+                      </span>
+                    ))}
                   </span>
                 )}
-                {op.exit !== null && op.exit !== 0 && (
-                  <span className={styles.tag}>{t("evidence.exit", { code: op.exit })}</span>
-                )}
+                {op.error !== null && <code className={styles.opError}>{op.error}</code>}
               </span>
-              {op.error !== null && <span className={styles.opError}>{op.error}</span>}
-            </span>
-            <span className={styles.opRef}>{op.ref}</span>
-          </li>
-        ))}
+              <span className={styles.opRef}>{op.ref}</span>
+            </li>
+          );
+        })}
       </ol>
       {episode.reads > 0 && (
         <p className={styles.note}>
@@ -160,30 +218,19 @@ function Episode({ episode, now, openSession, t }: EvidenceProps): ReactNode {
         </p>
       )}
       {keyed(episode.steering).map(({ key, text }) => (
-        <p key={key} className={styles.note}>
-          {t("evidence.steering")}: {text}
+        <p key={key} className={styles.quote}>
+          <span className={styles.label}>{t("evidence.steering")}</span>
+          {text}
         </p>
       ))}
       {episode.followup !== null && (
-        <p className={styles.note}>
-          {t("evidence.followup")}: {episode.followup}
+        <p className={styles.quote}>
+          <span className={styles.label}>{t("evidence.followup")}</span>
+          {episode.followup}
         </p>
       )}
     </section>
   );
-}
-
-const KEYS = new Set<string>([
-  "outcome.verified",
-  "outcome.succeeded",
-  "outcome.unverified",
-  "outcome.disputed",
-  "outcome.failed",
-  "outcome.aborted",
-]);
-
-function isKey(key: string): key is ScoutKey {
-  return KEYS.has(key);
 }
 
 interface FieldsEditorProps {
@@ -196,11 +243,11 @@ function FieldsEditor({ fields, onChange, t }: FieldsEditorProps): ReactNode {
   const id = useId();
   const field = (key: keyof SkillFields, rows: number, mono = false): ReactNode => (
     <label className={styles.field} htmlFor={`${id}-${key}`}>
-      <span className={styles.fieldLabel}>{t(`skill.${key}`)}</span>
+      <span className={styles.label}>{t(`skill.${key}`)}</span>
       {rows === 1 ? (
         <input
           id={`${id}-${key}`}
-          className={styles.input}
+          className={`${styles.input} ${styles.mono}`}
           value={fields[key]}
           spellCheck={false}
           onChange={(event) => onChange({ ...fields, [key]: event.target.value })}
@@ -236,53 +283,100 @@ function keyed(lines: readonly string[]): { readonly key: string; readonly text:
   });
 }
 
-/** 摘要占位条的宽度：几行短文本。 */
-const SUMMARY_BARS = ["88%", "72%", "46%"] as const;
-/** 草稿占位条的宽度，按 SKILL.md 的排版：标题、描述，空一行，一节标题与几行步骤；空串是段间空行。 */
-const DRAFT_BARS = ["36%", "94%", "82%", "", "22%", "90%", "74%", "84%", "58%"] as const;
-/** 相邻占位条的起伏错开的时间，连起来是一道自上而下的波。 */
-const BAR_STAGGER = 70;
+/** 比较标题时忽略大小写、空白与连字符。 */
+function normalized(text: string): string {
+  return text
+    .trim()
+    .toLowerCase()
+    .replaceAll(/[\s_-]+/gu, " ");
+}
 
-/** 模型写作时的占位：按最终排版画出的几条横条，依次快速明暗起伏；减少动态效果时静止。 */
-function Skeleton({ bars }: { readonly bars: readonly string[] }): ReactNode {
+/**
+ * 去掉正文开头与面板标题或 Skill 名称重复的一、二级标题。
+ * @internal 导出供测试使用。
+ */
+export function withoutTitle(body: string, titles: readonly string[]): string {
+  const match = /^\s*#{1,2}[ \t]+([^\n]+?)[ \t#]*(?:\n|$)/u.exec(body);
+  if (match === null) return body;
+  const heading = normalized(match[1] ?? "");
+  return titles.some((title) => normalized(title) === heading)
+    ? body.slice(match[0].length).trimStart()
+    : body;
+}
+
+/** 一段带标签的正文。 */
+/** 步骤条下面一行的文字；失败时用错误墨色。 */
+interface NextLine {
+  readonly text: string;
+  readonly failed: boolean;
+}
+
+function line(text: string): NextLine {
+  return { text, failed: false };
+}
+
+function block(label: string, children: ReactNode): ReactNode {
   return (
-    <div className={styles.skeleton} aria-hidden="true">
-      {keyed(bars).map(({ key, text: width }, index) =>
-        width === "" ? (
-          <span key={key} className={styles.skeletonGap} />
-        ) : (
-          <span
-            key={key}
-            className={styles.skeletonBar}
-            style={{ width, animationDelay: `${String(index * BAR_STAGGER)}ms` }}
-          />
-        ),
-      )}
-    </div>
+    <section className={styles.block} aria-label={label}>
+      <h3 className={styles.label}>{label}</h3>
+      {children}
+    </section>
   );
 }
 
-/** 模型正在处理时的一行状态与占位。 */
-function Working({
-  label,
-  bars,
+/** 详情面板；换一张卡片时编辑、预览与页签都重新开始。 */
+export function DetailPanel(props: DetailProps): ReactNode {
+  return <Detail key={props.item.id} {...props} />;
+}
+
+/** 按收件箱里的工作状态（两个阶段的模型、默认保存位置）显示一张卡片的详情。 */
+export function ItemDetail({
+  face,
+  view,
+  item,
+  t,
+  onSelect,
+  size,
+  onBack,
 }: {
-  readonly label: string;
-  readonly bars: readonly string[];
+  readonly face: ScoutFace;
+  readonly view: InboxView;
+  readonly item: ItemView;
+  readonly t: ScoutTranslate;
+  readonly onSelect: (id: string) => void;
+  readonly size: "page" | "pane";
+  readonly onBack?: (() => void) | undefined;
 }): ReactNode {
+  const { models, scope } = view.status;
   return (
-    <div className={styles.working}>
-      <p className={styles.workingLabel} role="status">
-        <TextShimmer active>{label}</TextShimmer>
-      </p>
-      <Skeleton bars={bars} />
-    </div>
+    <DetailPanel
+      item={item}
+      inbox={face.inbox}
+      loadDetail={face.loadDetail}
+      models={{ summary: models.summary?.model ?? null, draft: models.draft?.model ?? null }}
+      defaultScope={scope}
+      openSession={face.openSession}
+      t={t}
+      onSelect={onSelect}
+      size={size}
+      onBack={onBack}
+    />
   );
 }
 
-/** 一条建议的详情对话框。 */
-export function Detail({
-  id,
+const CAUTIONS = new Set<string>([
+  "caution.sudo",
+  "caution.force-push",
+  "caution.no-verify",
+  "caution.chmod-777",
+  "caution.recursive-delete",
+]);
+
+function isCaution(key: string): key is ScoutKey {
+  return CAUTIONS.has(key);
+}
+
+function Detail({
   item,
   inbox,
   loadDetail,
@@ -290,11 +384,13 @@ export function Detail({
   defaultScope,
   openSession,
   t,
-  onClose,
+  onSelect,
+  size,
+  onBack,
 }: DetailProps): ReactNode {
+  const id = item.id;
   const tabsId = useId();
   const labels = useLabels(t);
-  const [detail, setDetail] = useState<Loaded<DetailView>>({ status: "loading" });
   /** 用户选中的页签；为 null 时跟随状态：草稿生成中与可以保存时看 Skill，其余看摘要。 */
   const [chosenTab, setChosenTab] = useState<Tab | null>(null);
   const [scope, setScope] = useState(defaultScope);
@@ -304,24 +400,19 @@ export function Detail({
   const [preview, setPreview] = useState<Loaded<PreviewView> | null>(null);
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
-  const [now] = useState(() => Date.now());
+  const [more, setMore] = useState(false);
+  const now = useNow(60_000);
 
-  // 建议的状态或更新时间变化时重新读取详情：摘要与草稿都在模型回复之后才有。
+  // 面板开着时这张卡片的请求结束不另行提示，待决定的摘要与草稿也算看过。
+  useEffect(() => inbox.watch(id), [inbox, id]);
+
+  // 卡片的状态或更新时间变化时重新读取详情：摘要与草稿都在模型回复之后才有。
   const version = `${item.state}:${String(item.updatedAt)}`;
-  useEffect(() => {
-    const controller = new AbortController();
-    loadDetail(id, version, controller.signal).then(
-      (value) => {
-        if (controller.signal.aborted) return;
-        setDetail({ status: "ready", value });
-      },
-      (reason: unknown) => {
-        if (controller.signal.aborted) return;
-        setDetail({ status: "error", error: message(reason) });
-      },
-    );
-    return () => controller.abort();
-  }, [id, version, loadDetail]);
+  const load = useCallback(
+    (_version: string, signal: AbortSignal) => loadDetail(id, signal),
+    [loadDetail, id],
+  );
+  const detail = useLoaded(load, version);
 
   const value = detail.status === "ready" ? detail.value : null;
   const create = item.decision === "suggest_create";
@@ -335,6 +426,7 @@ export function Detail({
   const draftFailed = item.state === "failed" && item.failure?.stage === "draft";
   /** 摘要已经给出计划，等用户同意生成草稿。 */
   const awaitingConsent = proposal && (item.state === "proposed" || draftFailed);
+  const edited = (create ? fields : section) !== null;
 
   // 「改动」页与保存前都需要 Host 渲染的最终文件；编辑后稍等再请求。
   const wantPreview = drafted && item.state === "ready";
@@ -363,7 +455,7 @@ export function Detail({
               });
           },
           (reason: unknown) => {
-            if (!stale) setPreview({ status: "error", error: message(reason) });
+            if (!stale) setPreview({ status: "error", error: errorText(reason) });
           },
         );
       },
@@ -387,7 +479,7 @@ export function Detail({
       if (!result.ok) setError(t(`error.${result.error.kind}`));
       return result.ok;
     } catch (reason) {
-      setError(t("error.request", { error: message(reason) }));
+      setError(t("error.request", { error: errorText(reason) }));
       return false;
     } finally {
       setBusy(null);
@@ -407,17 +499,21 @@ export function Detail({
     setChosenTab(null);
     void run("draft", { action: "draft", id });
   };
-  const dismiss = async (similar: boolean): Promise<void> => {
-    const ok = await run(
-      "dismiss",
+  const dismiss = (similar: boolean): void => {
+    void run(
+      similar ? "similar" : "dismiss",
       { action: "dismiss", id, similar },
       {
         key: similar ? "notice.dismissedSimilar" : "notice.dismissed",
         params: {},
         undo: { action: "restore", id },
+        view: null,
       },
     );
-    if (ok) onClose();
+  };
+  const reset = (): void => {
+    if (create) setFields(null);
+    else setSection(null);
   };
   const save = async (): Promise<void> => {
     const ok = await run(
@@ -436,6 +532,7 @@ export function Detail({
         key: "notice.written",
         params: { skill: draft?.name ?? skillName },
         undo: { action: "undo", id },
+        view: null,
       },
     );
     if (ok) {
@@ -443,7 +540,27 @@ export function Detail({
       setPreview(null);
     }
   };
+  const undo = (): void => {
+    void run(
+      "undo",
+      { action: "undo", id },
+      {
+        key: "notice.undone",
+        params: { skill: item.write?.skill ?? skillName },
+        undo: null,
+        view: null,
+      },
+    );
+  };
+  const restore = (): void => {
+    void run(
+      "restore",
+      { action: "restore", id },
+      { key: "notice.restored", params: {}, undo: null, view: null },
+    );
+  };
 
+  // 内容 Tab 的顺序固定，没有内容的 Tab 不出现。
   const tabs: { value: Tab; label: string }[] = [
     { value: "summary", label: t("detail.tab.summary") },
     ...(item.state === "drafting" || drafted
@@ -452,38 +569,81 @@ export function Detail({
     ...(item.state === "ready" && drafted
       ? [{ value: "changes" as const, label: t("detail.tab.changes") }]
       : []),
-    { value: "evidence", label: t("detail.tab.evidence") },
+    ...((value?.episodes.length ?? 0) > 0
+      ? [{ value: "evidence" as const, label: t("detail.tab.evidence") }]
+      : []),
   ];
   const autoTab: Tab = item.state === "drafting" || item.state === "ready" ? "skill" : "summary";
   const wanted = chosenTab ?? autoTab;
   const activeTab = tabs.some((entry) => entry.value === wanted) ? wanted : "summary";
 
-  const subtitle = [
-    t(`kind.${item.kind}`),
-    sessionCount(t, item.occurrences),
-    value?.draftCall != null
-      ? t("detail.draftedBy", { model: value.draftCall.model })
-      : value?.summary != null
-        ? t("detail.summarizedBy", { model: value.summary.model })
-        : stateLabel(t, item),
-  ].join(" · ");
+  const writable = !(
+    preview?.status === "ready" &&
+    preview.value.kind === "improve" &&
+    !preview.value.writable
+  );
+  const notWritable = writable ? null : t("skill.notWritable", { skill: skillName });
 
-  const failure = (stage: "summary" | "draft"): ReactNode =>
-    item.state === "failed" && item.failure?.stage === stage ? (
-      <p className={styles.failure} role="alert">
-        {t(stage === "summary" ? "detail.failed.summary" : "detail.failed.draft", {
-          kind: t(`failure.${item.failure.kind}`),
-        })}
-        <span className={styles.failureDetail}>{item.failure.message}</span>
-      </p>
-    ) : null;
+  /**
+   * 步骤条下面一行（design 4.6），每种状态都有：能操作时以底栏主操作的动词开头，
+   * 运行中写这一步会产出什么，失败时写原因。
+   */
+  const nextStep = (): NextLine => {
+    const { state } = item;
+    if (state === "failed") {
+      return {
+        text:
+          item.failure === null
+            ? t(draftFailed ? "state.draftFailed" : "state.failed")
+            : t(draftFailed ? "detail.failed.draft" : "detail.failed.summary", {
+                kind: t(`failure.${item.failure.kind}`),
+              }),
+        failed: true,
+      };
+    }
+    if (state === "detected" || state === "skipped") {
+      if (models.summary === null) return line(t("detail.noSummaryModel"));
+      return line(
+        t(state === "detected" ? "detail.next.summarize" : "detail.next.resummarize", {
+          model: models.summary,
+        }),
+      );
+    }
+    if (state === "summarizing") return line(t("detail.next.summarizing"));
+    if (state === "proposed") {
+      return line(
+        models.draft === null
+          ? t("detail.noDraftModel")
+          : t("detail.next.draft", { model: models.draft }),
+      );
+    }
+    if (state === "drafting") {
+      return line(
+        create ? t("detail.next.drafting") : t("detail.next.draftingImprove", { skill: skillName }),
+      );
+    }
+    if (state === "ready") {
+      return line(create ? t("detail.next.save") : t("detail.next.improve", { skill: skillName }));
+    }
+    if (state === "dismissed") return line(t("detail.next.restore"));
+    if (item.write === null) return line(t("written.unknown"));
+    return line(
+      `${t("written.path", { path: item.write.path })} · ${
+        item.write.discovered
+          ? t("written.discovered")
+          : item.write.checking
+            ? t("written.checking")
+            : t("written.missing")
+      }`,
+    );
+  };
 
-  /** 规则匹配到的步骤，原来的写法。 */
+  /** 规则匹配到的步骤，原来的写法，按顺序列出。 */
   const steps = (): ReactNode =>
     item.steps.length === 0 ? null : (
-      <section className={styles.block}>
-        <h3 className={styles.heading}>{t("detail.steps")}</h3>
-        <ol className={styles.steps}>
+      <section className={styles.block} aria-label={t("detail.steps")}>
+        <h3 className={styles.label}>{t("detail.steps")}</h3>
+        <ol className={styles.sequence}>
           {keyed(item.steps).map(({ key, text }) => (
             <li key={key}>
               <code>{text}</code>
@@ -493,180 +653,132 @@ export function Detail({
       </section>
     );
 
+  /** 失败时模型或 Host 给出的原始说明。 */
+  const failureDetail = (stage: "summary" | "draft"): ReactNode =>
+    item.state === "failed" && item.failure?.stage === stage && item.failure.message !== "" ? (
+      <section className={styles.block} aria-label={t("detail.failureDetail")}>
+        <h3 className={styles.label}>{t("detail.failureDetail")}</h3>
+        <p className={styles.failureDetail}>{item.failure.message}</p>
+      </section>
+    ) : null;
+
   /** 摘要里的方案：发现了什么、Skill 做什么、何时使用、将要新建或改进哪个 Skill 与提纲、风险、验证方式。 */
   const plan = (): ReactNode => (
-    <dl className={styles.summary}>
-      <dt>{t("detail.found")}</dt>
-      <dd>{item.found}</dd>
-      <dt>{t("detail.description")}</dt>
-      <dd>{item.description}</dd>
-      {item.trigger !== null && (
+    <>
+      {item.found !== null &&
+        block(t("detail.found"), <p className={styles.prose}>{item.found}</p>)}
+      {item.description !== null &&
+        block(t("detail.description"), <p className={styles.prose}>{item.description}</p>)}
+      {item.trigger !== null &&
+        block(t("detail.trigger"), <p className={styles.prose}>{item.trigger}</p>)}
+      {block(
+        t("detail.plan"),
         <>
-          <dt>{t("detail.trigger")}</dt>
-          <dd>{item.trigger}</dd>
-        </>
+          <p className={styles.prose}>
+            {t(create ? "detail.plan.create" : "detail.plan.improve")}{" "}
+            <code className={styles.code}>{skillName}</code>
+          </p>
+          <ol className={styles.outline}>
+            {keyed(item.outline).map(({ key, text }) => (
+              <li key={key}>{text}</li>
+            ))}
+          </ol>
+        </>,
       )}
-      <dt>{t("detail.plan")}</dt>
-      <dd>
-        <p className={styles.planTarget}>
-          <span>{t(create ? "detail.plan.create" : "detail.plan.improve")}</span>
-          <code>{skillName}</code>
-        </p>
-        <ol className={styles.outline}>
-          {keyed(item.outline).map(({ key, text }) => (
-            <li key={key}>{text}</li>
-          ))}
-        </ol>
-      </dd>
-      {item.risks.length > 0 && (
-        <>
-          <dt>{t("detail.risks")}</dt>
-          <dd>
-            <ul className={styles.risks}>
-              {keyed(item.risks).map(({ key, text }) => (
-                <li key={key}>{text}</li>
-              ))}
-            </ul>
-          </dd>
-        </>
-      )}
-      {item.verification !== null && (
-        <>
-          <dt>{t("detail.verification")}</dt>
-          <dd>{item.verification}</dd>
-        </>
-      )}
-    </dl>
+      {item.risks.length > 0 &&
+        block(
+          t("detail.risks"),
+          <ul className={styles.outline}>
+            {keyed(item.risks).map(({ key, text }) => (
+              <li key={key}>{text}</li>
+            ))}
+          </ul>,
+        )}
+      {item.verification !== null &&
+        block(t("detail.verification"), <p className={styles.prose}>{item.verification}</p>)}
+    </>
   );
 
   const summaryTab = (): ReactNode => {
     if (item.state === "summarizing") {
       return (
-        <div className={styles.stack}>
-          <Working
-            label={t("detail.summarizing", { model: models.summary ?? "" })}
-            bars={SUMMARY_BARS}
-          />
+        <>
+          <Working stage="summary" progress={item.progress} model={models.summary} t={t} />
           {steps()}
-        </div>
+        </>
       );
     }
     if (proposal) {
       return (
-        <div className={styles.stack}>
+        <>
+          {failureDetail("draft")}
           {plan()}
-          {awaitingConsent && (
-            <div className={styles.callout}>
-              {failure("draft")}
-              <p className={styles.note}>
-                {models.draft === null
-                  ? t("detail.noDraftModel")
-                  : t("detail.consent", { model: models.draft })}
-              </p>
-            </div>
+          {awaitingConsent && models.draft !== null && (
+            <p className={styles.note}>{t("detail.consent", { model: models.draft })}</p>
           )}
-        </div>
+        </>
       );
     }
     if (item.decision === "skip") {
       return (
-        <div className={styles.stack}>
-          <div className={styles.callout}>
-            <p>{t("detail.skipped")}</p>
-            {item.reason !== null && <p className={styles.note}>{item.reason}</p>}
-          </div>
+        <>
+          <p className={styles.prose}>{t("detail.skipped")}</p>
+          {item.reason !== null &&
+            block(t("detail.reason"), <p className={styles.prose}>{item.reason}</p>)}
           {steps()}
-        </div>
+        </>
       );
     }
     return (
-      <div className={styles.stack}>
-        <div className={styles.callout}>
-          {failure("summary")}
-          <p>{t("detail.local")}</p>
-          {item.state !== "written" && item.state !== "dismissed" && (
-            <p className={styles.note}>
-              {models.summary === null
-                ? t("detail.noSummaryModel")
-                : t("detail.summaryNote", { count: item.sessions.length, model: models.summary })}
-            </p>
-          )}
-        </div>
+      <>
+        {failureDetail("summary")}
+        <p className={styles.prose}>{t("detail.local")}</p>
+        {item.state !== "written" && item.state !== "dismissed" && models.summary !== null && (
+          <p className={styles.note}>
+            {t(item.sessions.length === 1 ? "detail.summaryNote.one" : "detail.summaryNote.other", {
+              count: item.sessions.length,
+              model: models.summary,
+            })}
+          </p>
+        )}
         {steps()}
-      </div>
+      </>
     );
   };
 
-  const evidence = (): ReactNode => (
-    <div className={styles.stack}>
-      {value?.episodes.map((episode) => (
-        <Episode
-          key={episode.episodeId}
-          episode={episode}
-          now={now}
-          openSession={openSession}
-          t={t}
-        />
-      ))}
-    </div>
-  );
+  const evidence = (): ReactNode =>
+    value?.episodes.map((episode) => (
+      <Episode
+        key={episode.episodeId}
+        episode={episode}
+        now={now}
+        openSession={openSession}
+        t={t}
+      />
+    ));
 
   const cautions = (): ReactNode =>
     item.cautions.length === 0 ? null : (
-      <p className={styles.caution} role="note">
-        {t("detail.cautions", {
+      <LimitNotice
+        text={t("detail.cautions", {
           list: item.cautions
             .map((caution) => {
               const key = `caution.${caution}`;
               return isCaution(key) ? t(key) : caution;
             })
-            .join(", "),
+            .join(t("list.separator")),
         })}
-      </p>
+      />
     );
-
-  /** 草稿页签的工具栏：编辑、还原，以及按同一份摘要重新生成。 */
-  const toolbar = (lead: ReactNode): ReactNode => (
-    <div className={styles.toolbar}>
-      {lead}
-      <span className={styles.toolbarActions}>
-        {item.state === "ready" && (
-          <Button size="sm" variant="ghost" disabled={busy !== null} onClick={generate}>
-            {t("detail.redraft")}
-          </Button>
-        )}
-        {(create ? fields : section) !== null && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => (create ? setFields(null) : setSection(null))}
-          >
-            {t("skill.reset")}
-          </Button>
-        )}
-        <Button
-          size="sm"
-          variant="ghost"
-          onClick={() => setEditing(!editing)}
-          disabled={item.state !== "ready"}
-        >
-          {editing ? t("skill.preview") : t("skill.edit")}
-        </Button>
-      </span>
-    </div>
-  );
 
   const skill = (): ReactNode => {
     if (item.state === "drafting") {
-      return (
-        <Working label={t("detail.drafting", { model: models.draft ?? "" })} bars={DRAFT_BARS} />
-      );
+      return <Working stage="draft" progress={item.progress} model={models.draft} t={t} />;
     }
     if (create && draft !== null) {
       return (
-        <div className={styles.stack}>
+        <>
           {cautions()}
-          {toolbar(<span />)}
           {editing ? (
             <>
               <FieldsEditor fields={draft} onChange={setFields} t={t} />
@@ -678,10 +790,10 @@ export function Detail({
             </>
           ) : (
             <>
-              <dl className={styles.facts}>
+              <dl className={styles.fields}>
                 <dt>{t("skill.name")}</dt>
                 <dd>
-                  <code>{draft.name}</code>
+                  <code className={styles.code}>{draft.name}</code>
                 </dd>
                 <dt>{t("skill.description")}</dt>
                 <dd>{draft.description}</dd>
@@ -692,26 +804,23 @@ export function Detail({
                   </>
                 )}
               </dl>
-              <div className={styles.markdown}>
-                <MarkdownText text={draft.body} labels={labels.markdown} />
+              <div className={styles.document}>
+                <MarkdownText
+                  text={withoutTitle(draft.body, [titleOf(item), draft.name])}
+                  labels={labels.markdown}
+                />
               </div>
             </>
           )}
-        </div>
+        </>
       );
     }
     if (improve && shownSection !== null) {
-      const notWritable =
-        preview?.status === "ready" && preview.value.kind === "improve" && !preview.value.writable;
       return (
-        <div className={styles.stack}>
-          {notWritable && (
-            <p className={styles.caution}>{t("skill.notWritable", { skill: skillName })}</p>
-          )}
+        <>
+          {notWritable !== null && <LimitNotice text={notWritable} />}
           {cautions()}
-          {toolbar(
-            <span className={styles.heading}>{t("skill.section", { skill: skillName })}</span>,
-          )}
+          <h3 className={styles.label}>{t("skill.section", { skill: skillName })}</h3>
           {editing ? (
             <textarea
               className={`${styles.input} ${styles.mono}`}
@@ -721,11 +830,14 @@ export function Detail({
               onChange={(event) => setSection(event.target.value)}
             />
           ) : (
-            <div className={styles.markdown}>
-              <MarkdownText text={shownSection} labels={labels.markdown} />
+            <div className={styles.document}>
+              <MarkdownText
+                text={withoutTitle(shownSection, [titleOf(item)])}
+                labels={labels.markdown}
+              />
             </div>
           )}
-        </div>
+        </>
       );
     }
     return null;
@@ -740,18 +852,12 @@ export function Detail({
       );
     }
     if (preview.status === "error") {
-      return (
-        <p className={styles.failure} role="alert">
-          {t("changes.error", { error: preview.error })}
-        </p>
-      );
+      return <ErrorNotice text={t("changes.error", { error: preview.error })} />;
     }
     const file = preview.value;
     return (
-      <div className={styles.stack}>
-        {file.kind === "create" && file.exists && (
-          <p className={styles.caution}>{t("changes.exists")}</p>
-        )}
+      <>
+        {file.kind === "create" && file.exists && <LimitNotice text={t("changes.exists")} />}
         <DiffBlock
           diffs={[
             file.kind === "create"
@@ -761,232 +867,316 @@ export function Detail({
           labels={labels.diff}
           maxLines={400}
         />
-      </div>
+      </>
     );
   };
 
-  /** 右侧的主操作：随阶段从生成摘要、同意生成草稿到保存。 */
+  /** 底栏右侧的主操作：随阶段从生成摘要、同意生成草稿到保存；失败时是重试。 */
   const primary = (): ReactNode => {
     if (item.state === "summarizing" || item.state === "drafting") {
+      const label = stateLabel(t, item);
       return (
-        <Button size="sm" variant="primary" disabled>
-          {stateLabel(t, item)}
-        </Button>
+        <ActionButton
+          variant="primary"
+          label={label}
+          busyLabel={label}
+          busy
+          onClick={item.state === "summarizing" ? summarize : generate}
+        />
       );
     }
     if (awaitingConsent) {
       return (
-        <Button
-          size="sm"
+        <ActionButton
           variant="primary"
-          data-autofocus=""
-          disabled={models.draft === null || busy !== null}
+          label={
+            draftFailed
+              ? t("action.retry")
+              : create
+                ? t("detail.draft.create")
+                : t("detail.draft.improve")
+          }
+          busyLabel={t("state.drafting")}
+          busy={busy === "draft"}
+          disabled={busy !== null}
+          unavailable={models.draft === null ? t("detail.noDraftModel") : null}
           onClick={generate}
-        >
-          {draftFailed
-            ? t("detail.redraft")
-            : create
-              ? t("detail.draft.create")
-              : t("detail.draft.improve")}
-        </Button>
+        />
       );
     }
     if (item.state === "ready") {
-      const writable = !(
-        preview?.status === "ready" &&
-        preview.value.kind === "improve" &&
-        !preview.value.writable
-      );
-      return (
-        <>
-          {create && (
-            <SegmentedControl
-              id={`${tabsId}-scope`}
-              label={t("scope.label")}
-              value={scope}
-              disabled={busy !== null}
-              options={[
-                { value: "project", label: t("scope.project") },
-                { value: "user", label: t("scope.user") },
-              ]}
-              onChange={setScope}
-            />
-          )}
-          <Button
-            size="sm"
-            variant="primary"
-            data-autofocus=""
-            disabled={busy !== null || invalid || !writable}
+      const blocked = invalid ? t("skill.invalid") : notWritable;
+      if (create) {
+        return (
+          <SplitButton
+            label={t(scope === "project" ? "action.save.project" : "action.save.user")}
+            busyLabel={t("action.saving")}
+            busy={busy === "save"}
+            disabled={busy !== null}
+            unavailable={blocked}
             onClick={() => void save()}
-          >
-            {busy === "save"
-              ? t("action.saving")
-              : create
-                ? t("action.save")
-                : t("action.improve", { skill: skillName })}
-          </Button>
-        </>
+            choices={[
+              { id: "project", label: t("scope.project") },
+              { id: "user", label: t("scope.user") },
+            ]}
+            selected={scope}
+            onChoose={setScope}
+            labels={{ group: t("scope.label"), choose: t("scope.choose") }}
+          />
+        );
+      }
+      return (
+        <ActionButton
+          variant="primary"
+          label={t("action.improve", { skill: skillName })}
+          busyLabel={t("action.saving")}
+          busy={busy === "save"}
+          disabled={busy !== null}
+          unavailable={blocked}
+          onClick={() => void save()}
+        />
       );
     }
-    const again = item.decision === "skip" || item.failure !== null;
+    const failed = item.state === "failed";
     return (
-      <Button
-        size="sm"
+      <ActionButton
         variant={item.decision === "skip" ? "outline" : "primary"}
-        data-autofocus=""
-        disabled={models.summary === null || busy !== null}
+        label={
+          failed
+            ? t("action.retry")
+            : item.decision === "skip"
+              ? t("detail.resummarize")
+              : t("detail.summarize")
+        }
+        busyLabel={t("state.summarizing")}
+        busy={busy === "summarize"}
+        disabled={busy !== null}
+        unavailable={models.summary === null ? t("detail.noSummaryModel") : null}
         onClick={summarize}
-      >
-        {again ? t("detail.resummarize") : t("detail.summarize")}
-      </Button>
+      />
+    );
+  };
+
+  /** 底栏左侧的溢出菜单：忽略类似建议、放弃编辑。 */
+  const overflow = (): ReactNode => {
+    const entries = [
+      { id: "similar", label: t("action.dismissSimilar") },
+      ...(edited ? [{ id: "reset", label: t("skill.reset"), danger: true }] : []),
+    ];
+    return (
+      <Menu
+        open={more}
+        onClose={() => setMore(false)}
+        align="start"
+        side="top"
+        portal
+        autoFocus
+        items={entries}
+        onSelect={(entry) => {
+          setMore(false);
+          if (entry === "similar") dismiss(true);
+          if (entry === "reset") reset();
+        }}
+        anchor={
+          <IconButton
+            label={t("action.more")}
+            haspopup="menu"
+            expanded={more}
+            disabled={busy !== null}
+            onClick={() => setMore(!more)}
+          >
+            <IconEllipsisOutlineRegular size={14} />
+          </IconButton>
+        }
+      />
     );
   };
 
   const footer = (): ReactNode => {
-    if (item.state === "written" && item.write !== null) {
-      return (
-        <>
-          <p className={styles.written} role="status">
-            <span className={styles.writtenPath}>
-              {t("written.path", { path: shortPath(item.write.path) })}
-            </span>
-            <span>
-              {item.write.discovered
-                ? t("written.discovered")
-                : item.write.checking
-                  ? t("written.checking")
-                  : t("written.missing")}
-            </span>
-          </p>
-          <span className={styles.spacer} />
-          <Button
-            size="sm"
-            variant="outline"
-            disabled={busy !== null}
-            onClick={() =>
-              void run(
-                "undo",
-                { action: "undo", id },
-                {
-                  key: "notice.undone",
-                  params: { skill: item.write?.skill ?? skillName },
-                  undo: null,
-                },
-              )
-            }
-          >
-            {t("action.undo")}
-          </Button>
-          <Button size="sm" variant="primary" onClick={onClose} data-autofocus="">
-            {t("action.done")}
-          </Button>
-        </>
-      );
-    }
-    if (item.state === "dismissed") {
+    if (item.state === "written" || item.state === "dismissed") {
+      const written = item.state === "written";
       return (
         <>
           <span className={styles.spacer} />
-          <Button
-            size="sm"
+          <ActionButton
             variant="outline"
+            label={t(written ? "action.undo" : "action.restore")}
+            busyLabel={t(written ? "action.undoing" : "action.restoring")}
+            busy={busy === (written ? "undo" : "restore")}
             disabled={busy !== null}
-            onClick={() =>
-              void run(
-                "restore",
-                { action: "restore", id },
-                { key: "notice.restored", params: {}, undo: null },
-              )
-            }
-          >
-            {t("action.restore")}
-          </Button>
+            onClick={written ? undo : restore}
+          />
         </>
       );
     }
     return (
       <>
-        <Button
-          size="sm"
+        <ActionButton
           variant="ghost"
+          label={t("action.dismiss")}
+          busyLabel={t("action.dismissing")}
+          busy={busy === "dismiss" || busy === "similar"}
           disabled={busy !== null}
-          onClick={() => void dismiss(false)}
-        >
-          {t("action.dismiss")}
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          disabled={busy !== null}
-          onClick={() => void dismiss(true)}
-        >
-          {t("action.dismissSimilar")}
-        </Button>
+          onClick={() => dismiss(false)}
+        />
+        {overflow()}
         <span className={styles.spacer} />
         {primary()}
       </>
     );
   };
 
+  /** Skill Tab 尾部的图标按钮：编辑开关与按同一份摘要重新生成。 */
+  const tabActions =
+    activeTab === "skill" && item.state === "ready" && drafted ? (
+      <>
+        <IconButton label={t("skill.edit")} pressed={editing} onClick={() => setEditing(!editing)}>
+          <IconEditOutlineRegular size={14} />
+        </IconButton>
+        <IconButton
+          label={t("detail.redraft")}
+          disabled={busy !== null}
+          unavailable={models.draft === null ? t("detail.noDraftModel") : null}
+          onClick={generate}
+        >
+          <IconRefreshOutlineRegular size={14} />
+        </IconButton>
+      </>
+    ) : undefined;
+
+  const title = titleOf(item);
+  const lifecycle = lifecycleOf(t, item);
+  const next = nextStep();
+  const model =
+    value?.draftCall != null
+      ? t("detail.draftedBy", { model: value.draftCall.model })
+      : value?.summary != null
+        ? t("detail.summarizedBy", { model: value.summary.model })
+        : null;
+  const metadata = [
+    counted(t, "meta.sessions", item.occurrences),
+    ...(item.merged > 0 ? [t("meta.merged", { count: item.merged })] : []),
+    ...(model === null ? [] : [model]),
+  ];
+  const siblings = value?.siblings ?? [];
+
   return (
-    <Dialog
-      title={titleOf(item)}
-      subtitle={subtitle}
-      closeLabel={t("detail.close")}
-      busy={busy === "save" || busy === "undo"}
-      onClose={onClose}
-      footer={
-        <>
-          {error !== null && (
-            <p className={styles.actionError} role="alert">
-              {error}
-            </p>
-          )}
-          {footer()}
-        </>
-      }
+    <section
+      className={styles.detail}
+      data-size={size}
+      data-state={item.state}
+      aria-label={title}
+      aria-busy={busy !== null || undefined}
     >
-      {detail.status === "loading" && (
-        <p className={styles.note} role="status">
-          {t("detail.loading")}
-        </p>
-      )}
-      {detail.status === "error" && (
-        <p className={styles.failure} role="alert">
-          {t("detail.error")} <span className={styles.failureDetail}>{detail.error}</span>
-        </p>
-      )}
-      {value !== null && (
-        <>
-          <div className={styles.tabs}>
-            <SegmentedControl
-              id={tabsId}
-              label={t("detail.tabs")}
-              value={activeTab}
-              options={tabs}
-              onChange={setChosenTab}
-            />
+      <header className={styles.header}>
+        <div className={styles.titleRow}>
+          {onBack !== undefined && (
+            <span className={styles.back}>
+              <IconButton label={t("detail.back")} onClick={onBack}>
+                <IconChevronLeftOutlineRegular size={14} />
+              </IconButton>
+            </span>
+          )}
+          <div className={styles.heading}>
+            <h2 className={styles.title}>{title}</h2>
+            <Tag tone="outline" className={styles.kind}>
+              {t(`kind.${item.kind}`)}
+            </Tag>
           </div>
-          <div className={styles.panel} role="tabpanel" aria-labelledby={`${tabsId}-${activeTab}`}>
+          <Pager
+            entries={siblings.map((sibling) => {
+              const shown = siblingStatus(t, sibling.state, sibling.id === id ? item : null);
+              return { id: sibling.id, title: sibling.title, dot: shown.dot, word: shown.word };
+            })}
+            current={id}
+            onSelect={onSelect}
+            labels={{
+              group: t("detail.siblings"),
+              previous: t("pager.previous"),
+              next: t("pager.next"),
+              position: (index, total) => t("pager.position", { index, total }),
+            }}
+          />
+        </div>
+        <p className={styles.meta}>
+          {metadata.map((entry) => (
+            <span key={entry} className={styles.metaItem}>
+              {entry}
+            </span>
+          ))}
+          <time className={styles.metaItem} title={absolute(item.updatedAt, t("chart.locale"))}>
+            {ago(t, item.updatedAt, now)}
+          </time>
+        </p>
+        <div className={styles.steps}>
+          <Steps
+            label={t("step.label")}
+            closed={lifecycle.closed}
+            steps={lifecycle.steps}
+            next={next.text}
+            failed={next.failed}
+          />
+        </div>
+      </header>
+      {value !== null && (
+        <DetailTabs
+          size={size}
+          items={tabs}
+          value={activeTab}
+          onChange={setChosenTab}
+          label={t("detail.tabs")}
+          idBase={tabsId}
+          actions={tabActions}
+        />
+      )}
+      <div
+        className={styles.body}
+        {...(value === null
+          ? { "aria-busy": detail.status === "loading" || undefined }
+          : {
+              role: "tabpanel",
+              id: `${tabsId}-panel`,
+              "aria-labelledby": `${tabsId}-${activeTab}`,
+              tabIndex: 0,
+            })}
+      >
+        {detail.status === "loading" && (
+          <div className={styles.loading} role="status" aria-label={t("detail.loading")}>
+            <Skeleton width="min(320px, 80%)" />
+            <Skeleton width="min(440px, 95%)" />
+            <Skeleton width="min(260px, 60%)" />
+          </div>
+        )}
+        {detail.status === "error" && (
+          <ErrorNotice text={t("detail.error", { error: detail.error })} />
+        )}
+        {value !== null && (
+          <div className={styles.stack} data-tab={activeTab}>
             {activeTab === "summary" && summaryTab()}
             {activeTab === "evidence" && evidence()}
             {activeTab === "skill" && skill()}
             {activeTab === "changes" && changes()}
           </div>
-        </>
-      )}
-    </Dialog>
+        )}
+      </div>
+      <footer className={styles.footer}>
+        {error !== null && (
+          <p className={styles.actionError} role="alert">
+            {error}
+          </p>
+        )}
+        <div className={styles.actions}>{footer()}</div>
+      </footer>
+    </section>
   );
 }
 
-const CAUTIONS = new Set<string>([
-  "caution.sudo",
-  "caution.force-push",
-  "caution.no-verify",
-  "caution.chmod-777",
-  "caution.recursive-delete",
-]);
-
-function isCaution(key: string): key is ScoutKey {
-  return CAUTIONS.has(key);
+/** 分页器菜单里一个 idea 的状态点与状态词；当前这个用完整的卡片状态，其余只有状态。 */
+function siblingStatus(
+  t: ScoutTranslate,
+  state: ItemView["state"],
+  current: ItemView | null,
+): { readonly dot: StateDotState; readonly word: string } {
+  const status = itemStatus(t, current ?? { state, failure: null });
+  return { dot: status.dot, word: status.word };
 }
