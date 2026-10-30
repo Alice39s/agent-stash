@@ -1,32 +1,32 @@
 core:changelogs:
-  - content: "---\npackages:\n  \"@agent-stash/dsh-skill-scout\":\n    type: minor\n---\n\n## 经验提炼：会话 Tab、历史回溯提炼与多个 idea\n\n- 每个会话多了「经验提炼」Tab，和对话、轨迹并列：顶部是本会话的分析状态，可以立即分析或把整段会话交给发现模型提炼；左栏按「待你决定」「本地发现」「历史」分组列出引用本会话的 idea，下面是本会话的任务；右栏直接显示方案、草稿编辑、改动和证据。详情不再用弹窗。视图较窄时只显示一栏。\n- 列表每行前的圆点标出状态。详情顶部标出这一条所在的步骤（发现、摘要、草稿、保存）和下一步要做什么；同一线索的多个 idea 用「‹ n/m ›」切换；保存位置（项目或用户）并进保存按钮的下拉，「忽略类似建议」收进「更多操作」。\n- 侧栏新增「历史回溯提炼」页，分「建议」「搜索」「统计」三栏。标题栏的收件箱保留，点卡片会打开这个页面并选中这条建议。\n- 搜索在插件保存的脱敏任务记录里查找请求、命令、错误行、文件路径和任务中的插话，勾选 1 到 12 个任务可以交给发现模型提炼。「回溯 90 天」「回溯全部」在后台逐个读入历史范围之外的会话，显示进度，可以暂停。\n- 统计页顶部是四个总数（已分析的会话、近 30 天的任务、待你决定的 idea、已保存的 Skill），下面是近 30 天每天按结果堆叠的任务图、线索与 idea 的状态占比、跨会话的高频动作（带 8 周走势）与反复出现的错误、每天的新线索、分析失败的会话、近 7 天的模型用量（输入含缓存读写），以及最近模型调用的表格。图表支持键盘查看提示和隐藏某一类。\n- 一条线索的摘要可以给出多个互不重叠的 idea：规则发现的线索最多 3 个，提炼本会话或所选任务最多 5 个。每个 idea 单独同意、生成、保存或忽略；不同线索里同名的 idea 合成一张卡片，「忽略类似」也会屏蔽之后出现的相近 idea。\n- 模型请求按真实阶段显示进度：排队、准备证据、等待响应、思考、生成（已收到的字数）、核对证据，并显示已用时间；占位条随收到的内容逐条点亮。请求结束后结论留在原处；这一条没有列在打开的会话 Tab、「建议」栏或浮层里时，才弹出带「查看」的提示。\n- 摘要请求带上证据会话能看到的全部 Skill 名称（最多 200 个），模型据此避开已经占用的名称，覆盖已有 Skill 的流程改为追加内容。\n- 命令解析：多行脚本按行拆成命令；here-document 与 here-string 的内容、注释、`for`/`if`/`case` 等 shell 结构和 `set`/`export` 等内建命令不再被当成命令；含 `${…}`、`$((…))` 的命令不再让整个会话分析失败。分析失败的会话会记录原因，日志没有变长就不再重试。\n\n### 升级说明\n\n- 插件存储升级到新格式。升级后历史范围内的会话按新规则重新分析，建议重新生成；0.2 版写入的 Skill 文件留在原处，但不能再从插件里撤销。\n"
-    filename: dsh-skill-scout-workspace.md
+  - content: "---\npackages:\n  \"@agent-stash/dsh-enhance\":\n    type: patch\n---\n\n## 使用 o200k_base 估算输入 Tokens\n\n改用 tiktoken 编码器统计草稿、预设指令与关联上下文的输入文本。界面注明 o200k_base 估算，不代表所选模型的实际计费，也不包含输出 Tokens。\n\n编码器在 DSH Host 按需创建并复用，插件卸载时释放。浏览器菜单通过防抖请求读取估算，不在输入线程加载 WASM。\n"
+    filename: enhance-o200k-tokens.md
     v: 0.0.0
 core:packages:
   - id: npm:@agent-stash/init
     updated: false
   - id: npm:agent-stash-docs
     updated: false
+  - id: npm:@agent-stash/dsh-message-edit
+    updated: false
+  - id: npm:@agent-stash/dsh-skill-scout
+    updated: false
   - id: npm:@agent-stash/dsh-autosuggest
     updated: false
-  - id: npm:@agent-stash/dsh-enhance
-    updated: false
+  - changelogIds:
+      - enhance-o200k-tokens.md
+    id: npm:@agent-stash/dsh-enhance
+    updated: true
   - id: npm:@agent-stash/dsh-stash-kit
     updated: false
   - id: npm:@agent-stash/dsh-recall
     updated: false
-  - id: npm:@agent-stash/dsh-message-edit
-    updated: false
-  - changelogIds:
-      - dsh-skill-scout-workspace.md
-    id: npm:@agent-stash/dsh-skill-scout
-    updated: true
 npm:packages:
   - id: npm:@agent-stash/init
   - id: npm:agent-stash-docs
+  - id: npm:@agent-stash/dsh-message-edit
+  - id: npm:@agent-stash/dsh-skill-scout
   - id: npm:@agent-stash/dsh-autosuggest
   - id: npm:@agent-stash/dsh-enhance
   - id: npm:@agent-stash/dsh-stash-kit
   - id: npm:@agent-stash/dsh-recall
-  - id: npm:@agent-stash/dsh-message-edit
-  - id: npm:@agent-stash/dsh-skill-scout
