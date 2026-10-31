@@ -1,0 +1,42 @@
+# 否定与对比：不能删掉，也不能被写作指南「优化」掉。
+- id: negation-contrast-dedupe
+  category: negation
+  draft: 不是要加缓存，是要把重复的请求合并掉，`useUserQuery` 现在一个页面会发三次
+  intent: 目标是合并重复请求，用户明确说不是加缓存；useUserQuery 现在一个页面发三次请求。
+  presets:
+    polish: changed
+    structure: either
+    concise: either
+  keep:
+    - 缓存
+
+- id: negation-limit-retries
+  category: negation
+  draft: 把 `MAX_RETRIES` 调大一点，但别改成无限重试
+  intent: 调大 MAX_RETRIES，但不能改成无限重试；用户没给具体数值，改写不能替用户定一个数。
+  presets:
+    polish: either
+    structure: unchanged
+    concise: unchanged
+  keep:
+    - 无限
+
+- id: negation-keep-raw-sql
+  category: negation
+  draft: Don't migrate to Prisma. Keep the raw SQL, but move the queries out of the route handlers into `db/queries.ts`.
+  intent: No Prisma; keep the raw SQL; move the queries out of the route handlers into db/queries.ts. The "Don't migrate to Prisma" must survive.
+  presets:
+    polish: either
+    structure: either
+    concise: either
+  keep:
+    - Prisma
+
+- id: negation-scope-header
+  category: negation
+  draft: 只改 `Header` 组件的样式，别碰它的逻辑，也别动 `Footer`
+  intent: 只改 Header 的样式；不改 Header 的逻辑；不动 Footer。
+  presets:
+    polish: either
+    structure: unchanged
+    concise: unchanged

@@ -1,0 +1,20 @@
+{
+  "name": "agent-stash-prompt-benchmark",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Benchmarks for the prompts that Agent Stash plugins send to models, run with vieval",
+  "license": "Apache-2.0",
+  "type": "module",
+  "scripts": {
+    "bench": "vieval run",
+    "report": "vieval report"
+  },
+  "dependencies": {
+    "@vieval/ui": "^0.10.3",
+    "@xsai/generate-text": "^0.5.1",
+    "pathe": "^2.0.3",
+    "valibot": "^1.5.0",
+    "vieval": "^0.10.3",
+    "yaml": "^2.9.1"
+  }
+}

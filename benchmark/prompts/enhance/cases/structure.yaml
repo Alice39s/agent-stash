@@ -1,0 +1,36 @@
+# 信息多、顺序乱的草稿：需要整理成好读的结构，但不能丢点或改顺序约束。
+- id: structure-import-users
+  category: structure
+  draft: 我们要做一个导入用户的功能，后台管理那边用的，上传 Excel，第一行是表头，字段有姓名邮箱手机号，邮箱要去重，已经存在的用户就跳过，不要覆盖，然后导入完了要给个结果，成功几个失败几个，失败的原因也要能看到，文件大小限制 5MB 吧，格式只支持 xlsx
+  intent: 后台管理的用户导入功能：上传 Excel（第一行表头；字段姓名、邮箱、手机号）；邮箱去重，已存在的用户跳过、不覆盖；导入后显示成功数、失败数和失败原因；文件限制 5MB；只支持 xlsx。
+  presets:
+    polish: changed
+    structure: changed
+    concise: changed
+  keep:
+    - 5MB
+    - xlsx
+
+- id: structure-ordered-release
+  category: structure
+  draft: |-
+    First back up the prod database, then run the migration `20261030_add_index.sql`, and only after that restart the API pods. Oh and before all of this, announce it in #ops. Don't do it during peak hours.
+  intent: "Ordered steps: announce in #ops, back up the prod database, run 20261030_add_index.sql, then restart the API pods. Not during peak hours. The announcement comes first."
+  presets:
+    polish: changed
+    structure: changed
+    concise: either
+  keep:
+    - "#ops"
+
+- id: structure-bug-report
+  category: structure
+  draft: |-
+    点保存没反应。控制台有个 warning：`Warning: Can't perform a React state update on an unmounted component`。复现步骤：打开编辑弹窗，改个字段，快速点两次保存。期望是保存一次然后关闭弹窗。用的是 Chrome 130。
+  intent: 缺陷报告：点保存没反应，控制台有 React 卸载后更新状态的警告；复现步骤、期望结果和浏览器版本都已给出。请助手修复。
+  presets:
+    polish: either
+    structure: either
+    concise: either
+  keep:
+    - Chrome 130

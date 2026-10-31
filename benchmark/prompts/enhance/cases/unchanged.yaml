@@ -1,0 +1,38 @@
+# 已经清楚的草稿：整理与精炼应该原样返回，润色可以不改。
+- id: unchanged-rename-function
+  category: unchanged
+  draft: 把 `src/utils/date.ts` 里的 `formatDate` 改名为 `formatDisplayDate`，并更新所有调用处。
+  intent: 重命名一个函数并更新调用处，文件、旧名和新名都已写明，没有需要补充的。
+  presets:
+    polish: either
+    structure: unchanged
+    concise: unchanged
+
+- id: unchanged-run-tests
+  category: unchanged
+  draft: Run `pnpm test --filter api` and show me the failing tests.
+  intent: Run the api tests and list the failing ones. The request is already short and specific.
+  presets:
+    polish: either
+    structure: unchanged
+    concise: unchanged
+
+- id: unchanged-question-react
+  category: unchanged
+  draft: Why does `useEffect` run twice in development but once in production?
+  intent: A question to the coding assistant. The rewriter must not answer it (for example by explaining StrictMode).
+  presets:
+    polish: either
+    structure: unchanged
+    concise: unchanged
+  avoid:
+    - StrictMode
+
+- id: unchanged-bump-dependency
+  category: unchanged
+  draft: 把 `package.json` 里的 `vitest` 升到 `^5.0.4`，别动其他依赖。
+  intent: 只升级 vitest 到指定版本，明确不动其他依赖。
+  presets:
+    polish: either
+    structure: unchanged
+    concise: unchanged
