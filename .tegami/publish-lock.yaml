@@ -1,20 +1,22 @@
 core:changelogs:
-  - content: "---\npackages:\n  \"@agent-stash/dsh-enhance\":\n    type: patch\n---\n\n## 使用 o200k_base 估算输入 Tokens\n\n改用 tiktoken 编码器统计草稿、预设指令与关联上下文的输入文本。界面注明 o200k_base 估算，不代表所选模型的实际计费，也不包含输出 Tokens。\n\n编码器在 DSH Host 按需创建并复用，插件卸载时释放。浏览器菜单通过防抖请求读取估算，不在输入线程加载 WASM。\n"
-    filename: enhance-o200k-tokens.md
+  - content: "---\npackages:\n  \"@agent-stash/dsh-enhance\":\n    type: minor\n---\n\n## 增强提示词：改写更贴近原意\n\n- 「看看能不能」「要不要」这类调查和试探保持原来的语气，不会被改成直接动手的命令，怀疑的语气也保留；纯礼貌的客套话可以去掉。\n- 会话上下文只用来弄清指代和用户仍然有效的决定。用户后来的决定取代之前的，助手提出但用户没有接受的方案不算决定，被否决的方案不会写进结果；上下文确定不了指代时保留原话。指代用户提过的要求时保留它的每一部分，例如上限和超出时的处理；指代助手的方案时只写方案本身，不带助手的理由。\n- 「润色 Prompt」只在对目标有帮助时请 AI 权衡做法、风险或检查方式，写成要考虑的点，不默认追加测试、基准、回退方案和实施步骤。草稿已经写明具体做法时不追加事后检查或额外要求，只是提问时不追加修改或修复的要求。很短的草稿最多扩写到约 150 个汉字或 80 个英文单词。\n- 三个预设只在有先后顺序的步骤或三项以上并列时用列表，一两个要点保留成句子，不加「请完成以下几项：」这类开场句。\n- 内置指令里的示例都是完整的草稿与改写结果，包括原样返回的例子。改写结果只比草稿多了句末标点时按原稿处理，提示「已经很清楚，无需改动」。\n- 草稿和上下文里写到的 `<draft_prompt>`、`<conversation_context>`、`<rewritten_prompt>` 以 `⟦tag-1⟧` 这样的占位符发给模型，结果写回输入框前换回原文。\n"
+    filename: dsh-enhance-intent.md
     v: 0.0.0
 core:packages:
   - id: npm:@agent-stash/init
     updated: false
   - id: npm:agent-stash-docs
     updated: false
-  - id: npm:@agent-stash/dsh-message-edit
+  - id: npm:agent-stash-prompt-benchmark
     updated: false
-  - id: npm:@agent-stash/dsh-skill-scout
+  - id: npm:@agent-stash/dsh-message-edit
     updated: false
   - id: npm:@agent-stash/dsh-autosuggest
     updated: false
+  - id: npm:@agent-stash/dsh-skill-scout
+    updated: false
   - changelogIds:
-      - enhance-o200k-tokens.md
+      - dsh-enhance-intent.md
     id: npm:@agent-stash/dsh-enhance
     updated: true
   - id: npm:@agent-stash/dsh-stash-kit
@@ -24,9 +26,10 @@ core:packages:
 npm:packages:
   - id: npm:@agent-stash/init
   - id: npm:agent-stash-docs
+  - id: npm:agent-stash-prompt-benchmark
   - id: npm:@agent-stash/dsh-message-edit
-  - id: npm:@agent-stash/dsh-skill-scout
   - id: npm:@agent-stash/dsh-autosuggest
+  - id: npm:@agent-stash/dsh-skill-scout
   - id: npm:@agent-stash/dsh-enhance
   - id: npm:@agent-stash/dsh-stash-kit
   - id: npm:@agent-stash/dsh-recall
