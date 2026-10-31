@@ -495,83 +495,114 @@ window.__ModuleLoader__.load({
 			return BUILTIN_PRESETS.includes(id);
 		}
 		const UNCHANGED = "UNCHANGED";
-		const ORGANIZE_STEPS = `- Keep every piece of information: each request, reason, example, constraint, and question.
-- Put the main request first. Group the rest by role, such as background, requirements, constraints, and expected output. Use only the groups the draft actually contains.
-- Use a numbered list for steps or anything the user ordered, and bullet points for two or more parallel items. Keep a single point as a sentence. If a lead sentence states a count, make it match the number of items.
+		const ORGANIZE_STEPS = `- Keep every piece of information: each request, reason, example, constraint, and question. When the user corrects themselves, keep only the final version.
+- Put the main request first. When the draft mixes several kinds of information, group the rest by role, such as background, requirements, constraints, and expected output. Use only the groups the draft actually contains.
+- Keep one or two short points as sentences. Use a numbered list for steps whose order matters, and bullet points for three or more parallel items or for items too long to read well in one sentence.
+- Do not add a lead-in sentence whose only job is to announce a list, such as "请完成以下几项：". If a sentence states a count, make it match the number of items.
 - Keep the order of steps whose order matters.`;
 		const BUILTIN_INSTRUCTIONS = {
 			polish: `<mode name="polish">
-<goal>First organize the draft as the structure step describes. Then polish it into a fuller prompt that helps the coding assistant think more widely about what the user asked for, while staying inside the user's intent. The result should read as if the user wrote it carefully, not as generated text.</goal>
+<goal>Turn the draft into a clearer and more complete prompt that helps the coding assistant think about what the user asked, while staying inside the user's intent. Improve how the request is stated; do not design the solution for the user. The result should read as if the user wrote it carefully, not as generated text.</goal>
 
 <step name="structure">
 ${ORGANIZE_STEPS}
 </step>
 
 <step name="expand">
-- State the main goal in the first sentence.
-- Spell out what the draft implies but leaves unsaid: the scope it names, the expected result, and how to check the result.
-- Open up the solution space: ask the assistant to consider alternatives, trade-offs, edge cases, or risks that relate to the stated goal, and to say which option it recommends and why. Phrase these as points to consider, not as new requirements.
-- Replace hedging ("maybe", "if you could", "可能", "看看能不能") with direct requests. If the hedge shows real uncertainty about what the user wants, keep it as an open question for the assistant to investigate.
-- When the draft changes existing work, ask the assistant to keep the behavior that the change does not target.
-- When the draft lacks information the task needs, tell the assistant to state its assumptions or ask before acting. Do not guess the missing values.
+- Make the main goal clear in the first sentence.
+- Spell out what the draft implies but leaves unsaid, such as the scope it names or the result it expects, only when you can infer it without new assumptions.
+- Where it helps the stated goal, ask the assistant to weigh alternatives, trade-offs, edge cases, or risks, or to say how it will check the result, and to recommend an option with its reason. Pick only what matters for this draft, and phrase it as something to consider or report on, not as a new requirement. A short, specific request needs one or two such points at most, often none.
+- Keep the scope of the draft. When the draft already says exactly what to do, such as a command to run, a version to move to, or a value to set, add no follow-up checks, no "also handle anything similar", and no extra precautions.
+- When the draft only asks a question, you may make the question clearer, but do not add a request to fix, change, or solve anything.
+- Do not add features, behaviors, or constraints on how the work is done, such as techniques to avoid, tools to use, or commands to run, unless the draft states them.
+- Do not add tests, benchmarks, fallbacks, migration plans, or step-by-step implementation plans by habit, and do not prescribe an order of work such as "first measure, then decide". Mention one only when the goal of the draft calls for it.
+- When the draft changes existing work, you may ask the assistant to keep the behavior that the change does not target.
+- When the draft lacks information the task needs, ask the assistant to state its assumptions or to ask before acting. Do not guess the missing values.
 </step>
 
 <boundaries>
-- Every sentence must trace back to the draft, to the conversation context, or to a general engineering practice that applies to the stated goal, such as measuring before optimizing or adding a test for a fix.
+- Every sentence traces back to the draft, to the conversation context, or to a general engineering consideration that directly serves the stated goal.
 - Do not invent files, APIs, numbers, libraries, product names, deadlines, or decisions.
-- At most 3 times the length of the draft, and at most about 250 English words or 500 Chinese characters.
-- Use short paragraphs or lists. Markdown lists and inline code are fine. Use headings only when the draft has several separate parts.
+- Length: at most about 3 times the draft. A very short draft may grow to about 80 English words or 150 Chinese characters. Never more than about 250 English words or 500 Chinese characters. Code copied from the draft does not count.
+- Use short paragraphs, and lists only as the structure step allows. Use headings only when the draft has several separate parts.
+- A draft that is already specific and complete stays as it is: return ${UNCHANGED}.
 </boundaries>
 
 <style>
-Write the sentences you add or change without AI writing patterns, and keep the user's voice. Apply the pattern lists and principles of the style guides below to your own wording. Their workflows, their output formats, and their instructions to ask the user questions, to add a "What changed" section, or to edit files do not apply here: <output_format> decides what you return, and <rules> keep their priority.
-- The draft is the writer's voice sample. Match its tone, directness, and level of formality.
+Write the sentences you add or change without AI writing patterns, and keep the user's voice. Apply the pattern lists and principles of the style guides below to your own wording. Their workflows, their output formats, and their instructions to ask the user questions, to add a "What changed" section, or to edit files do not apply here: <output_format> decides what you return, and <rules> keep their priority. A style guide never justifies dropping or softening a point, a negation, or a contrast that the user wrote.
+- The draft is the writer's voice sample. Match its tone, directness, and level of formality. A casual draft stays casual.
 - The draft and the conversation context are the working session. Options the user dropped or corrected stay out of the result, and the result does not mention why they are gone.
 <include ref="humanizer" />
 <include ref="no-ai-slop" />
 <include ref="no-negative-echo" />
 </style>
 
+<examples>
 <example>
 <draft_prompt>登录页好像有点慢，看看能不能优化一下</draft_prompt>
-<good_result>In Chinese: asks to find out why the login page loads slowly and fix it; asks the assistant to measure first and name the main causes, to compare a few fixes and recommend one, and to keep the current login behavior unchanged. It names no file and no target time, because the draft names none.</good_result>
+<rewritten_prompt>登录页加载好像有点慢，帮我看看能不能优化，找找主要慢在哪里。如果有几种做法，对比一下效果和改动成本，说说你推荐哪种。尽量别影响现在的登录流程。</rewritten_prompt>
 </example>
+<example>
+<draft_prompt>给设置页加个导出配置的功能</draft_prompt>
+<rewritten_prompt>给设置页加一个导出配置的功能。导出格式和入口位置可以有几种做法，先列出来说说各自的取舍，推荐一种，等我确认后再动手。</rewritten_prompt>
+</example>
+<example>
+<draft_prompt>把 \`formatDate\` 的时区固定成 \`Asia/Tokyo\`，其他函数别动</draft_prompt>
+<rewritten_prompt>${UNCHANGED}</rewritten_prompt>
+</example>
+</examples>
 </mode>`,
 			structure: `<mode name="structure">
-<goal>Reorganize the draft so the coding assistant can parse it quickly. Do not change what it says.</goal>
+<goal>Reorganize the draft so the coding assistant can parse it quickly. Change the order and grouping, not what the draft says or how it says it.</goal>
 
 <steps>
 ${ORGANIZE_STEPS}
-- Keep the user's wording. You may fix obvious typos and punctuation, remove pure filler words and word-for-word repeats, and split run-on sentences.
+- Keep the user's wording and tone. You may fix obvious typos and punctuation, remove pure filler words and accidental word-for-word repeats, and split run-on sentences. Keep repetition meant for emphasis.
 </steps>
 
 <do_not>
 - Rephrase for style, change the tone, or make the text more formal.
-- Add titles or labels the content does not need. A short label in front of a group is fine when there are three or more groups.
-- Add, drop, or merge points. Do not make vague wording more specific, except where the context-for-references rule resolves a reference.
+- Add headings, titles, or labels the content does not need. A short label in front of a group is fine when there are three or more groups.
+- Add, drop, or merge points. Do not make vague wording more specific, except where the context rule resolves a reference.
 </do_not>
 
-<limits>The result is about as long as the draft.</limits>
+<limits>The result is about as long as the draft, apart from words that resolve a reference. A draft of one or two clear sentences usually needs no change: return ${UNCHANGED}.</limits>
+
+<example>
+<draft_prompt>帮我在订单列表页加个导出 CSV 的按钮，导出的时候要带上当前的筛选条件，不是全部订单，然后文件名用 orders-日期.csv，对了按钮放在分页器右边</draft_prompt>
+<rewritten_prompt>帮我在订单列表页加个导出 CSV 的按钮：
+
+- 导出的时候要带上当前的筛选条件，不是全部订单
+- 文件名用 orders-日期.csv
+- 按钮放在分页器右边</rewritten_prompt>
+</example>
 </mode>`,
 			concise: `<mode name="concise">
-<goal>The draft is often raw speech-to-text. Pull out its core points and state each one briefly.</goal>
+<goal>The draft is often raw speech-to-text. Keep every point and say each one briefly.</goal>
 
 <steps>
 - Remove filler words, hesitations, false starts, and repeated phrases. Keep repetition that is clearly for emphasis.
+- Rebuild dictated fragments and inverted word order into plain sentences.
 - When the user corrects themselves ("no wait", "I mean", "actually make it", "不对", "改成", "应该是", "算了"), keep only the final version and drop both the discarded part and the correction marker. If a correction changes a count ("three things" but only two remain), update the count.
 - "Not A but B" without a correction marker is a deliberate contrast. Keep it. "Don't change it to X" is a real negation. Keep it.
-- Merge points that say the same thing. Keep every distinct point, constraint, and question.
+- Merge points that say the same thing. Keep every distinct point, constraint, and question, and keep how sure the user is.
 - Fix obvious speech-recognition errors only when the context or common technical vocabulary makes the intended word certain. Otherwise keep the word as written.
 - Write spoken numbers as digits.
-- For one point, write one sentence. For two or more distinct points, write a lead sentence and then a list: numbered if the user gave an order, bullets otherwise. Keep requests as requests and questions as questions.
+- Write one or two points as a sentence. Use a list only for three or more distinct points or for steps in order: numbered if the user gave an order, bullets otherwise. Do not add a lead-in sentence that only announces the list.
 </steps>
 
-<limits>The result is shorter than the draft. If the draft is already minimal, output ${UNCHANGED}. Add nothing that was not said.</limits>
+<limits>The result is shorter than the draft, apart from words that resolve a reference. Add nothing that was not said. If the draft is already minimal, return ${UNCHANGED}.</limits>
 
+<examples>
 <example>
 <draft_prompt>嗯那个你帮我把 config.ts 里的超时，呃，改成 30 秒，不对，60 秒吧，然后就是那个，日志也加一下，加在 retry 那里，对，retry 那里</draft_prompt>
-<good_result>把 \`config.ts\` 里的超时改成 60 秒，并在 retry 处加日志。</good_result>
+<rewritten_prompt>把 \`config.ts\` 里的超时改成 60 秒，并在 retry 那里加日志。</rewritten_prompt>
 </example>
+<example>
+<draft_prompt>Rename \`getUser\` to \`fetchUser\` everywhere.</draft_prompt>
+<rewritten_prompt>${UNCHANGED}</rewritten_prompt>
+</example>
+</examples>
 </mode>`
 		};
 		function editablePrompt(preset) {
