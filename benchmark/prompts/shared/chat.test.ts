@@ -1,5 +1,6 @@
+import { createRetryPolicy, runWithRetry } from "vieval/core/inference-executors";
 import { afterEach, describe, expect, test } from "vitest";
-import { complete } from "./chat.ts";
+import { complete, isRetryableChatError } from "./chat.ts";
 import { startChatServer } from "./chat-server.ts";
 
 let close: (() => Promise<void>) | undefined;
@@ -61,5 +62,29 @@ describe("chat completion", () => {
         { system: "s", user: "u", signal: new AbortController().signal },
       ),
     ).rejects.toThrow("HTTP 200 with an error body: Our servers are currently busy.");
+  });
+
+  test("retries a request whose 200 response carries an upstream error", async () => {
+    const server = await startChatServer([
+      { text: "", errorMessage: "Our servers are currently busy." },
+      { text: "ok" },
+    ]);
+    close = server.close;
+    const signal = new AbortController().signal;
+    const reply = await runWithRetry(
+      () =>
+        complete(
+          { baseURL: server.baseURL, apiKey: "k", model: "m", body: {} },
+          { system: "s", user: "u", signal },
+        ),
+      createRetryPolicy({ maxAttempts: 2, delayMs: () => 0, shouldRetry: isRetryableChatError }),
+      { signal },
+    );
+    expect(reply.text).toBe("ok");
+    expect(server.received).toHaveLength(2);
+  });
+
+  test("does not retry an error that is neither a provider failure nor an upstream error body", () => {
+    expect(isRetryableChatError(new Error("expected a JSON verdict"))).toBe(false);
   });
 });
