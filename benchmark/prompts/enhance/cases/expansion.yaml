@@ -1,0 +1,42 @@
+# 润色容易过度展开的草稿：小改动、短而模糊的请求、普通功能需求。
+- id: expansion-button-color
+  category: expansion
+  draft: 把主按钮的背景色改成 `--color-primary`
+  intent: 把主按钮的背景色改成 --color-primary。小改动，不需要测试、基准或回滚方案。
+  presets:
+    polish: either
+    structure: unchanged
+    concise: unchanged
+  avoid:
+    - 基准
+    - benchmark
+    - 回滚
+
+- id: expansion-vague-optimize
+  category: expansion
+  draft: 优化一下这个函数
+  intent: 没有上下文，「这个函数」是哪个、优化什么都没说。改写不能编造函数名、指标或目标，可以请助手先说明假设或先问清楚。
+  presets:
+    polish: changed
+    structure: unchanged
+    concise: unchanged
+
+- id: expansion-type-error
+  category: expansion
+  draft: 修一下 `src/store/cart.ts` 里的类型报错
+  intent: 修复 cart.ts 里的类型错误。草稿没给出报错内容，改写不能编造报错。
+  presets:
+    polish: either
+    structure: unchanged
+    concise: unchanged
+
+- id: expansion-dark-mode
+  category: expansion
+  draft: Add dark mode to the settings page.
+  intent: Add dark mode to the settings page. Nothing more is specified; the rewrite must not invent a theme library, a toggle location, or deadlines.
+  presets:
+    polish: changed
+    structure: unchanged
+    concise: unchanged
+  avoid:
+    - benchmark

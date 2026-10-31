@@ -50,6 +50,9 @@ When you change `scripts/ci`, run `uv run ruff format --check`, `uv run ruff che
     <Folder name="dsh-message-edit" />
     <Folder name="dsh-skill-scout" />
   </Folder>
+  <Folder name="benchmark" defaultOpen>
+    <Folder name="prompts" />
+  </Folder>
   <Folder name="pi" />
   <Folder name="cline" />
   <Folder name="cli" />
@@ -64,6 +67,18 @@ When you change `scripts/ci`, run `uv run ruff format --check`, `uv run ruff che
     <Folder name="public" />
   </Folder>
 </Files>
+
+## Prompt benchmark
+
+`benchmark/prompts/` uses [vieval](https://github.com/vieval-dev/vieval) to evaluate the prompts the plugins send to models. It covers the three built-in dsh-enhance presets. The golden set lives in `enhance/cases/*.yaml`, one file per category. Each case goes through the plugin's own request building and result checks, then rule checks and a judge model score the result. Fidelity and modality (questions, investigations, and suggestions do not become orders) must be perfect for a case to pass; context use, mode fit, and restraint are scored as well.
+
+```bash
+cd benchmark/prompts
+DEEPSEEK_API_KEY=... pnpm bench              # rewriter deepseek-flash, judge deepseek-pro by default
+pnpm exec vieval report compare <baseline report> <candidate report> --case-key benchmark.case.id
+```
+
+When you change the dsh-enhance prompts, how the request is built, or how the result is checked, run a baseline on the commit before the change, run the changed version, and compare them. `benchmark/prompts/README.md` lists the merge conditions and the case format. `pnpm test` does not use the network; it checks the case files, the rule checks, and the adapters.
 
 ## Docs site
 

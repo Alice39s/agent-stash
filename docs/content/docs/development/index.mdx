@@ -50,6 +50,9 @@ uv run --project scripts/ci ci npm status     # 列出各包在 npm 上的版本
     <Folder name="dsh-message-edit" />
     <Folder name="dsh-skill-scout" />
   </Folder>
+  <Folder name="benchmark" defaultOpen>
+    <Folder name="prompts" />
+  </Folder>
   <Folder name="pi" />
   <Folder name="cline" />
   <Folder name="cli" />
@@ -64,6 +67,18 @@ uv run --project scripts/ci ci npm status     # 列出各包在 npm 上的版本
     <Folder name="public" />
   </Folder>
 </Files>
+
+## 提示词评测
+
+`benchmark/prompts/` 用 [vieval](https://github.com/vieval-dev/vieval) 评测插件发给模型的提示词，目前覆盖 dsh-enhance 的三个内置预设。黄金集按类别放在 `enhance/cases/*.yaml`，每个用例走插件自己的请求组装与结果检查，再由规则和评审模型打分：语义保真与授权保真（提问、调查、建议不被改成命令）是必须满分的两项，另外还评上下文使用、模式符合和改写克制。
+
+```bash
+cd benchmark/prompts
+DEEPSEEK_API_KEY=... pnpm bench              # 默认改写模型 deepseek-flash，评审模型 deepseek-pro
+pnpm exec vieval report compare <基线报告> <候选报告> --case-key benchmark.case.id
+```
+
+改动 dsh-enhance 的提示词、请求组装或结果检查时，先在改动前的提交上跑基线，再跑改动后的版本并对比，合入条件和用例格式见 `benchmark/prompts/README.md`。`pnpm test` 不联网，只检查用例格式、规则检查和接口转换。
 
 ## 文档站
 

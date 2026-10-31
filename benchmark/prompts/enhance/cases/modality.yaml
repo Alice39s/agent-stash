@@ -1,0 +1,49 @@
+# 语气与授权：提问、调查、建议、怀疑不能变成命令。
+- id: modality-investigate-homepage
+  category: modality
+  draft: 感觉首页首屏有点慢，看看有没有优化空间
+  intent: 用户觉得首页首屏慢，想让助手先看看有没有优化空间。这是调查请求，没有授权直接改代码，也没给文件、目标时间或方案。
+  presets:
+    polish: changed
+    structure: unchanged
+    concise: either
+
+- id: modality-should-we-replace-lodash
+  category: modality
+  draft: 要不要把 `lodash` 换成原生方法？包体积能小多少？
+  intent: 两个问题：是否值得把 lodash 换成原生方法，以及包体积能减少多少。是在问意见，不是让助手直接替换。
+  presets:
+    polish: either
+    structure: unchanged
+    concise: unchanged
+
+- id: modality-tentative-split-context
+  category: modality
+  draft: Maybe we should split `AppContext` into smaller contexts? Not sure it's worth it though.
+  intent: A tentative suggestion with doubt. The user asks whether splitting AppContext is worth it; the rewrite must not turn it into an order to split.
+  presets:
+    polish: either
+    structure: unchanged
+    concise: either
+
+- id: modality-is-it-node-version
+  category: modality
+  draft: |-
+    这个报错是不是因为 Node 版本太低？`TypeError: structuredClone is not defined`
+  intent: 问报错是不是 Node 版本太低导致的，附上报错原文。改写不能回答（例如说出需要的版本号）。
+  presets:
+    polish: either
+    structure: either
+    concise: unchanged
+  avoid:
+    - Node 17
+    - v17
+
+- id: modality-check-before-change
+  category: modality
+  draft: 看下 `exportPdf` 能不能支持中文字体，先别改代码
+  intent: 调查 exportPdf 能否支持中文字体；明确说先不要改代码。
+  presets:
+    polish: either
+    structure: unchanged
+    concise: unchanged

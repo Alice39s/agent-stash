@@ -13,3 +13,6 @@ docs/tsconfig.tsbuildinfo
 .turbo
 
 .pnpm-store/
+
+.vieval/
+benchmark/prompts/.env*
