@@ -3,7 +3,7 @@ import { createRetryPolicy, readRetryAfter, runWithRetry } from "vieval/core/inf
 import { BUILTIN_PRESETS } from "../../../../dsh/enhance/src/presets.ts";
 import { loadReferences } from "../../../../dsh/enhance/src/references.ts";
 import { runRewrite } from "../../../../dsh/enhance/src/rewrite.ts";
-import { complete } from "../../shared/chat.ts";
+import { complete, isRetryableChatError } from "../../shared/chat.ts";
 import { endpointOf } from "../../shared/endpoint.ts";
 import { benchSettings, loadBenchEnv } from "../../shared/settings.ts";
 import { loadCases } from "../src/cases.ts";
@@ -17,9 +17,13 @@ const { timeoutMs } = benchSettings(loadBenchEnv());
 
 const JUDGE = { id: "judge", kind: "model" } as const;
 
-/** 评审请求遇到限流或服务错误时最多再试 5 次，按服务给的 Retry-After 或 5、10、20、40、60 秒等待。 */
+/**
+ * 评审请求遇到限流、服务错误或网关在 HTTP 200 里返回的上游错误时最多再试 5 次，
+ * 按服务给的 Retry-After 或 5、10、20、40、60 秒等待。
+ */
 const JUDGE_RETRY = createRetryPolicy({
   maxAttempts: 6,
+  shouldRetry: isRetryableChatError,
   delayMs: (attempt, error) => readRetryAfter(error) ?? Math.min(5000 * 2 ** (attempt - 1), 60_000),
 });
 
