@@ -14,15 +14,15 @@ Agent Stash is a set of Agent Skills and plugins for personal use. It adds promp
 
 ## Plugins
 
-| Name                                             | Install source                  | Supported agents                         | What it does                                                                                                                    |
-| ------------------------------------------------ | ------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| [dsh-recall](./plugins/dsh-recall.mdx)           | `@agent-stash/dsh-recall`       | DSH                                      | Press ↑↓ in the input box to browse the prompts sent in the current session                                                     |
-| [dsh-autosuggest](./plugins/dsh-autosuggest.mdx) | `@agent-stash/dsh-autosuggest`  | DSH                                      | Type the start of a past prompt and gray text completes the rest. Press Tab or → to fill it in                                  |
-| [dsh-enhance](./plugins/dsh-enhance.mdx)         | `@agent-stash/dsh-enhance`      | DSH                                      | A button beside the send button rewrites the draft into a clearer prompt. You can undo it                                       |
-| [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)     | `@agent-stash/dsh-stash-kit`    | DSH                                      | The panel, motion and appearance settings that dsh-recall, dsh-autosuggest and dsh-enhance share. They install it automatically |
-| [Message edit](./plugins/dsh-message-edit.mdx)   | `@agent-stash/dsh-message-edit` | DSH                                      | Edit messages, regenerate replies or retry turns. Each change opens a new session version                                       |
-| [Skill Scout](./plugins/dsh-skill-scout.mdx)     | `@agent-stash/dsh-skill-scout`  | DSH                                      | Finds reusable workflows in finished sessions and saves them as Skills after review                                             |
-| [/init](./plugins/init.mdx)                      | `@agent-stash/init`             | Pi, DSH, Cline, Grok Build, goose, Aider | Analyzes the project with the `/init` prompt of another coding agent and writes `AGENTS.md`                                     |
+| Name                                             | Install source                  | Supported agents                         | What it does                                                                                                   |
+| ------------------------------------------------ | ------------------------------- | ---------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| [dsh-recall](./plugins/dsh-recall.mdx)           | `@agent-stash/dsh-recall`       | DSH                                      | Browse the prompts sent in the current session with ↑↓                                                         |
+| [dsh-autosuggest](./plugins/dsh-autosuggest.mdx) | `@agent-stash/dsh-autosuggest`  | DSH                                      | Complete the input from past prompts in every session                                                          |
+| [dsh-enhance](./plugins/dsh-enhance.mdx)         | `@agent-stash/dsh-enhance`      | DSH                                      | Polish, structure, or distill a prompt draft to its core in one click                                          |
+| [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)     | `@agent-stash/dsh-stash-kit`    | DSH                                      | Set the panels, ghost text and motion shared by Agent Stash plugins in one place. Installed with those plugins |
+| [Message edit](./plugins/dsh-message-edit.mdx)   | `@agent-stash/dsh-message-edit` | DSH                                      | Edit messages, regenerate replies or retry turns as versions you can switch between                            |
+| [Skill Scout](./plugins/dsh-skill-scout.mdx)     | `@agent-stash/dsh-skill-scout`  | DSH                                      | Turn reusable workflows from finished sessions into Skills after review                                        |
+| [/init](./plugins/init.mdx)                      | `@agent-stash/init`             | Pi, DSH, Cline, Grok Build, goose, Aider | Analyze the project with another coding agent's `/init` preset and write `AGENTS.md`                           |
 
 ## Skills
 
@@ -44,25 +44,25 @@ Install the skills with `npx -y skills add Alice39s/agent-stash`. See the [Skill
   />
   <Card
     title="dsh-recall"
-    description="↑ opens the prompt history of the current session, ↑↓ switches entries, Esc returns to the draft."
+    description="Browse the prompts sent in the current session with ↑↓."
     href="./plugins/dsh-recall.mdx"
     icon={<History />}
   />
   <Card
     title="dsh-autosuggest"
-    description="Prefix completion across sessions. Gray text shows the rest."
+    description="Complete the input from past prompts in every session."
     href="./plugins/dsh-autosuggest.mdx"
     icon={<Sparkles />}
   />
   <Card
     title="dsh-enhance"
-    description="Rewrite the draft into a clearer prompt. You can undo it."
+    description="Polish, structure, or distill a prompt draft to its core in one click."
     href="./plugins/dsh-enhance.mdx"
     icon={<WandSparkles />}
   />
   <Card
     title="dsh-stash-kit"
-    description="Appearance settings for frosted glass, motion, ghost text, row height and key hints."
+    description="Set the panels, ghost text and motion shared by Agent Stash plugins in one place."
     href="./plugins/dsh-stash-kit.mdx"
     icon={<SwatchBook />}
   />

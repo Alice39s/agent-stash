@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@agent-stash/dsh-stash-kit)](https://www.npmjs.com/package/@agent-stash/dsh-stash-kit) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
 
-Agent Stash 框架：为 Agent Stash 系列的 DeepSeek Harness（DSH）插件提供共用的面板、补全灰字、动画和外观配置。[`@agent-stash/dsh-recall`](https://www.npmjs.com/package/@agent-stash/dsh-recall)、[`@agent-stash/dsh-autosuggest`](https://www.npmjs.com/package/@agent-stash/dsh-autosuggest) 与 [`@agent-stash/dsh-enhance`](https://www.npmjs.com/package/@agent-stash/dsh-enhance) 依赖它渲染界面，第一次启动时会自动安装并启用它，一般不需要单独安装。
+Agent Stash 基础核心框架：为 Agent Stash 系列的 DeepSeek Harness（DSH）插件提供共用的面板、补全灰字、动画和外观配置。[`@agent-stash/dsh-recall`](https://www.npmjs.com/package/@agent-stash/dsh-recall)、[`@agent-stash/dsh-autosuggest`](https://www.npmjs.com/package/@agent-stash/dsh-autosuggest) 与 [`@agent-stash/dsh-enhance`](https://www.npmjs.com/package/@agent-stash/dsh-enhance) 依赖它渲染界面，第一次启动时会自动安装并启用它，一般不需要单独安装。
 
 单独安装：
 
@@ -14,7 +14,7 @@ dsh plugin --profile web add @agent-stash/dsh-stash-kit
 
 ## 外观配置
 
-在「插件」页打开「Agent Stash 框架」，点它的条目进入配置页。页面顶部有实时预览，可以重播动画；改动点保存后立即生效，所有插件同时生效。
+在「插件」页打开「Agent Stash 基础核心框架」，点它的条目进入配置页。页面顶部有实时预览，可以重播动画；改动点保存后立即生效，所有插件同时生效。
 
 | 配置项     | 字段        | 可选值                                             | 默认 |
 | ---------- | ----------- | -------------------------------------------------- | ---- |

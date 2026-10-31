@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Prompt 补全",
-    "description": "输入的内容是某条历史 Prompt 的完整前缀时，以灰字提示剩余部分，按 Tab 或 → 填入；历史来自所有会话。"
+    "title": "Prompt 自动补全",
+    "description": "用所有会话的历史 Prompt 补全输入内容"
   }
 }

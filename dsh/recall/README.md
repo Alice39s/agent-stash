@@ -14,7 +14,7 @@ DSH 桌面版：在「插件」页点「添加插件」，填入 `@agent-stash/d
 dsh plugin --profile web add @agent-stash/dsh-recall
 ```
 
-界面建立在 Agent Stash 框架 [`@agent-stash/dsh-stash-kit`](https://www.npmjs.com/package/@agent-stash/dsh-stash-kit) 上。插件第一次启动时会自动安装并启用框架。
+界面建立在 Agent Stash 基础核心框架 [`@agent-stash/dsh-stash-kit`](https://www.npmjs.com/package/@agent-stash/dsh-stash-kit) 上。插件第一次启动时会自动安装并启用框架。
 
 ## 使用
 

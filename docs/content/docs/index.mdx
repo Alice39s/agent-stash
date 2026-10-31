@@ -14,15 +14,15 @@ Agent Stash 是一组自用的 Agent Skills 和插件：给 [DeepSeek Harness](h
 
 ## 插件
 
-| 名称                                             | 安装源                          | 支持的 Agent                             | 作用                                                                                  |
-| ------------------------------------------------ | ------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------- |
-| [dsh-recall](./plugins/dsh-recall.mdx)           | `@agent-stash/dsh-recall`       | DSH                                      | 在输入框里按 ↑↓ 翻看当前会话发过的 Prompt                                             |
-| [dsh-autosuggest](./plugins/dsh-autosuggest.mdx) | `@agent-stash/dsh-autosuggest`  | DSH                                      | 输入历史 Prompt 的开头时以灰字补出剩余部分，按 Tab 或 → 填入                          |
-| [dsh-enhance](./plugins/dsh-enhance.mdx)         | `@agent-stash/dsh-enhance`      | DSH                                      | 发送按钮旁的按钮把草稿改写成更适合交给 AI 的 Prompt，可以撤销                         |
-| [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)     | `@agent-stash/dsh-stash-kit`    | DSH                                      | dsh-recall、dsh-autosuggest 与 dsh-enhance 共用的面板、动画与外观配置，随它们自动安装 |
-| [消息编辑](./plugins/dsh-message-edit.mdx)       | `@agent-stash/dsh-message-edit` | DSH                                      | 编辑消息、重新生成回复或重试回合，每次改动另开一个会话版本                            |
-| [经验提炼](./plugins/dsh-skill-scout.mdx)        | `@agent-stash/dsh-skill-scout`  | DSH                                      | 从已结束的会话里找出可复用的流程，审核后保存成 Skill                                  |
-| [/init](./plugins/init.mdx)                      | `@agent-stash/init`             | Pi、DSH、Cline、Grok Build、goose、Aider | 用其他 Coding Agent 的 `/init` Prompt 分析项目，写出 `AGENTS.md`                      |
+| 名称                                             | 安装源                          | 支持的 Agent                             | 作用                                                                |
+| ------------------------------------------------ | ------------------------------- | ---------------------------------------- | ------------------------------------------------------------------- |
+| [dsh-recall](./plugins/dsh-recall.mdx)           | `@agent-stash/dsh-recall`       | DSH                                      | 按 ↑↓ 翻看当前会话发过的 Prompt                                     |
+| [dsh-autosuggest](./plugins/dsh-autosuggest.mdx) | `@agent-stash/dsh-autosuggest`  | DSH                                      | 用所有会话的历史 Prompt 补全输入内容                                |
+| [dsh-enhance](./plugins/dsh-enhance.mdx)         | `@agent-stash/dsh-enhance`      | DSH                                      | 一键润色、结构化、提炼 Prompt 草稿的核心内容                        |
+| [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)     | `@agent-stash/dsh-stash-kit`    | DSH                                      | 统一设置 Agent Stash 插件的面板、补全灰字与动画，随这些插件自动安装 |
+| [消息编辑](./plugins/dsh-message-edit.mdx)       | `@agent-stash/dsh-message-edit` | DSH                                      | 编辑消息、重新生成回复或重试回合，改动另存为可切换的版本            |
+| [经验提炼器](./plugins/dsh-skill-scout.mdx)      | `@agent-stash/dsh-skill-scout`  | DSH                                      | 从已结束的会话里提炼可复用的流程，审核后存为 Skill                  |
+| [/init](./plugins/init.mdx)                      | `@agent-stash/init`             | Pi、DSH、Cline、Grok Build、goose、Aider | 用其他 Coding Agent 的 `/init` 预设分析项目，写出 `AGENTS.md`       |
 
 ## 技能
 
@@ -44,25 +44,25 @@ Agent Stash 是一组自用的 Agent Skills 和插件：给 [DeepSeek Harness](h
   />
   <Card
     title="dsh-recall"
-    description="↑ 打开当前会话的 Prompt 历史，↑↓ 切换，Esc 回到草稿。"
+    description="按 ↑↓ 翻看当前会话发过的 Prompt。"
     href="./plugins/dsh-recall.mdx"
     icon={<History />}
   />
   <Card
     title="dsh-autosuggest"
-    description="跨会话的前缀补全，灰字提示剩余部分。"
+    description="用所有会话的历史 Prompt 补全输入内容。"
     href="./plugins/dsh-autosuggest.mdx"
     icon={<Sparkles />}
   />
   <Card
     title="dsh-enhance"
-    description="把草稿改写成更清楚的 Prompt，可以撤销。"
+    description="一键润色、结构化、提炼 Prompt 草稿的核心内容。"
     href="./plugins/dsh-enhance.mdx"
     icon={<WandSparkles />}
   />
   <Card
     title="dsh-stash-kit"
-    description="毛玻璃、动画、补全灰字、行高与按键提示的外观配置。"
+    description="统一设置 Agent Stash 插件的面板、补全灰字与动画。"
     href="./plugins/dsh-stash-kit.mdx"
     icon={<SwatchBook />}
   />

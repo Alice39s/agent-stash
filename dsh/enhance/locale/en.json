@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Prompt enhance",
-    "description": "A button beside the send button rewrites the draft into a clearer prompt: polish it, only restructure it, or condense dictated text. Uses the session model and recent turns by default; one click undoes it."
+    "description": "Polish, structure, or distill a prompt draft to its core in one click"
   }
 }

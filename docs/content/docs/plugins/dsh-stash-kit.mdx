@@ -1,6 +1,6 @@
 ---
 title: dsh-stash-kit
-description: 在一个配置页里设置 dsh-recall、dsh-autosuggest 与 dsh-enhance 共用的面板外观、补全灰字与动画。
+description: 统一设置 Agent Stash 插件的面板、补全灰字与动画。
 icon: SwatchBook
 ---
 
@@ -10,7 +10,7 @@ icon: SwatchBook
   caption="配置页顶部的预览随设置实时变化，点重播再看一遍动画"
 />
 
-Agent Stash 框架（`dsh-stash-kit`）的浏览器半部提供 `stashKit` 服务。[dsh-recall](./dsh-recall.mdx) 与 [dsh-autosuggest](./dsh-autosuggest.mdx) 用它渲染面板和灰字，[dsh-enhance](./dsh-enhance.mdx) 的按钮动画和改写结果写回输入框的动画跟随它的「动画」设置。Host 半部持有外观配置，修改一次，所有插件同时生效。
+Agent Stash 基础核心框架（`dsh-stash-kit`）的浏览器半部提供 `stashKit` 服务。[dsh-recall](./dsh-recall.mdx) 与 [dsh-autosuggest](./dsh-autosuggest.mdx) 用它渲染面板和灰字，[dsh-enhance](./dsh-enhance.mdx) 的按钮动画和改写结果写回输入框的动画跟随它的「动画」设置。Host 半部持有外观配置，修改一次，所有插件同时生效。
 
 面板与 DSH 自带的 `/` 菜单使用同一套几何：离输入框 4px，圆角与内边距一致，内容左边线对齐输入框的文字列。底色完全不透明，默认再加一层背景模糊。
 
@@ -19,7 +19,7 @@ Agent Stash 框架（`dsh-stash-kit`）的浏览器半部提供 `stashKit` 服�
 <Steps>
 <Step>
 
-在「插件」页打开「Agent Stash 框架」，点它的条目进入配置页。
+在「插件」页打开「Agent Stash 基础核心框架」，点它的条目进入配置页。
 
 </Step>
 <Step>

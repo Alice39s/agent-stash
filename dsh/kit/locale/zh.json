@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Agent Stash 框架",
-    "description": "Agent Stash 系列插件共用的面板、补全灰字与动画，毛玻璃、动画、高亮和行高在这里统一设置。"
+    "title": "Agent Stash 基础核心框架",
+    "description": "统一设置 Agent Stash 插件的面板、补全灰字与动画"
   }
 }

@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Message Edit",
-    "description": "Edit messages, reroll replies, and retry turns as new session branches; the Timeline view switches between versions."
+    "description": "Edit messages, regenerate replies, or retry turns as versions you can switch between"
   }
 }

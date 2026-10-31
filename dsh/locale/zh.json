@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "/init",
-    "description": "在输入框的 / 菜单里加入「初始化」，选一个 Codex、Claude Code、Kimi Code、OpenCode 等 Coding Agent 的 /init prompt，让 agent 分析项目并写出 AGENTS.md。"
+    "description": "用其他 Coding Agent 的 /init 预设分析项目，写出 AGENTS.md"
   }
 }

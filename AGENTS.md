@@ -15,6 +15,7 @@
 - `benchmark/prompts/` (private workspace package `agent-stash-prompt-benchmark`): [vieval](https://github.com/vieval-dev/vieval) benchmarks for the prompts the plugins send to models. `enhance/` runs the dsh-enhance built-in presets through the plugin's own `buildPrompt` and `runRewrite` over the golden set in `enhance/cases/*.yaml`, then scores each result with rule checks (`enhance/src/checks.ts`) and a judge model (`enhance/src/judge.ts`). Its README holds the review process for prompt changes.
 - `prompts/init/`: hand-maintained presets (`claude-code*.md`).
 - Generated content, never edited by hand: `vendor/init-prompts/` (from `pnpm sync:init-prompts`), `skills/code-styleguide/` (from `pnpm sync:code-styleguide`), `SKILL.md` and `agents/openai.yaml` in each `skills/self-use-*-subagent/` (from `uv run skills/self-use-haiku-subagent/scripts/render.py`, which renders that directory's `templates/` with `models.yaml`), and `dist/` plus `dsh/*/dist/` (from `pnpm bundle`).
+- Plugin names and descriptions: `meta.title` and `meta.description` in each bundle's `locale/*.json` hold the wording that READMEs, the docs site (overview table, page descriptions), and changesets reuse. The Chinese titles are `/init`, Prompt 回溯, Prompt 自动补全, 提示词增强器, Agent Stash 基础核心框架, 消息编辑, and 经验提炼器. A description is one clause, without trailing punctuation, that says what the plugin does (提示词增强器: 一键润色、结构化、提炼 Prompt 草稿的核心内容); key bindings, defaults, and limits go in the README and the docs page.
 
 ## Build, Test, and Development Commands
 

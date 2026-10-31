@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "/init",
-    "description": "Adds Init to the / menu of the input box. Pick the /init prompt of Codex, Claude Code, Kimi Code, OpenCode, or another coding agent, and the agent analyzes the project and writes AGENTS.md."
+    "description": "Analyze the project with another coding agent's /init preset and write AGENTS.md"
   }
 }

@@ -2,7 +2,7 @@
 
 [![npm](https://img.shields.io/npm/v/@agent-stash/dsh-enhance)](https://www.npmjs.com/package/@agent-stash/dsh-enhance) [![DSH Plugin](https://img.shields.io/badge/DeepSeek%20Harness-Plugin-4d6bfe)](https://github.com/deepseek-ai/deepseek-harness)
 
-DeepSeek Harness（DSH）插件「增强提示词」：输入框右下角、发送按钮左侧的按钮把草稿改写成更适合交给 AI 的提示词，改写后一键可撤销。默认使用会话的模型，并附带当前会话最近 3 轮对话的正文，让改写器理解「这个」「刚才的方案」指的是什么。需要 DSH 0.2.1-rc.3 或更新的版本。
+DeepSeek Harness（DSH）插件「提示词增强器」：输入框右下角、发送按钮左侧的按钮把草稿改写成更适合交给 AI 的提示词，改写后一键可撤销。默认使用会话的模型，并附带当前会话最近 3 轮对话的正文，让改写器理解「这个」「刚才的方案」指的是什么。需要 DSH 0.2.1-rc.3 或更新的版本。
 
 ## 安装
 
@@ -14,7 +14,7 @@ DSH 桌面版：在「插件」页点「添加插件」，填入 `@agent-stash/d
 dsh plugin --profile web add @agent-stash/dsh-enhance
 ```
 
-界面建立在 Agent Stash 框架 [`@agent-stash/dsh-stash-kit`](https://www.npmjs.com/package/@agent-stash/dsh-stash-kit) 上。插件第一次启动时会自动安装并启用框架。
+界面建立在 Agent Stash 基础核心框架 [`@agent-stash/dsh-stash-kit`](https://www.npmjs.com/package/@agent-stash/dsh-stash-kit) 上。插件第一次启动时会自动安装并启用框架。
 
 ## 使用
 
@@ -34,7 +34,7 @@ dsh plugin --profile web add @agent-stash/dsh-enhance
 
 ## 配置
 
-在「插件」页打开「增强提示词」，点「配置」，或在菜单底部点「管理预设…」进入。可以设置：
+在「插件」页打开「提示词增强器」，点「配置」，或在菜单底部点「管理预设…」进入。可以设置：
 
 - 模型：跟随会话（默认），或从模型列表里指定一个，并选推理强度。
 - 超时：5–600 秒，默认 60。

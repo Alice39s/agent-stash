@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Prompt Recall",
-    "description": "Press ↑ at the start of the composer to browse the prompts sent in the current session; ↓ past the newest restores your draft."
+    "description": "Browse the prompts sent in the current session with ↑↓"
   }
 }
