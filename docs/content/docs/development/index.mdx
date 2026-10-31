@@ -82,7 +82,7 @@ pnpm exec vieval report compare <基线报告> <候选报告> --case-key benchma
 
 ## 文档站
 
-文档站在 `docs/` 下，是一个静态导出的 [Fumadocs](https://fumadocs.dev) 站点。`.github/workflows/pages.yml` 用 `ci docs` 构建它、用 `ci plugin-index` 生成插件索引，两者放进同一个 GitHub Pages 产物：改动 `docs/` 的 Pull Request 只构建预览产物，`main` 上的运行才部署。页面在 `docs/content/docs/` 下，中文页面是 `*.mdx`，英文页面是同名的 `*.en.mdx`。
+文档站在 `docs/` 下，是一个静态导出的 [Fumadocs](https://fumadocs.dev) 站点。`.github/workflows/pages.yml` 用 `ci docs` 构建它、用 `ci plugin-index` 生成插件索引，两者放进同一个 GitHub Pages 产物：改动 `docs/` 的 Pull Request 只构建预览产物，`main` 上的运行才部署。发布流程结束后与每小时的定时运行先用 `ci plugin-index-diff` 比对新生成的索引和站点上的索引，两者相同时不构建也不部署。页面在 `docs/content/docs/` 下，中文页面是 `*.mdx`，英文页面是同名的 `*.en.mdx`。
 
 ```bash
 pnpm --filter agent-stash-docs dev    # http://localhost:3883/agent-stash/

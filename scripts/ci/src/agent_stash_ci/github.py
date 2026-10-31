@@ -15,6 +15,14 @@ def write_step_summary(markdown: str) -> None:
             summary.write(markdown)
 
 
+def write_output(name: str, value: str) -> None:
+    """在 GitHub Actions 里设置当前步骤的输出；本地运行时什么也不做。"""
+    path = os.environ.get("GITHUB_OUTPUT")
+    if path:
+        with Path(path).open("a") as output:
+            output.write(f"{name}={value}\n")
+
+
 def repo_slug(root: Path) -> str:
     view = ["gh", "repo", "view", "--json", "nameWithOwner", "--jq", ".nameWithOwner"]
     return run(view, cwd=root, capture=True).strip()

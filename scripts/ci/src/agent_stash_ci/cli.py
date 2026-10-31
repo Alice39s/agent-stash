@@ -1,4 +1,5 @@
 import os
+import shutil
 from enum import StrEnum
 from pathlib import Path
 from typing import Annotated
@@ -9,6 +10,7 @@ from rich.table import Column, Table
 
 from . import github, registry
 from .placeholder import Auth, check_credentials, publish_placeholder
+from .plugin_index import PluginIndex, fetch_published, index_changes
 from .proc import console, run
 from .publish_lock import LOCK_PATH, parse_publish_lock
 from .workspace import (
@@ -113,6 +115,27 @@ def plugin_index(
     )  # fmt: skip
 
 
+@app.command("plugin-index-diff")
+def plugin_index_diff(
+    index: Annotated[Path, typer.Option(help="Generated index.json.")],
+    published: Annotated[str, typer.Option(help="URL of the published index.json.")],
+) -> None:
+    """Compare a generated plugin index with the published one.
+
+    Prints each difference and sets the step output `changed` to true or false.
+    """
+    changes = index_changes(
+        PluginIndex.model_validate_json(index.read_bytes()), fetch_published(published)
+    )
+    github.write_output("changed", "true" if changes else "false")
+    if not changes:
+        stdout.print(f"{published} matches the generated index")
+        return
+    lines = "".join(f"- {change}\n" for change in changes)
+    stdout.print(f"{published} differs from the generated index:\n{lines}", markup=False)
+    github.write_step_summary(f"Plugin index changes:\n\n{lines}")
+
+
 @app.command()
 def docs(
     base_path: Annotated[
@@ -125,13 +148,18 @@ def docs(
         str,
         typer.Option(envvar="SITE_ORIGIN", help="Origin of the published site, for absolute URLs."),
     ],
+    plugin_index: Annotated[
+        Path, typer.Option(help="index.json to serve at the root of the site.")
+    ],
 ) -> None:
-    """Export the docs site to docs/out for GitHub Pages."""
+    """Export the docs site to docs/out for GitHub Pages, with the plugin index at its root."""
+    root = repo_root()
     run(
         ["pnpm", "--filter", "agent-stash-docs", "build"],
-        cwd=repo_root(),
+        cwd=root,
         env={"DOCS_BASE_PATH": base_path, "SITE_ORIGIN": origin},
     )
+    shutil.copyfile(plugin_index, root / "docs" / "out" / "index.json")
 
 
 @npm_app.command()

@@ -82,7 +82,7 @@ When you change the dsh-enhance prompts, how the request is built, or how the re
 
 ## Docs site
 
-The docs site is in `docs/`. It is a statically exported [Fumadocs](https://fumadocs.dev) site. `.github/workflows/pages.yml` builds it with `ci docs`, generates the plugin index with `ci plugin-index`, and puts both into one GitHub Pages artifact. Pull requests that change `docs/` only build a preview artifact, and runs on `main` deploy it. The pages are in `docs/content/docs/`. Chinese pages are `*.mdx` files, and English pages are `*.en.mdx` files with the same names.
+The docs site is in `docs/`. It is a statically exported [Fumadocs](https://fumadocs.dev) site. `.github/workflows/pages.yml` builds it with `ci docs`, generates the plugin index with `ci plugin-index`, and puts both into one GitHub Pages artifact. Pull requests that change `docs/` only build a preview artifact, and runs on `main` deploy it. The runs after a release and the hourly runs first compare the generated index with the published one through `ci plugin-index-diff`, and skip the build and the deployment when they match. The pages are in `docs/content/docs/`. Chinese pages are `*.mdx` files, and English pages are `*.en.mdx` files with the same names.
 
 ```bash
 pnpm --filter agent-stash-docs dev    # http://localhost:3883/agent-stash/
