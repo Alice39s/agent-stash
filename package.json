@@ -1,6 +1,6 @@
 {
   "name": "@agent-stash/init",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Personal Agent Skills and /init plugins for pi, DeepSeek Harness, Cline, Grok Build, goose, and Aider",
   "keywords": [
     "cline-plugin",

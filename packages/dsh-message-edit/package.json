@@ -1,6 +1,6 @@
 {
   "name": "@agent-stash/dsh-message-edit",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Edit, reroll, and retry DeepSeek Harness conversation turns as reversible session branches",
   "keywords": [
     "deepseek-harness",
