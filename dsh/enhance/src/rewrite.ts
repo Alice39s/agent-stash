@@ -46,31 +46,68 @@ export interface LlmView {
   prepareCall(config: ModelRoute, signal?: AbortSignal): Promise<PreparedCallView>;
 }
 
-/** 发给模型的系统提示与用户输入；`draft` 是凭据换成占位符之后的草稿。 */
+/**
+ * 发给模型的系统提示与用户输入。`draft` 是凭据与分段标签换成占位符之后的草稿；
+ * `secrets` 与 `tags` 是把占位符换回原文的对照表。
+ */
 export interface RewritePrompt {
   readonly system: string;
   readonly input: string;
   readonly draft: string;
   readonly secrets: readonly string[];
+  readonly tags: readonly string[];
 }
 
-/** 组装改写请求：共用规则加预设的模式说明作为系统提示，会话上下文与草稿分段放进用户输入。 */
+/** 用户输入与模型输出分段用的标签。 */
+const SECTION_TAG = /<\/?(?:conversation_context|draft_prompt|rewritten_prompt)>/gu;
+
+/** 第 `index` 个分段标签的占位符，从 1 开始编号。 */
+export function tagPlaceholder(index: number): string {
+  return `⟦tag-${String(index)}⟧`;
+}
+
+/**
+ * 把文字里的分段标签换成占位符，模型就不会把草稿或上下文里写到的标签当成分段的边界。
+ * 新出现的标签追加到 `tags`，同一个标签共用一个编号。
+ */
+function maskTags(text: string, tags: string[]): string {
+  return text.replace(SECTION_TAG, (tag) => {
+    if (!tags.includes(tag)) tags.push(tag);
+    return tagPlaceholder(tags.indexOf(tag) + 1);
+  });
+}
+
+function unmaskTags(text: string, tags: readonly string[]): string {
+  return tags.reduce(
+    (result, tag, index) => result.replaceAll(tagPlaceholder(index + 1), tag),
+    text,
+  );
+}
+
+/**
+ * 组装改写请求：共用规则加预设的模式说明作为系统提示，会话上下文与草稿分段放进用户输入。
+ * 草稿里的凭据、草稿与上下文里的分段标签都换成占位符。
+ */
 export function buildPrompt(
   draft: string,
   instructions: string,
   turns: readonly ContextTurn[],
 ): RewritePrompt {
   const masked = maskSecrets(draft);
+  const tags: string[] = [];
+  const text = maskTags(masked.text, tags);
   const sections: string[] = [];
   if (turns.length > 0) {
-    sections.push(`<conversation_context>\n${renderTurns(turns)}\n</conversation_context>`);
+    const context = maskTags(renderTurns(turns), tags);
+    sections.push(`<conversation_context>\n${context}\n</conversation_context>`);
   }
-  sections.push(`<draft_prompt>\n${masked.text}\n</draft_prompt>`);
+  sections.push(`<draft_prompt>\n${text}\n</draft_prompt>`);
   return {
     system: `${SHARED_RULES}\n\n${instructions}`,
     input: sections.join("\n\n"),
-    draft: masked.text,
+    draft: text,
     secrets: masked.secrets,
+    tags,
   };
 }
 
@@ -121,7 +158,7 @@ function mainlyCjk(text: string): boolean | undefined {
   return undefined;
 }
 
-/** 草稿里必须原样出现在结果中的片段：代码块、行内代码、链接与凭据占位符。 */
+/** 草稿里必须原样出现在结果中的片段：代码块、行内代码、链接，以及凭据与分段标签的占位符。 */
 export function protectedTokens(draft: string): string[] {
   const tokens = new Set<string>();
   for (const match of draft.matchAll(/```[^\n]*\n([\s\S]*?)\n```/gu)) {
@@ -137,13 +174,13 @@ export function protectedTokens(draft: string): string[] {
   )) {
     tokens.add(match[0]);
   }
-  for (const match of draft.matchAll(/⟦secret-\d+⟧/gu)) tokens.add(match[0]);
+  for (const match of draft.matchAll(/⟦(?:secret|tag)-\d+⟧/gu)) tokens.add(match[0]);
   return [...tokens];
 }
 
 /**
  * 检查改写结果能否替换草稿，不能时返回原因：像在回答草稿、换了语言，或者丢了草稿里必须原样保留的片段。
- * 两边都是凭据换成占位符之后的文本。
+ * 两边都是凭据与分段标签换成占位符之后的文本。
  */
 export function checkResult(draft: string, result: string): string | undefined {
   const head = result.trimStart().toLowerCase();
@@ -160,6 +197,17 @@ export function checkResult(draft: string, result: string): string | undefined {
   return undefined;
 }
 
+/** 句末的标点与空白：改写结果与草稿只差这些时，算作没有改动。 */
+const TRAILING_PUNCTUATION = /[\s。．.!！?？;；,，、]+$/u;
+
+function withoutClosingPunctuation(text: string): string {
+  return text.trim().replace(TRAILING_PUNCTUATION, "");
+}
+
+function sameAsDraft(result: string, draft: string): boolean {
+  return withoutClosingPunctuation(result) === withoutClosingPunctuation(draft);
+}
+
 /** 一次改写的结果。 */
 export type RewriteOutcome =
   | { readonly ok: true; readonly text: string; readonly unchanged: boolean }
@@ -169,7 +217,9 @@ function failed(reason: Failure["reason"], message: string): RewriteOutcome {
   return { ok: false, reason, message };
 }
 
-/** 处理模型的完整输出：识别无需改动的哨兵、检查结果，再把占位符换回原文。 */
+/**
+ * 处理模型的完整输出：识别无需改动的哨兵和只补了句末标点的结果、检查结果，再把占位符换回原文。
+ */
 export function settleOutput(
   raw: string,
   prompt: RewritePrompt,
@@ -179,10 +229,11 @@ export function settleOutput(
   const result = extractResult(raw, prompt.draft);
   if (result === UNCHANGED) return { ok: true, text: original, unchanged: true };
   if (result === "") return failed("empty", `${label} returned no text`);
-  if (result === prompt.draft.trim()) return { ok: true, text: original, unchanged: true };
+  if (sameAsDraft(result, prompt.draft)) return { ok: true, text: original, unchanged: true };
   const problem = checkResult(prompt.draft, result);
   if (problem !== undefined) return failed("invalid", `${label}: ${problem}`);
-  return { ok: true, text: unmaskSecrets(result, prompt.secrets), unchanged: false };
+  const text = unmaskSecrets(unmaskTags(result, prompt.tags), prompt.secrets);
+  return { ok: true, text, unchanged: false };
 }
 
 /**

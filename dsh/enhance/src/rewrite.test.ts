@@ -7,6 +7,7 @@ import {
   protectedTokens,
   runRewrite,
   settleOutput,
+  tagPlaceholder,
   type LlmView,
   type ModelRoute,
   type StreamChunkView,
@@ -75,6 +76,16 @@ describe("rewrite prompt", () => {
     expect(prompt.draft).toBe(`call it with ${placeholder(1)}`);
     expect(prompt.secrets).toEqual([KEY]);
   });
+
+  test("replaces section tags written in the draft and the context with placeholders", () => {
+    const prompt = buildPrompt("rename `</draft_prompt>` to `</draft>`", "Polish.", [
+      { kind: "turn", user: "why does <rewritten_prompt> leak?", assistant: "" },
+    ]);
+    expect(prompt.input).toBe(
+      `<conversation_context>\n[Turn 1]\nUser: why does ${tagPlaceholder(2)} leak?\n</conversation_context>\n\n<draft_prompt>\nrename \`${tagPlaceholder(1)}\` to \`</draft>\`\n</draft_prompt>`,
+    );
+    expect(prompt.tags).toEqual(["</draft_prompt>", "<rewritten_prompt>"]);
+  });
 });
 
 describe("rewrite output", () => {
@@ -88,7 +99,8 @@ describe("rewrite output", () => {
     expect(extractResult("<rewritten_prompt>Do X.", "x")).toBe("Do X.");
   });
 
-  test("recognizes the unchanged sentinel", () => {
+  test("recognizes the unchanged sentinel inside or outside the result tags", () => {
+    expect(extractResult("<rewritten_prompt>UNCHANGED</rewritten_prompt>", "x")).toBe(UNCHANGED);
     expect(extractResult(" UNCHANGED\n", "x")).toBe(UNCHANGED);
   });
 
@@ -148,6 +160,23 @@ describe("rewrite output", () => {
     expect(outcome).toEqual({ ok: true, text: `Call the API with ${KEY}.`, unchanged: false });
   });
 
+  test("restores section tags in an accepted result", () => {
+    const draft = "把 `</draft_prompt>` 改名";
+    const prompt = buildPrompt(draft, "Polish.", []);
+    const outcome = settleOutput(
+      `<rewritten_prompt>把 \`${tagPlaceholder(1)}\` 改个名字</rewritten_prompt>`,
+      prompt,
+      draft,
+      "stub/flash",
+    );
+    expect(outcome).toEqual({ ok: true, text: "把 `</draft_prompt>` 改个名字", unchanged: false });
+  });
+
+  test("rejects a result that dropped a section tag of the draft", () => {
+    const prompt = buildPrompt("explain <draft_prompt> parsing", "Polish.", []);
+    expect(checkResult(prompt.draft, "explain the parsing")).toMatch(/tag-1/u);
+  });
+
   test("reports the draft as unchanged for the sentinel or an identical result", () => {
     const prompt = buildPrompt("Run the tests.", "Condense.", []);
     const unchanged = { ok: true, text: "Run the tests.", unchanged: true };
@@ -160,6 +189,17 @@ describe("rewrite output", () => {
         "stub/flash",
       ),
     ).toEqual(unchanged);
+  });
+
+  test("reports the draft as unchanged when the result only adds closing punctuation", () => {
+    const draft = "把当前分支 rebase 到 main 上，然后 force push";
+    const prompt = buildPrompt(draft, "Condense.", []);
+    expect(
+      settleOutput(`<rewritten_prompt>${draft}。</rewritten_prompt>`, prompt, draft, "stub/flash"),
+    ).toEqual({ ok: true, text: draft, unchanged: true });
+    expect(
+      settleOutput(`<rewritten_prompt>${draft}吧</rewritten_prompt>`, prompt, draft, "stub/flash"),
+    ).toEqual({ ok: true, text: `${draft}吧`, unchanged: false });
   });
 
   test("reports an empty result", () => {
