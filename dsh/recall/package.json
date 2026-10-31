@@ -1,6 +1,6 @@
 {
   "name": "@agent-stash/dsh-recall",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Browse the prompts of the current DeepSeek Harness session with the arrow keys in the composer",
   "keywords": [
     "dsh-plugin",
