@@ -1,6 +1,6 @@
 {
   "name": "@agent-stash/dsh-autosuggest",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Complete the DeepSeek Harness composer from global prompt history, zsh-autosuggestions style",
   "keywords": [
     "autosuggest",
