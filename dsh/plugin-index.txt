@@ -1,5 +1,5 @@
 # 插件索引的来源列表：.github/workflows/pages.yml 用 DSH 的参考生成器把它生成 index.json，与文档站一起发布。
-# npm 上每个声明了 dsh.bundle 的发布版本都会列出。
+# 每个插件列出 npm 上声明了 dsh.bundle 的发布版本中版本号最高的 10 个。
 @agent-stash/init
 @agent-stash/dsh-message-edit
 @agent-stash/dsh-recall

@@ -10,7 +10,7 @@ from rich.table import Column, Table
 
 from . import github, registry
 from .placeholder import Auth, check_credentials, publish_placeholder
-from .plugin_index import PluginIndex, fetch_published, index_changes
+from .plugin_index import PluginIndex, fetch_published, index_changes, trim_index_file
 from .proc import console, run
 from .publish_lock import LOCK_PATH, parse_publish_lock
 from .workspace import (
@@ -99,7 +99,10 @@ def plugin_index(
     output: Annotated[Path, typer.Option(help="index.json to write.")],
     cache: Annotated[Path, typer.Option(help="Generator result cache, kept between runs.")],
 ) -> None:
-    """Generate the DSH plugin index from dsh/plugin-index.txt with DSH's reference generator."""
+    """Generate the DSH plugin index from dsh/plugin-index.txt with DSH's reference generator.
+
+    Each plugin keeps its 10 highest versions plus any version a dist-tag points to.
+    """
     generator = "@deepseek-ai/dsh-plugin-market-generator"
     run(["pnpm", "install", "--frozen-lockfile", "--filter", f"{generator}..."], cwd=dsh)
     run(
@@ -113,6 +116,7 @@ def plugin_index(
         ],
         cwd=dsh,
     )  # fmt: skip
+    trim_index_file(output)
 
 
 @app.command("plugin-index-diff")

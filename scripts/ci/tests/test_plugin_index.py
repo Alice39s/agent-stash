@@ -9,7 +9,13 @@ import pytest
 from typer.testing import CliRunner
 
 from agent_stash_ci.cli import app
-from agent_stash_ci.plugin_index import PluginIndex, index_changes
+from agent_stash_ci.plugin_index import (
+    IndexedPlugin,
+    PluginIndex,
+    index_changes,
+    newest_versions,
+    trim_index_file,
+)
 
 
 def _plugin(name: str, *versions: str, description: str = "A plugin") -> dict[str, object]:
@@ -68,6 +74,62 @@ def test_a_reordered_index_is_a_change() -> None:
 def test_an_unpublished_index_is_a_change() -> None:
     generated = PluginIndex.model_validate(_index(_plugin("a", "1.0.0")))
     assert index_changes(generated, None) == ["no index is published yet"]
+
+
+def _kept(plugin: dict[str, object], limit: int = 10) -> list[str]:
+    trimmed = newest_versions(IndexedPlugin.model_validate(plugin), limit)
+    return [entry.version for entry in trimmed.versions]
+
+
+def test_only_the_ten_highest_versions_are_kept() -> None:
+    versions = [f"0.{minor}.0" for minor in range(12, 0, -1)]
+    assert _kept(_plugin("dsh-context", *versions)) == versions[:10]
+
+
+def test_a_plugin_with_few_versions_keeps_them_all() -> None:
+    assert _kept(_plugin("@agent-stash/dsh-enhance", "0.3.0", "0.2.1")) == ["0.3.0", "0.2.1"]
+
+
+def test_versions_are_ranked_by_semver_and_keep_their_listed_order() -> None:
+    plugin = _plugin("a", "0.9.0", "0.10.0", "1.0.0-rc.1", "0.2.0", "1.0.0")
+    assert _kept(plugin, limit=3) == ["0.10.0", "1.0.0-rc.1", "1.0.0"]
+
+
+def test_a_version_a_dist_tag_points_to_is_kept() -> None:
+    plugin = _plugin("a", "3.0.0", "2.0.0", "1.0.0") | {"dist-tags": {"latest": "1.0.0"}}
+    assert _kept(plugin, limit=1) == ["3.0.0", "1.0.0"]
+
+
+def test_the_trimmed_file_keeps_the_generator_layout(tmp_path: Path) -> None:
+    short = {
+        "name": "@agent-stash/init",
+        "title": {"en": "/init", "zh": "初始化"},
+        "icon": "data:image/svg+xml;base64,AA==",
+        "metadata": {"keywords": []},
+        "versions": [
+            {
+                "version": "1.4.1",
+                "publishTimestamp": 1,
+                "source": {"type": "npm"},
+                "engines": {"dsh": ">=0.2.1-alpha.2"},
+            }
+        ],
+    }
+    long = _plugin("dsh-context", *(f"0.{minor}.0" for minor in range(15, 0, -1)))
+    index = {
+        "format": 1,
+        "title": "Agent Stash",
+        "description": "Plugins",
+        "plugins": [short, long],
+    }
+    path = tmp_path / "index.json"
+    path.write_text(json.dumps(index, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    trim_index_file(path)
+    expected = index | {"plugins": [short, long | {"versions": long["versions"][:10]}]}
+    assert (
+        path.read_text(encoding="utf-8")
+        == json.dumps(expected, indent=2, ensure_ascii=False) + "\n"
+    )
 
 
 @pytest.fixture

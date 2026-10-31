@@ -1,8 +1,20 @@
 import time
 from http import HTTPStatus
+from pathlib import Path
 
 import requests
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, SerializerFunctionWrapHandler, model_serializer
+from semver import Version
+
+MAX_VERSIONS = 10
+"""每个插件在发布的索引里最多列出的版本数。"""
+
+
+def _move_last(data: dict[str, object], *keys: str) -> dict[str, object]:
+    """把 `keys` 挪到末尾，其余字段保持原顺序；输出与生成器写出的字段顺序一致。"""
+    return {key: value for key, value in data.items() if key not in keys} | {
+        key: data[key] for key in keys if key in data
+    }
 
 
 class IndexedVersion(BaseModel):
@@ -21,6 +33,17 @@ class IndexedPlugin(BaseModel):
     name: str
     versions: list[IndexedVersion]
 
+    @model_serializer(mode="wrap")
+    def _versions_last(self, handler: SerializerFunctionWrapHandler) -> dict[str, object]:
+        return _move_last(handler(self), "versions")
+
+    def tagged_versions(self) -> set[str]:
+        """`dist-tags` 指向的版本号；索引格式要求这些版本都在列表里。"""
+        tags = (self.model_extra or {}).get("dist-tags", {})
+        if not isinstance(tags, dict):
+            raise TypeError(f"{self.name}: dist-tags is not an object")
+        return {str(version) for version in tags.values()}
+
 
 class PluginIndex(BaseModel):
     """DSH 插件索引；插件列表以外的字段原样保留，参与比较。"""
@@ -28,6 +51,27 @@ class PluginIndex(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     plugins: list[IndexedPlugin]
+
+    @model_serializer(mode="wrap")
+    def _plugins_last(self, handler: SerializerFunctionWrapHandler) -> dict[str, object]:
+        return _move_last(handler(self), "plugins")
+
+
+def newest_versions(plugin: IndexedPlugin, limit: int) -> IndexedPlugin:
+    """只留 SemVer 最高的 `limit` 个版本和 `dist-tags` 指向的版本，按原来的顺序排列。"""
+    ranked = sorted(plugin.versions, key=lambda entry: Version.parse(entry.version), reverse=True)
+    kept = {entry.version for entry in ranked[:limit]} | plugin.tagged_versions()
+    versions = [entry for entry in plugin.versions if entry.version in kept]
+    return plugin.model_copy(update={"versions": versions})
+
+
+def trim_index_file(path: Path, limit: int = MAX_VERSIONS) -> None:
+    """把生成的索引改写为每个插件只列最新的 `limit` 个版本。"""
+    index = PluginIndex.model_validate_json(path.read_bytes())
+    trimmed = index.model_copy(
+        update={"plugins": [newest_versions(plugin, limit) for plugin in index.plugins]}
+    )
+    path.write_text(f"{trimmed.model_dump_json(indent=2)}\n", encoding="utf-8")
 
 
 def fetch_published(url: str) -> PluginIndex | None:
