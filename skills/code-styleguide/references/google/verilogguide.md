@@ -1,6 +1,6 @@
 # Google Verilog Style Guide
 
-Source: <https://google.github.io/styleguide/verilogguide.html> · google/styleguide@24cfcced577a (2026-10-17) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/verilogguide.html> · google/styleguide@0de02b3671a9 (2026-10-30) · CC-BY-3.0
 
 ## Index
 
