@@ -1,7 +1,7 @@
 ---
 name: agent-stash-docs-design
 description: 用于 Agent Stash 文档站（docs/）的长文文档页、页面末尾的贡献者与页面历史、语言入口页、未找到页、页面内的截图与录屏展示，以及构建生成的链接预览图。读者是给 Coding Agent 安装插件和技能的开发者，在桌面上对照命令、按键和配置操作，也会在手机上查阅；目标是沿用 DeepSeek Harness 界面的中性色与系统字体、插件图标的蓝色作为唯一强调色、Apple 式的截图展示板，中英双语，浅色与深色主题。
-version: 2026-10-27.1
+version: 2026-10-31.1
 ---
 
 ## 1. 范围与优先级
@@ -58,6 +58,11 @@ version: 2026-10-27.1
 - [SHOULD] 一个展示板只放一段素材；同一功能的录屏和截图不并排重复展示。
 - [MUST] 素材里的界面语言、主题和数据如实来自拍摄时的程序，说明里不描述素材里没有的效果。
 - [MUST] 录屏在用全新 DSH_HOME 启动的 dsh web 里拍摄，会话只含演示用的 Prompt；画面里有指针（点击时指尖扩散一圈波纹）和按键提示，操作从指针点击输入框或控件开始。封面图不带指针和按键提示。（来源：2026-10-26 文档站素材重拍。）
+- [MUST] 每段录屏和它的封面图都烧录同一层仓库水印，内容是 `github.com/Alice39s/agent-stash`，读者下载、转发或全屏播放时都能看到出处。截图不加水印。（来源：2026-10-31 用户要求。）
+- [MUST] 水印分两层，按 CSS 像素排版、以 2 倍像素渲染：
+  - 右下角角标：离右边和底边各 12px；8px 圆角，内边距 5px 10px 5px 8px，底色 `rgb(15 17 21 / 0.64)`，0.5px `rgb(255 255 255 / 0.16)` 描边，投影 `0 2px 8px rgb(0 0 0 / 0.24)`；左侧 13px 白色 GitHub 标志（90% 不透明），间隔 6px 后是 12px、行高 1.4、500 字重、`rgb(255 255 255 / 0.88)` 的仓库地址。
+  - 全屏平铺：仓库地址 14px、600 字重、5% 不透明的白色，逆时针旋转 24°，横向每 300px、纵向约每 120px 一条，相邻两行错开半格，铺满整个画面。
+- [SHOULD] 平铺层只在深色界面上隐约可见，不遮挡界面文字；读者辨认出处靠角标。（决策：录屏全部在深色主题下拍摄，界面元素占满画面底部，角标不可避免地压在界面上，所以用半透明深色底保证可读。来源：2026-10-31 录屏角落取样。）
 
 ### 贡献者与页面历史
 
@@ -167,6 +172,7 @@ version: 2026-10-27.1
 | `Kbd`、`Keys`        | `components/kbd.tsx`                        | 按键帽；`Keys` 的 `keys` 列出可替换的一组按键                                                             |
 | `KeyStrip`           | `components/key-strip.tsx`                  | 品牌装饰                                                                                                  |
 | `OgImage`            | `lib/og-image.tsx`                          | 链接预览图模板                                                                                            |
+| `watermarkOverlay`   | `lib/watermark.ts`                          | 录屏水印的透明覆盖层；`watermarkStyle` 记录角标位置与平铺间距                                             |
 | `ViewOptionsPopover` | `fumadocs-extras/page-actions`              | 页面操作行的打开方式菜单；`markdownUrl`、`githubUrl`、`pageUrl`、`locale`                                 |
 | `GitChangelog`       | `fumadocs-page-history/ui`                  | 贡献者与页面历史；记录与本页目录条目来自 `lib/page-history.tsx`，样式类名 `as-page-history`               |
 | Fumadocs 组件        | `components/mdx.tsx`                        | `Steps`/`Step`、`Tabs`/`Tab`、`Files`/`Folder`/`File`、`Accordions`/`Accordion`、`TypeTable`、`ImageZoom` |
@@ -205,7 +211,7 @@ version: 2026-10-27.1
 - [SHOULD] 主要信息不用小号、低对比度的文字。
 - [SHOULD] 普通元数据不用胶囊标签。
 - [SHOULD] 不使用渐变；`KeyStrip` 的透明度渐变、预览图条带的渐隐遮罩，以及 Fumadocs 侧栏与本页目录滚动区域边缘的渐隐遮罩除外。
-- [MUST] 不在展示板里放示意图、合成图或与真实界面不符的素材。
+- [MUST] 不在展示板里放示意图、合成图或与真实界面不符的素材；录屏水印是唯一叠加在素材上的内容。
 
 ## 8. 实现与接入
 
@@ -214,6 +220,7 @@ version: 2026-10-27.1
 - [MUST] 主题由 next-themes 在 `html` 上切换 `dark` 类，默认跟随系统；原生控件和滚动条使用当前主题的 color-scheme。
 - [SHOULD] 文档站的 MDX 组件映射在 `components/mdx.tsx`；表头与短列由 `lib/remark-label-columns.ts` 标记为不换行；内容链接由 `lib/remark-content-links.ts` 改写为页面地址。
 - [SHOULD] 截图与录屏放在 `docs/public/media/`，文件名用场景名（`recall.mp4`、`recall.png`），尺寸登记在 `lib/media.ts`；录屏为 H.264 MP4、60fps、无音轨。中文页用中文界面的录制，英文页用同一段操作在英文界面下的录制，场景名加 `-en`（`recall-en`）。
+- [MUST] 录屏和封面图的水印由 `pnpm --filter agent-stash-docs media:watermark --source <目录>` 写入 `public/media/`：`--source` 目录放未加水印的原始文件（文件名与 `lib/media.ts` 相同，相对路径从运行 pnpm 的目录算起），覆盖层由 `lib/watermark.ts` 经预览图渲染器生成，ffmpeg 叠加后按 H.264 CRF 20 重新编码。加过水印的录屏在 `comment` 元数据里带标记，脚本拒绝把它当原始文件再加一次。
 - [SHOULD] 浮层与菜单用 Base UI（Fumadocs 默认的组件库）；图标用 lucide-react。不引入另一套组件系统。
 - [SHOULD] 打开方式菜单用 `fumadocs-extras`，贡献者与页面历史用 `fumadocs-page-history`；两者的样式预设在 `globals.css` 里紧跟 Fumadocs 的预设导入，页面历史的站点调整写在 `.as-page-history` 下。
 - [MUST] 页面历史在构建时由 `lib/page-history.tsx` 从 Git 读取，哪些页面显示它也在这里决定；构建需要完整的提交历史，Pages 工作流检出时用 `fetch-depth: 0`。页面历史不进入 Markdown 副本、`llms-full.txt` 和站内搜索。

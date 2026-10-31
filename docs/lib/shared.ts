@@ -8,13 +8,7 @@ export const siteOrigin = requiredEnv(
 );
 export const siteName = "Agent Stash";
 
-export const repository = {
-  owner: "Alice39s",
-  name: "agent-stash",
-  branch: "main",
-  contentDir: "docs/content/docs",
-} as const;
-export const repositoryUrl = `https://github.com/${repository.owner}/${repository.name}`;
+export { repository, repositoryUrl } from "./repository";
 
 interface PageRef {
   slugs: string[];
