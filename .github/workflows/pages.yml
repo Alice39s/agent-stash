@@ -16,13 +16,15 @@ on:
       - "pnpm-lock.yaml"
       - "scripts/ci/**"
       - ".github/workflows/pages.yml"
-  # 发布流程把新版本发到 npm 之后重新生成，新版本随即出现在插件索引里。
+  # 发布流程结束后与每小时各重新生成一次插件索引，与已发布的不同时才构建并部署。
+  # 发布流程失败时新版本可能已经发到 npm，所以不论结果都比对；每小时的运行收进第三方插件的新版本，
+  # 也补上部署失败的运行。
   workflow_run:
     workflows: [Release]
     types: [completed]
     branches: [main]
   schedule:
-    - cron: "17 4 * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -41,9 +43,10 @@ env:
 
 jobs:
   build:
-    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    outputs:
+      changed: ${{ steps.index.outputs.changed }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -57,21 +60,28 @@ jobs:
       - uses: ./.github/actions/setup
       - id: pages
         uses: actions/configure-pages@v6
+      - name: Generate index.json
+        run: uv run ci plugin-index --dsh .dsh --output "${{ runner.temp }}/index.json" --cache "${{ runner.temp }}/plugin-index-cache"
+      # 发布流程结束后与定时运行只在索引变了时构建；其余事件不比对，`changed` 为空。
+      - name: Compare with the published index.json
+        id: index
+        if: github.event_name == 'workflow_run' || github.event_name == 'schedule'
+        run: uv run ci plugin-index-diff --index "${{ runner.temp }}/index.json" --published "${{ steps.pages.outputs.base_url }}/index.json"
+      # 插件索引与文档站发布在同一个 Pages 站点，地址固定为站点根目录下的 index.json。
       - name: Build the docs
-        run: uv run ci docs
+        if: steps.index.outputs.changed != 'false'
+        run: uv run ci docs --plugin-index "${{ runner.temp }}/index.json"
         env:
           DOCS_BASE_PATH: ${{ steps.pages.outputs.base_path }}
           SITE_ORIGIN: ${{ steps.pages.outputs.origin }}
-      # 插件索引与文档站发布在同一个 Pages 站点，地址固定为站点根目录下的 index.json。
-      - name: Generate index.json
-        run: uv run ci plugin-index --dsh .dsh --output docs/out/index.json --cache "${{ runner.temp }}/plugin-index-cache"
       # Pull request 只保留产物作为预览，main 上的运行才部署。
       - uses: actions/upload-pages-artifact@v5
+        if: steps.index.outputs.changed != 'false'
         with:
           path: docs/out
 
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && needs.build.outputs.changed != 'false'
     needs: build
     runs-on: ubuntu-latest
     permissions:

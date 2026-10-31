@@ -39,7 +39,7 @@ Browse the plugins in the index on the Discover page and install the ones you ne
 </Step>
 </Steps>
 
-GitHub Actions generates the index with the DSH reference generator. The index updates after each release and on a daily schedule. It lists every released version of these npm packages. The index and these docs are published to the same GitHub Pages site.
+GitHub Actions generates the index with the DSH reference generator. It lists every released version of these npm packages. After each release run and once an hour, the workflow generates the index again and deploys it when it differs from the published one. The index and these docs are published to the same GitHub Pages site, which caches files for up to 10 minutes.
 
 Besides the Agent Stash plugins, the index lists two recommended third-party plugins:
 
