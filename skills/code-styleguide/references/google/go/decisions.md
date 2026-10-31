@@ -1,6 +1,6 @@
 # Go Style Decisions
 
-Source: <https://google.github.io/styleguide/go/decisions.html> · google/styleguide@c098353acb6d (2026-03-18) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/go/decisions.html> · google/styleguide@9d7ce97386f8 (2026-10-30) · CC-BY-3.0
 
 ## Index
 
@@ -10,71 +10,71 @@ Source: <https://google.github.io/styleguide/go/decisions.html> · google/styleg
   - L117 Package names
   - L143 Receiver names
   - L159 Constant names
-  - L195 Initialisms
-  - L218 Getters
-  - L224 Variable names
-  - L274 Repetition
-- L391 Commentary
-  - L401 Comment line length
-  - L433 Doc comments
-  - L469 Comment sentences
-  - L494 Examples
-  - L500 Named result parameters
-  - L549 Package comments
-- L605 Imports
-  - L607 Import renaming
-  - L636 Import grouping
-  - L668 Import "blank" (import _)
-  - L688 Import "dot" (import .)
-- L718 Errors
-  - L720 Returning errors
-  - L751 Error strings
-  - L774 Handle errors
-  - L795 In-band errors
-  - L837 Indent error flow
-- L887 Language
-  - L889 Literal formatting
-  - L1153 Nil slices
-  - L1237 Indentation confusion
-  - L1256 Function formatting
-  - L1343 Conditionals and loops
-  - L1493 Copying
-  - L1542 Don't panic
-  - L1554 Must functions
-  - L1619 Goroutine lifetimes
-  - L1691 Interfaces
-  - L1707 Generics
-  - L1729 Pass values
-  - L1735 Receiver type
-  - L1836 switch and break
-  - L1888 Synchronous functions
-  - L1900 Type aliases
-  - L1904 Use %q
-  - L1924 Use any
-- L1928 Common libraries
-  - L1930 Flags
-  - L1962 Logging
-  - L1975 Contexts
-  - L2033 crypto/rand
-- L2061 Useful test failures
-  - L2072 Assertion libraries
-  - L2149 Identify the function
-  - L2153 Identify the input
-  - L2157 Got before want
-  - L2163 Full structure comparisons
-  - L2190 Compare stable results
-  - L2196 Keep going
-  - L2238 Equality comparison and diffs
-  - L2278 Level of detail
-  - L2294 Print diffs
-  - L2314 Test error semantics
-- L2334 Test structure
-  - L2336 Subtests
-  - L2402 Table-driven tests
-  - L2617 Test helpers
-  - L2648 Test package
-  - L2708 Use package testing
-- L2723 Non-decisions
+  - L192 Initialisms
+  - L215 Getters
+  - L221 Variable names
+  - L271 Repetition
+- L377 Commentary
+  - L387 Comment line length
+  - L417 Doc comments
+  - L451 Comment sentences
+  - L475 Examples
+  - L481 Named result parameters
+  - L526 Package comments
+- L578 Imports
+  - L580 Import renaming
+  - L607 Import grouping
+  - L638 Import "blank" (import _)
+  - L658 Import "dot" (import .)
+- L686 Errors
+  - L688 Returning errors
+  - L716 Error strings
+  - L738 Handle errors
+  - L758 In-band errors
+  - L796 Indent error flow
+- L842 Language
+  - L844 Literal formatting
+  - L1089 Nil slices
+  - L1166 Indentation confusion
+  - L1184 Function formatting
+  - L1262 Conditionals and loops
+  - L1399 Copying
+  - L1445 Don't panic
+  - L1457 Must functions
+  - L1519 Goroutine lifetimes
+  - L1588 Interfaces
+  - L1606 Generics
+  - L1628 Pass values
+  - L1634 Receiver type
+  - L1728 switch and break
+  - L1778 Synchronous functions
+  - L1790 Type aliases
+  - L1794 Use %q
+  - L1812 Use any
+- L1816 Common libraries
+  - L1818 Flags
+  - L1848 Logging
+  - L1861 Contexts
+  - L1920 crypto/rand
+- L1947 Useful test failures
+  - L1958 Assertion libraries
+  - L2031 Identify the function
+  - L2035 Identify the input
+  - L2039 Got before want
+  - L2045 Full structure comparisons
+  - L2071 Compare stable results
+  - L2077 Keep going
+  - L2117 Equality comparison and diffs
+  - L2155 Level of detail
+  - L2171 Print diffs
+  - L2191 Test error semantics
+- L2210 Test structure
+  - L2212 Subtests
+  - L2277 Table-driven tests
+  - L2488 Test helpers
+  - L2518 Test package
+  - L2575 Use package testing
+- L2590 Non-decisions
 
 ---
 
@@ -161,7 +161,6 @@ See also: [Go blog post about package names](https://go.dev/blog/package-names).
 Constant names must use [MixedCaps](https://google.github.io/styleguide/go/guide#mixed-caps) like all other names in Go. ([Exported](https://tour.golang.org/basics/3) constants start with uppercase, while unexported constants start with lowercase.) This applies even when it breaks conventions in other languages. Constant names should not be a derivative of their values and should instead explain what the value denotes.
 
 ```go
-// Good:
 const MaxPacketSize = 512
 
 const (
@@ -174,7 +173,6 @@ const (
 Do not use non-MixedCaps constant names or constants with a `K` prefix.
 
 ```go
-// Bad:
 const MAX_PACKET_SIZE = 512
 const kMaxBufferSize = 1024
 const KMaxUsersPergroup = 500
@@ -183,7 +181,6 @@ const KMaxUsersPergroup = 500
 Name constants based on their role, not their values. If a constant does not have a role apart from its value, then it is unnecessary to define it as a constant.
 
 ```go
-// Bad:
 const Twelve = 12
 
 const (
@@ -287,7 +284,6 @@ When naming exported symbols, the name of the package is always visible outside 
 > - `widget.NewWidgetWithName` -> `widget.NewWithName`
 > - `db.LoadFromDatabase` -> `db.Load`
 > - `goatteleportutil.CountGoatsTeleported` -> `gtutil.CountGoatsTeleported` or `goatteleport.Count`
-> - `myteampb.MyTeamMethodRequest` -> `mtpb.MyTeamMethodRequest` or `myteampb.MethodRequest`
 
 #### Variable name vs. type
 
@@ -302,13 +298,11 @@ The compiler always knows the type of a variable, and in most cases it is also c
 If the value appears in multiple forms, this can be clarified either with an extra word like `raw` and `parsed` or with the underlying representation:
 
 ```go
-// Good:
 limitRaw := r.FormValue("limit")
 limit, err := strconv.Atoi(limitRaw)
 ```
 
 ```go
-// Good:
 limitStr := r.FormValue("limit")
 limit, err := strconv.Atoi(limitStr)
 ```
@@ -318,7 +312,6 @@ limit, err := strconv.Atoi(limitStr)
 Names that include information from their surrounding context often create extra noise without benefit. The package name, method name, type name, function name, import path, and even filename can all provide context that automatically qualifies all names within.
 
 ```go
-// Bad:
 // In package "ads/targeting/revenue/reporting"
 type AdsTargetingRevenueReport struct{}
 
@@ -326,7 +319,6 @@ func (p *Project) ProjectName() string
 ```
 
 ```go
-// Good:
 // In package "ads/targeting/revenue/reporting"
 type Report struct{}
 
@@ -334,19 +326,16 @@ func (p *Project) Name() string
 ```
 
 ```go
-// Bad:
 // In package "sqldb"
 type DBConnection struct{}
 ```
 
 ```go
-// Good:
 // In package "sqldb"
 type Connection struct{}
 ```
 
 ```go
-// Bad:
 // In package "ads/targeting"
 func Process(in *pb.FooProto) *Report {
     adsTargetingID := in.GetAdsTargetingID()
@@ -354,7 +343,6 @@ func Process(in *pb.FooProto) *Report {
 ```
 
 ```go
-// Good:
 // In package "ads/targeting"
 func Process(in *pb.FooProto) *Report {
     id := in.GetAdsTargetingID()
@@ -364,11 +352,10 @@ func Process(in *pb.FooProto) *Report {
 Repetition should generally be evaluated in the context of the user of the symbol, rather than in isolation. For example, the following code has lots of names that may be fine in some circumstances, but redundant in context:
 
 ```go
-// Bad:
 func (db *DB) UserCount() (userCount int, err error) {
     var userCountInt64 int64
     if dbLoadError := db.LoadFromDatabase("count(distinct users)", &userCountInt64); dbLoadError != nil {
-        return 0, fmt.Errorf("failed to load user count: %s", dbLoadError)
+        return 0, fmt.Errorf("load user count: %s", dbLoadError)
     }
     userCount = int(userCountInt64)
     return userCount, nil
@@ -378,11 +365,10 @@ func (db *DB) UserCount() (userCount int, err error) {
 Instead, information about names that are clear from context or usage can often be omitted:
 
 ```go
-// Good:
 func (db *DB) UserCount() (int, error) {
     var count int64
     if err := db.Load("count(distinct users)", &count); err != nil {
-        return 0, fmt.Errorf("failed to load user count: %s", err)
+        return 0, fmt.Errorf("load user count: %s", err)
     }
     return int(count), nil
 }
@@ -407,7 +393,6 @@ Long comment lines should be wrapped to ensure that source is readable in tools 
 See this [post from The Go Blog on documentation](https://blog.golang.org/godoc-documenting-go-code) for more on commentary.
 
 ```text
-# Good:
 // This is a comment paragraph.
 // The length of individual lines doesn't matter in Godoc;
 // but the choice of wrapping makes it easy to read on narrow screens.
@@ -423,7 +408,6 @@ See this [post from The Go Blog on documentation](https://blog.golang.org/godoc-
 Avoid comments that fit large amounts of text onto a single line, which is a poor reader experience.
 
 ```text
-# Bad:
 // This is a comment paragraph. While some code editors and viewers will wrap the paragraph for the reader, others will display a very long line that will overflow most windows and require users to scroll horizontally. In addition, even on a screen capable of displaying the entire line, it is easier to read a narrower paragraph than very wide one.
 //
 // Don't worry too much about the long URL:
@@ -435,7 +419,6 @@ Avoid comments that fit large amounts of text onto a single line, which is a poo
 All top-level exported names must have doc comments, as should unexported type or function declarations with unobvious behavior or meaning. These comments should be [full sentences](#comment-sentences) that begin with the name of the object being described. An article ("a", "an", "the") can precede the name to make it read more naturally.
 
 ```go
-// Good:
 // A Request represents a request to run a command.
 type Request struct { ...
 
@@ -448,7 +431,6 @@ Doc comments appear in [Godoc](https://pkg.go.dev/) and are surfaced by IDEs, an
 A documentation comment applies to the following symbol, or the group of fields if it appears in a struct.
 
 ```go
-// Good:
 // Options configure the group management service.
 type Options struct {
     // General setup:
@@ -475,7 +457,6 @@ Comments that are sentence fragments have no such requirements for punctuation o
 [Documentation comments](#doc-comments) should always be complete sentences, and as such should always be capitalized and punctuated. Simple end-of-line comments (especially for struct fields) can be simple phrases that assume the field name is the subject.
 
 ```go
-// Good:
 // A Server handles serving quotes from the collected works of Shakespeare.
 type Server struct {
     // BaseDir points to the base directory under which Shakespeare's works are stored.
@@ -502,7 +483,6 @@ If it isn't feasible to provide a runnable example, example code can be provided
 When naming parameters, consider how function signatures appear in Godoc. The name of the function itself and the type of the result parameters are often sufficiently clear.
 
 ```go
-// Good:
 func (n *Node) Parent1() *Node
 func (n *Node) Parent2() (*Node, error)
 ```
@@ -510,14 +490,12 @@ func (n *Node) Parent2() (*Node, error)
 If a function returns two or more parameters of the same type, adding names can be useful.
 
 ```go
-// Good:
 func (n *Node) Children() (left, right *Node, err error)
 ```
 
 If the caller must take action on particular result parameters, naming them can help suggest what the action is:
 
 ```go
-// Good:
 // WithTimeout returns a context that will be canceled no later than d duration
 // from now.
 //
@@ -531,7 +509,6 @@ In the code above, cancellation is a particular action a caller must take. Howev
 Don't use named result parameters when the names produce [unnecessary repetition](#repetitive-with-type).
 
 ```go
-// Bad:
 func (n *Node) Parent1() (node *Node)
 func (n *Node) Parent2() (node *Node, err error)
 ```
@@ -551,7 +528,6 @@ It is always acceptable to name a result parameter if its value must be changed 
 Package comments must appear immediately above the package clause with no blank line between the comment and the package name. Example:
 
 ```go
-// Good:
 // Package math provides basic constants and mathematical functions.
 //
 // This package does not guarantee bit-identical results across architectures.
@@ -563,7 +539,6 @@ There must be a single package comment per package. If a package is composed of 
 Comments for `main` packages have a slightly different form, where the name of the `go_binary` rule in the BUILD file takes the place of the package name.
 
 ```go
-// Good:
 // The seed_generator command is a utility that generates a Finch seed file
 // from a set of JSON study configs.
 package main
@@ -572,7 +547,6 @@ package main
 Other styles of comment are fine as long as the name of the binary is exactly as written in the BUILD file. When the binary name is the first word, capitalizing it is required even though it does not strictly match the spelling of the command-line invocation.
 
 ```go
-// Good:
 // Binary seed_generator ...
 // Command seed_generator ...
 // Program seed_generator ...
@@ -590,7 +564,6 @@ Tips:
 - Multiline comments can be used instead of multiple single-line comments. This is primarily useful if the documentation contains sections which may be useful to copy and paste from the source file, as with sample command-lines (for binaries) and template examples.
 
   ```go
-  // Good:
   /*
   The seed_generator command is a utility that generates a Finch seed file
   from a set of JSON study configs.
@@ -615,7 +588,6 @@ An imported package _must_ be renamed to avoid a name collision with other impor
 Generated protocol buffer packages _must_ be renamed to remove underscores from their names, and their local names must have a `pb` suffix. See [proto and stub best practices](https://google.github.io/styleguide/go/best-practices#import-protos) for more information.
 
 ```go
-// Good:
 import (
     foosvcpb "path/to/package/foo_service_go_proto"
 )
@@ -624,7 +596,6 @@ import (
 Lastly, an imported, non-autogenerated package _can_ be renamed if it has an uninformative name (e.g. `util` or `v1`) Do this sparingly: do not rename the package if the code surrounding the use of the package conveys enough context. When possible, prefer refactoring the package itself with a more suitable name.
 
 ```go
-// Good:
 import (
     core "github.com/kubernetes/api/core/v1"
     meta "github.com/kubernetes/apimachinery/pkg/apis/meta/v1beta1"
@@ -641,12 +612,11 @@ Imports should be organized into the following groups, in order:
 
 2. Other (project and vendored) packages
 
-3. Protocol Buffer imports (e.g., `fpb "path/to/foo_go_proto"`)
+3. Protocol Buffer imports (e.g., `foopb "path/to/foo_go_proto"`)
 
 4. Import for [side-effects](https://go.dev/doc/effective_go#blank_import) (e.g., `_ "path/to/package"`)
 
 ```go
-// Good:
 package main
 
 import (
@@ -692,7 +662,6 @@ The `import .` form is a language feature that allows bringing identifiers expor
 Do **not** use this feature in the Google codebase; it makes it harder to tell where the functionality is coming from.
 
 ```go
-// Bad:
 package foo_test
 
 import (
@@ -704,7 +673,6 @@ var myThing = Bar() // Bar defined in package foo; no qualification needed.
 ```
 
 ```go
-// Good:
 package foo_test
 
 import (
@@ -722,14 +690,12 @@ var myThing = foo.Bar()
 Use `error` to signal that a function can fail. By convention, `error` is the last result parameter.
 
 ```go
-// Good:
 func Good() error { /* ... */ }
 ```
 
 Returning a `nil` error is the idiomatic way to signal a successful operation that could otherwise fail. If a function returns an error, callers must treat all non-error return values as unspecified unless explicitly documented otherwise. Commonly, the non-error return values are their zero values, but this cannot be assumed.
 
 ```go
-// Good:
 func GoodLookup() (*Result, error) {
     // ...
     if err != nil {
@@ -742,7 +708,6 @@ func GoodLookup() (*Result, error) {
 Exported functions that return errors should return them using the `error` type. Concrete error types are susceptible to subtle bugs: a concrete `nil` pointer can get wrapped into an interface and thus become a non-nil value (see the [Go FAQ entry on the topic](https://golang.org/doc/faq#nil_error)).
 
 ```go
-// Bad:
 func Bad() *os.PathError { /*...*/ }
 ```
 
@@ -753,22 +718,21 @@ func Bad() *os.PathError { /*...*/ }
 Error strings should not be capitalized (unless beginning with an exported name, a proper noun or an acronym) and should not end with punctuation. This is because error strings usually appear within other context before being printed to the user.
 
 ```go
-// Bad:
 err := fmt.Errorf("Something bad happened.")
 ```
 
 ```go
-// Good:
 err := fmt.Errorf("something bad happened")
 ```
 
-On the other hand, the style for the full displayed message (logging, test failure, API response, or other UI) depends, but should typically be capitalized.
+On the other hand, the style for the full displayed message (logging, test failure, API response, or other UI) depends, but should typically be capitalized unless directly referring to an unexported identifier (such as in a [test failure](#identify-the-function)).
 
 ```go
-// Good:
 log.Infof("Operation aborted: %v", err)
 log.Errorf("Operation aborted: %v", err)
 t.Errorf("Op(%q) failed unexpectedly; err=%v", args, err)
+t.Errorf("arrangeInputs(%q) = %v, want %v", args, got, want)
+t.Fatalf("Connection failed: %v", err)
 ```
 
 ### Handle errors
@@ -784,7 +748,6 @@ Code that encounters an error should make a deliberate choice about how to handl
 In the rare circumstance where it is appropriate to ignore or discard an error (for example a call to [`(*bytes.Buffer).Write`](https://pkg.go.dev/bytes#Buffer.Write) that is documented to never fail), an accompanying comment should explain why this is safe.
 
 ```go
-// Good:
 var b *bytes.Buffer
 
 n, _ := b.Write(p) // never returns a non-nil error
@@ -797,7 +760,6 @@ For more discussion and examples of error handling, see [Effective Go](http://go
 In C and similar languages, it is common for functions to return values like -1, null, or the empty string to signal errors or missing results. This is known as in-band error handling.
 
 ```go
-// Bad:
 // Lookup returns the value for key or -1 if there is no mapping for key.
 func Lookup(key string) int
 ```
@@ -805,7 +767,6 @@ func Lookup(key string) int
 Failing to check for an in-band error value can lead to bugs and can attribute errors to the wrong function.
 
 ```go
-// Bad:
 // The following line returns an error that Parse failed for the input value,
 // whereas the failure was that there is no mapping for missingKey.
 return Parse(Lookup(missingKey))
@@ -814,7 +775,6 @@ return Parse(Lookup(missingKey))
 Go's support for multiple return values provides a better solution (see the [Effective Go section on multiple returns](http://golang.org/doc/effective_go.html#multiple-returns)). Instead of requiring clients to check for an in-band error value, a function should return an additional value to indicate whether its other return values are valid. This return value may be an error or a boolean when no explanation is needed, and should be the final return value.
 
 ```go
-// Good:
 // Lookup returns the value for key or ok=false if there is no mapping for key.
 func Lookup(key string) (value string, ok bool)
 ```
@@ -824,7 +784,6 @@ This API prevents the caller from incorrectly writing `Parse(Lookup(key))` which
 Returning errors in this way encourages more robust and explicit error handling:
 
 ```go
-// Good:
 value, ok := Lookup(key)
 if !ok {
     return fmt.Errorf("no value for %q", key)
@@ -841,7 +800,6 @@ Handle errors before proceeding with the rest of your code. This improves the re
 Code that runs if the terminal condition is not met should appear after the `if` block, and should not be indented in an `else` clause.
 
 ```go
-// Good:
 if err != nil {
     // error handling
     return // or continue, etc.
@@ -850,7 +808,6 @@ if err != nil {
 ```
 
 ```go
-// Bad:
 if err != nil {
     // error handling
 } else {
@@ -861,7 +818,6 @@ if err != nil {
 > **Tip:** If you are using a variable for more than a few lines of code, it is generally not worth using the `if`-with-initializer style. In these cases, it is usually better to move the declaration out and use a standard `if` statement:
 >
 > ```go
-> // Good:
 > x, err := f()
 > if err != nil {
 >   // error handling
@@ -872,7 +828,6 @@ if err != nil {
 > ```
 >
 > ```go
-> // Bad:
 > if x, err := f(); err != nil {
 >   // error handling
 >   return
@@ -897,7 +852,6 @@ Struct literals must specify **field names** for types defined outside the curre
 - Include field names for types from other packages.
 
   ```go
-  // Good:
   // https://pkg.go.dev/encoding/csv#Reader
   r := csv.Reader{
     Comma: ',',
@@ -909,14 +863,12 @@ Struct literals must specify **field names** for types defined outside the curre
   The position of fields in a struct and the full set of fields (both of which are necessary to get right when field names are omitted) are not usually considered to be part of a struct's public API; specifying the field name is needed to avoid unnecessary coupling.
 
   ```go
-  // Bad:
   r := csv.Reader{',', '#', 4, false, false, false, false}
   ```
 
 - For package-local types, field names are optional.
 
   ```go
-  // Good:
   okay := Type{42}
   also := internalType{4, 2}
   ```
@@ -924,7 +876,6 @@ Struct literals must specify **field names** for types defined outside the curre
   Field names should still be used if it makes the code clearer, and it is very common to do so. For example, a struct with a large number of fields should almost always be initialized with field names.
 
   ```go
-  // Good:
   okay := StructWithLotsOfFields{
     field1: 1,
     field2: "two",
@@ -940,12 +891,10 @@ The closing half of a brace pair should always appear on a line with the same am
 The most common mistake in this area is putting the closing brace on the same line as a value in a multi-line struct literal. In these cases, the line should end with a comma and the closing brace should appear on the next line.
 
 ```go
-// Good:
 good := []*Type{{Key: "value"}}
 ```
 
 ```go
-// Good:
 good := []*Type{
     {Key: "multi"},
     {Key: "line"},
@@ -953,14 +902,12 @@ good := []*Type{
 ```
 
 ```go
-// Bad:
 bad := []*Type{
     {Key: "multi"},
     {Key: "line"}}
 ```
 
 ```go
-// Bad:
 bad := []*Type{
     {
         Key: "value"},
@@ -975,7 +922,6 @@ Dropping whitespace between braces (aka "cuddling" them) for slice and array lit
 - The inner values are also literals or proto builders (i.e. not a variable or other expression)
 
 ```go
-// Good:
 good := []*Type{
     { // Not cuddled
         Field: "value",
@@ -987,7 +933,6 @@ good := []*Type{
 ```
 
 ```go
-// Good:
 good := []*Type{{ // Cuddled correctly
     Field: "value",
 }, {
@@ -996,7 +941,6 @@ good := []*Type{{ // Cuddled correctly
 ```
 
 ```go
-// Good:
 good := []*Type{
     first, // Can't be cuddled
     {Field: "second"},
@@ -1004,7 +948,6 @@ good := []*Type{
 ```
 
 ```go
-// Good:
 okay := []*pb.Type{pb.Type_builder{
     Field: "first", // Proto Builders may be cuddled to save vertical space
 }.Build(), pb.Type_builder{
@@ -1013,7 +956,6 @@ okay := []*pb.Type{pb.Type_builder{
 ```
 
 ```go
-// Bad:
 bad := []*Type{
     first,
     {
@@ -1026,7 +968,6 @@ bad := []*Type{
 Repeated type names may be omitted from slice and map literals. This can be helpful in reducing clutter. A reasonable occasion for repeating the type names explicitly is when dealing with a complex type that is not common in your project, when the repetitive type names are on lines that are far apart and can remind the reader of the context.
 
 ```go
-// Good:
 good := []*Type{
     {A: 42},
     {A: 43},
@@ -1034,7 +975,6 @@ good := []*Type{
 ```
 
 ```go
-// Bad:
 repetitive := []*Type{
     &Type{A: 42},
     &Type{A: 43},
@@ -1042,7 +982,6 @@ repetitive := []*Type{
 ```
 
 ```go
-// Good:
 good := map[Type1]*Type2{
     {A: 1}: {B: 2},
     {A: 3}: {B: 4},
@@ -1050,7 +989,6 @@ good := map[Type1]*Type2{
 ```
 
 ```go
-// Bad:
 repetitive := map[Type1]*Type2{
     Type1{A: 1}: &Type2{B: 2},
     Type1{A: 3}: &Type2{B: 4},
@@ -1066,7 +1004,6 @@ repetitive := map[Type1]*Type2{
 Well-designed APIs often employ zero-value construction for enhanced readability. For example, omitting the three zero-value fields from the following struct draws attention to the only option that is being specified.
 
 ```go
-// Bad:
 import (
   "github.com/golang/leveldb"
   "github.com/golang/leveldb/db"
@@ -1089,7 +1026,6 @@ ldb := leveldb.Open("/my/table", &db.Options{
 ```
 
 ```go
-// Good:
 import (
   "github.com/golang/leveldb"
   "github.com/golang/leveldb/db"
@@ -1155,7 +1091,6 @@ tests := []struct {
 For most purposes, there is no functional difference between `nil` and the empty slice. Built-in functions like `len` and `cap` behave as expected on `nil` slices.
 
 ```go
-// Good:
 import "fmt"
 
 var s []int         // nil
@@ -1172,26 +1107,22 @@ fmt.Println(s)      // [42]
 If you declare an empty slice as a local variable (especially if it can be the source of a return value), prefer the nil initialization to reduce the risk of bugs by callers.
 
 ```go
-// Good:
 var t []string
 ```
 
 ```go
-// Bad:
 t := []string{}
 ```
 
 Do not create APIs that force their clients to make distinctions between nil and the empty slice.
 
 ```go
-// Good:
 // Ping pings its targets.
 // Returns hosts that successfully responded.
 func Ping(hosts []string) ([]string, error) { ... }
 ```
 
 ```go
-// Bad:
 // Ping pings its targets and returns a list of hosts
 // that successfully responded. Can be empty if the input was empty.
 // nil signifies that a system error occurred.
@@ -1203,7 +1134,6 @@ When designing interfaces, avoid making a distinction between a `nil` slice and 
 This implementation accepts both `nil` and zero-length slices as "empty":
 
 ```go
-// Good:
 // describeInts describes s with the given prefix, unless s is empty.
 func describeInts(prefix string, s []int) {
     if len(s) == 0 {
@@ -1216,7 +1146,6 @@ func describeInts(prefix string, s []int) {
 Instead of relying on the distinction as a part of the API:
 
 ```go
-// Bad:
 func maybeInts() []int { /* ... */ }
 
 // describeInts describes s with the given prefix; pass nil to skip completely.
@@ -1239,7 +1168,6 @@ See [in-band errors](#in-band-errors) for further discussion.
 Avoid introducing a line break if it would align the rest of the line with an indented code block. If this is unavoidable, leave a space to separate the code in the block from the wrapped line.
 
 ```go
-// Bad:
 if longCondition1 && longCondition2 &&
     // Conditions 3 and 4 have the same indentation as the code within the if.
     longCondition3 && longCondition4 {
@@ -1260,7 +1188,6 @@ The signature of a function or method declaration should remain on a single line
 Function argument lists can make some of the longest lines in a Go source file. However, they precede a change in indentation, and therefore it is difficult to break the line in a way that does not make subsequent lines look like part of the function body in a confusing way:
 
 ```go
-// Bad:
 func (r *SomeType) SomeLongFunctionName(foo1, foo2, foo3 string,
     foo4, foo5, foo6 int) {
     foo7 := bar(foo1)
@@ -1273,7 +1200,6 @@ See [best practices](https://google.github.io/styleguide/go/best-practices#funca
 Lines can often be shortened by factoring out local variables.
 
 ```go
-// Good:
 local := helper(some, parameters, here)
 good := foo.Call(list, of, parameters, local)
 ```
@@ -1281,12 +1207,10 @@ good := foo.Call(list, of, parameters, local)
 Similarly, function and method calls should not be separated based solely on line length.
 
 ```go
-// Good:
 good := foo.Call(long, list, of, parameters, all, on, one, line)
 ```
 
 ```go
-// Bad:
 bad := foo.Call(long, list, of, parameters,
     with, arbitrary, line, breaks)
 ```
@@ -1294,12 +1218,10 @@ bad := foo.Call(long, list, of, parameters,
 Avoid adding inline comments to specific function arguments where possible. Instead, use an [option struct](https://google.github.io/styleguide/go/best-practices#option-structure) or add more detail to the function documentation.
 
 ```go
-// Good:
 good := server.New(ctx, server.Options{Port: 42})
 ```
 
 ```go
-// Bad:
 bad := server.New(
     ctx,
     42, // Port
@@ -1309,7 +1231,6 @@ bad := server.New(
 If the API cannot be changed or if the local call is unusual (whether or not the call is too long), it is always permissible to add line breaks if it aids in understanding the call.
 
 ```go
-// Good:
 canvas.RenderHeptagon(fillColor,
     x0, y0, vertexColor0,
     x1, y1, vertexColor1,
@@ -1326,14 +1247,12 @@ Note that the lines in the above example are not wrapped at a specific column bo
 Long string literals within functions should not be broken for the sake of line length. For functions that include such strings, a line break can be added after the string format, and the arguments can be provided on the next or subsequent lines. The decision about where the line breaks should go is best made based on semantic groupings of inputs, rather than based purely on line length.
 
 ```go
-// Good:
 log.Warningf("Database key (%q, %d, %q) incompatible in transaction started by (%q, %d, %q)",
     currentCustomer, currentOffset, currentKey,
     txCustomer, txOffset, txKey)
 ```
 
 ```go
-// Bad:
 log.Warningf("Database key (%q, %d, %q) incompatible in"+
     " transaction started by (%q, %d, %q)",
     currentCustomer, currentOffset, currentKey, txCustomer,
@@ -1345,7 +1264,6 @@ log.Warningf("Database key (%q, %d, %q) incompatible in"+
 An `if` statement should not be line broken; multi-line `if` clauses can lead to [indentation confusion](#indentation-confusion).
 
 ```go
-// Bad:
 // The second if statement is aligned with the code within the if block, causing
 // indentation confusion.
 if db.CurrentStatusIs(db.InTransaction) &&
@@ -1357,7 +1275,6 @@ if db.CurrentStatusIs(db.InTransaction) &&
 If the short-circuit behavior is not required, the boolean operands can be extracted directly:
 
 ```go
-// Good:
 inTransaction := db.CurrentStatusIs(db.InTransaction)
 keysMatch := db.ValuesEqual(db.TransactionKey(), row.Key())
 if inTransaction && keysMatch {
@@ -1368,7 +1285,6 @@ if inTransaction && keysMatch {
 There may also be other locals that can be extracted, especially if the conditional is already repetitive:
 
 ```go
-// Good:
 uid := user.GetUniqueUserID()
 if db.UserIsAdmin(uid) || db.UserHasPermission(uid, perms.ViewServerConfig) || db.UserHasPermission(uid, perms.CreateGroup) {
     // ...
@@ -1376,7 +1292,6 @@ if db.UserIsAdmin(uid) || db.UserHasPermission(uid, perms.ViewServerConfig) || d
 ```
 
 ```go
-// Bad:
 if db.UserIsAdmin(user.GetUniqueUserID()) || db.UserHasPermission(user.GetUniqueUserID(), perms.ViewServerConfig) || db.UserHasPermission(user.GetUniqueUserID(), perms.CreateGroup) {
     // ...
 }
@@ -1385,7 +1300,6 @@ if db.UserIsAdmin(user.GetUniqueUserID()) || db.UserHasPermission(user.GetUnique
 `if` statements that contain closures or multi-line struct literals should ensure that the [braces match](#literal-matching-braces) to avoid [indentation confusion](#indentation-confusion).
 
 ```go
-// Good:
 if err := db.RunInTransaction(func(tx *db.TX) error {
     return tx.Execute(userUpdate, x, y, z)
 }); err != nil {
@@ -1394,8 +1308,7 @@ if err := db.RunInTransaction(func(tx *db.TX) error {
 ```
 
 ```go
-// Good:
-if _, err := client.Update(ctx, &upb.UserUpdateRequest{
+if _, err := client.Update(ctx, &userpb.UserUpdateRequest{
     ID:   userID,
     User: user,
 }); err != nil {
@@ -1406,7 +1319,6 @@ if _, err := client.Update(ctx, &upb.UserUpdateRequest{
 Similarly, don't try inserting artificial linebreaks into `for` statements. You can always let the line simply be long if there is no elegant way to refactor it:
 
 ```go
-// Good:
 for i, max := 0, collection.Size(); i < max && !collection.HasPendingWriters(); i++ {
     // ...
 }
@@ -1415,7 +1327,6 @@ for i, max := 0, collection.Size(); i < max && !collection.HasPendingWriters(); 
 Often, though, there is:
 
 ```go
-// Good:
 for i, max := 0, collection.Size(); i < max; i++ {
     if collection.HasPendingWriters() {
         break
@@ -1427,7 +1338,6 @@ for i, max := 0, collection.Size(); i < max; i++ {
 `switch` and `case` statements should also remain on a single line.
 
 ```go
-// Good:
 switch good := db.TransactionStatus(); good {
 case db.TransactionStarting, db.TransactionActive, db.TransactionWaiting:
     // ...
@@ -1439,7 +1349,6 @@ default:
 ```
 
 ```go
-// Bad:
 switch bad := db.TransactionStatus(); bad {
 case db.TransactionStarting,
     db.TransactionActive,
@@ -1456,7 +1365,6 @@ default:
 If the line is excessively long, indent all cases and separate them with a blank line to avoid [indentation confusion](#indentation-confusion):
 
 ```go
-// Good:
 switch db.TransactionStatus() {
 case
     db.TransactionStarting,
@@ -1475,7 +1383,6 @@ default:
 In conditionals comparing a variable to a constant, place the variable value on the left hand side of the equality operator:
 
 ```go
-// Good:
 if result == "foo" {
   // ...
 }
@@ -1484,7 +1391,6 @@ if result == "foo" {
 Instead of the less clear phrasing where the constant comes first (["Yoda style conditionals"](https://en.wikipedia.org/wiki/Yoda_conditions)):
 
 ```go
-// Bad:
 if "foo" == result {
   // ...
 }
@@ -1499,7 +1405,6 @@ The `bytes.Buffer` type contains a `[]byte` slice and, as an optimization for sm
 In general, do not copy a value of type `T` if its methods are associated with the pointer type, `*T`.
 
 ```go
-// Bad:
 b1 := bytes.Buffer{}
 b2 := b1
 ```
@@ -1509,7 +1414,6 @@ Invoking a method that takes a value receiver can hide the copy. When you author
 These are acceptable:
 
 ```go
-// Good:
 type Record struct {
   buf bytes.Buffer
   // other fields omitted
@@ -1525,7 +1429,6 @@ func Consumer(r *Record) {...}
 But these are usually wrong:
 
 ```go
-// Bad:
 type Record struct {
   buf bytes.Buffer
   // other fields omitted
@@ -1558,7 +1461,6 @@ Setup helper functions that stop the program on failure follow the naming conven
 This often comes up for functions called to initialize package-level variables exclusively at [package initialization time](https://golang.org/ref/spec#Package_initialization) (e.g. [template.Must](https://golang.org/pkg/text/template/#Must) and [regexp.MustCompile](https://golang.org/pkg/regexp/#MustCompile)).
 
 ```go
-// Good:
 func MustParse(version string) *Version {
     v, err := Parse(version)
     if err != nil {
@@ -1575,7 +1477,6 @@ var DefaultVersion = MustParse("1.2.3")
 The same convention may be used in test helpers that only stop the current test (using `t.Fatal`). Such helpers are often convenient in creating test values, for example in struct fields of [table driven tests](#table-driven-tests), as functions that return errors cannot be directly assigned to a struct field.
 
 ```go
-// Good:
 func mustMarshalAny(t *testing.T, m proto.Message) *anypb.Any {
   t.Helper()
   any, err := anypb.New(m)
@@ -1608,7 +1509,6 @@ Where `Must` functions are used in a test, they should generally be [marked as a
 They should not be used when [ordinary error handling](https://google.github.io/styleguide/go/best-practices#error-handling) is possible (including with some refactoring):
 
 ```go
-// Bad:
 func Version(o *servicepb.Object) (*version.Version, error) {
     // Return error instead of using Must functions.
     v := version.MustParse(o.GetVersionString())
@@ -1625,7 +1525,6 @@ Goroutines can leak by blocking on channel sends or receives. The garbage collec
 Even when goroutines do not leak, leaving them in-flight when they are no longer needed can cause other subtle and hard-to-diagnose problems. Sending on a channel that has been closed causes a panic.
 
 ```go
-// Bad:
 ch := make(chan int)
 ch <- 42
 close(ch)
@@ -1639,7 +1538,6 @@ Concurrent code should be written such that the goroutine lifetimes are obvious.
 Code that follows best practices around context usage often helps make this clear. It is conventionally managed with a [`context.Context`](https://pkg.go.dev/context):
 
 ```go
-// Good:
 func (w *Worker) Run(ctx context.Context) error {
     var wg sync.WaitGroup
     // ...
@@ -1661,7 +1559,6 @@ There are other variants of the above that use raw signal channels like `chan st
 In contrast, the following code is careless about when its spawned goroutines finish:
 
 ```go
-// Bad:
 func (w *Worker) Run() {
     // ...
     for item := range w.q {
@@ -1695,6 +1592,8 @@ Avoid creating interfaces until a [real need](https://google.github.io/styleguid
 - Do not wrap RPC clients in new manual interfaces just for the sake of abstraction or testing. [Use real transports](https://google.github.io/styleguide/go/best-practices#use-real-transports) instead ([testing RPC](https://codelabs.developers.google.com/grpc/getting-started-grpc-go#3)).
 
 - Do not define back doors or export [test double](https://abseil.io/resources/swe-book/html/ch13.html) implementations of an interface solely for testing. Prefer testing via the [public API](https://abseil.io/resources/swe-book/html/ch12.html#test_via_public_apis) of the real implementation instead.
+
+- When testing with the real implementation is impractical, it's acceptable to provide test-specific configurations or test doubles. These testing facilities should be placed within a dedicated package (e.g., like [spannertest](https://pkg.go.dev/cloud.google.com/go/spanner/spannertest)).
 
 Design interfaces to be small for easier implementation and composition ([GoTip #78: Minimal Viable Interfaces](https://google.github.io/styleguide/go/index.html#gotip)). Document interfaces appropriately including their contract, edge cases, and expected errors. Keep interface types unexported if they are only used internally within a package.
 
@@ -1743,7 +1642,6 @@ The list below spells out each case in further detail:
 - If the receiver is a slice and the method doesn't reslice or reallocate the slice, use a value rather than a pointer.
 
   ```go
-  // Good:
   type Buffer []byte
 
   func (b Buffer) Len() int { return len(b) }
@@ -1752,7 +1650,6 @@ The list below spells out each case in further detail:
 - If the method needs to mutate the receiver, the receiver must be a pointer.
 
   ```go
-  // Good:
   type Counter int
 
   func (c *Counter) Inc() { *c++ }
@@ -1766,7 +1663,6 @@ The list below spells out each case in further detail:
 - If the receiver is a struct containing fields that [cannot safely be copied](#copying), use a pointer receiver. Common examples are [`sync.Mutex`](https://pkg.go.dev/sync#Mutex) and other synchronization types.
 
   ```go
-  // Good:
   type Counter struct {
       mu    sync.Mutex
       total int
@@ -1788,7 +1684,6 @@ The list below spells out each case in further detail:
 - If the receiver is a struct or array, any of whose elements is a pointer to something that may be mutated, prefer a pointer receiver to make the intention of mutability clear to the reader.
 
   ```go
-  // Good:
   type Counter struct {
       m *Metric
   }
@@ -1801,7 +1696,6 @@ The list below spells out each case in further detail:
 - If the receiver is a [built-in type](https://pkg.go.dev/builtin), such as an integer or a string, that does not need to be modified, use a value.
 
   ```go
-  // Good:
   type User string
 
   func (u User) String() { return string(u) }
@@ -1810,7 +1704,6 @@ The list below spells out each case in further detail:
 - If the receiver is a map, function, or channel, use a value rather than a pointer.
 
   ```go
-  // Good:
   // See https://pkg.go.dev/net/http#Header.
   type Header map[string][]string
 
@@ -1820,7 +1713,6 @@ The list below spells out each case in further detail:
 - If the receiver is a "small" array or struct that is naturally a value type with no mutable fields and no pointers, a value receiver is usually the right choice.
 
   ```go
-  // Good:
   // See https://pkg.go.dev/time#Time.
   type Time struct { /* omitted */ }
 
@@ -1838,7 +1730,6 @@ As a general guideline, prefer to make the methods for a type either all pointer
 Do not use `break` statements without target labels at the ends of `switch` clauses; they are redundant. Unlike in C and Java, `switch` clauses in Go automatically break, and a `fallthrough` statement is needed to achieve the C-style behavior. Use a comment rather than `break` if you want to clarify the purpose of an empty clause.
 
 ```go
-// Good:
 switch x {
 case "A", "B":
     buf.WriteString(x)
@@ -1850,7 +1741,6 @@ default:
 ```
 
 ```go
-// Bad:
 switch x {
 case "A", "B":
     buf.WriteString(x)
@@ -1906,14 +1796,12 @@ Use a _type definition_, `type T1 T2`, to define a new type. Use a [_type alias_
 Go's format functions (`fmt.Printf` etc.) have a `%q` verb which prints strings inside double-quotation marks.
 
 ```go
-// Good:
 fmt.Printf("value %q looks like English text", someText)
 ```
 
 Prefer using `%q` over doing the equivalent manually, using `%s`:
 
 ```go
-// Bad:
 fmt.Printf("value \"%s\" looks like English text", someText)
 // Avoid manually wrapping strings with single-quotes too:
 fmt.Printf("value '%s' looks like English text", someText)
@@ -1932,14 +1820,12 @@ Go 1.18 introduces an `any` type as an [alias](https://go.googlesource.com/propo
 Go programs in the Google codebase use an internal variant of the [standard `flag` package](https://golang.org/pkg/flag/). It has a similar interface but interoperates well with internal Google systems. Flag names in Go binaries should prefer to use underscores to separate words, though the variables that hold a flag's value should follow the standard Go name style ([mixed caps](https://google.github.io/styleguide/go/guide#mixed-caps)). Specifically, the flag name should be in snake case, and the variable name should be the equivalent name in camel case.
 
 ```go
-// Good:
 var (
     pollInterval = flag.Duration("poll_interval", time.Minute, "Interval to use for polling.")
 )
 ```
 
 ```go
-// Bad:
 var (
     poll_interval = flag.Int("pollIntervalSeconds", 60, "Interval to use for polling in seconds.")
 )
@@ -2006,13 +1892,14 @@ Exceptions are:
 The convention that [`context.Context`](https://pkg.go.dev/context) comes first in functions also applies to test helpers.
 
 ```go
-// Good:
 func readTestFile(ctx context.Context, t *testing.T, path string) string {}
 ```
 
 Do not add a context member to a struct type. Instead, add a context parameter to each method on the type that needs to pass it along. The one exception is for methods whose signature must match an interface in the standard library or in a third party library outside Google's control. Such cases are very rare, and should be discussed with the Google Go style mailing list before implementation and readability review.
 
-**Note:** Go 1.24 added a [`(testing.TB).Context()`](https://pkg.go.dev/testing#TB.Context) method. In tests, prefer using [`(testing.TB).Context()`](https://pkg.go.dev/testing#TB.Context) over [`context.Background()`](https://pkg.go.dev/context/#Background) to provide the initial [`context.Context`](https://pkg.go.dev/context) used by the test. Helper functions, environment or test double setup, and other functions called from the test function body that require a context should have one explicitly passed.
+In tests, prefer to use the innermost [`(testing.TB).Context()`](https://pkg.go.dev/testing#TB.Context) over [`context.Background()`](https://pkg.go.dev/context/#Background) to provide the initial [`context.Context`](https://pkg.go.dev/context) used by the test or subtest. Helper functions, environment or test double setup, and other functions called from the test function body that require a context should have one explicitly passed.
+
+**Note:** Contexts from `(testing.TB).Context()` are canceled before cleanup functions passed to [`(testing.TB).Cleanup`](https://pkg.go.dev/testing#TB.Cleanup) are run. During cleanup, either use [`context.Background()`](https://pkg.go.dev/context/#Background) or retain values from the test's context using [`context.WithoutCancel`](https://pkg.go.dev/context#WithoutCancel).
 
 Code in the Google codebase that must spawn background operations which can run after the parent context has been cancelled can use an internal package for detachment. Follow [issue #40221](https://github.com/golang/go/issues/40221) for discussions on an open source alternative.
 
@@ -2035,7 +1922,6 @@ If you have application data to pass around, put it in a parameter, in the recei
 Do not use package `math/rand` to generate keys, even throwaway ones. If unseeded, the generator is completely predictable. Seeded with `time.Nanoseconds()`, there are just a few bits of entropy. Instead, use `crypto/rand`'s Reader, and if you need text, print to hexadecimal or base64.
 
 ```go
-// Good:
 import (
     "crypto/rand"
     // "encoding/base64"
@@ -2076,7 +1962,6 @@ Do not create "assertion libraries" as helpers for testing.
 Assertion libraries are libraries that attempt to combine the validation and production of failure messages within a test (though the same pitfalls can apply to other test helpers as well). For more on the distinction between test helpers and assertion libraries, see [best practices](https://google.github.io/styleguide/go/best-practices#test-functions).
 
 ```go
-// Bad:
 var obj BlogPost
 
 assert.IsNotNil(t, "obj", obj)
@@ -2088,7 +1973,6 @@ assert.StringNotEq(t, "obj.Body", obj.Body, "")
 Assertion libraries tend to either stop the test early (if `assert` calls `t.Fatalf` or `panic`) or omit relevant information about what the test got right:
 
 ```go
-// Bad:
 package assert
 
 func IsNotNil(t *testing.T, name string, val any) {
@@ -2109,7 +1993,6 @@ Complex assertion functions often do not provide [useful failure messages](#usef
 Assertion libraries often factor out comparisons and equality checks. Prefer using standard libraries such as [`cmp`](https://pkg.go.dev/github.com/google/go-cmp/cmp) and [`fmt`](https://golang.org/pkg/fmt/) instead:
 
 ```go
-// Good:
 var got BlogPost
 
 want := BlogPost{
@@ -2125,7 +2008,6 @@ if !cmp.Equal(got, want) {
 For more domain-specific comparison helpers, prefer returning a value or an error that can be used in the test's failure message instead of passing `*testing.T` and calling its error reporting methods:
 
 ```go
-// Good:
 func postLength(p BlogPost) int { return len(p.Body) }
 
 func TestBlogPost_VeritableRant(t *testing.T) {
@@ -2171,7 +2053,6 @@ If your struct needs to be compared for approximate (or equivalent kind of seman
 If your function returns multiple return values, you don't need to wrap those in a struct before comparing them. Just compare the return values individually and print them.
 
 ```go
-// Good:
 val, multi, tail, err := strconv.UnquoteChar(`\"Fran & Freddie's Diner\"`, '"')
 if err != nil {
   t.Fatalf(...)
@@ -2200,7 +2081,6 @@ Tests should keep going for as long as possible, even after a failure, in order 
 Prefer calling `t.Error` over `t.Fatal` for reporting a mismatch. When comparing several different properties of a function's output, use `t.Error` for each of those comparisons.
 
 ```go
-// Good:
 gotMean, gotVariance, err := MyDistribution(input)
 if err != nil {
   t.Fatalf("MyDistribution(%v) returned unexpected error: %v", input, err)
@@ -2216,7 +2096,6 @@ if diff := cmp.Diff(wantVariance, gotVariance); diff != "" {
 Calling `t.Fatal` is primarily useful for reporting an unexpected condition (such as an error or output mismatch) when subsequent failures would be meaningless or even mislead the investigator. Note how the code below calls `t.Fatalf` and _then_ `t.Errorf`:
 
 ```go
-// Good:
 gotEncoded := Encode(input)
 if gotEncoded != wantEncoded {
   t.Fatalf("Encode(%q) = %q, want %q", input, gotEncoded, wantEncoded)
@@ -2242,7 +2121,6 @@ The `==` operator evaluates equality using [language-defined comparisons](http:/
 The [`cmp`](https://pkg.go.dev/github.com/google/go-cmp/cmp) package can compare more complex data structures not appropriately handled by `==`, such as slices. Use [`cmp.Equal`](https://pkg.go.dev/github.com/google/go-cmp/cmp#Equal) for equality comparison and [`cmp.Diff`](https://pkg.go.dev/github.com/google/go-cmp/cmp#Diff) to obtain a human-readable diff between objects.
 
 ```go
-// Good:
 want := &Doc{
     Type:     "blogPost",
     Comments: 2,
@@ -2257,7 +2135,6 @@ if !cmp.Equal(got, want) {
 As a general-purpose comparison library, `cmp` may not know how to compare certain types. For example, it can only compare protocol buffer messages if passed the [`protocmp.Transform`](https://pkg.go.dev/google.golang.org/protobuf/testing/protocmp#Transform) option.
 
 ```go
-// Good:
 if diff := cmp.Diff(want, got, protocmp.Transform()); diff != "" {
     t.Errorf("Foo() returned unexpected difference in protobuf messages (-want +got):\n%s", diff)
 }
@@ -2322,7 +2199,6 @@ Within unit tests, it is common to only care whether an error occurred or not. I
 > **Note:** If a test uses [`cmpopts.EquateErrors`](https://pkg.go.dev/github.com/google/go-cmp/cmp/cmpopts#EquateErrors) but all of its `wantErr` values are either `nil` or `cmpopts.AnyError`, then using `cmp` is [unnecessary mechanism](https://google.github.io/styleguide/go/guide#least-mechanism). Simplify the code by making the want field a `bool`. You can then use a simple comparison with `!=`.
 >
 > ```go
-> // Good:
 > err := f(test.input)
 > if gotErr := err != nil; gotErr != test.wantErr {
 >     t.Errorf("f(%q) = %v, want error presence = %v", test.input, err, test.wantErr)
@@ -2351,17 +2227,17 @@ Subtests may be run individually using flags to the [Go test runner](https://gol
 
 > **Warning:** Slash characters are particularly unfriendly in subtest names, since they have [special meaning for test filters](https://blog.golang.org/subtests#:~:text=Perhaps%20a%20bit,match%20any%20tests).
 >
-> > ```sh
-> > # Bad:
-> > # Assuming TestTime and t.Run("America/New_York", ...)
-> > bazel test :mytest --test_filter="Time/New_York"    # Runs nothing!
-> > bazel test :mytest --test_filter="Time//New_York"   # Correct, but awkward.
-> > ```
+> >
+>
+> ```sh
+> # Assuming TestTime and t.Run("America/New_York", ...)
+> bazel test :mytest --test_filter="Time/New_York"    # Runs nothing!
+> bazel test :mytest --test_filter="Time//New_York"   # Correct, but awkward.
+> ```
 
 To [identify the inputs](#identify-the-input) of the function, include them in the test's failure messages, where they won't be escaped by the test runner.
 
 ```go
-// Good:
 func TestTranslate(t *testing.T) {
     data := []struct {
         name, desc, srcLang, dstLang, srcText, wantDstText string
@@ -2390,7 +2266,6 @@ func TestTranslate(t *testing.T) {
 Here are a few examples of things to avoid:
 
 ```go
-// Bad:
 // Too wordy.
 t.Run("check that there is no mention of scratched records or hovercrafts", ...)
 // Slashes cause problems on the command line.
@@ -2409,7 +2284,6 @@ Use table-driven tests when many different test cases can be tested using simila
 Here is the minimal structure of a table-driven test. If needed, you may use different names or add extra facilities such as subtests or setup and cleanup functions. Always keep [useful test failures](#useful-test-failures) in mind.
 
 ```go
-// Good:
 func TestCompare(t *testing.T) {
     compareTests := []struct {
         a, b string
@@ -2499,7 +2373,6 @@ You can combine table-driven tests with multiple test functions. For example, wh
 Table test rows can sometimes become complicated, with the row values dictating conditional behavior inside the test case. The extra clarity from the duplication between the test cases is necessary for readability.
 
 ```go
-// Good:
 type decodeCase struct {
     name   string
     input  string
@@ -2549,7 +2422,6 @@ func TestDecodeWithFake(t *testing.T) {
 In the counterexample below, note how hard it is to distinguish between which type of `Codex` is used per test case in the case setup. (The highlighted parts run afoul of the advice from [TotT: Data Driven Traps!](https://testing.googleblog.com/2008/09/tott-data-driven-traps.html) .)
 
 ```go
-// Bad:
 type decodeCase struct {
   name   string
   input  string
@@ -2596,7 +2468,6 @@ func TestDecode(t *testing.T) {
 Do not use the index of the test in the test table as a substitute for naming your tests or printing the inputs. Nobody wants to go through your test table and count the entries in order to figure out which test case is failing.
 
 ```go
-// Bad:
 tests := []struct {
     input, want string
 }{
@@ -2621,7 +2492,6 @@ A test helper is a function that performs a setup or cleanup task. All failures 
 If you pass a `*testing.T`, call [`t.Helper`](https://pkg.go.dev/testing#T.Helper) to attribute failures in the test helper to the line where the helper is called. This parameter should come after a [context](#contexts) parameter, if present, and before any remaining parameters.
 
 ```go
-// Good:
 func TestSomeFunction(t *testing.T) {
     golden := readFile(t, "testdata/golden-result.txt")
     // ... tests against golden ...
@@ -2658,7 +2528,6 @@ To write a test in the same package:
 - Do not explicitly import the package to be tested
 
 ```build
-# Good:
 go_library(
     name = "foo",
     srcs = ["foo.go"],
@@ -2687,7 +2556,6 @@ It is not always appropriate or even possible to define a test in the same packa
 - If an integration test does not have an obvious library that it belongs to
 
   ```go
-  // Good:
   package gmailintegration_test
 
   import "testing"
@@ -2696,7 +2564,6 @@ It is not always appropriate or even possible to define a test in the same packa
 - If defining the tests in the same package results in circular dependencies
 
   ```go
-  // Good:
   package fireworks_test
 
   import (
@@ -2726,7 +2593,7 @@ A style guide cannot enumerate positive prescriptions for all matters, nor can i
 
 - **Local variable initialization with zero value**. `var i int` and `i := 0` are equivalent. See also [initialization best practices](https://google.github.io/styleguide/go/best-practices#vardeclinitialization).
 - **Empty composite literal vs. `new` or `make`**. `&File{}` and `new(File)` are equivalent. So are `map[string]bool{}` and `make(map[string]bool)`. See also [composite declaration best practices](https://google.github.io/styleguide/go/best-practices#vardeclcomposite).
-- **got, want argument ordering in cmp.Diff calls**. Be locally consistent, and [include a legend](#print-diffs) in your failure message.
+- **`got`, `want` argument ordering in `cmp.Diff` calls**. Be locally consistent, and [include a legend](#print-diffs) in your failure message.
 - **`errors.New` vs `fmt.Errorf` on non-formatted strings**. `errors.New("foo")` and `fmt.Errorf("foo")` may be used interchangeably.
 
 If there are special circumstances where they come up again, the readability mentor might make an optional comment, but in general the author is free to pick the style they prefer in the given situation.

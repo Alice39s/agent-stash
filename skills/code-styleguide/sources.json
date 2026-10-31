@@ -19,12 +19,12 @@
       "title": "Google C++ Style Guide",
       "url": "https://google.github.io/styleguide/cppguide.html",
       "repository": "google/styleguide",
-      "path": "cppguide.html",
-      "revision": "0acdb47ea7d3fe887af5ddd34f9a9b09a7b97566",
-      "updated": "2026-10-14",
+      "path": "cppguide.md",
+      "revision": "9d7ce97386f88b7e2c8257123425e65f60b49789",
+      "updated": "2026-10-30",
       "license": "CC-BY-3.0",
       "indexEnd": 119,
-      "lines": 3655
+      "lines": 3658
     },
     {
       "file": "references/google/csharpguide.md",
@@ -46,8 +46,8 @@
       "url": "https://google.github.io/styleguide/go/index.html",
       "repository": "google/styleguide",
       "path": "go/index.md",
-      "revision": "9ae38d43e38a5b182092723d0f1295c3b80b1e06",
-      "updated": "2022-12-27",
+      "revision": "9d7ce97386f88b7e2c8257123425e65f60b49789",
+      "updated": "2026-10-30",
       "license": "CC-BY-3.0",
       "indexEnd": 10,
       "lines": 120
@@ -59,11 +59,11 @@
       "url": "https://google.github.io/styleguide/go/best-practices.html",
       "repository": "google/styleguide",
       "path": "go/best-practices.md",
-      "revision": "c098353acb6d8ee2dcf995e2e2ae67cf35afe30d",
-      "updated": "2026-03-18",
+      "revision": "9d7ce97386f88b7e2c8257123425e65f60b49789",
+      "updated": "2026-10-30",
       "license": "CC-BY-3.0",
       "indexEnd": 61,
-      "lines": 2943
+      "lines": 2862
     },
     {
       "file": "references/google/go/decisions.md",
@@ -72,11 +72,11 @@
       "url": "https://google.github.io/styleguide/go/decisions.html",
       "repository": "google/styleguide",
       "path": "go/decisions.md",
-      "revision": "c098353acb6d8ee2dcf995e2e2ae67cf35afe30d",
-      "updated": "2026-03-18",
+      "revision": "9d7ce97386f88b7e2c8257123425e65f60b49789",
+      "updated": "2026-10-30",
       "license": "CC-BY-3.0",
       "indexEnd": 77,
-      "lines": 2734
+      "lines": 2601
     },
     {
       "file": "references/google/go/guide.md",
@@ -85,11 +85,11 @@
       "url": "https://google.github.io/styleguide/go/guide.html",
       "repository": "google/styleguide",
       "path": "go/guide.md",
-      "revision": "c098353acb6d8ee2dcf995e2e2ae67cf35afe30d",
-      "updated": "2026-03-18",
+      "revision": "9d7ce97386f88b7e2c8257123425e65f60b49789",
+      "updated": "2026-10-30",
       "license": "CC-BY-3.0",
       "indexEnd": 18,
-      "lines": 272
+      "lines": 266
     },
     {
       "file": "references/google/haskellguide.md",
@@ -254,8 +254,8 @@
       "url": "https://google.github.io/styleguide/verilogguide.html",
       "repository": "google/styleguide",
       "path": "verilogguide.md",
-      "revision": "24cfcced577a82c4c455909515fa05682c8d2fa8",
-      "updated": "2026-10-17",
+      "revision": "0de02b3671a9c28e17c331c0c6f3318ccbfcd50d",
+      "updated": "2026-10-30",
       "license": "CC-BY-3.0",
       "indexEnd": 126,
       "lines": 4222

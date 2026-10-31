@@ -1,6 +1,6 @@
 # Go Style
 
-Source: <https://google.github.io/styleguide/go/index.html> · google/styleguide@9ae38d43e38a (2022-12-27) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/go/index.html> · google/styleguide@9d7ce97386f8 (2026-10-30) · CC-BY-3.0
 
 ## Index
 
@@ -105,11 +105,11 @@ Below are some additional resources for those looking to self-educate about Go s
 
 **Relevant Testing-on-the-Toilet articles**
 
-- [TotT: Identifier Naming](https://testing.googleblog.com/2017/10/code-health-identifiernamingpostforworl.html)
-- [TotT: Testing State vs. Testing Interactions](https://testing.googleblog.com/2013/03/testing-on-toilet-testing-state-vs.html)
-- [TotT: Effective Testing](https://testing.googleblog.com/2014/05/testing-on-toilet-effective-testing.html)
-- [TotT: Risk-driven Testing](https://testing.googleblog.com/2014/05/testing-on-toilet-risk-driven-testing.html)
-- [TotT: Change-detector Tests Considered Harmful](https://testing.googleblog.com/2015/01/testing-on-toilet-change-detector-tests.html)
+- [TotT : Identifier Naming](https://testing.googleblog.com/2017/10/code-health-identifiernamingpostforworl.html)
+- [TotT : Testing State vs. Testing Interactions](https://testing.googleblog.com/2013/03/testing-on-toilet-testing-state-vs.html)
+- [TotT : Effective Testing](https://testing.googleblog.com/2014/05/testing-on-toilet-effective-testing.html)
+- [TotT : Risk-driven Testing](https://testing.googleblog.com/2014/05/testing-on-toilet-risk-driven-testing.html)
+- [TotT : Change-detector Tests Considered Harmful](https://testing.googleblog.com/2015/01/testing-on-toilet-change-detector-tests.html)
 
 **Additional External Writings**
 

@@ -3,7 +3,7 @@ name: "code-styleguide"
 description: "Google, Angular, and Android Kotlin style guides synced from upstream, covering Common Lisp, C++, C#, Go, Haskell, HTML/CSS, JavaScript, Java, JSON, Markdown, Objective-C, Python, R, Rust, Shell, TypeScript, Verilog, Vim script, XML Document Format, Angular, Kotlin. Use when writing, reviewing, refactoring, or formatting code that should follow one of these guides, or when the user asks about naming, formatting, comments, imports, or language-feature rules in these languages."
 license: "CC-BY-3.0, CC-BY-4.0, Apache-2.0"
 metadata:
-  updated: "2026-10-29"
+  updated: "2026-10-30"
   sources: "google/styleguide, angular/angular, developer.android.com"
   generator: "scripts/sync-code-styleguide.ts"
 ---
@@ -22,12 +22,12 @@ The project's own configuration, formatter, and surrounding code take precedence
 | Topic | Reference | Index | Lines |
 | --- | --- | --- | --- |
 | Common Lisp | [Google Common Lisp Style Guide](references/google/lispguide.md) | 1-55 | 1215 |
-| C++ | [Google C++ Style Guide](references/google/cppguide.md) | 1-119 | 3655 |
+| C++ | [Google C++ Style Guide](references/google/cppguide.md) | 1-119 | 3658 |
 | C# | [C# at Google Style Guide](references/google/csharpguide.md) | 1-37 | 493 |
 | Go | [Go Style](references/google/go/index.md) | 1-10 | 120 |
-| Go | [Go Style Best Practices](references/google/go/best-practices.md) | 1-61 | 2943 |
-| Go | [Go Style Decisions](references/google/go/decisions.md) | 1-77 | 2734 |
-| Go | [Go Style Guide](references/google/go/guide.md) | 1-18 | 272 |
+| Go | [Go Style Best Practices](references/google/go/best-practices.md) | 1-61 | 2862 |
+| Go | [Go Style Decisions](references/google/go/decisions.md) | 1-77 | 2601 |
+| Go | [Go Style Guide](references/google/go/guide.md) | 1-18 | 266 |
 | Haskell | [Google's Haskell Style Guide](references/google/haskellguide.md) | 1-41 | 702 |
 | HTML/CSS | [Google HTML/CSS Style Guide](references/google/htmlcssguide.md) | 1-19 | 915 |
 | JavaScript | [Google JavaScript Style Guide](references/google/jsguide.md) | 1-70 | 3078 |
