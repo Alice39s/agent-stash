@@ -1,9 +1,18 @@
 import time
 from http import HTTPStatus
 from pathlib import Path
+from typing import Self
 
 import requests
-from pydantic import BaseModel, ConfigDict, SerializerFunctionWrapHandler, model_serializer
+import yaml
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    SerializerFunctionWrapHandler,
+    field_validator,
+    model_serializer,
+    model_validator,
+)
 from semver import Version
 
 MAX_VERSIONS = 10
@@ -57,6 +66,78 @@ class PluginIndex(BaseModel):
         return _move_last(handler(self), "plugins")
 
 
+class Declaration(BaseModel):
+    """索引声明的一个分类或标签：id 对应的显示名称，按语言给出，必须有英文。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    title: dict[str, str]
+
+    @field_validator("title")
+    @classmethod
+    def _has_english(cls, title: dict[str, str]) -> dict[str, str]:
+        if "en" not in title:
+            raise ValueError("title needs an en entry")
+        return title
+
+
+class ListedPlugin(BaseModel):
+    """来源列表里的一个插件：npm 包名，以及索引给它的分类和标签。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    category: str
+    labels: list[str]
+
+
+class IndexSources(BaseModel):
+    """dsh/plugin-index.yaml：生成器读取的插件列表，以及索引声明的分类和标签。"""
+
+    model_config = ConfigDict(extra="forbid")
+
+    categories: dict[str, Declaration]
+    labels: dict[str, Declaration]
+    plugins: list[ListedPlugin]
+
+    @model_validator(mode="after")
+    def _references_are_declared(self) -> Self:
+        names = [plugin.name for plugin in self.plugins]
+        if len(set(names)) != len(names):
+            raise ValueError("plugins lists a package more than once")
+        for plugin in self.plugins:
+            if plugin.category not in self.categories:
+                raise ValueError(f"{plugin.name}: category {plugin.category!r} is not declared")
+            undeclared = [label for label in plugin.labels if label not in self.labels]
+            if undeclared:
+                raise ValueError(f"{plugin.name}: labels {undeclared} are not declared")
+            if len(set(plugin.labels)) != len(plugin.labels):
+                raise ValueError(f"{plugin.name}: labels repeat an id")
+        return self
+
+    def source_list(self) -> str:
+        """生成器的输入：每行一个 npm 包名，顺序即索引里插件的顺序。"""
+        return "".join(f"{plugin.name}\n" for plugin in self.plugins)
+
+
+def load_sources(path: Path) -> IndexSources:
+    return IndexSources.model_validate(yaml.safe_load(path.read_text(encoding="utf-8")))
+
+
+def categorize(index: PluginIndex, sources: IndexSources) -> PluginIndex:
+    """在索引里声明分类和标签，并写入每个插件的分类和标签；生成器写出的关键词保持不变。"""
+    listed = {plugin.name: plugin for plugin in sources.plugins}
+    data = index.model_dump()
+    data["metadata"] = sources.model_dump(include={"categories", "labels"})
+    for plugin in data["plugins"]:
+        entry = listed[plugin["name"]]
+        plugin["metadata"] = plugin.get("metadata", {}) | {
+            "category": entry.category,
+            "labels": entry.labels,
+        }
+    return PluginIndex.model_validate(data)
+
+
 def newest_versions(plugin: IndexedPlugin, limit: int) -> IndexedPlugin:
     """只留 SemVer 最高的 `limit` 个版本和 `dist-tags` 指向的版本，按原来的顺序排列。"""
     ranked = sorted(plugin.versions, key=lambda entry: Version.parse(entry.version), reverse=True)
@@ -65,13 +146,14 @@ def newest_versions(plugin: IndexedPlugin, limit: int) -> IndexedPlugin:
     return plugin.model_copy(update={"versions": versions})
 
 
-def trim_index_file(path: Path, limit: int = MAX_VERSIONS) -> None:
-    """把生成的索引改写为每个插件只列最新的 `limit` 个版本。"""
+def finish_index_file(path: Path, sources: IndexSources, limit: int = MAX_VERSIONS) -> None:
+    """把生成的索引改写为每个插件只列最新的 `limit` 个版本，并写入分类和标签。"""
     index = PluginIndex.model_validate_json(path.read_bytes())
     trimmed = index.model_copy(
         update={"plugins": [newest_versions(plugin, limit) for plugin in index.plugins]}
     )
-    path.write_text(f"{trimmed.model_dump_json(indent=2)}\n", encoding="utf-8")
+    finished = categorize(trimmed, sources)
+    path.write_text(f"{finished.model_dump_json(indent=2)}\n", encoding="utf-8")
 
 
 def fetch_published(url: str) -> PluginIndex | None:
@@ -97,7 +179,7 @@ def index_changes(generated: PluginIndex, published: PluginIndex | None) -> list
         return ["no index is published yet"]
     changes: list[str] = []
     if generated.model_dump(exclude={"plugins"}) != published.model_dump(exclude={"plugins"}):
-        changes.append("index title, description, or format changed")
+        changes.append("index title, description, format, categories, or labels changed")
     before = {plugin.name: plugin for plugin in published.plugins}
     listed = {plugin.name for plugin in generated.plugins}
     changes.extend(

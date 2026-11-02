@@ -5,14 +5,14 @@ on:
     branches: [main]
     paths:
       - "docs/**"
-      - "dsh/plugin-index.txt"
+      - "dsh/plugin-index.yaml"
       - "pnpm-lock.yaml"
       - "scripts/ci/**"
       - ".github/workflows/pages.yml"
   pull_request:
     paths:
       - "docs/**"
-      - "dsh/plugin-index.txt"
+      - "dsh/plugin-index.yaml"
       - "pnpm-lock.yaml"
       - "scripts/ci/**"
       - ".github/workflows/pages.yml"
@@ -36,7 +36,7 @@ concurrency:
 
 env:
   # 参考生成器 apps/plugin-market-generator 所在的 DeepSeek Harness 版本。
-  DSH_REF: dsh-v0.2.1-rc.3
+  DSH_REF: dsh-v0.2.2-alpha.2
   # `uv run ci ...` 调用 scripts/ci 里的 Typer 命令，并要求 uv.lock 与依赖一致。
   UV_PROJECT: ${{ github.workspace }}/scripts/ci
   UV_LOCKED: "1"

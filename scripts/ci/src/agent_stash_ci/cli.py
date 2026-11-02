@@ -10,7 +10,13 @@ from rich.table import Column, Table
 
 from . import github, registry
 from .placeholder import Auth, check_credentials, publish_placeholder
-from .plugin_index import PluginIndex, fetch_published, index_changes, trim_index_file
+from .plugin_index import (
+    PluginIndex,
+    fetch_published,
+    finish_index_file,
+    index_changes,
+    load_sources,
+)
 from .proc import console, run
 from .publish_lock import LOCK_PATH, parse_publish_lock
 from .workspace import (
@@ -99,16 +105,20 @@ def plugin_index(
     output: Annotated[Path, typer.Option(help="index.json to write.")],
     cache: Annotated[Path, typer.Option(help="Generator result cache, kept between runs.")],
 ) -> None:
-    """Generate the DSH plugin index from dsh/plugin-index.txt with DSH's reference generator.
+    """Generate the DSH plugin index from dsh/plugin-index.yaml with DSH's reference generator.
 
-    Each plugin keeps its 10 highest versions plus any version a dist-tag points to.
+    Each plugin keeps its 10 highest versions plus any version a dist-tag points to,
+    and gets the category and labels dsh/plugin-index.yaml assigns to it.
     """
+    sources = load_sources(repo_root() / "dsh" / "plugin-index.yaml")
+    source_list = output.resolve().with_name("plugin-index-sources.txt")
+    source_list.write_text(sources.source_list(), encoding="utf-8")
     generator = "@deepseek-ai/dsh-plugin-market-generator"
     run(["pnpm", "install", "--frozen-lockfile", "--filter", f"{generator}..."], cwd=dsh)
     run(
         [
             "pnpm", "--filter", generator, "start",
-            "--input", str(repo_root() / "dsh" / "plugin-index.txt"),
+            "--input", str(source_list),
             "--output", str(output.resolve()),
             "--cache", str(cache.resolve()),
             "--title", "Agent Stash",
@@ -116,7 +126,7 @@ def plugin_index(
         ],
         cwd=dsh,
     )  # fmt: skip
-    trim_index_file(output)
+    finish_index_file(output, sources)
 
 
 @app.command("plugin-index-diff")

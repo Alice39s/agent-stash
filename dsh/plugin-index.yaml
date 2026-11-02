@@ -1,0 +1,92 @@
+# 插件索引的来源、分类与标签。.github/workflows/pages.yml 先用 DSH 的参考生成器按 plugins 的顺序生成 index.json，
+# 再写入这里声明的分类和标签，与文档站一起发布。每个插件列出 npm 上声明了 dsh.bundle 的发布版本中版本号最高的 10 个。
+# 分类和标签的 title 必须有英文 en；插件引用的分类和标签都要在这里声明。
+
+categories:
+  first-party:
+    title:
+      en: First-party plugins
+      zh: 第一方（原创）插件
+  third-party:
+    title:
+      en: Recommended third-party plugins
+      zh: 第三方（推荐）插件
+
+labels:
+  slash-command:
+    title:
+      en: Slash command
+      zh: 斜杠命令
+  project-instructions:
+    title:
+      en: Project instructions
+      zh: 项目指令
+  composer:
+    title:
+      en: Composer
+      zh: 输入框
+  prompt-history:
+    title:
+      en: Prompt history
+      zh: Prompt 历史
+  prompt-writing:
+    title:
+      en: Prompt writing
+      zh: Prompt 写作
+  conversation:
+    title:
+      en: Conversation
+      zh: 会话
+  skills:
+    title:
+      en: Skills
+      zh: Skill
+  uses-model:
+    title:
+      en: Uses a model
+      zh: 调用模型
+  shared-framework:
+    title:
+      en: Shared framework
+      zh: 共享框架
+  context:
+    title:
+      en: Context
+      zh: 上下文
+  balance:
+    title:
+      en: Balance and usage
+      zh: 余额与用量
+  widget:
+    title:
+      en: Widget
+      zh: 挂件
+
+plugins:
+  - name: "@agent-stash/init"
+    category: first-party
+    labels: [slash-command, project-instructions]
+  - name: "@agent-stash/dsh-message-edit"
+    category: first-party
+    labels: [conversation]
+  - name: "@agent-stash/dsh-recall"
+    category: first-party
+    labels: [composer, prompt-history]
+  - name: "@agent-stash/dsh-autosuggest"
+    category: first-party
+    labels: [composer, prompt-history]
+  - name: "@agent-stash/dsh-enhance"
+    category: first-party
+    labels: [composer, prompt-writing, uses-model]
+  - name: "@agent-stash/dsh-stash-kit"
+    category: first-party
+    labels: [shared-framework]
+  - name: "@agent-stash/dsh-skill-scout"
+    category: first-party
+    labels: [skills, uses-model]
+  - name: dsh-context
+    category: third-party
+    labels: [context, slash-command]
+  - name: dsh-whale-widget
+    category: third-party
+    labels: [balance, widget]

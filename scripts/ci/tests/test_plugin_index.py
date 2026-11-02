@@ -11,11 +11,16 @@ from typer.testing import CliRunner
 from agent_stash_ci.cli import app
 from agent_stash_ci.plugin_index import (
     IndexedPlugin,
+    IndexSources,
     PluginIndex,
+    categorize,
+    finish_index_file,
     index_changes,
+    load_sources,
     newest_versions,
-    trim_index_file,
 )
+
+REPOSITORY_SOURCES = Path(__file__).parents[3] / "dsh" / "plugin-index.yaml"
 
 
 def _plugin(name: str, *versions: str, description: str = "A plugin") -> dict[str, object]:
@@ -71,6 +76,14 @@ def test_a_reordered_index_is_a_change() -> None:
     assert _changes(_index(first, second), _index(second, first)) == ["plugin order changed"]
 
 
+def test_a_change_to_the_declared_categories_is_an_index_change() -> None:
+    plugin = _plugin("a", "1.0.0")
+    generated = _index(plugin) | {"metadata": {"categories": {"x": {"title": {"en": "X"}}}}}
+    assert _changes(generated, _index(plugin)) == [
+        "index title, description, format, categories, or labels changed"
+    ]
+
+
 def test_an_unpublished_index_is_a_change() -> None:
     generated = PluginIndex.model_validate(_index(_plugin("a", "1.0.0")))
     assert index_changes(generated, None) == ["no index is published yet"]
@@ -100,7 +113,103 @@ def test_a_version_a_dist_tag_points_to_is_kept() -> None:
     assert _kept(plugin, limit=1) == ["3.0.0", "1.0.0"]
 
 
-def test_the_trimmed_file_keeps_the_generator_layout(tmp_path: Path) -> None:
+def _sources(*plugins: dict[str, object]) -> IndexSources:
+    return IndexSources.model_validate(
+        {
+            "categories": {
+                "first-party": {"title": {"en": "First-party plugins", "zh": "第一方（原创）插件"}},
+                "third-party": {"title": {"en": "Recommended third-party plugins"}},
+            },
+            "labels": {
+                "composer": {"title": {"en": "Composer", "zh": "输入框"}},
+                "widget": {"title": {"en": "Widget"}},
+            },
+            "plugins": list(plugins),
+        }
+    )
+
+
+def test_the_repository_sources_declare_every_category_and_label_they_use() -> None:
+    sources = load_sources(REPOSITORY_SOURCES)
+    assert sources.plugins
+    assert set(sources.categories) == {"first-party", "third-party"}
+
+
+def test_the_source_list_holds_one_package_per_line_in_order() -> None:
+    sources = _sources(
+        {"name": "@agent-stash/dsh-recall", "category": "first-party", "labels": []},
+        {"name": "dsh-whale-widget", "category": "third-party", "labels": ["widget"]},
+    )
+    assert sources.source_list() == "@agent-stash/dsh-recall\ndsh-whale-widget\n"
+
+
+@pytest.mark.parametrize(
+    ("plugins", "message"),
+    [
+        (
+            [{"name": "a", "category": "unknown", "labels": []}],
+            "a: category 'unknown' is not declared",
+        ),
+        (
+            [{"name": "a", "category": "first-party", "labels": ["composer", "unknown"]}],
+            "a: labels ['unknown'] are not declared",
+        ),
+        (
+            [{"name": "a", "category": "first-party", "labels": ["composer", "composer"]}],
+            "a: labels repeat an id",
+        ),
+        (
+            [
+                {"name": "a", "category": "first-party", "labels": []},
+                {"name": "a", "category": "third-party", "labels": []},
+            ],
+            "plugins lists a package more than once",
+        ),
+    ],
+)
+def test_sources_reject_undeclared_or_repeated_ids(
+    plugins: list[dict[str, object]], message: str
+) -> None:
+    with pytest.raises(ValueError, match=message.replace("[", r"\[").replace("]", r"\]")):
+        _sources(*plugins)
+
+
+def test_a_declaration_without_an_english_title_is_rejected() -> None:
+    with pytest.raises(ValueError, match="title needs an en entry"):
+        IndexSources.model_validate(
+            {"categories": {"x": {"title": {"zh": "分类"}}}, "labels": {}, "plugins": []}
+        )
+
+
+def test_categorize_declares_the_ids_and_tags_each_plugin() -> None:
+    index = PluginIndex.model_validate(
+        _index(
+            _plugin("@agent-stash/dsh-recall", "0.1.1") | {"metadata": {"keywords": ["history"]}},
+            _plugin("dsh-whale-widget", "0.4.2"),
+        )
+    )
+    sources = _sources(
+        {"name": "@agent-stash/dsh-recall", "category": "first-party", "labels": ["composer"]},
+        {"name": "dsh-whale-widget", "category": "third-party", "labels": ["widget"]},
+    )
+    data = categorize(index, sources).model_dump()
+    assert data["metadata"] == {
+        "categories": {
+            "first-party": {"title": {"en": "First-party plugins", "zh": "第一方（原创）插件"}},
+            "third-party": {"title": {"en": "Recommended third-party plugins"}},
+        },
+        "labels": {
+            "composer": {"title": {"en": "Composer", "zh": "输入框"}},
+            "widget": {"title": {"en": "Widget"}},
+        },
+    }
+    assert [plugin["metadata"] for plugin in data["plugins"]] == [
+        {"keywords": ["history"], "category": "first-party", "labels": ["composer"]},
+        {"category": "third-party", "labels": ["widget"]},
+    ]
+
+
+def test_the_finished_file_keeps_the_generator_layout(tmp_path: Path) -> None:
     short = {
         "name": "@agent-stash/init",
         "title": {"en": "/init", "zh": "初始化"},
@@ -124,8 +233,30 @@ def test_the_trimmed_file_keeps_the_generator_layout(tmp_path: Path) -> None:
     }
     path = tmp_path / "index.json"
     path.write_text(json.dumps(index, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    trim_index_file(path)
-    expected = index | {"plugins": [short, long | {"versions": long["versions"][:10]}]}
+    sources = _sources(
+        {"name": "@agent-stash/init", "category": "first-party", "labels": ["composer"]},
+        {"name": "dsh-context", "category": "third-party", "labels": []},
+    )
+    finish_index_file(path, sources)
+    declarations = sources.model_dump(include={"categories", "labels"})
+    expected = {
+        "format": 1,
+        "title": "Agent Stash",
+        "description": "Plugins",
+        "metadata": declarations,
+        "plugins": [
+            short
+            | {
+                "metadata": {"keywords": [], "category": "first-party", "labels": ["composer"]},
+                "versions": short["versions"],
+            },
+            {key: value for key, value in long.items() if key != "versions"}
+            | {
+                "metadata": {"category": "third-party", "labels": []},
+                "versions": long["versions"][:10],
+            },
+        ],
+    }
     assert (
         path.read_text(encoding="utf-8")
         == json.dumps(expected, indent=2, ensure_ascii=False) + "\n"
