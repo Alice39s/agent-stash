@@ -31,6 +31,14 @@
   "publishConfig": {
     "access": "public"
   },
+  "peerDependencies": {
+    "@deepseek-ai/dsh": ">=0.2.1-alpha.4"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh": {
+      "optional": true
+    }
+  },
   "icon": "./icon.svg",
   "engines": {
     "dsh": ">=0.2.1-alpha.4"

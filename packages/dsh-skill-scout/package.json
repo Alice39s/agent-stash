@@ -58,6 +58,14 @@
     "vfile-matter": "^5.0.1",
     "yaml": "^2.9.1"
   },
+  "peerDependencies": {
+    "@deepseek-ai/dsh": ">=0.2.1-rc.3"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh": {
+      "optional": true
+    }
+  },
   "icon": "./icon.svg",
   "engines": {
     "dsh": ">=0.2.1-rc.3"

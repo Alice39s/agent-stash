@@ -36,6 +36,14 @@
   "dependencies": {
     "tiktoken": "1.0.22"
   },
+  "peerDependencies": {
+    "@deepseek-ai/dsh": ">=0.2.1-rc.3"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/dsh": {
+      "optional": true
+    }
+  },
   "icon": "./icon.svg",
   "engines": {
     "dsh": ">=0.2.1-rc.3"

@@ -6,6 +6,9 @@ packages:
   - dsh/enhance
   - docs
   - benchmark/prompts
+# 各组合包把 DSH 版本要求同时写进可选 peer `@deepseek-ai/dsh`；工作区开发时不装 DSH 本体。
+overrides:
+  "@deepseek-ai/dsh": "-"
 allowBuilds:
   "@google/genai": false
   esbuild: false

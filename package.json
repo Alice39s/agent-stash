@@ -98,9 +98,13 @@
     "yaml": "^2.9.1"
   },
   "peerDependencies": {
+    "@deepseek-ai/dsh": ">=0.2.1-alpha.2",
     "@earendil-works/pi-coding-agent": "*"
   },
   "peerDependenciesMeta": {
+    "@deepseek-ai/dsh": {
+      "optional": true
+    },
     "@earendil-works/pi-coding-agent": {
       "optional": true
     }
