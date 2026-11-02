@@ -1,21 +1,14 @@
 core:changelogs:
-  - content: "---\npackages:\n  \"@agent-stash/init\":\n    type: patch\n---\n\n## 文档站录屏\n\n- 文档站的录屏和封面图右下角显示仓库地址 `github.com/Alice39s/agent-stash`，画面上另有一层低透明度的斜向仓库地址。下载、转发或全屏播放时，地址都在画面里。\n"
-    filename: docs-recording-watermark.md
+  - content: "---\npackages:\n  \"@agent-stash/init\":\n    type: minor\n  \"@agent-stash/dsh-message-edit\":\n    type: minor\n  \"@agent-stash/dsh-recall\":\n    type: minor\n  \"@agent-stash/dsh-autosuggest\":\n    type: minor\n  \"@agent-stash/dsh-enhance\":\n    type: minor\n  \"@agent-stash/dsh-stash-kit\":\n    type: minor\n  \"@agent-stash/dsh-skill-scout\":\n    type: minor\n---\n\n## DSH 版本要求\n\n- `package.json` 的 `peerDependencies` 声明可选的 `@deepseek-ai/dsh`，范围与 `engines.dsh` 相同。从 `peerDependencies` 读取兼容声明的插件市场也能显示插件支持的 DSH 版本，安装时不会额外装上 DSH。\n"
+    filename: dsh-peer-requirement.md
     v: 0.0.0
-  - content: "---\npackages:\n  \"@agent-stash/init\":\n    type: patch\n  \"@agent-stash/dsh-recall\":\n    type: patch\n  \"@agent-stash/dsh-autosuggest\":\n    type: patch\n  \"@agent-stash/dsh-enhance\":\n    type: patch\n  \"@agent-stash/dsh-stash-kit\":\n    type: patch\n  \"@agent-stash/dsh-message-edit\":\n    type: patch\n  \"@agent-stash/dsh-skill-scout\":\n    type: patch\n---\n\n## 插件简介\n\n插件列表里的简介改为一句话：\n\n- /init：用其他 Coding Agent 的 /init 预设分析项目，写出 AGENTS.md\n- Prompt 回溯：按 ↑↓ 翻看当前会话发过的 Prompt\n- Prompt 自动补全：用所有会话的历史 Prompt 补全输入内容\n- 提示词增强器：一键润色、结构化、提炼 Prompt 草稿的核心内容\n- Agent Stash 基础核心框架：统一设置 Agent Stash 插件的面板、补全灰字与动画\n- 消息编辑：编辑消息、重新生成回复或重试回合，改动另存为可切换的版本\n- 经验提炼器：从已结束的会话里提炼可复用的流程，审核后存为 Skill\n"
-    filename: plugin-descriptions.md
-    v: 0.0.0
-  - content: "---\npackages:\n  \"@agent-stash/init\":\n    type: patch\n---\n\n## 插件索引\n\n- `https://alice39s.github.io/agent-stash/index.json` 里每个插件最多列出版本号最高的 10 个版本，`dist-tags` 指向的版本也会保留。\n"
-    filename: plugin-index-versions.md
-    v: 0.0.0
-  - content: "---\npackages:\n  \"@agent-stash/dsh-autosuggest\":\n    type: patch\n  \"@agent-stash/dsh-enhance\":\n    type: patch\n  \"@agent-stash/dsh-stash-kit\":\n    type: patch\n  \"@agent-stash/dsh-skill-scout\":\n    type: patch\n---\n\n## 插件名称\n\n插件页里显示的中文名称：\n\n- `@agent-stash/dsh-autosuggest`：Prompt 自动补全\n- `@agent-stash/dsh-enhance`：提示词增强器\n- `@agent-stash/dsh-stash-kit`：Agent Stash 基础核心框架\n- `@agent-stash/dsh-skill-scout`：经验提炼器，找不到发现模型和无法修改 Skill 的提示里也用这个名称\n"
-    filename: plugin-names.md
+  - content: "---\npackages:\n  \"@agent-stash/init\":\n    type: minor\n---\n\n## 插件索引\n\n- `https://alice39s.github.io/agent-stash/index.json` 把插件分为「第一方（原创）插件」和「第三方（推荐）插件」，每个插件带有标签，DSH 的「发现」页可以按分类和标签筛选。\n"
+    filename: plugin-index-categories.md
     v: 0.0.0
 core:packages:
   - changelogIds:
-      - docs-recording-watermark.md
-      - plugin-descriptions.md
-      - plugin-index-versions.md
+      - dsh-peer-requirement.md
+      - plugin-index-categories.md
     id: npm:@agent-stash/init
     updated: true
   - id: npm:agent-stash-docs
@@ -23,32 +16,28 @@ core:packages:
   - id: npm:agent-stash-prompt-benchmark
     updated: false
   - changelogIds:
-      - plugin-descriptions.md
+      - dsh-peer-requirement.md
     id: npm:@agent-stash/dsh-message-edit
     updated: true
   - changelogIds:
-      - plugin-descriptions.md
-      - plugin-names.md
+      - dsh-peer-requirement.md
     id: npm:@agent-stash/dsh-skill-scout
     updated: true
   - changelogIds:
-      - plugin-descriptions.md
-    id: npm:@agent-stash/dsh-recall
+      - dsh-peer-requirement.md
+    id: npm:@agent-stash/dsh-autosuggest
     updated: true
   - changelogIds:
-      - plugin-descriptions.md
-      - plugin-names.md
-    id: npm:@agent-stash/dsh-stash-kit
-    updated: true
-  - changelogIds:
-      - plugin-descriptions.md
-      - plugin-names.md
+      - dsh-peer-requirement.md
     id: npm:@agent-stash/dsh-enhance
     updated: true
   - changelogIds:
-      - plugin-descriptions.md
-      - plugin-names.md
-    id: npm:@agent-stash/dsh-autosuggest
+      - dsh-peer-requirement.md
+    id: npm:@agent-stash/dsh-stash-kit
+    updated: true
+  - changelogIds:
+      - dsh-peer-requirement.md
+    id: npm:@agent-stash/dsh-recall
     updated: true
 npm:packages:
   - id: npm:@agent-stash/init
@@ -56,7 +45,7 @@ npm:packages:
   - id: npm:agent-stash-prompt-benchmark
   - id: npm:@agent-stash/dsh-message-edit
   - id: npm:@agent-stash/dsh-skill-scout
-  - id: npm:@agent-stash/dsh-recall
-  - id: npm:@agent-stash/dsh-stash-kit
-  - id: npm:@agent-stash/dsh-enhance
   - id: npm:@agent-stash/dsh-autosuggest
+  - id: npm:@agent-stash/dsh-enhance
+  - id: npm:@agent-stash/dsh-stash-kit
+  - id: npm:@agent-stash/dsh-recall

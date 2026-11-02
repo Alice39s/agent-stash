@@ -1,3 +1,13 @@
+## @agent-stash/init@1.5.0
+
+### DSH 版本要求
+
+- `package.json` 的 `peerDependencies` 声明可选的 `@deepseek-ai/dsh`，范围与 `engines.dsh` 相同。从 `peerDependencies` 读取兼容声明的插件市场也能显示插件支持的 DSH 版本，安装时不会额外装上 DSH。
+
+### 插件索引
+
+- `https://alice39s.github.io/agent-stash/index.json` 把插件分为「第一方（原创）插件」和「第三方（推荐）插件」，每个插件带有标签，DSH 的「发现」页可以按分类和标签筛选。
+
 ## @agent-stash/init@1.4.2
 
 ### 文档站录屏
