@@ -61,6 +61,14 @@ labels:
     title:
       en: Widget
       zh: 挂件
+  notification:
+    title:
+      en: Notifications
+      zh: 通知
+  sidebar:
+    title:
+      en: Sidebar
+      zh: 侧边栏
 
 plugins:
   - name: "@agent-stash/init"
@@ -90,3 +98,9 @@ plugins:
   - name: dsh-whale-widget
     category: third-party
     labels: [balance, widget]
+  - name: dsh-notify-me
+    category: third-party
+    labels: [notification]
+  - name: dsh-better-sidebar
+    category: third-party
+    labels: [sidebar, conversation]
