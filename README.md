@@ -12,16 +12,16 @@
 
 ## 收录内容
 
-| 名称                                                                                                     | 说明                                                                |
-| -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| [/init](https://alice39s.github.io/agent-stash/zh/plugins/init/)                                         | 插件，用其他 Coding Agent 的 `/init` 预设分析项目，写出 `AGENTS.md` |
-| [消息编辑](https://alice39s.github.io/agent-stash/zh/plugins/dsh-message-edit/)                          | DSH 插件，编辑消息、重新生成回复或重试回合，改动另存为可切换的版本  |
-| [经验提炼器](https://alice39s.github.io/agent-stash/zh/plugins/dsh-skill-scout/)                         | DSH 插件，从已结束的会话里提炼可复用的流程，审核后存为 Skill        |
-| [Prompt 回溯](https://alice39s.github.io/agent-stash/zh/plugins/dsh-recall/)                             | DSH 插件，按 ↑↓ 翻看当前会话发过的 Prompt                           |
-| [Prompt 自动补全](https://alice39s.github.io/agent-stash/zh/plugins/dsh-autosuggest/)                    | DSH 插件，用所有会话的历史 Prompt 补全输入内容                      |
-| [提示词增强器](https://alice39s.github.io/agent-stash/zh/plugins/dsh-enhance/)                           | DSH 插件，一键润色、结构化、提炼 Prompt 草稿的核心内容              |
-| [`code-styleguide`](https://alice39s.github.io/agent-stash/zh/skills/#code-styleguide)                   | 技能，Google、Angular 与 Android Kotlin 风格指南，每天从上游同步    |
-| [`self-use-<model>-subagent`](https://alice39s.github.io/agent-stash/zh/skills/#self-use-model-subagent) | 技能，在 DSH 里把任务委托给指定模型的子代理                         |
+| 名称                                                                                                                                                         | 说明                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
+| <img src="dsh/init/icon.svg" alt="" width="20" height="20"> [/init](https://alice39s.github.io/agent-stash/zh/plugins/init/)                                 | 插件，用其他 Coding Agent 的 `/init` 预设分析项目，写出 `AGENTS.md` |
+| <img src="packages/dsh-message-edit/icon.svg" alt="" width="20" height="20"> [消息编辑](https://alice39s.github.io/agent-stash/zh/plugins/dsh-message-edit/) | DSH 插件，编辑消息、重新生成回复或重试回合，改动另存为可切换的版本  |
+| <img src="packages/dsh-skill-scout/icon.svg" alt="" width="20" height="20"> [经验提炼器](https://alice39s.github.io/agent-stash/zh/plugins/dsh-skill-scout/) | DSH 插件，从已结束的会话里提炼可复用的流程，审核后存为 Skill        |
+| <img src="dsh/recall/icon.svg" alt="" width="20" height="20"> [Prompt 回溯](https://alice39s.github.io/agent-stash/zh/plugins/dsh-recall/)                   | DSH 插件，按 ↑↓ 翻看当前会话发过的 Prompt                           |
+| <img src="dsh/autosuggest/icon.svg" alt="" width="20" height="20"> [Prompt 自动补全](https://alice39s.github.io/agent-stash/zh/plugins/dsh-autosuggest/)     | DSH 插件，用所有会话的历史 Prompt 补全输入内容                      |
+| <img src="dsh/enhance/icon.svg" alt="" width="20" height="20"> [提示词增强器](https://alice39s.github.io/agent-stash/zh/plugins/dsh-enhance/)                | DSH 插件，一键润色、结构化、提炼 Prompt 草稿的核心内容              |
+| [`code-styleguide`](https://alice39s.github.io/agent-stash/zh/skills/#code-styleguide)                                                                       | 技能，Google、Angular 与 Android Kotlin 风格指南，每天从上游同步    |
+| [`self-use-<model>-subagent`](https://alice39s.github.io/agent-stash/zh/skills/#self-use-model-subagent)                                                     | 技能，在 DSH 里把任务委托给指定模型的子代理                         |
 
 ## 安装
 
