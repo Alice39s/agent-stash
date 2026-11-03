@@ -1,0 +1,6 @@
+{
+  "title": "Coding Agent 通用插件",
+  "icon": "Bot",
+  "defaultOpen": true,
+  "pages": ["../init"]
+}

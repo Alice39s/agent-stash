@@ -1,0 +1,6 @@
+{
+  "title": "Universal coding agent plugins",
+  "icon": "Bot",
+  "defaultOpen": true,
+  "pages": ["../init"]
+}

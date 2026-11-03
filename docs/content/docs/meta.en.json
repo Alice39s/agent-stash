@@ -1,4 +1,11 @@
 {
   "title": "Agent Stash Docs",
-  "pages": ["index", "install", "plugins", "skills", "development"]
+  "pages": [
+    "index",
+    "install",
+    "plugins/(deepseek)",
+    "plugins/(coding-agent)",
+    "skills",
+    "development"
+  ]
 }
