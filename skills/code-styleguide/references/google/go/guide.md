@@ -1,6 +1,6 @@
 # Go Style Guide
 
-Source: <https://google.github.io/styleguide/go/guide.html> · google/styleguide@c098353acb6d (2026-03-18) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/go/guide.html> · google/styleguide@4e404ae582e2 (2026-11-06) · CC-BY-3.0
 
 ## Index
 
@@ -8,14 +8,14 @@ Source: <https://google.github.io/styleguide/go/guide.html> · google/styleguide
   - L38 Clarity
   - L79 Simplicity
   - L116 Concision
-  - L150 Maintainability
-  - L211 Consistency
-- L219 Core guidelines
-  - L225 Formatting
-  - L229 MixedCaps
-  - L237 Line length
-  - L246 Naming
-  - L256 Local consistency
+  - L148 Maintainability
+  - L205 Consistency
+- L213 Core guidelines
+  - L219 Formatting
+  - L223 MixedCaps
+  - L238 Line length
+  - L247 Naming
+  - L257 Local consistency
 
 ---
 
@@ -132,7 +132,6 @@ When considering multiple ways to structure code, it is worth considering which 
 Understanding and using common code constructions and idioms are also important for maintaining a high signal-to-noise ratio. For example, the following code block is very common in [error handling](https://go.dev/blog/errors-are-values), and the reader can quickly understand the purpose of this block.
 
 ```go
-// Good:
 if err := doSomething(); err != nil {
     // ...
 }
@@ -141,7 +140,6 @@ if err := doSomething(); err != nil {
 If code looks very similar to this but is subtly different, a reader may not notice the change. In cases like this, it is worth intentionally ["boosting"](https://google.github.io/styleguide/go/best-practices#signal-boost) the signal of the error check by adding a comment to call attention to it.
 
 ```go
-// Good:
 if err := doSomething(); err == nil { // if NO error
     // ...
 }
@@ -164,7 +162,6 @@ When using abstractions like interfaces and types which by definition remove inf
 Maintainable code also avoids hiding important details in places that are easy to overlook. For example, in each of the following lines of code, the presence or lack of a single character is critical to understand the line:
 
 ```go
-// Bad:
 // The use of = instead of := can change this line completely.
 if user, err = db.UserByID(userID); err != nil {
     // ...
@@ -172,7 +169,6 @@ if user, err = db.UserByID(userID); err != nil {
 ```
 
 ```go
-// Bad:
 // The ! in the middle of this line is very easy to miss.
 leap := (year%4 == 0) && (!(year%100 == 0) || (year%400 == 0))
 ```
@@ -180,7 +176,6 @@ leap := (year%4 == 0) && (!(year%100 == 0) || (year%400 == 0))
 Neither of these are incorrect, but both could be written in a more explicit fashion, or could have an accompanying comment that calls attention to the important behavior:
 
 ```go
-// Good:
 u, err := db.UserByID(userID)
 if err != nil {
     return fmt.Errorf("invalid origin user: %s", err)
@@ -189,7 +184,6 @@ user = u
 ```
 
 ```go
-// Good:
 // Gregorian leap years aren't just year%4 == 0.
 // See https://en.wikipedia.org/wiki/Leap_year#Algorithm.
 var (
@@ -233,6 +227,13 @@ Go source code uses `MixedCaps` or `mixedCaps` (camel case) rather than undersco
 This applies even when it breaks conventions in other languages. For example, a constant is `MaxLength` (not `MAX_LENGTH`) if exported and `maxLength` (not `max_length`) if unexported.
 
 Local variables are considered [unexported](https://go.dev/ref/spec#Exported_identifiers) for the purpose of choosing the initial capitalization.
+
+> **Note:** The following are exempt from this rule:
+>
+> - Generated Protocol Buffer API
+> - Standard library interface to the operating system, e.g. <https://pkg.go.dev/syscall#pkg-constants>
+>
+> **Human-written code is held to a higher standard.**
 
 ### Line length
 

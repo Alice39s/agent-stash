@@ -1,6 +1,6 @@
 # Google Java Style Guide
 
-Source: <https://google.github.io/styleguide/javaguide.html> · google/styleguide@8e035461436f (2026-10-28) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/javaguide.html> · google/styleguide@ab89e73079a7 (2026-11-04) · CC-BY-3.0
 
 ## Index
 
@@ -590,7 +590,7 @@ package com.example.frozzler;
 ```java
 /// This is a module.
 @Deprecated
-@SuppressWarnings("CheckReturnValue") // TODO(b/123): Fix existing CRV violations.
+@SuppressWarnings("CheckReturnValue") // TODO(b/12345): Fix existing CRV violations.
 module com.example.frozzler { ... }
 ```
 
@@ -652,13 +652,13 @@ A `TODO` comment begins with the word `TODO` in all caps, a following colon, and
 The purpose is to have a consistent `TODO` format that can be searched to find out how to get more details.
 
 ```java
-// TODO: crbug.com/12345678 - Remove this after the 2047q4 compatibility window expires.
+// TODO: example.com/12345678 - Remove this after the 2047q4 compatibility window expires.
 ```
 
 Avoid adding TODOs that refer to an individual or team as the context:
 
 ```java
-// TODO: @yourusername - File an issue and use a '*' for repetition.
+// TODO: username - File an issue and use a '*' for repetition.
 ```
 
 If your `TODO` is of the form "At a future date do something" make sure that you either include a very specific date ("Fix by November 2005") or a very specific event ("Remove this code when all clients can handle XML responses.").
