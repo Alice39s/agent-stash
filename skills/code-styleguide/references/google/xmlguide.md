@@ -1,6 +1,6 @@
 # Google XML Document Format Style Guide
 
-Source: <https://google.github.io/styleguide/xmlguide.html> · google/styleguide@24cfcced577a (2026-10-17) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/xmlguide.html> · google/styleguide@7c3eb00dd3a3 (2026-11-06) · CC-BY-3.0
 
 ## Index
 
@@ -231,5 +231,3 @@ Break _ANY OR ALL_ of these rules (yes, even the ones that say MUST) rather than
 >     Those who know roar like lions;\
 >     Wise hackers smile like tigers.\
 >             --a [tanka](https://en.wikipedia.org/wiki/Waka_%28poetry%29#Forms_of_waka), or extended haiku
-
-\[TODO: if a registry of schemas is set up, add a link to it]

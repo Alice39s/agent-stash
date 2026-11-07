@@ -1,6 +1,6 @@
 # Shell Style Guide
 
-Source: <https://google.github.io/styleguide/shellguide.html> · google/styleguide@577f395ca4c3 (2026-10-23) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/shellguide.html> · google/styleguide@3c900a67cd12 (2026-11-03) · CC-BY-3.0
 
 ## Index
 
@@ -223,7 +223,7 @@ This matches the convention in the [C++ Guide](https://google.github.io/stylegui
 Examples:
 
 ```shell
-# TODO(mrmonkey): Handle the unlikely edge cases (bug ####)
+# TODO(username): Handle the unlikely edge cases (bug ####)
 ```
 
 ## Formatting
