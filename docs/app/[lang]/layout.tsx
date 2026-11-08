@@ -9,6 +9,7 @@ import DocsSearchDialog from "@/components/search";
 import { SiteHeader } from "@/components/site-header";
 import { htmlLang, i18n, isLocale } from "@/lib/i18n";
 import { layoutOptions, translations } from "@/lib/layout.shared";
+import { absoluteUrl } from "@/lib/shared";
 import { source } from "@/lib/source";
 
 export const dynamicParams = false;
@@ -28,6 +29,8 @@ export default async function Layout({ params, children }: LayoutProps) {
   return (
     <html lang={htmlLang[lang]} suppressHydrationWarning>
       <body className="flex min-h-screen flex-col font-sans">
+        {/* 本语言的 llms.txt 列出该语言的页面；React 会把这个链接放进 head。 */}
+        <link rel="describedby" href={absoluteUrl(`/${lang}/llms.txt`)} />
         <RootProvider
           i18n={i18nProvider(translations, lang)}
           search={{ SearchDialog: DocsSearchDialog }}

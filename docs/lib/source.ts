@@ -1,8 +1,9 @@
 import { llms, loader } from "fumadocs-core/source";
+import { renderMarkdownUrl } from "fumadocs-extras/llms";
 import { defineDocs } from "fumadocs-mdx/macro";
 import { i18n } from "./i18n";
 import { resolveIcon } from "./icons";
-import { absoluteUrl, pagePath } from "./shared";
+import { absoluteUrl, pageMarkdownPath, pagePath } from "./shared";
 
 export const docs = defineDocs({
   dir: "content/docs",
@@ -32,8 +33,12 @@ const publicSource = loader({
     ),
 });
 
-/** 给 LLM 读的 Markdown。`remarkContentLinks` 已把站内链接改成公开路径；标题行带页面的绝对地址。 */
+/**
+ * 给 LLM 读的 Markdown。静态站点不能按 `Accept: text/markdown` 在页面地址上返回 Markdown，所以 `llms.txt` 的条目
+ * 链接到 Markdown 副本，`remarkContentLinks` 对站内链接也这样处理。标题行带页面的绝对地址。
+ */
 export const docsLlms = llms(publicSource, {
+  renderUrl: renderMarkdownUrl(publicSource, (page) => absoluteUrl(pageMarkdownPath(page))),
   renderPage: async (page) => `# ${page.data.title} (${page.url})
 
 ${await page.data.getText("processed")}`,

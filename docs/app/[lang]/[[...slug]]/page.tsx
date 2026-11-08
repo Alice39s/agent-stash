@@ -74,8 +74,8 @@ export default async function DocPage(props: PageProps) {
         <ViewOptionsPopover
           markdownUrl={markdownUrl}
           githubUrl={`${repositoryUrl}/blob/${repository.branch}/${repository.contentDir}/${page.path}`}
-          // 发给 AI 的 Prompt 里用发布站点上的地址，本地预览时也一样。
-          pageUrl={absoluteUrl(pagePath(page.url))}
+          // 发给 AI 的 Prompt 里用发布站点上的 Markdown 副本地址，本地预览时也一样。
+          pageUrl={absoluteUrl(markdownUrl)}
           locale={htmlLang[locale]}
         />
       </div>
@@ -113,7 +113,11 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
   return {
     title: `${page.data.title} · ${siteName} ${section}`,
     description: page.data.description,
-    alternates: { canonical: url, languages },
+    alternates: {
+      canonical: url,
+      languages,
+      types: { "text/markdown": absoluteUrl(pageMarkdownPath(page)) },
+    },
     openGraph: {
       type: "article",
       siteName: `${siteName} ${section}`,
