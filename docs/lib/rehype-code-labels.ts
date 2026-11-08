@@ -1,7 +1,19 @@
 import type { Root } from "hast";
 import { visit } from "unist-util-visit";
 import type { VFile } from "vfile";
-import { localeOf } from "./remark-content-links.ts";
+import { i18n } from "./i18n.ts";
+
+const LOCALE_SUFFIX = /\.([a-z]{2})\.mdx$/u;
+
+/** 内容文件的语言，取自 `.en.mdx` 这样的后缀；默认语言没有后缀。 */
+function localeOf(file: string): string {
+  const suffix = LOCALE_SUFFIX.exec(file)?.[1];
+  if (suffix === undefined) return i18n.defaultLanguage;
+  if (!i18n.languages.some((language) => language === suffix)) {
+    throw new Error(`${file}: unknown locale "${suffix}"`);
+  }
+  return suffix;
+}
 
 const codeWord: Record<string, { word: string; separator: string }> = {
   zh: { word: "代码", separator: "：" },

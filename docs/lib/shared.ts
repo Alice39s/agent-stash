@@ -1,4 +1,5 @@
 import { requiredEnv } from "./env";
+import { markdownPath } from "./markdown-path";
 
 /** 部署前缀，不带结尾斜杠；由 `site.config.ts` 经 `next.config.mjs` 设置。 */
 export const basePath = requiredEnv("NEXT_PUBLIC_BASE_PATH", process.env["NEXT_PUBLIC_BASE_PATH"]);
@@ -22,7 +23,7 @@ function localePath(page: PageRef): string[] {
 
 /** 页面的 Markdown 副本，给“复制 Markdown”和 LLM 工具使用。Next.js 不给 route handler 的地址加前缀。 */
 export function pageMarkdownPath(page: PageRef): string {
-  return `/md/${[...localePath(page), "content.md"].join("/")}`;
+  return markdownPath(localePath(page));
 }
 
 /** 页面的 Open Graph 图片，构建时渲染。 */
