@@ -1,0 +1,26 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g mask="url(#agent-stash-readme-skill-modern-web-guidance-badge-cutout)">
+    <rect x="6" y="10" width="21" height="18" rx="3.5" fill="url(#agent-stash-readme-skill-modern-web-guidance-window)" />
+    <circle cx="9.5" cy="13.5" r="1" fill="#FFFFFF" />
+    <circle cx="12.5" cy="13.5" r="1" fill="#FFFFFF" />
+    <circle cx="15.5" cy="13.5" r="1" fill="#FFFFFF" fill-opacity="0.55" />
+    <path d="M9.5 19H19.5M9.5 22.5H15" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" />
+  </g>
+  <circle cx="26" cy="10" r="5.25" fill="url(#agent-stash-readme-skill-modern-web-guidance-badge)" />
+  <path d="M28.6 7.4L26.9 10.9L25.1 9.1L28.6 7.4Z" fill="#FFFFFF" />
+  <path d="M23.4 12.6L25.1 9.1L26.9 10.9L23.4 12.6Z" fill="#FFFFFF" fill-opacity="0.6" />
+  <defs>
+    <mask id="agent-stash-readme-skill-modern-web-guidance-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF" />
+      <circle cx="26" cy="10" r="6.5" fill="#000000" />
+    </mask>
+    <linearGradient id="agent-stash-readme-skill-modern-web-guidance-window" x1="7" y1="10" x2="26" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB" />
+      <stop offset="1" stop-color="#3650DE" />
+    </linearGradient>
+    <linearGradient id="agent-stash-readme-skill-modern-web-guidance-badge" x1="20.75" y1="4.75" x2="31.25" y2="15.25" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB" />
+      <stop offset="1" stop-color="#108792" />
+    </linearGradient>
+  </defs>
+</svg>

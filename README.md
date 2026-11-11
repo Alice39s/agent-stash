@@ -10,9 +10,9 @@
 
 </div>
 
-## 收录内容
+## <img src=".github/img/package.svg" alt="" width="24" height="24" align="absmiddle"> 收录内容
 
-### 插件
+### <img src=".github/img/puzzle.svg" alt="" width="20" height="20" align="absmiddle"> 插件
 
 | 名称                                                                                                                                                                           | 说明                                                                |
 | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
@@ -23,15 +23,16 @@
 | <img src="dsh/autosuggest/icon.svg" alt="" width="22" height="22" align="absmiddle"> [Prompt 自动补全](https://alice39s.github.io/agent-stash/zh/plugins/dsh-autosuggest/)     | DSH 插件，用所有会话的历史 Prompt 补全输入内容                      |
 | <img src="dsh/enhance/icon.svg" alt="" width="22" height="22" align="absmiddle"> [提示词增强器](https://alice39s.github.io/agent-stash/zh/plugins/dsh-enhance/)                | DSH 插件，一键润色、结构化、提炼 Prompt 草稿的核心内容              |
 
-### Agent Skills
+### <img src=".github/img/book-open-text.svg" alt="" width="20" height="20" align="absmiddle"> Agent Skills
 
-| 名称                                                                                                     | 说明                                                            |
-| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
-| [`code-styleguide`](https://alice39s.github.io/agent-stash/zh/skills/#code-styleguide)                   | Google、Angular 与 Android Kotlin 风格指南，每天从上游同步      |
-| [`self-use-<model>-subagent`](https://alice39s.github.io/agent-stash/zh/skills/#self-use-model-subagent) | 在 DSH 里把任务委托给指定模型的子代理                           |
-| [`research-writing`](https://alice39s.github.io/agent-stash/zh/skills/#research-writing)                 | 科研论文写作 prompt：翻译、润色、去 AI 味、图表、实验分析与审稿 |
+| 名称                                                                                                                                                                                                               | 说明                                                                                |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| <img src=".github/img/skill-code-styleguide.svg" alt="" width="22" height="22" align="absmiddle"> [`code-styleguide`](https://alice39s.github.io/agent-stash/zh/skills/#code-styleguide)                           | Google、Angular 与 Android Kotlin 风格指南，每天从上游同步                          |
+| <img src=".github/img/skill-self-use-model-subagent.svg" alt="" width="22" height="22" align="absmiddle"> [`self-use-<model>-subagent`](https://alice39s.github.io/agent-stash/zh/skills/#self-use-model-subagent) | 在 DSH 里把任务委托给指定模型的子代理                                               |
+| <img src=".github/img/skill-research-writing.svg" alt="" width="22" height="22" align="absmiddle"> [`research-writing`](https://alice39s.github.io/agent-stash/zh/skills/#research-writing)                        | 科研论文写作 prompt：翻译、润色、去 AI 味、图表、实验分析与审稿                     |
+| <img src=".github/img/skill-modern-web-guidance.svg" alt="" width="22" height="22" align="absmiddle"> [`modern-web-guidance`](https://alice39s.github.io/agent-stash/zh/skills/#modern-web-guidance)               | Chrome 团队的现代 Web 开发指南：HTML、CSS、表单、性能、无障碍与安全，每天从上游同步 |
 
-## 安装
+## <img src=".github/img/download.svg" alt="" width="24" height="24" align="absmiddle"> 安装
 
 技能用 [skills.sh](https://skills.sh/Alice39s/agent-stash) 的命令行安装：
 
@@ -41,10 +42,10 @@ npx -y skills add Alice39s/agent-stash
 
 DSH 插件推荐导入 Agent Stash 插件市场后按需安装，步骤和其他 Agent 的接入方法见文档站的[安装](https://alice39s.github.io/agent-stash/zh/install/)页。
 
-## 开发
+## <img src=".github/img/code-xml.svg" alt="" width="24" height="24" align="absmiddle"> 开发
 
 本地开发、CI 命令行与发布流程见文档站的[参与开发](https://alice39s.github.io/agent-stash/zh/development/)页。
 
-## 许可证
+## <img src=".github/img/scale.svg" alt="" width="24" height="24" align="absmiddle"> 许可证
 
 本仓库使用 [Apache License 2.0](LICENSE)。

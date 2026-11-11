@@ -1,0 +1,27 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g mask="url(#agent-stash-readme-skill-self-use-model-subagent-badge-cutout)">
+    <rect x="6" y="5.5" width="20" height="14" rx="3.5" fill="url(#agent-stash-readme-skill-self-use-model-subagent-agent)" />
+    <path d="M9.5 10.5H19.5M9.5 14.5H15" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" />
+    <path d="M11 19.5V23.75C11 25.13 12.12 26.25 13.5 26.25H16.25" stroke="url(#agent-stash-readme-skill-self-use-model-subagent-link)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+  <rect x="19" y="21" width="11" height="10.5" rx="2.75" fill="url(#agent-stash-readme-skill-self-use-model-subagent-badge)" />
+  <path d="M22 24.75H27M22 27.75H25" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" />
+  <defs>
+    <mask id="agent-stash-readme-skill-self-use-model-subagent-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF" />
+      <rect x="17.75" y="19.75" width="13.5" height="13" rx="4" fill="#000000" />
+    </mask>
+    <linearGradient id="agent-stash-readme-skill-self-use-model-subagent-agent" x1="7" y1="5.5" x2="25" y2="19.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB" />
+      <stop offset="1" stop-color="#3650DE" />
+    </linearGradient>
+    <linearGradient id="agent-stash-readme-skill-self-use-model-subagent-link" x1="11" y1="19.5" x2="17" y2="27" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB" />
+      <stop offset="1" stop-color="#3650DE" />
+    </linearGradient>
+    <linearGradient id="agent-stash-readme-skill-self-use-model-subagent-badge" x1="19" y1="21" x2="30" y2="31.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB" />
+      <stop offset="1" stop-color="#108792" />
+    </linearGradient>
+  </defs>
+</svg>

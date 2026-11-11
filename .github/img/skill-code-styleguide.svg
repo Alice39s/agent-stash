@@ -1,0 +1,22 @@
+<svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <g mask="url(#agent-stash-readme-skill-code-styleguide-badge-cutout)">
+    <rect x="6" y="7" width="21" height="19" rx="3.5" fill="url(#agent-stash-readme-skill-code-styleguide-editor)" />
+    <path d="M9.5 11.5H15M12.5 15H21.5M12.5 18.5H16M9.5 22H14" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" />
+  </g>
+  <rect x="19" y="19" width="11" height="11" rx="2.75" fill="url(#agent-stash-readme-skill-code-styleguide-badge)" />
+  <path d="M21.9 24.6L23.9 26.6L27.2 22.6" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+  <defs>
+    <mask id="agent-stash-readme-skill-code-styleguide-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF" />
+      <rect x="17.75" y="17.75" width="13.5" height="13.5" rx="4" fill="#000000" />
+    </mask>
+    <linearGradient id="agent-stash-readme-skill-code-styleguide-editor" x1="7" y1="7" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB" />
+      <stop offset="1" stop-color="#3650DE" />
+    </linearGradient>
+    <linearGradient id="agent-stash-readme-skill-code-styleguide-badge" x1="19" y1="19" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB" />
+      <stop offset="1" stop-color="#108792" />
+    </linearGradient>
+  </defs>
+</svg>
