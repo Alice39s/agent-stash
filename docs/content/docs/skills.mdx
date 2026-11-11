@@ -1,6 +1,6 @@
 ---
 title: 技能 (Agent Skills)
-description: 用 skills 命令行把风格指南和子代理技能装进正在用的 Coding Agent。
+description: 用 skills 命令行把风格指南、子代理和科研写作技能装进正在用的 Coding Agent。
 icon: Wand
 ---
 
@@ -86,3 +86,14 @@ npx -y skills add Alice39s/agent-stash -g -a codex \
 | `self-use-dpsk-subagent`   | DeepSeek V4.1 Flash | 200k                   |
 
 每个技能写了调用参数、按预算估算一个子代理能做多少、提示词怎么写，以及子代理用满上下文被终止后怎么接手。
+
+## `research-writing`
+
+20 段科研论文写作 prompt，每段一个 reference 文件，`SKILL.md` 按翻译、润色与改写、检查与审稿、图表、工具与模型分组索引。同一任务分 LaTeX 版和 Word 版时，按稿件放进 `.tex` 还是粘贴进 Word 选用。
+
+来源：
+
+- [Leey21/awesome-ai-research-writing](https://github.com/Leey21/awesome-ai-research-writing) 的 README，作者 Leey21、MySunX
+- [Leey21/awesome-ai-research-writing#40](https://github.com/Leey21/awesome-ai-research-writing/issues/40) 的严苛审稿人 prompt，作者 Pioneer-wxh
+
+每个 reference 的 frontmatter 记录原作者、上游链接与固定提交的行号。上游仓库没有声明许可证，prompt 文本的版权归原作者。

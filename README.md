@@ -25,10 +25,11 @@
 
 ### Agent Skills
 
-| 名称                                                                                                     | 说明                                                       |
-| -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [`code-styleguide`](https://alice39s.github.io/agent-stash/zh/skills/#code-styleguide)                   | Google、Angular 与 Android Kotlin 风格指南，每天从上游同步 |
-| [`self-use-<model>-subagent`](https://alice39s.github.io/agent-stash/zh/skills/#self-use-model-subagent) | 在 DSH 里把任务委托给指定模型的子代理                      |
+| 名称                                                                                                     | 说明                                                            |
+| -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| [`code-styleguide`](https://alice39s.github.io/agent-stash/zh/skills/#code-styleguide)                   | Google、Angular 与 Android Kotlin 风格指南，每天从上游同步      |
+| [`self-use-<model>-subagent`](https://alice39s.github.io/agent-stash/zh/skills/#self-use-model-subagent) | 在 DSH 里把任务委托给指定模型的子代理                           |
+| [`research-writing`](https://alice39s.github.io/agent-stash/zh/skills/#research-writing)                 | 科研论文写作 prompt：翻译、润色、去 AI 味、图表、实验分析与审稿 |
 
 ## 安装
 

@@ -1,6 +1,6 @@
 ---
 title: Agent Skills
-description: Install the style guides and subagent skills into your coding agent with the skills CLI.
+description: Install the style guide, subagent and research writing skills into your coding agent with the skills CLI.
 icon: Wand
 ---
 
@@ -86,3 +86,14 @@ Four skills for dispatching subagents in DSH, one for each model:
 | `self-use-dpsk-subagent`   | DeepSeek V4.1 Flash | 200k                        |
 
 Each skill describes the call parameters, how to estimate from the budget how much one subagent can do, how to write the prompt and how to take over after a subagent fills its context and is terminated.
+
+## `research-writing`
+
+20 research paper writing prompts in Chinese, one reference file each. `SKILL.md` indexes them in five groups: translation, polishing and rewriting, checking and review, figures and tables, and tools and models. When a task has a LaTeX and a Word version, pick by whether the text goes into a `.tex` file or is pasted into Word.
+
+Sources:
+
+- The README of [Leey21/awesome-ai-research-writing](https://github.com/Leey21/awesome-ai-research-writing), by Leey21 and MySunX
+- The strict reviewer prompt from [Leey21/awesome-ai-research-writing#40](https://github.com/Leey21/awesome-ai-research-writing/issues/40), by Pioneer-wxh
+
+The frontmatter of each reference records its original authors, the upstream link and the line range at a pinned commit. The upstream repository declares no license, and the prompt text remains the copyright of its authors.
