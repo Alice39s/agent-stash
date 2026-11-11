@@ -50,6 +50,7 @@ class SyncTarget(StrEnum):
     INIT_PROMPTS = "init-prompts"
     CODE_STYLEGUIDE = "code-styleguide"
     ENHANCE_REFERENCES = "enhance-references"
+    MODERN_WEB_GUIDANCE = "modern-web-guidance"
 
 
 _SYNC_INTRO = {
@@ -59,6 +60,9 @@ _SYNC_INTRO = {
     ),
     SyncTarget.ENHANCE_REFERENCES: (
         "Upstream writing references for `dsh/enhance` at the latest commit touching each file:"
+    ),
+    SyncTarget.MODERN_WEB_GUIDANCE: (
+        "Regenerated `skills/modern-web-guidance` from the latest npm release:"
     ),
 }
 

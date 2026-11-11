@@ -1,6 +1,6 @@
 ---
 title: 技能 (Agent Skills)
-description: 用 skills 命令行把风格指南、子代理和科研写作技能装进正在用的 Coding Agent。
+description: 用 skills 命令行把风格指南、Web 开发指南、子代理和科研写作技能装进正在用的 Coding Agent。
 icon: Wand
 ---
 
@@ -73,6 +73,12 @@ npx -y skills add Alice39s/agent-stash -g -a codex \
 - [google/styleguide](https://github.com/google/styleguide) README 列出的全部指南（CC-BY-3.0）
 - [Angular 风格指南](https://angular.dev/style-guide)（CC-BY-4.0）
 - [Android Kotlin 风格指南](https://developer.android.com/kotlin/style-guide)（Apache-2.0）
+
+## `modern-web-guidance`
+
+[GoogleChrome/modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance) 的指南，覆盖 HTML、CSS、客户端 JavaScript、表单、性能、无障碍、安全与内置 AI。每篇指南一个文件，按分类放在 `references/<分类>/` 下，每个分类的 `index.md` 列出指南的一句话说明、token 数和特性门槛。Agent 在本地按索引查找并读取指南，不调用上游的 `npx modern-web-guidance` 命令行，也就不联网、不发送使用统计。
+
+`.github/workflows/sync-modern-web-guidance.yml` 每天从 npm 下载最新的 `modern-web-guidance` 包，核对完整性哈希后重新生成技能，有变化时开一个同步 PR。依赖 Origin Trial 或单一引擎新特性的指南在索引里标出，用户同意或项目的 `.mwgrc` 打开对应开关后才使用。指南内容使用 CC-BY 4.0 许可。
 
 ## `self-use-<model>-subagent`
 

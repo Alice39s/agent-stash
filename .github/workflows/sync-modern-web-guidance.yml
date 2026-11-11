@@ -1,0 +1,40 @@
+name: Sync modern web guidance
+
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: sync-modern-web-guidance
+  cancel-in-progress: false
+
+env:
+  UV_PROJECT: ${{ github.workspace }}/scripts/ci
+  UV_LOCKED: "1"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ./.github/actions/setup
+      - name: Regenerate the modern-web-guidance skill
+        run: uv run ci sync modern-web-guidance --body "${{ runner.temp }}/pr-body.md"
+      # 用 GITHUB_TOKEN 创建的 PR 不会触发其他 workflow，在这里检查。
+      - run: pnpm check
+      - uses: peter-evans/create-pull-request@v8
+        with:
+          branch: chore/sync-modern-web-guidance
+          delete-branch: true
+          add-paths: skills/modern-web-guidance
+          commit-message: |
+            chore(skills): sync modern-web-guidance guides
+
+            Co-authored-by: Alice39s <180387319+Alice39s@users.noreply.github.com>
+          title: "chore(skills): sync modern-web-guidance guides"
+          body-path: ${{ runner.temp }}/pr-body.md

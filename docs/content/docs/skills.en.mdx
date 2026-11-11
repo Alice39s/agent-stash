@@ -1,6 +1,6 @@
 ---
 title: Agent Skills
-description: Install the style guide, subagent and research writing skills into your coding agent with the skills CLI.
+description: Install the style guide, web development guide, subagent and research writing skills into your coding agent with the skills CLI.
 icon: Wand
 ---
 
@@ -73,6 +73,12 @@ The included style guides. `.github/workflows/sync-code-styleguide.yml` checks u
 - All guides listed in the [google/styleguide](https://github.com/google/styleguide) README (CC-BY-3.0)
 - [Angular style guide](https://angular.dev/style-guide) (CC-BY-4.0)
 - [Android Kotlin style guide](https://developer.android.com/kotlin/style-guide) (Apache-2.0)
+
+## `modern-web-guidance`
+
+The guides from [GoogleChrome/modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance), covering HTML, CSS, client-side JavaScript, forms, performance, accessibility, security and built-in AI. Each guide is one file under `references/<category>/`, and each category's `index.md` lists its guides with a one-line description, a token count and feature gates. The agent finds and reads guides locally through these indexes instead of calling the upstream `npx modern-web-guidance` CLI, so it makes no network requests and sends no usage statistics.
+
+`.github/workflows/sync-modern-web-guidance.yml` downloads the latest `modern-web-guidance` package from npm daily, checks its integrity hash, regenerates the skill and opens a sync PR when anything changed. The indexes mark guides that rely on Origin Trial APIs or features shipped in a single engine; the agent uses them only after the user agrees or the project's `.mwgrc` turns on the matching option. The guide content is licensed under CC-BY 4.0.
 
 ## `self-use-<model>-subagent`
 

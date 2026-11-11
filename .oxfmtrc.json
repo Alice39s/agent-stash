@@ -11,6 +11,7 @@
     "dsh/enhance/vendor/**",
     "skills/code-styleguide/**",
     "skills/research-writing/references/**",
+    "skills/modern-web-guidance/**",
     "prompts/**",
     ".tegami/**",
     "CHANGELOG.md",
