@@ -1,0 +1,413 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="380" viewBox="0 0 1280 380" fill="none">
+  <!-- Agent Stash header. Line icons from Lucide (https://lucide.dev), ISC License. -->
+  <defs>
+    <radialGradient id="hdr-light-sky" cx="640.0" cy="-140" r="470" gradientUnits="userSpaceOnUse" gradientTransform="translate(640.0 -140) scale(1.9 1) translate(-640.0 140)">
+      <stop offset="0.3" stop-color="#b8cbec"/>
+      <stop offset="0.72" stop-color="#dbe5f6" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#dbe5f6" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="hdr-light-shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#1f3b73" flood-opacity="0.12"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="380" fill="url(#hdr-light-sky)"/>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="606.0" y="66" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="616.0" y="76" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-enhance-sparkle-cutout)">
+    <rect x="6.5" y="12" width="19" height="16" rx="3.5" fill="url(#agent-stash-enhance-composer)"/>
+    <path d="M10 17.5H16.5M10 21H21M10 24.5H14.5" stroke="#FFFFFF" stroke-width="1.5"/>
+  </g>
+  <path d="M26 6C26.5 9.4 28.1 11 31.5 11.5C28.1 12 26.5 13.6 26 17C25.5 13.6 23.9 12 20.5 11.5C23.9 11 25.5 9.4 26 6Z" fill="url(#agent-stash-enhance-sparkle)"/>
+  <defs>
+    <mask id="agent-stash-enhance-sparkle-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <path d="M26 6C26.5 9.4 28.1 11 31.5 11.5C28.1 12 26.5 13.6 26 17C25.5 13.6 23.9 12 20.5 11.5C23.9 11 25.5 9.4 26 6Z" fill="#000000" stroke="#000000" stroke-width="2.5" stroke-linejoin="round"/>
+    </mask>
+    <linearGradient id="agent-stash-enhance-composer" x1="7.5" y1="12" x2="25.5" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-enhance-sparkle" x1="20.5" y1="6" x2="31.5" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="512.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="522.0" y="118" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-skill-scout-badge-cutout)">
+    <rect x="10" y="7.5" width="14" height="18" rx="3" fill="url(#agent-stash-skill-scout-back)" fill-opacity="0.5"/>
+    <rect x="6.5" y="11" width="16" height="19" rx="3.5" fill="url(#agent-stash-skill-scout-card)"/>
+    <path d="M10 17H17.5M10 20.5H19M10 24H15" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <circle cx="25.5" cy="11.5" r="5" fill="url(#agent-stash-skill-scout-badge)"/>
+  <path d="M25.5 8.3C25.8 10.4 26.6 11.2 28.7 11.5C26.6 11.8 25.8 12.6 25.5 14.7C25.2 12.6 24.4 11.8 22.3 11.5C24.4 11.2 25.2 10.4 25.5 8.3Z" fill="#FFFFFF"/>
+  <defs>
+    <mask id="agent-stash-skill-scout-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <circle cx="25.5" cy="11.5" r="6.25" fill="#000000"/>
+    </mask>
+    <linearGradient id="agent-stash-skill-scout-back" x1="10" y1="7.5" x2="24" y2="25.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-skill-scout-card" x1="6.5" y1="11" x2="22.5" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-skill-scout-badge" x1="20.5" y1="6.5" x2="30.5" y2="16.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="700.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="710.0" y="118" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-autosuggest-key-cutout)">
+    <rect x="6.5" y="9" width="20" height="14" rx="3.5" fill="url(#agent-stash-autosuggest-composer)"/>
+    <path d="M10 16H14.5" stroke="#FFFFFF" stroke-width="1.6"/>
+    <path d="M16.5 12.5V19.5" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M18.5 16H23.5" stroke="#FFFFFF" stroke-width="1.6" stroke-opacity="0.5"/>
+  </g>
+  <rect x="19" y="19" width="11" height="9" rx="2.5" fill="url(#agent-stash-autosuggest-key)"/>
+  <path d="M21.8 23.5H26.2M24.3 21.6L26.2 23.5L24.3 25.4M27.7 21.3V25.7" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs>
+    <mask id="agent-stash-autosuggest-key-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <rect x="17.75" y="17.75" width="13.5" height="11.5" rx="3.75" fill="#000000"/>
+    </mask>
+    <linearGradient id="agent-stash-autosuggest-composer" x1="7.5" y1="9" x2="25.5" y2="23" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-autosuggest-key" x1="19" y1="19" x2="30" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="512.0" y="202" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="522.0" y="212" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-recall-badge-cutout)">
+    <rect x="9.5" y="10" width="12" height="7" rx="2" fill="url(#agent-stash-recall-history)" fill-opacity="0.5"/>
+    <rect x="6.5" y="15" width="18" height="14" rx="3.5" fill="url(#agent-stash-recall-composer)"/>
+    <path d="M10 20.5H18M10 24H14.5" stroke="#FFFFFF" stroke-width="1.5"/>
+  </g>
+  <circle cx="25" cy="11" r="5" fill="url(#agent-stash-recall-badge)"/>
+  <path d="M25 13.7V8.4M22.8 10.6L25 8.4L27.2 10.6" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs>
+    <mask id="agent-stash-recall-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <circle cx="25" cy="11" r="6.25" fill="#000000"/>
+    </mask>
+    <linearGradient id="agent-stash-recall-history" x1="9.5" y1="10" x2="21.5" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-recall-composer" x1="7.5" y1="15" x2="23.5" y2="29" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-recall-badge" x1="20" y1="6" x2="30" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="700.0" y="202" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="710.0" y="212" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-readme-skill-modern-web-guidance-badge-cutout)">
+    <rect x="6" y="10" width="21" height="18" rx="3.5" fill="url(#agent-stash-readme-skill-modern-web-guidance-window)"/>
+    <circle cx="9.5" cy="13.5" r="1" fill="#FFFFFF"/>
+    <circle cx="12.5" cy="13.5" r="1" fill="#FFFFFF"/>
+    <circle cx="15.5" cy="13.5" r="1" fill="#FFFFFF" fill-opacity="0.55"/>
+    <path d="M9.5 19H19.5M9.5 22.5H15" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <circle cx="26" cy="10" r="5.25" fill="url(#agent-stash-readme-skill-modern-web-guidance-badge)"/>
+  <path d="M28.6 7.4L26.9 10.9L25.1 9.1L28.6 7.4Z" fill="#FFFFFF"/>
+  <path d="M23.4 12.6L25.1 9.1L26.9 10.9L23.4 12.6Z" fill="#FFFFFF" fill-opacity="0.6"/>
+  <defs>
+    <mask id="agent-stash-readme-skill-modern-web-guidance-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <circle cx="26" cy="10" r="6.5" fill="#000000"/>
+    </mask>
+    <linearGradient id="agent-stash-readme-skill-modern-web-guidance-window" x1="7" y1="10" x2="26" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-readme-skill-modern-web-guidance-badge" x1="20.75" y1="4.75" x2="31.25" y2="15.25" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="512.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="522.0" y="24" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-init-badge-cutout)">
+    <path d="M10 7H19L24 12V25C24 26.1046 23.1046 27 22 27H10C8.89543 27 8 26.1046 8 25V9C8 7.89543 8.89543 7 10 7Z" fill="url(#agent-stash-init-page)"/>
+    <path d="M19 7V10C19 11.1046 19.8954 12 21 12H24L19 7Z" fill="#FFFFFF" fill-opacity="0.45"/>
+    <path d="M11 13H16M11 16.5H20M11 20H14.5" stroke="#FFFFFF" stroke-width="1.5"/>
+  </g>
+  <rect x="19" y="19" width="10" height="10" rx="2.5" fill="url(#agent-stash-init-badge)"/>
+  <path d="M25.5 21.5L22.5 26.5" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round"/>
+  <defs>
+    <mask id="agent-stash-init-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <rect x="17.75" y="17.75" width="12.5" height="12.5" rx="3.75" fill="#000000"/>
+    </mask>
+    <linearGradient id="agent-stash-init-page" x1="9" y1="7" x2="23" y2="27" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-init-badge" x1="19" y1="19" x2="29" y2="29" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="700.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="710.0" y="24" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-message-edit-pencil-cutout)">
+    <path d="M10 11H23C24.3807 11 25.5 12.1193 25.5 13.5V22.5C25.5 23.8807 24.3807 25 23 25H14.5L10.4 29.1Q10 29.5 10 28.93V25C8.61929 25 7.5 23.8807 7.5 22.5V13.5C7.5 12.1193 8.61929 11 10 11Z" fill="url(#agent-stash-message-edit-bubble)"/>
+    <path d="M11 17H16.5M11 20.5H20" stroke="#FFFFFF" stroke-width="1.6"/>
+  </g>
+  <path d="M27.59 6.59L30.41 9.41L23.91 15.91L20 17L21.09 13.09L27.59 6.59Z" fill="url(#agent-stash-message-edit-pencil)"/>
+  <defs>
+    <mask id="agent-stash-message-edit-pencil-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <path d="M27.59 6.59L30.41 9.41L23.91 15.91L20 17L21.09 13.09L27.59 6.59Z" fill="#000000" stroke="#000000" stroke-width="2.5" stroke-linejoin="round"/>
+    </mask>
+    <linearGradient id="agent-stash-message-edit-bubble" x1="8.5" y1="11" x2="24.5" y2="29" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-message-edit-pencil" x1="29" y1="8" x2="20" y2="17" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="418.0" y="155" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="428.0" y="165" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-readme-skill-research-writing-badge-cutout)">
+    <rect x="8" y="5.5" width="17" height="24" rx="3" fill="url(#agent-stash-readme-skill-research-writing-paper)"/>
+    <path d="M11.5 10.5H21.5" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round"/>
+    <path d="M11.5 14.5H19M11.5 18H21.5M11.5 21.5H16.5" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <circle cx="25" cy="25.5" r="5.25" fill="url(#agent-stash-readme-skill-research-writing-badge)"/>
+  <circle cx="24.4" cy="24.9" r="1.85" stroke="#FFFFFF" stroke-width="1.4"/>
+  <path d="M25.8 26.3L27.4 27.9" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+  <defs>
+    <mask id="agent-stash-readme-skill-research-writing-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <circle cx="25" cy="25.5" r="6.5" fill="#000000"/>
+    </mask>
+    <linearGradient id="agent-stash-readme-skill-research-writing-paper" x1="8" y1="5.5" x2="25" y2="29.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-readme-skill-research-writing-badge" x1="19.75" y1="20.25" x2="30.25" y2="30.75" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="794.0" y="155" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="804.0" y="165" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-kit-toggle-cutout)">
+    <rect x="7" y="9.5" width="18" height="18" rx="3.5" fill="url(#agent-stash-kit-panel)"/>
+    <path d="M10.5 13.5H15" stroke="#FFFFFF" stroke-width="1.5"/>
+    <rect x="9.5" y="16.75" width="13" height="4" rx="2" fill="#FFFFFF" fill-opacity="0.45"/>
+    <path d="M10.5 24H18" stroke="#FFFFFF" stroke-width="1.5"/>
+  </g>
+  <rect x="19" y="6" width="12" height="7" rx="3.5" fill="url(#agent-stash-kit-toggle)"/>
+  <circle cx="27.5" cy="9.5" r="2" fill="#FFFFFF"/>
+  <defs>
+    <mask id="agent-stash-kit-toggle-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <rect x="17.75" y="4.75" width="14.5" height="9.5" rx="4.75" fill="#000000"/>
+    </mask>
+    <linearGradient id="agent-stash-kit-panel" x1="8" y1="9.5" x2="24" y2="27.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-kit-toggle" x1="19" y1="6" x2="31" y2="13" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="418.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="428.0" y="71" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-readme-skill-code-styleguide-badge-cutout)">
+    <rect x="6" y="7" width="21" height="19" rx="3.5" fill="url(#agent-stash-readme-skill-code-styleguide-editor)"/>
+    <path d="M9.5 11.5H15M12.5 15H21.5M12.5 18.5H16M9.5 22H14" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+  <rect x="19" y="19" width="11" height="11" rx="2.75" fill="url(#agent-stash-readme-skill-code-styleguide-badge)"/>
+  <path d="M21.9 24.6L23.9 26.6L27.2 22.6" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <defs>
+    <mask id="agent-stash-readme-skill-code-styleguide-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <rect x="17.75" y="17.75" width="13.5" height="13.5" rx="4" fill="#000000"/>
+    </mask>
+    <linearGradient id="agent-stash-readme-skill-code-styleguide-editor" x1="7" y1="7" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-readme-skill-code-styleguide-badge" x1="19" y1="19" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="794.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="804.0" y="71" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-readme-skill-self-use-model-subagent-badge-cutout)">
+    <rect x="6" y="5.5" width="20" height="14" rx="3.5" fill="url(#agent-stash-readme-skill-self-use-model-subagent-agent)"/>
+    <path d="M9.5 10.5H19.5M9.5 14.5H15" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M11 19.5V23.75C11 25.13 12.12 26.25 13.5 26.25H16.25" stroke="url(#agent-stash-readme-skill-self-use-model-subagent-link)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <rect x="19" y="21" width="11" height="10.5" rx="2.75" fill="url(#agent-stash-readme-skill-self-use-model-subagent-badge)"/>
+  <path d="M22 24.75H27M22 27.75H25" stroke="#FFFFFF" stroke-width="1.5" stroke-linecap="round"/>
+  <defs>
+    <mask id="agent-stash-readme-skill-self-use-model-subagent-badge-cutout" maskUnits="userSpaceOnUse" x="0" y="0" width="36" height="36">
+      <rect width="36" height="36" fill="#FFFFFF"/>
+      <rect x="17.75" y="19.75" width="13.5" height="13" rx="4" fill="#000000"/>
+    </mask>
+    <linearGradient id="agent-stash-readme-skill-self-use-model-subagent-agent" x1="7" y1="5.5" x2="25" y2="19.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-readme-skill-self-use-model-subagent-link" x1="11" y1="19.5" x2="17" y2="27" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6DB9FB"/>
+      <stop offset="1" stop-color="#3650DE"/>
+    </linearGradient>
+    <linearGradient id="agent-stash-readme-skill-self-use-model-subagent-badge" x1="19" y1="21" x2="30" y2="31.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#51CFDB"/>
+      <stop offset="1" stop-color="#108792"/>
+    </linearGradient>
+  </defs>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="324.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="343.0" y="127" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19h8"/>
+  <path d="m4 17 6-6-6-6"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="888.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="907.0" y="127" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8h.01"/>
+  <path d="M12 12h.01"/>
+  <path d="M14 8h.01"/>
+  <path d="M16 12h.01"/>
+  <path d="M18 8h.01"/>
+  <path d="M6 8h.01"/>
+  <path d="M7 16h10"/>
+  <path d="M8 12h.01"/>
+  <rect width="20" height="16" x="2" y="4" rx="2"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="324.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="343.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+  <path d="M3 3v5h5"/>
+  <path d="M12 7v5l4 2"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="888.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="907.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+  <path d="M20 2v4"/>
+  <path d="M22 4h-4"/>
+  <circle cx="4" cy="20" r="2"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="230.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="249.0" y="80" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6a9 9 0 0 0-9 9V3"/>
+  <circle cx="18" cy="6" r="3"/>
+  <circle cx="6" cy="18" r="3"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="982.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="1001.0" y="80" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
+  <path d="M14 2v5a1 1 0 0 0 1 1h5"/>
+  <path d="M10 9H8"/>
+  <path d="M16 13H8"/>
+  <path d="M16 17H8"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="136.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="155.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="1076.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="1095.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/>
+  <rect width="16" height="12" x="4" y="8" rx="2"/>
+  <path d="M2 14h2"/>
+  <path d="M20 14h2"/>
+  <path d="M15 13v2"/>
+  <path d="M9 13v2"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="606.0" y="-28" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="625.0" y="-9" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>
+  <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
+  <path d="M2 12h20"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="418.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="437.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v16"/>
+  <path d="M16 13h2"/>
+  <path d="M16 9h2"/>
+  <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/>
+  <path d="M6 13h2"/>
+  <path d="M6 9h2"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="794.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="813.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="230.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="249.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/>
+  <path d="m6 8-4 4 4 4"/>
+  <path d="m14.5 4-5 16"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="982.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="1001.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
+  <path d="M12 22V12"/>
+  <polyline points="3.29 7 12 12 20.71 7"/>
+  <path d="m7.5 4.27 9 5.15"/>
+</svg>
+  <g filter="url(#hdr-light-shadow)">
+    <rect x="592.0" y="166" width="96" height="96" rx="24" fill="#ffffff" stroke="#000000" stroke-opacity="0.06"/>
+  </g>
+  <svg x="608.0" y="182" width="64" height="64" viewBox="0 0 24 24">
+    <rect width="24" height="24" rx="6" fill="#4d6bfe"/>
+    <rect x="5" y="6.5" width="14" height="2.4" rx="1.2" fill="#ffffff" opacity="0.6"/>
+    <rect x="5" y="10.8" width="14" height="2.4" rx="1.2" fill="#ffffff"/>
+    <rect x="5" y="15.1" width="9" height="2.4" rx="1.2" fill="#ffffff" opacity="0.6"/>
+  </svg>
+</svg>

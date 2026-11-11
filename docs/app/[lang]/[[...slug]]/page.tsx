@@ -8,6 +8,7 @@ import {
 } from "fumadocs-ui/layouts/docs/page";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { HeaderArt } from "@/components/header-art";
 import { getMDXComponents } from "@/components/mdx";
 import { htmlLang, i18n, type Locale } from "@/lib/i18n";
 import { siteText } from "@/lib/layout.shared";
@@ -63,6 +64,8 @@ export default async function DocPage(props: PageProps) {
       breadcrumb={{ enabled: false }}
       className="sm:px-6 md:px-8 md:pt-8 xl:pt-8"
     >
+      {/* 页头图只放在概览页，写在页面组件里，不进入 Markdown 副本。 */}
+      {page.slugs.length === 0 && <HeaderArt />}
       {/* Fumadocs 的标题与描述组件自带字号，类名合并时会压过字号角色，所以直接写元素。 */}
       <h1 className="text-h1">{page.data.title}</h1>
       {page.data.description !== undefined && (

@@ -19,7 +19,7 @@ version: 2026-10-31.1
 - [SHOULD] 表面、文字和边框只用灰阶 token；`primary` 蓝色（插件图标的 `#4d6bfe` 系列）只出现在链接、焦点环、当前导航、主要按钮和信息提示的图标上。正文链接为正文色文字加 primary 下划线。
 - [MUST] 截图与录屏是功能说明的主要证据：每段展示的界面来自真实运行的插件，放在展示板 `Showcase` 里，配一句说明。
 - [MUST] 按键帽是唯一的品牌装饰：入口页、未找到页和链接预览图使用 `KeyStrip`；正文里提到按键时用 `Kbd`。
-- [SHOULD] 页面高度由内容决定，不放全屏宣传区、插画或背景图。（决策：这是查阅型文档。来源：2026-10-26 文档站初版设计决策。）
+- [SHOULD] 页面高度由内容决定，不放全屏宣传区、插画或背景图；概览页标题上方的页头图是唯一的插图。（决策：这是查阅型文档。来源：2026-10-26 文档站初版设计决策；页头图来自 2026-11-11 用户要求。）
 - [MUST] 文案语气直接、克制：写条件、步骤和结果，不写夸张的形容词。
 - [MUST] 状态同时用文字和颜色表达，不只靠颜色。
 
@@ -48,6 +48,12 @@ version: 2026-10-31.1
 - [SHOULD] 表格撑满正文宽度，表头 600 字重、muted 底色；列宽之和超过正文时，表格在外层容器内横向滚动，字号不变。
 - [SHOULD] 表头不换行；某列所有正文单元格都不超过 8 个汉字或 16 个拉丁字符时，整列不换行。（决策：自动表格布局会把短表头挤成一字一行。来源：2026-10-26 文档站初版设计决策。）
 - [SHOULD] 图片可点击放大查看。
+
+### 页头图
+
+- [MUST] `HeaderArt` 只出现在中英文概览页，放在页面标题之前，撑满正文宽度，上边两角为 `--radius-card` 圆角，对辅助技术隐藏；它由页面组件渲染，不进入 Markdown 副本。
+- [SHOULD] 画面 1280×380：插件图标与技能图标放在 68px、16px 圆角的半透明方块上，按 11 列左右对称排成向下的弧形，中线底部是 96px 方块上的 `BrandMark`；带颜色的图标靠近中线，外圈和被顶边裁掉的方块放 Lucide 线条图标（浅色主题 `#3654e6`、深色主题 `#7a90ff`）。背景是从顶部向下渐隐为透明的椭圆形蓝灰色，因此能叠在任意页面底色上。
+- [MUST] 浅色、深色两版是 `public/header-light.svg` 与 `public/header-dark.svg`，README 用同样的两张图（`.github/img/header-*.svg`，经 `<picture>` 按配色切换）。增删插件或技能图标时，两处一起重新生成。
 
 ### 截图与录屏展示
 
@@ -168,6 +174,7 @@ version: 2026-10-31.1
 | `iconButton`         | `components/icon-button.ts`                 | 图标按钮的类名                                                                                            |
 | `Card`、`Cards`      | `components/card.tsx`、`components/mdx.tsx` | 卡片；`title`、`description`、`icon`、`href`、`external`                                                  |
 | `Callout`            | `components/callout.tsx`                    | 提示框；`type`：`info`、`idea`、`warn`/`warning`、`error`、`success`；`title`                             |
+| `HeaderArt`          | `components/header-art.tsx`                 | 概览页的页头图，浅色与深色两版                                                                            |
 | `Showcase`           | `components/showcase.tsx`                   | 截图与录屏展示板；`name`（`lib/media.ts` 里的场景名）、`alt`、`caption`                                   |
 | `Kbd`、`Keys`        | `components/kbd.tsx`                        | 按键帽；`Keys` 的 `keys` 列出可替换的一组按键                                                             |
 | `KeyStrip`           | `components/key-strip.tsx`                  | 品牌装饰                                                                                                  |
@@ -210,7 +217,7 @@ version: 2026-10-31.1
 - [SHOULD] 不使用原语之外的字号、字重或色值字面量。
 - [SHOULD] 主要信息不用小号、低对比度的文字。
 - [SHOULD] 普通元数据不用胶囊标签。
-- [SHOULD] 不使用渐变；`KeyStrip` 的透明度渐变、预览图条带的渐隐遮罩，以及 Fumadocs 侧栏与本页目录滚动区域边缘的渐隐遮罩除外。
+- [SHOULD] 不使用渐变；`KeyStrip` 的透明度渐变、页头图的背景与图标、预览图条带的渐隐遮罩，以及 Fumadocs 侧栏与本页目录滚动区域边缘的渐隐遮罩除外。
 - [MUST] 不在展示板里放示意图、合成图或与真实界面不符的素材；录屏水印是唯一叠加在素材上的内容。
 
 ## 8. 实现与接入
