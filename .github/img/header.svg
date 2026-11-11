@@ -1,18 +1,19 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1280" height="380" viewBox="0 0 1280 380" fill="none">
   <!-- Agent Stash header. Line icons from Lucide (https://lucide.dev), ISC License. -->
+  <style>.hdr-sky-a{stop-color:#b8cbec}.hdr-sky-b{stop-color:#dbe5f6}.hdr-tile{fill:#ffffff;fill-opacity:0.78;stroke:#000000;stroke-opacity:0.06}.hdr-hero{fill:#ffffff;stroke:#000000;stroke-opacity:0.06}.hdr-line{stroke:#3654e6}.hdr-shadow{flood-color:#1f3b73;flood-opacity:0.12}@media (prefers-color-scheme: dark){.hdr-sky-a{stop-color:#1d2b4a}.hdr-sky-b{stop-color:#172033}.hdr-tile{fill:#2a2d34;fill-opacity:0.86;stroke:#ffffff;stroke-opacity:0.08}.hdr-hero{fill:#30343c;stroke:#ffffff;stroke-opacity:0.08}.hdr-line{stroke:#7a90ff}.hdr-shadow{flood-color:#000000;flood-opacity:0.45}}.light .hdr-sky-a{stop-color:#b8cbec}.light .hdr-sky-b{stop-color:#dbe5f6}.light .hdr-tile{fill:#ffffff;fill-opacity:0.78;stroke:#000000;stroke-opacity:0.06}.light .hdr-hero{fill:#ffffff;stroke:#000000;stroke-opacity:0.06}.light .hdr-line{stroke:#3654e6}.light .hdr-shadow{flood-color:#1f3b73;flood-opacity:0.12}.dark .hdr-sky-a{stop-color:#1d2b4a}.dark .hdr-sky-b{stop-color:#172033}.dark .hdr-tile{fill:#2a2d34;fill-opacity:0.86;stroke:#ffffff;stroke-opacity:0.08}.dark .hdr-hero{fill:#30343c;stroke:#ffffff;stroke-opacity:0.08}.dark .hdr-line{stroke:#7a90ff}.dark .hdr-shadow{flood-color:#000000;flood-opacity:0.45}</style>
   <defs>
-    <radialGradient id="hdr-light-sky" cx="640.0" cy="-140" r="470" gradientUnits="userSpaceOnUse" gradientTransform="translate(640.0 -140) scale(1.9 1) translate(-640.0 140)">
-      <stop offset="0.3" stop-color="#b8cbec"/>
-      <stop offset="0.72" stop-color="#dbe5f6" stop-opacity="0.7"/>
-      <stop offset="1" stop-color="#dbe5f6" stop-opacity="0"/>
+    <radialGradient id="hdr-sky" cx="640.0" cy="-140" r="470" gradientUnits="userSpaceOnUse" gradientTransform="translate(640.0 -140) scale(1.9 1) translate(-640.0 140)">
+      <stop offset="0.3" stop-color="#b8cbec" class="hdr-sky-a"/>
+      <stop offset="0.72" stop-color="#dbe5f6" stop-opacity="0.7" class="hdr-sky-b"/>
+      <stop offset="1" stop-color="#dbe5f6" stop-opacity="0" class="hdr-sky-b"/>
     </radialGradient>
-    <filter id="hdr-light-shadow" x="-30%" y="-30%" width="160%" height="170%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#1f3b73" flood-opacity="0.12"/>
+    <filter id="hdr-shadow" x="-30%" y="-30%" width="160%" height="170%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#1f3b73" flood-opacity="0.12" class="hdr-shadow"/>
     </filter>
   </defs>
-  <rect width="1280" height="380" fill="url(#hdr-light-sky)"/>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="606.0" y="66" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <rect width="1280" height="380" fill="url(#hdr-sky)"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="606.0" y="66" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="616.0" y="76" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-enhance-sparkle-cutout)">
     <rect x="6.5" y="12" width="19" height="16" rx="3.5" fill="url(#agent-stash-enhance-composer)"/>
@@ -34,8 +35,8 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="512.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="512.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="522.0" y="118" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-skill-scout-badge-cutout)">
     <rect x="10" y="7.5" width="14" height="18" rx="3" fill="url(#agent-stash-skill-scout-back)" fill-opacity="0.5"/>
@@ -63,8 +64,8 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="700.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="700.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="710.0" y="118" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-autosuggest-key-cutout)">
     <rect x="6.5" y="9" width="20" height="14" rx="3.5" fill="url(#agent-stash-autosuggest-composer)"/>
@@ -89,8 +90,8 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="512.0" y="202" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="512.0" y="202" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="522.0" y="212" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-recall-badge-cutout)">
     <rect x="9.5" y="10" width="12" height="7" rx="2" fill="url(#agent-stash-recall-history)" fill-opacity="0.5"/>
@@ -118,8 +119,8 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="700.0" y="202" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="700.0" y="202" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="710.0" y="212" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-readme-skill-modern-web-guidance-badge-cutout)">
     <rect x="6" y="10" width="21" height="18" rx="3.5" fill="url(#agent-stash-readme-skill-modern-web-guidance-window)"/>
@@ -146,8 +147,8 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="512.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="512.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="522.0" y="24" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-init-badge-cutout)">
     <path d="M10 7H19L24 12V25C24 26.1046 23.1046 27 22 27H10C8.89543 27 8 26.1046 8 25V9C8 7.89543 8.89543 7 10 7Z" fill="url(#agent-stash-init-page)"/>
@@ -171,8 +172,8 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="700.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="700.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="710.0" y="24" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-message-edit-pencil-cutout)">
     <path d="M10 11H23C24.3807 11 25.5 12.1193 25.5 13.5V22.5C25.5 23.8807 24.3807 25 23 25H14.5L10.4 29.1Q10 29.5 10 28.93V25C8.61929 25 7.5 23.8807 7.5 22.5V13.5C7.5 12.1193 8.61929 11 10 11Z" fill="url(#agent-stash-message-edit-bubble)"/>
@@ -194,8 +195,8 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="418.0" y="155" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="418.0" y="155" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="428.0" y="165" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-readme-skill-research-writing-badge-cutout)">
     <rect x="8" y="5.5" width="17" height="24" rx="3" fill="url(#agent-stash-readme-skill-research-writing-paper)"/>
@@ -220,8 +221,8 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="794.0" y="155" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="794.0" y="155" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="804.0" y="165" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-kit-toggle-cutout)">
     <rect x="7" y="9.5" width="18" height="18" rx="3.5" fill="url(#agent-stash-kit-panel)"/>
@@ -246,8 +247,8 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="418.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="418.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="428.0" y="71" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-readme-skill-code-styleguide-badge-cutout)">
     <rect x="6" y="7" width="21" height="19" rx="3.5" fill="url(#agent-stash-readme-skill-code-styleguide-editor)"/>
@@ -270,8 +271,8 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="794.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="794.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
   <svg x="804.0" y="71" width="48" height="48" viewBox="0 0 36 36" fill="none"><g mask="url(#agent-stash-readme-skill-self-use-model-subagent-badge-cutout)">
     <rect x="6" y="5.5" width="20" height="14" rx="3.5" fill="url(#agent-stash-readme-skill-self-use-model-subagent-agent)"/>
@@ -299,16 +300,16 @@
     </linearGradient>
   </defs>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="324.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="324.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="343.0" y="127" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19h8"/>
+  <svg x="343.0" y="127" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M12 19h8"/>
   <path d="m4 17 6-6-6-6"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="888.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="888.0" y="108" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="907.0" y="127" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8h.01"/>
+  <svg x="907.0" y="127" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M10 8h.01"/>
   <path d="M12 12h.01"/>
   <path d="M14 8h.01"/>
   <path d="M16 12h.01"/>
@@ -318,91 +319,91 @@
   <path d="M8 12h.01"/>
   <rect width="20" height="16" x="2" y="4" rx="2"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="324.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="324.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="343.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+  <svg x="343.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
   <path d="M3 3v5h5"/>
   <path d="M12 7v5l4 2"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="888.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="888.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="907.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
+  <svg x="907.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M11.017 2.814a1 1 0 0 1 1.966 0l1.051 5.558a2 2 0 0 0 1.594 1.594l5.558 1.051a1 1 0 0 1 0 1.966l-5.558 1.051a2 2 0 0 0-1.594 1.594l-1.051 5.558a1 1 0 0 1-1.966 0l-1.051-5.558a2 2 0 0 0-1.594-1.594l-5.558-1.051a1 1 0 0 1 0-1.966l5.558-1.051a2 2 0 0 0 1.594-1.594z"/>
   <path d="M20 2v4"/>
   <path d="M22 4h-4"/>
   <circle cx="4" cy="20" r="2"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="230.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="230.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="249.0" y="80" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6a9 9 0 0 0-9 9V3"/>
+  <svg x="249.0" y="80" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M15 6a9 9 0 0 0-9 9V3"/>
   <circle cx="18" cy="6" r="3"/>
   <circle cx="6" cy="18" r="3"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="982.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="982.0" y="61" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="1001.0" y="80" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
+  <svg x="1001.0" y="80" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/>
   <path d="M14 2v5a1 1 0 0 0 1 1h5"/>
   <path d="M10 9H8"/>
   <path d="M16 13H8"/>
   <path d="M16 17H8"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="136.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="136.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="155.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>
+  <svg x="155.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="1076.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="1076.0" y="14" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="1095.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8V4H8"/>
+  <svg x="1095.0" y="33" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M12 8V4H8"/>
   <rect width="16" height="12" x="4" y="8" rx="2"/>
   <path d="M2 14h2"/>
   <path d="M20 14h2"/>
   <path d="M15 13v2"/>
   <path d="M9 13v2"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="606.0" y="-28" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="606.0" y="-28" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="625.0" y="-9" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/>
+  <svg x="625.0" y="-9" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><circle cx="12" cy="12" r="10"/>
   <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/>
   <path d="M2 12h20"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="418.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="418.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="437.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v16"/>
+  <svg x="437.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M12 5v16"/>
   <path d="M16 13h2"/>
   <path d="M16 9h2"/>
   <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/>
   <path d="M6 13h2"/>
   <path d="M6 9h2"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="794.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="794.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="813.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/>
+  <svg x="813.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M15.39 4.39a1 1 0 0 0 1.68-.474 2.5 2.5 0 1 1 3.014 3.015 1 1 0 0 0-.474 1.68l1.683 1.682a2.414 2.414 0 0 1 0 3.414L19.61 15.39a1 1 0 0 1-1.68-.474 2.5 2.5 0 1 0-3.014 3.015 1 1 0 0 1 .474 1.68l-1.683 1.682a2.414 2.414 0 0 1-3.414 0L8.61 19.61a1 1 0 0 0-1.68.474 2.5 2.5 0 1 1-3.014-3.015 1 1 0 0 0 .474-1.68l-1.683-1.682a2.414 2.414 0 0 1 0-3.414L4.39 8.61a1 1 0 0 1 1.68.474 2.5 2.5 0 1 0 3.014-3.015 1 1 0 0 1-.474-1.68l1.683-1.682a2.414 2.414 0 0 1 3.414 0z"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="230.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="230.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="249.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 16 4-4-4-4"/>
+  <svg x="249.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="m18 16 4-4-4-4"/>
   <path d="m6 8-4 4 4 4"/>
   <path d="m14.5 4-5 16"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="982.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="982.0" y="-40" width="68" height="68" rx="16" fill="#ffffff" fill-opacity="0.78" stroke="#000000" stroke-opacity="0.06" class="hdr-tile"/>
   </g>
-  <svg x="1001.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
+  <svg x="1001.0" y="-21" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3654e6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="hdr-line"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/>
   <path d="M12 22V12"/>
   <polyline points="3.29 7 12 12 20.71 7"/>
   <path d="m7.5 4.27 9 5.15"/>
 </svg>
-  <g filter="url(#hdr-light-shadow)">
-    <rect x="592.0" y="166" width="96" height="96" rx="24" fill="#ffffff" stroke="#000000" stroke-opacity="0.06"/>
+  <g filter="url(#hdr-shadow)">
+    <rect x="592.0" y="166" width="96" height="96" rx="24" fill="#ffffff" stroke="#000000" stroke-opacity="0.06" class="hdr-hero"/>
   </g>
   <svg x="608.0" y="182" width="64" height="64" viewBox="0 0 24 24">
     <rect width="24" height="24" rx="6" fill="#4d6bfe"/>

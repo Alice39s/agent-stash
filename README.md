@@ -1,9 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset=".github/img/header-dark.svg">
-  <img src=".github/img/header-light.svg" alt="" width="100%">
-</picture>
+<img src=".github/img/header.svg" alt="" width="100%">
 
 # Agent-Stash
 
