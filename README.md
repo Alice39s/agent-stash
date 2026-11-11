@@ -1,5 +1,10 @@
 <div align="center">
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/img/header-dark.svg">
+  <img src=".github/img/header-light.svg" alt="" width="100%">
+</picture>
+
 # Agent-Stash
 
 [![CI](https://img.shields.io/github/actions/workflow/status/Alice39s/agent-stash/ci.yml?branch=main&label=CI&logo=githubactions&logoColor=white)](https://github.com/Alice39s/agent-stash/actions/workflows/ci.yml) [![Agent Stash release](https://img.shields.io/github/v/release/Alice39s/agent-stash?label=Agent%20Skills&color=D97757)](https://github.com/Alice39s/agent-stash/releases/latest) [![skills.sh](https://skills.sh/b/Alice39s/agent-stash)](https://skills.sh/Alice39s/agent-stash) [![License](https://img.shields.io/github/license/Alice39s/agent-stash)](LICENSE)
