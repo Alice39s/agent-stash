@@ -10,6 +10,7 @@
     "dsh/*/CHANGELOG.md",
     "dsh/enhance/vendor/**",
     "skills/code-styleguide/**",
+    "skills/research-writing/references/**",
     "prompts/**",
     ".tegami/**",
     "CHANGELOG.md",
