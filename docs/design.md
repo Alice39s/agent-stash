@@ -53,7 +53,7 @@ version: 2026-10-31.1
 
 - [MUST] `HeaderArt` 只出现在中英文概览页，放在页面标题之前，撑满正文宽度，上边两角为 `--radius-card` 圆角，对辅助技术隐藏；它由页面组件渲染，不进入 Markdown 副本。
 - [SHOULD] 画面 1280×380：插件图标与技能图标放在 68px、16px 圆角的半透明方块上，按 11 列左右对称排成向下的弧形，中线底部是 96px 方块上的 `BrandMark`；带颜色的图标靠近中线，外圈和被顶边裁掉的方块放 Lucide 线条图标（浅色主题 `#3654e6`、深色主题 `#7a90ff`）。背景是从顶部向下渐隐为透明的椭圆形蓝灰色，因此能叠在任意页面底色上。
-- [MUST] 浅色、深色两版是 `public/header-light.svg` 与 `public/header-dark.svg`，README 用同样的两张图（`.github/img/header-*.svg`，经 `<picture>` 按配色切换）。增删插件或技能图标时，两处一起重新生成。
+- [MUST] 页头图是一张自带两套配色的 SVG：`<style>` 里先按 `prefers-color-scheme` 取色，祖先上的 `light`、`dark` 类优先。文档站把 `components/header-art.svg` 内联进页面，因此跟随站点的主题菜单；README 用 `<img>` 引用同一张图（`.github/img/header.svg`），跟随系统配色。增删插件或技能图标时，两处一起重新生成。
 
 ### 截图与录屏展示
 
@@ -174,7 +174,7 @@ version: 2026-10-31.1
 | `iconButton`         | `components/icon-button.ts`                 | 图标按钮的类名                                                                                            |
 | `Card`、`Cards`      | `components/card.tsx`、`components/mdx.tsx` | 卡片；`title`、`description`、`icon`、`href`、`external`                                                  |
 | `Callout`            | `components/callout.tsx`                    | 提示框；`type`：`info`、`idea`、`warn`/`warning`、`error`、`success`；`title`                             |
-| `HeaderArt`          | `components/header-art.tsx`                 | 概览页的页头图，浅色与深色两版                                                                            |
+| `HeaderArt`          | `components/header-art.tsx`                 | 概览页的页头图，内联 SVG，配色随主题切换                                                                  |
 | `Showcase`           | `components/showcase.tsx`                   | 截图与录屏展示板；`name`（`lib/media.ts` 里的场景名）、`alt`、`caption`                                   |
 | `Kbd`、`Keys`        | `components/kbd.tsx`                        | 按键帽；`Keys` 的 `keys` 列出可替换的一组按键                                                             |
 | `KeyStrip`           | `components/key-strip.tsx`                  | 品牌装饰                                                                                                  |
