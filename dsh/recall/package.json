@@ -3,6 +3,7 @@
   "version": "0.2.0",
   "description": "Browse the prompts of the current DeepSeek Harness session with the arrow keys in the composer",
   "keywords": [
+    "deepseek-harness",
     "dsh-plugin",
     "prompt-history"
   ],

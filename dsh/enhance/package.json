@@ -3,6 +3,7 @@
   "version": "0.4.0",
   "description": "Polish, structure, or distill a DeepSeek Harness prompt draft to its core in one click",
   "keywords": [
+    "deepseek-harness",
     "dsh-plugin",
     "prompt",
     "prompt-enhancer"

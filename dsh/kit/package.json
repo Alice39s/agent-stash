@@ -4,6 +4,7 @@
   "description": "Shared panels, ghost text, motion, and appearance settings for the Agent Stash DeepSeek Harness plugins",
   "keywords": [
     "agent-stash",
+    "deepseek-harness",
     "dsh-plugin"
   ],
   "homepage": "https://github.com/Alice39s/agent-stash/tree/main/dsh/kit#readme",
