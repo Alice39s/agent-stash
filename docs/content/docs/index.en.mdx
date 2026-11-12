@@ -4,7 +4,7 @@ description: See what each plugin and skill does and which agents it supports be
 icon: BookOpen
 ---
 
-Agent Stash is a set of Agent Skills and plugins for personal use. It adds prompt history, autocompletion and draft rewriting to the input box of [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH), gives Pi, DSH, Cline, Grok Build and goose the same `/init` command, and runs Aider with the same presets. It also includes style guides and skills that delegate tasks to subagents.
+Agent Stash is a set of Agent Skills and plugins for personal use. In [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (DSH), the plugins add prompt history, autocompletion and draft rewriting to the input box, keep message edits and retries as versions you can switch between, and turn workflows from finished sessions into Skills. `/init` gives Pi, DSH, Cline, Grok Build and goose the same command and runs Aider with the same presets. The skills cover style guides, Chrome's modern web development guides, research paper writing prompts and delegating tasks to subagents.
 
 <Showcase
   name="autosuggest-en"
@@ -20,7 +20,7 @@ Agent Stash is a set of Agent Skills and plugins for personal use. It adds promp
 | [dsh-autosuggest](./plugins/dsh-autosuggest.mdx) | `@agent-stash/dsh-autosuggest`  | DSH                                      | Complete the input from past prompts in every session                                                          |
 | [dsh-enhance](./plugins/dsh-enhance.mdx)         | `@agent-stash/dsh-enhance`      | DSH                                      | Polish, structure, or distill a prompt draft to its core in one click                                          |
 | [dsh-stash-kit](./plugins/dsh-stash-kit.mdx)     | `@agent-stash/dsh-stash-kit`    | DSH                                      | Set the panels, ghost text and motion shared by Agent Stash plugins in one place. Installed with those plugins |
-| [Message edit](./plugins/dsh-message-edit.mdx)   | `@agent-stash/dsh-message-edit` | DSH                                      | Edit messages, regenerate replies or retry turns as versions you can switch between                            |
+| [Message Edit](./plugins/dsh-message-edit.mdx)   | `@agent-stash/dsh-message-edit` | DSH                                      | Edit messages, regenerate replies or retry turns as versions you can switch between                            |
 | [Skill Scout](./plugins/dsh-skill-scout.mdx)     | `@agent-stash/dsh-skill-scout`  | DSH                                      | Turn reusable workflows from finished sessions into Skills after review                                        |
 | [/init](./plugins/init.mdx)                      | `@agent-stash/init`             | Pi, DSH, Cline, Grok Build, goose, Aider | Analyze the project with another coding agent's `/init` preset and write `AGENTS.md`                           |
 
@@ -67,5 +67,23 @@ Install the skills with `npx -y skills add Alice39s/agent-stash`. See the [Skill
     description="Set the panels, ghost text and motion shared by Agent Stash plugins in one place."
     href="./plugins/dsh-stash-kit.mdx"
     icon={<SwatchBook />}
+  />
+  <Card
+    title="Message Edit"
+    description="Edit messages, regenerate replies or retry turns as versions you can switch between."
+    href="./plugins/dsh-message-edit.mdx"
+    icon={<Pencil />}
+  />
+  <Card
+    title="Skill Scout"
+    description="Turn reusable workflows from finished sessions into Skills after review."
+    href="./plugins/dsh-skill-scout.mdx"
+    icon={<Lightbulb />}
+  />
+  <Card
+    title="/init"
+    description="Analyze the project with another coding agent's /init preset and write AGENTS.md."
+    href="./plugins/init.mdx"
+    icon={<FileText />}
   />
 </Cards>

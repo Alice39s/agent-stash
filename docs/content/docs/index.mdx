@@ -4,7 +4,7 @@ description: 看每个插件和技能能做什么、支持哪些 Agent，再决�
 icon: BookOpen
 ---
 
-Agent Stash 是一组自用的 Agent Skills 和插件：给 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）的输入框加上 Prompt 历史、自动补全与草稿改写，给 Pi、DSH、Cline、Grok Build 与 goose 提供同一套 `/init` 命令，也用同样的预设驱动 Aider，另外收录风格指南和子代理委托技能。
+Agent Stash 是一组自用的 Agent Skills 和插件。在 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)（DSH）里，插件给输入框加上 Prompt 历史、自动补全与草稿改写，把消息编辑和重试存成可切换的版本，并从已结束的会话里提炼 Skill。`/init` 给 Pi、DSH、Cline、Grok Build 与 goose 提供同一套命令，也用同样的预设驱动 Aider。技能收录风格指南、Chrome 团队的现代 Web 开发指南、科研论文写作 prompt 和子代理委托方法。
 
 <Showcase
   name="autosuggest"
@@ -67,5 +67,23 @@ Agent Stash 是一组自用的 Agent Skills 和插件：给 [DeepSeek Harness](h
     description="统一设置 Agent Stash 插件的面板、补全灰字与动画。"
     href="./plugins/dsh-stash-kit.mdx"
     icon={<SwatchBook />}
+  />
+  <Card
+    title="消息编辑"
+    description="编辑消息、重新生成回复或重试回合，改动另存为可切换的版本。"
+    href="./plugins/dsh-message-edit.mdx"
+    icon={<Pencil />}
+  />
+  <Card
+    title="经验提炼器"
+    description="从已结束的会话里提炼可复用的流程，审核后存为 Skill。"
+    href="./plugins/dsh-skill-scout.mdx"
+    icon={<Lightbulb />}
+  />
+  <Card
+    title="/init"
+    description="用其他 Coding Agent 的 /init 预设分析项目，写出 AGENTS.md。"
+    href="./plugins/init.mdx"
+    icon={<FileText />}
   />
 </Cards>
