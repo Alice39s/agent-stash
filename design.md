@@ -7,7 +7,7 @@ description: Presentation rules for browser UI that agent-stash DSH plugins rend
 
 ## 1. Scope and priority
 
-Applies to: panels, ghost text, and keyboard hint rows that a plugin renders in the DSH `conversation.input.overlay` slot, composer buttons that a plugin renders in the `conversation.input.right` slot (the Prompt enhance button, its menu, and its status line), and the plugin settings pages on the Plugins page, in the light and dark DSH themes.
+Applies to: panels, ghost text, and keyboard hint rows that a plugin renders in the DSH `conversation.input.overlay` slot, composer buttons that a plugin renders in the `conversation.input.right` slot (the Prompt Enhance button, its menu, and its status line), and the plugin settings pages on the Plugins page, in the light and dark DSH themes.
 
 Does not apply to: the README, plugin icons for plugin indexes, the host DSH UI itself, and CLI or TUI output.
 
@@ -37,7 +37,7 @@ Inline ghost text:
 - [MUST] Ghost text continues the last line of the draft after the caret, in caption ink, and disappears during IME composition.
 - [MUST] Ghost text shows only while the caret is collapsed at the end of the draft.
 
-Composer button (Prompt enhance):
+Composer button (Prompt Enhance):
 
 - [MUST] The button sits in the composer's right control row, left of the model selector and the send button, 12px apart like the host controls. It renders nothing while the draft is empty, so an empty composer looks like the host one.
 - [MUST] Its menu is the host `Menu`, opened above the button and aligned to its right edge. Rows carry the preset icon, a title, and a one-line hint, and the footer holds one management link.
@@ -174,7 +174,7 @@ const { Panel } = ctx.stashKit;
 
 ## 8. Implementation and integration
 
-- Styles: the Kit installs one stylesheet in its Client `apply` and removes it on unload; overlay feature plugins install only their dictionaries. Prompt enhance installs its own `dsh-enhance` stylesheet the same way.
+- Styles: the Kit installs one stylesheet in its Client `apply` and removes it on unload; overlay feature plugins install only their dictionaries. Prompt Enhance installs its own `dsh-enhance` stylesheet the same way.
 - Theme switching: inherited from DSH; panel styles read theme variables only.
 - Appearance: the Kit's Host `Config` declares volatile `glass`, `motion`, `ghost`, `highlight`, `density`, and `hints` fields; the browser reads them through `ctx.configForms` and re-renders every Kit component without a page reload. Without the settings service the Kit uses the defaults.
 - Dependency: feature plugins inject `stashKit` and wait in the pending state until the Kit loads; their Host halves install or enable the Kit bundle through `pluginManager`.
