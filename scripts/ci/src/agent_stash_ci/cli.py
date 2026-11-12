@@ -101,6 +101,24 @@ def sync(
     stdout.print(text, markup=False)
 
 
+@app.command("merge-pr")
+def merge_pr(
+    number: Annotated[int, typer.Argument(help="Pull request number.")],
+    subject: Annotated[str, typer.Option(help="Subject of the squash commit.")],
+    body: Annotated[str, typer.Option(help="Body of the squash commit.")] = "",
+    repo: Annotated[
+        str | None,
+        typer.Option(envvar="GITHUB_REPOSITORY", help="owner/name; defaults to the checkout's."),
+    ] = None,
+) -> None:
+    """Squash-merge a pull request, or turn on auto-merge when it cannot merge yet.
+
+    Waits until GitHub has computed the merge state, which reads UNKNOWN right after a push.
+    """
+    root = repo_root()
+    github.merge_pull_request(root, repo or github.repo_slug(root), number, subject, body)
+
+
 @app.command("plugin-index")
 def plugin_index(
     dsh: Annotated[
