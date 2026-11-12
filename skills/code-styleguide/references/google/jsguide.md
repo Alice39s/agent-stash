@@ -1,6 +1,6 @@
 # Google JavaScript Style Guide
 
-Source: <https://google.github.io/styleguide/jsguide.html> · google/styleguide@572c673d9058 (2026-10-28) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/jsguide.html> · google/styleguide@798edea5df05 (2026-11-11) · CC-BY-3.0
 
 ## Index
 
@@ -30,44 +30,44 @@ Source: <https://google.github.io/styleguide/jsguide.html> · google/styleguide@
   - L1018 4.8 Comments
 - L1056 5 Language features
   - L1062 5.1 Local variable declarations
-  - L1101 5.2 Array literals
-  - L1181 5.3 Object literals
-  - L1359 5.4 Classes
-  - L1621 5.5 Functions
-  - L1792 5.6 String literals
-  - L1840 5.7 Number literals
-  - L1844 5.8 Control structures
-  - L1915 5.9 this
-  - L1921 5.10 Equality Checks
-  - L1937 5.11 Disallowed features
-- L2004 6 Naming
-  - L2006 6.1 Rules common to all identifiers
-  - L2033 6.2 Rules by identifier type
-  - L2134 6.3 Camel case: defined
-- L2170 7 JSDoc
-  - L2174 7.1 General form
-  - L2198 7.2 Markdown
-  - L2231 7.3 JSDoc tags
-  - L2272 7.4 Line wrapping
-  - L2291 7.5 Top/file-level comments
-  - L2305 7.6 Class comments
-  - L2336 7.7 Enum and typedef comments
-  - L2361 7.8 Method and function comments
-  - L2444 7.9 Property comments
-  - L2476 7.10 Type annotations
-  - L2629 7.11 Visibility annotations
-- L2633 8 Policies
-  - L2635 8.1 Issues unspecified by Google Style: Be Consistent!
-  - L2639 8.2 Compiler warnings
-  - L2671 8.3 Deprecation
-  - L2675 8.4 Code not in Google Style
-  - L2694 8.5 Local style rules
-  - L2698 8.6 Generated code: mostly exempt
-- L2702 9 Appendices
-  - L2704 9.1 JSDoc tag reference
-  - L2853 9.2 Commonly misunderstood style rules
-  - L2863 9.3 Style-related tools
-  - L2889 9.4 Exceptions for legacy platforms
+  - L1118 5.2 Array literals
+  - L1214 5.3 Object literals
+  - L1392 5.4 Classes
+  - L1654 5.5 Functions
+  - L1825 5.6 String literals
+  - L1881 5.7 Number literals
+  - L1885 5.8 Control structures
+  - L1956 5.9 this
+  - L1962 5.10 Equality Checks
+  - L1978 5.11 Disallowed features
+- L2045 6 Naming
+  - L2047 6.1 Rules common to all identifiers
+  - L2074 6.2 Rules by identifier type
+  - L2185 6.3 Camel case: defined
+- L2221 7 JSDoc
+  - L2225 7.1 General form
+  - L2249 7.2 Markdown
+  - L2282 7.3 JSDoc tags
+  - L2323 7.4 Line wrapping
+  - L2342 7.5 Top/file-level comments
+  - L2356 7.6 Class comments
+  - L2387 7.7 Enum and typedef comments
+  - L2412 7.8 Method and function comments
+  - L2495 7.9 Property comments
+  - L2527 7.10 Type annotations
+  - L2680 7.11 Visibility annotations
+- L2684 8 Policies
+  - L2686 8.1 Issues unspecified by Google Style: Be Consistent!
+  - L2690 8.2 Compiler warnings
+  - L2722 8.3 Deprecation
+  - L2726 8.4 Code not in Google Style
+  - L2745 8.5 Local style rules
+  - L2749 8.6 Generated code: mostly exempt
+- L2753 9 Appendices
+  - L2755 9.1 JSDoc tag reference
+  - L2904 9.2 Commonly misunderstood style rules
+  - L2914 9.3 Style-related tools
+  - L2940 9.4 Exceptions for legacy platforms
 
 ---
 
@@ -1096,7 +1096,24 @@ Mixing inline and JSDoc styles is not allowed: the compiler will only process th
 const /** !Array<number> */ data = [];
 ```
 
-> Tip: There are many cases where the compiler can infer a templatized type but not its parameters. This is particularly the case when the initializing literal or constructor call does not include any values of the template parameter type (e.g., empty arrays, objects, `Map`s, or `Set`s), or if the variable is modified in a closure. Local variable type annotations are particularly helpful in these cases since otherwise the compiler will infer the template parameter as unknown.
+There are many cases where the compiler can infer a templatized type but not its parameters. This is particularly the case when the initializing literal or constructor call does not include any values of the template parameter type (e.g., empty arrays, objects, `Map`s, or `Set`s), or if the variable is modified in a closure. Local variable type annotations are particularly helpful in these cases since otherwise the compiler will infer the template parameter as unknown.
+
+```js
+/** @param {!Array<string>} ids */
+function process(ids) {
+  // Inferred as !Set<string> from the argument, so no annotation is needed.
+  const uniqueIds = new Set(ids);
+}
+
+// Empty collections need an annotation.
+const /** !Map<string, number> */ wordCounts = new Map();
+const /** !Set<string> */ seenIds = new Set();
+```
+
+```js
+// The key and value types of the Map are inferred as unknown.
+const wordCounts = new Map();
+```
 
 ### 5.2 Array literals
 
@@ -1165,7 +1182,23 @@ Disallowed:
 function badDestructuring([a, b] = [4, 2]) { … };
 ```
 
-> Tip: For (un)packing multiple values into a function’s parameter or return, prefer object destructuring to array destructuring when possible, as it allows naming the individual elements and specifying a different type for each.
+For (un)packing multiple values into a function’s parameter or return, prefer object destructuring to array destructuring when possible, as it allows naming the individual elements and specifying a different type for each.
+
+```js
+/** @return {{name: string, age: number}} */
+function getUser() {
+  return {name: 'Alice', age: 30};
+}
+const {name, age} = getUser();
+```
+
+```js
+/** @return {!Array<string|number>} */
+function getUser() {
+  return ['Alice', 30];
+}
+const [name, age] = getUser();
+```
 
 #### 5.2.5 Spread operator
 
@@ -1475,7 +1508,7 @@ C.prototype.method = function(param) {
 
 Per-instance properties should be defined in the constructor after the call to the super class constructor, if there is a super class. Methods should be defined on the prototype of the constructor.
 
-Defining constructor prototype hierarchies correctly is harder than it first appears! For that reason, it is best to use `goog.inherits` from [the Closure Library](http://code.google.com/closure/library/).
+Defining constructor prototype hierarchies correctly is harder than it first appears! For that reason, it is best to use `goog.inherits` from [the Closure Library](https://github.com/google/closure-library).
 
 #### 5.4.6 Do not manipulate `prototype`s directly
 
@@ -1837,6 +1870,14 @@ const longString = 'This is a very long string that far exceeds the 80 ' +
     'the concatenated strings are cleaner.';
 ```
 
+The same applies to template literals:
+
+```js
+const longString = `Hello ${name}, this is a very long string that far ` +
+    `exceeds the 80 column limit, so it is split into concatenated ` +
+    `template literals.`;
+```
+
 ### 5.7 Number literals
 
 Numbers may be specified in decimal, hex, octal, or binary. Use exactly `0x`, `0o`, and `0b` prefixes, with lowercase letters, for hex, octal, and binary, respectively. Never include a leading zero unless it is immediately followed by `x`, `o`, or `b`.
@@ -2126,6 +2167,16 @@ Local variable names are written in `lowerCamelCase`, except for module-local (t
 #### 6.2.9 Template parameter names
 
 Template parameter names should be concise, single-word or single-letter identifiers, and must be all-caps, such as `TYPE` or `THIS`.
+
+```js
+/** @template T */
+/** @template KEY, VALUE */
+```
+
+```js
+/** @template ElementType */
+/** @template KEY_TYPE */
+```
 
 #### 6.2.10 Module-local names
 
@@ -2930,6 +2981,11 @@ function sillyFunction() {
 ##### 9.4.2.3 Use @const for constants variables
 
 For global declarations where the `const` keyword would be used, if it were available, annotate the `var` declaration with `@const` instead (this is optional for local variables).
+
+```js
+/** @const */
+var MAX_RETRIES = 3;
+```
 
 #### 9.4.3 Do not use block scoped functions declarations
 

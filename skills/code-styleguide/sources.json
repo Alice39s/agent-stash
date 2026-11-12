@@ -7,8 +7,8 @@
       "url": "https://google.github.io/styleguide/lispguide.html",
       "repository": "google/styleguide",
       "path": "lispguide.md",
-      "revision": "577f395ca4c30868313a6b234e582129d88d68f8",
-      "updated": "2026-10-23",
+      "revision": "0917409e4ed99f65d535f00f08342dc66a4d735e",
+      "updated": "2026-11-05",
       "license": "CC-BY-3.0",
       "indexEnd": 55,
       "lines": 1215
@@ -19,12 +19,12 @@
       "title": "Google C++ Style Guide",
       "url": "https://google.github.io/styleguide/cppguide.html",
       "repository": "google/styleguide",
-      "path": "cppguide.html",
-      "revision": "0acdb47ea7d3fe887af5ddd34f9a9b09a7b97566",
-      "updated": "2026-10-14",
+      "path": "cppguide.md",
+      "revision": "72372684427af9861212ee7f1cdbb48b6f497857",
+      "updated": "2026-11-09",
       "license": "CC-BY-3.0",
       "indexEnd": 119,
-      "lines": 3655
+      "lines": 3658
     },
     {
       "file": "references/google/csharpguide.md",
@@ -46,8 +46,8 @@
       "url": "https://google.github.io/styleguide/go/index.html",
       "repository": "google/styleguide",
       "path": "go/index.md",
-      "revision": "9ae38d43e38a5b182092723d0f1295c3b80b1e06",
-      "updated": "2022-12-27",
+      "revision": "9d7ce97386f88b7e2c8257123425e65f60b49789",
+      "updated": "2026-10-30",
       "license": "CC-BY-3.0",
       "indexEnd": 10,
       "lines": 120
@@ -59,11 +59,11 @@
       "url": "https://google.github.io/styleguide/go/best-practices.html",
       "repository": "google/styleguide",
       "path": "go/best-practices.md",
-      "revision": "c098353acb6d8ee2dcf995e2e2ae67cf35afe30d",
-      "updated": "2026-03-18",
+      "revision": "9d7ce97386f88b7e2c8257123425e65f60b49789",
+      "updated": "2026-10-30",
       "license": "CC-BY-3.0",
       "indexEnd": 61,
-      "lines": 2943
+      "lines": 2862
     },
     {
       "file": "references/google/go/decisions.md",
@@ -72,11 +72,11 @@
       "url": "https://google.github.io/styleguide/go/decisions.html",
       "repository": "google/styleguide",
       "path": "go/decisions.md",
-      "revision": "c098353acb6d8ee2dcf995e2e2ae67cf35afe30d",
-      "updated": "2026-03-18",
+      "revision": "4e404ae582e2c61ab88d5ae137afe96c4835ad38",
+      "updated": "2026-11-06",
       "license": "CC-BY-3.0",
       "indexEnd": 77,
-      "lines": 2734
+      "lines": 2629
     },
     {
       "file": "references/google/go/guide.md",
@@ -85,11 +85,11 @@
       "url": "https://google.github.io/styleguide/go/guide.html",
       "repository": "google/styleguide",
       "path": "go/guide.md",
-      "revision": "c098353acb6d8ee2dcf995e2e2ae67cf35afe30d",
-      "updated": "2026-03-18",
+      "revision": "4e404ae582e2c61ab88d5ae137afe96c4835ad38",
+      "updated": "2026-11-06",
       "license": "CC-BY-3.0",
       "indexEnd": 18,
-      "lines": 272
+      "lines": 273
     },
     {
       "file": "references/google/haskellguide.md",
@@ -111,11 +111,11 @@
       "url": "https://google.github.io/styleguide/htmlcssguide.html",
       "repository": "google/styleguide",
       "path": "htmlcssguide.md",
-      "revision": "577f395ca4c30868313a6b234e582129d88d68f8",
-      "updated": "2026-10-23",
+      "revision": "7c3eb00dd3a3308003c5c8a79c4290dc1c8a8c53",
+      "updated": "2026-11-06",
       "license": "CC-BY-3.0",
       "indexEnd": 19,
-      "lines": 915
+      "lines": 907
     },
     {
       "file": "references/google/jsguide.md",
@@ -124,11 +124,11 @@
       "url": "https://google.github.io/styleguide/jsguide.html",
       "repository": "google/styleguide",
       "path": "jsguide.md",
-      "revision": "572c673d9058242c049fbc8248b17029726c7afa",
-      "updated": "2026-10-28",
+      "revision": "798edea5df05d5eca56c16f568c59b60c2b2d56a",
+      "updated": "2026-11-11",
       "license": "CC-BY-3.0",
       "indexEnd": 70,
-      "lines": 3078
+      "lines": 3134
     },
     {
       "file": "references/google/javaguide.md",
@@ -137,8 +137,8 @@
       "url": "https://google.github.io/styleguide/javaguide.html",
       "repository": "google/styleguide",
       "path": "javaguide.md",
-      "revision": "8e035461436fa0bd20650d7b01fae92dd8f9a77b",
-      "updated": "2026-10-28",
+      "revision": "ab89e73079a79f97ea705f08af902a16d3063739",
+      "updated": "2026-11-04",
       "license": "CC-BY-3.0",
       "indexEnd": 41,
       "lines": 931
@@ -163,11 +163,11 @@
       "url": "https://google.github.io/styleguide/docguide/style.html",
       "repository": "google/styleguide",
       "path": "docguide/style.md",
-      "revision": "591fedaf0eb82e0b14c1163ab03b1518ff6dbe60",
-      "updated": "2026-10-21",
+      "revision": "780190ace581367cf0c8a2e0f9f74ec00b5349c3",
+      "updated": "2026-11-03",
       "license": "CC-BY-3.0",
-      "indexEnd": 38,
-      "lines": 727
+      "indexEnd": 37,
+      "lines": 716
     },
     {
       "file": "references/google/objcguide.md",
@@ -176,8 +176,8 @@
       "url": "https://google.github.io/styleguide/objcguide.html",
       "repository": "google/styleguide",
       "path": "objcguide.md",
-      "revision": "24cfcced577a82c4c455909515fa05682c8d2fa8",
-      "updated": "2026-10-17",
+      "revision": "110139e6e9b1d1d6803fc0b2dbca1d2be979a024",
+      "updated": "2026-11-11",
       "license": "CC-BY-3.0",
       "indexEnd": 77,
       "lines": 1735
@@ -189,8 +189,8 @@
       "url": "https://google.github.io/styleguide/pyguide.html",
       "repository": "google/styleguide",
       "path": "pyguide.md",
-      "revision": "cbce6a3f220b64fe950e40b43d3ff2a6a6479304",
-      "updated": "2026-10-26",
+      "revision": "f8e2b0f7c8b0456b8c199166b13640d3eb36df87",
+      "updated": "2026-11-03",
       "license": "CC-BY-3.0",
       "indexEnd": 48,
       "lines": 2399
@@ -215,8 +215,8 @@
       "url": "https://google.github.io/styleguide/rustguide.html",
       "repository": "google/styleguide",
       "path": "rustguide.md",
-      "revision": "c775c0c2f73c110613243520c001577cdbc0034d",
-      "updated": "2026-10-24",
+      "revision": "cceb297e93677c31053e5e75de6b701a9204fc03",
+      "updated": "2026-11-06",
       "license": "CC-BY-3.0",
       "indexEnd": 85,
       "lines": 1243
@@ -228,8 +228,8 @@
       "url": "https://google.github.io/styleguide/shellguide.html",
       "repository": "google/styleguide",
       "path": "shellguide.md",
-      "revision": "577f395ca4c30868313a6b234e582129d88d68f8",
-      "updated": "2026-10-23",
+      "revision": "3c900a67cd1271cf40881075904385cd101fa1bf",
+      "updated": "2026-11-03",
       "license": "CC-BY-3.0",
       "indexEnd": 51,
       "lines": 1074
@@ -241,11 +241,11 @@
       "url": "https://google.github.io/styleguide/tsguide.html",
       "repository": "google/styleguide",
       "path": "tsguide.md",
-      "revision": "5ec857768df34c038b648d4b407e128d7224bbdb",
-      "updated": "2026-10-29",
+      "revision": "d5c987a7133aab84efc0f374de9015a2b48bf9fd",
+      "updated": "2026-11-11",
       "license": "CC-BY-3.0",
       "indexEnd": 64,
-      "lines": 3177
+      "lines": 3205
     },
     {
       "file": "references/google/verilogguide.md",
@@ -254,8 +254,8 @@
       "url": "https://google.github.io/styleguide/verilogguide.html",
       "repository": "google/styleguide",
       "path": "verilogguide.md",
-      "revision": "24cfcced577a82c4c455909515fa05682c8d2fa8",
-      "updated": "2026-10-17",
+      "revision": "0de02b3671a9c28e17c331c0c6f3318ccbfcd50d",
+      "updated": "2026-10-30",
       "license": "CC-BY-3.0",
       "indexEnd": 126,
       "lines": 4222
@@ -280,11 +280,11 @@
       "url": "https://google.github.io/styleguide/xmlguide.html",
       "repository": "google/styleguide",
       "path": "xmlguide.md",
-      "revision": "24cfcced577a82c4c455909515fa05682c8d2fa8",
-      "updated": "2026-10-17",
+      "revision": "7c3eb00dd3a3308003c5c8a79c4290dc1c8a8c53",
+      "updated": "2026-11-06",
       "license": "CC-BY-3.0",
       "indexEnd": 23,
-      "lines": 235
+      "lines": 233
     },
     {
       "file": "references/angular/style-guide.md",
@@ -306,8 +306,8 @@
       "url": "https://developer.android.com/kotlin/style-guide",
       "repository": "developer.android.com",
       "path": "/kotlin/style-guide.md.txt",
-      "revision": "sha256:9de0be421b8ee8905398386414d4a2809571878ea3595a485b5418327a8485d9",
-      "updated": "2026-10-24",
+      "revision": "sha256:317135dfd19ed82f3e5731debe466a534f55200f3921a8fa224b2885873947b6",
+      "updated": "2026-11-12",
       "license": "Apache-2.0",
       "indexEnd": 16,
       "lines": 888

@@ -1,6 +1,6 @@
 # TS/JS Style Guide
 
-Source: <https://google.github.io/styleguide/tsguide.html> · google/styleguide@5ec857768df3 (2026-10-29) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/tsguide.html> · google/styleguide@d5c987a7133a (2026-11-11) · CC-BY-3.0
 
 ## Index
 
@@ -29,39 +29,39 @@ Source: <https://google.github.io/styleguide/tsguide.html> · google/styleguide@
 - L2200 Naming
   - L2202 Identifiers
   - L2252 Rules by identifier type
-- L2365 Type system
-  - L2367 Type inference
-  - L2426 Undefined and null
-  - L2456 Use structural types
-  - L2547 Prefer interfaces over type literal aliases
-  - L2571 Array<T> Type
-  - L2607 Indexable types / index signatures ({[key: string]: T})
-  - L2630 Mapped and conditional types
-  - L2681 any Type
-  - L2752 {} Type
-  - L2781 Tuple types
-  - L2823 Wrapper types
-  - L2832 Return type only generics
-- L2836 Toolchain requirements
-  - L2840 TypeScript compiler
-  - L2859 Conformance
-- L2867 Comments and documentation
-  - L2899 JSDoc general form
-  - L2923 Markdown
-  - L2956 JSDoc tags
-  - L2977 Line wrapping
-  - L2996 Document all top-level exports of modules
-  - L3002 Class comments
-  - L3006 Method and function comments
-  - L3012 Parameter property comments
-  - L3043 JSDoc type annotations
-  - L3047 Make comments that actually add information
-  - L3087 Place documentation prior to decorators
-- L3113 Policies
-  - L3115 Consistency
-  - L3130 Deprecation
-  - L3134 Generated code: mostly exempt
-- L3173 Footnotes
+- L2393 Type system
+  - L2395 Type inference
+  - L2454 Undefined and null
+  - L2484 Use structural types
+  - L2575 Prefer interfaces over type literal aliases
+  - L2599 Array<T> Type
+  - L2635 Indexable types / index signatures ({[key: string]: T})
+  - L2658 Mapped and conditional types
+  - L2709 any Type
+  - L2780 {} Type
+  - L2809 Tuple types
+  - L2851 Wrapper types
+  - L2860 Return type only generics
+- L2864 Toolchain requirements
+  - L2868 TypeScript compiler
+  - L2887 Conformance
+- L2895 Comments and documentation
+  - L2927 JSDoc general form
+  - L2951 Markdown
+  - L2984 JSDoc tags
+  - L3005 Line wrapping
+  - L3024 Document all top-level exports of modules
+  - L3030 Class comments
+  - L3034 Method and function comments
+  - L3040 Parameter property comments
+  - L3071 JSDoc type annotations
+  - L3075 Make comments that actually add information
+  - L3115 Place documentation prior to decorators
+- L3141 Policies
+  - L3143 Consistency
+  - L3158 Deprecation
+  - L3162 Generated code: mostly exempt
+- L3201 Footnotes
 
 ---
 
@@ -2359,6 +2359,34 @@ const CAPACITY = 5;
 class Teapot {
   readonly BrewStateEnum = BrewStateEnum;
   readonly CAPACITY = CAPACITY;
+}
+```
+
+#### Overridden and implemented members
+
+Properties and methods that override, implement, or narrow a base class or interface member, or appear in a contextually typed object literal, must match the existing declaration's name and casing to compile. Casing rules therefore apply only at a member's original declaration, which _must_ follow them unless an external contract requires otherwise. Consider fixing the original declaration's name if possible.
+
+```ts
+interface ServerResponse {
+  // Disallowed: property names must use lowerCamelCase (or CONSTANT_CASE).
+  // The correct name here would be `errorCode`.
+  error_code: number;
+}
+```
+
+```ts
+// When the existing name is required to match an external contract, suppress
+// the lint warning on the original declaration and include a rationale:
+declare interface ServerResponse {
+  // Required to match external contract.
+  // tslint:disable-next-line:enforce-name-casing
+  error_code: number;
+}
+
+// Extending, implementing, or contextually matching the existing declaration
+// is allowed to follow its naming convention without another suppression:
+interface ErrorResponse extends ServerResponse {
+  error_code: 400 | 500;
 }
 ```
 

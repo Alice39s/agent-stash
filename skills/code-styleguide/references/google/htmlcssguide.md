@@ -1,6 +1,6 @@
 # Google HTML/CSS Style Guide
 
-Source: <https://google.github.io/styleguide/htmlcssguide.html> · google/styleguide@577f395ca4c3 (2026-10-23) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/htmlcssguide.html> · google/styleguide@7c3eb00dd3a3 (2026-11-06) · CC-BY-3.0
 
 ## Index
 
@@ -9,14 +9,14 @@ Source: <https://google.github.io/styleguide/htmlcssguide.html> · google/styleg
   - L29 General Style Rules
   - L63 General Formatting Rules
   - L126 General Meta Rules
-- L167 HTML
-  - L169 HTML Style Rules
-  - L386 HTML Formatting Rules
-- L486 CSS
-  - L488 CSS Style Rules
-  - L713 CSS Formatting Rules
-  - L887 CSS Meta Rules
-- L909 Parting Words
+- L159 HTML
+  - L161 HTML Style Rules
+  - L378 HTML Formatting Rules
+- L478 CSS
+  - L480 CSS Style Rules
+  - L705 CSS Formatting Rules
+  - L879 CSS Meta Rules
+- L901 Parting Words
 
 ---
 
@@ -145,23 +145,15 @@ Use comments to explain code: What does it cover, what purpose does it serve, wh
 
 #### Action Items
 
-Mark todos and action items with `TODO`.
+Use `TODO` comments for code that is temporary, a short-term solution, or good-enough but not perfect.
 
-Highlight todos by using the keyword `TODO` only, not other common formats like `@@`.
+A `TODO` comment begins with the word `TODO` in all caps, and a parenthesized link to a resource that contains the context, ideally a bug reference. A bug reference is preferable because bugs are tracked and have follow-up comments. Follow this piece of context with a colon and an explanatory string.
 
-Append action items after a colon as in `TODO: action item`.
+The purpose is to have a consistent `TODO` format that can be searched to find out how to get more details.
 
 ```django
-{# TODO: Revisit centering. #}
+{# TODO(b/12345): Revisit centering. #}
 <center>Test</center>
-```
-
-```html
-<!-- TODO: Remove optional tags. -->
-<ul>
-  <li>Apples</li>
-  <li>Oranges</li>
-</ul>
 ```
 
 ## HTML

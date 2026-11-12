@@ -1,41 +1,40 @@
 # Markdown style guide
 
-Source: <https://google.github.io/styleguide/docguide/style.html> · google/styleguide@591fedaf0eb8 (2026-10-21) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/docguide/style.html> · google/styleguide@780190ace581 (2026-11-03) · CC-BY-3.0
 
 ## Index
 
-- L50 Minimum viable documentation
-- L59 Better is better than best
-- L77 Capitalization
-- L95 Document layout
-- L127 Table of contents
-  - L129 Use a [TOC] directive
-  - L133 Place the [TOC] directive after the introduction
-- L161 Character line limit
-  - L169 Exceptions
-- L196 Trailing whitespace
-- L211 Headings
-  - L213 ATX-style headings
-  - L228 Use unique, complete names for headings
-  - L254 Add spacing to headings
-  - L275 Use a single H1 heading
-  - L279 Capitalization of titles and headers
-- L283 Lists
-  - L285 Use lazy numbering for long lists
-  - L305 Nested list spacing
-- L352 Code
-  - L354 Inline
-  - L370 Use code span for escaping
-  - L380 Codeblocks
-- L454 Links
-  - L458 Use explicit paths for links within Markdown
-  - L472 Avoid relative paths unless within the same directory
-  - L487 Use informative Markdown link titles
-  - L513 Reference
-- L635 Images
-- L644 Tables
-- L717 Strongly prefer Markdown to HTML
-- L725 Footnotes
+- L49 Minimum viable documentation
+- L58 Better is better than best
+- L76 Capitalization
+- L94 Document layout
+- L126 Table of contents
+  - L128 Use a [TOC] directive
+  - L132 Place the [TOC] directive after the introduction
+- L160 80-character line limit
+  - L168 Exceptions
+- L195 Trailing whitespace
+- L210 Headings
+  - L212 ATX-style headings
+  - L227 Use unique, complete names for headings
+  - L253 Add spacing to headings
+  - L274 Use a single H1 heading
+  - L278 Capitalization of titles and headers
+- L282 Lists
+  - L302 Nested list spacing
+- L349 Code
+  - L351 Inline
+  - L367 Use code span for escaping
+  - L377 Code blocks
+- L451 Links
+  - L455 Use explicit paths for links within Markdown
+  - L469 Avoid relative paths unless within the same directory
+  - L484 Use informative Markdown link titles
+  - L508 Use reference links carefully
+- L626 Images
+- L635 Use tables wisely
+- L706 Strongly prefer Markdown to HTML
+- L714 Footnotes
 
 ---
 
@@ -158,7 +157,7 @@ For users who read your documentation visually, it doesn't matter where your `[T
 
 That's because `[TOC]` inserts the HTML for the table of contents into the DOM wherever you've included the directive in your Markdown file. If, for example, you place the directive at the very bottom of your file, screen readers won't read it until they get to the end of the document.
 
-## Character line limit
+## 80-character line limit
 
 Markdown content follows the residual convention of an 80-character line limit. Why? Because it's what most of us do for code.
 
@@ -179,7 +178,7 @@ This means that lines with links are allowed to extend past column 80, along wit
 
 ```markdown
 *   See the
-    [foo docs](https://gerrit.googlesource.com/gitiles/+/HEAD/Documentation/markdown.md).
+    [foo docs](https://gerrit.googlesource.com/gitiles/+/HEAD/Documentation/markdown.md)
     and find the logfile.
 ```
 
@@ -221,7 +220,7 @@ Best practice is to avoid the need for a `<br />` altogether. A pair of newlin
 Headings with `=` or `-` underlines can be annoying to maintain and don't fit with the rest of the heading syntax. An editor has to ask: Does `---` mean H1 or H2?
 
 ```markdown
-Heading - do you remember what level? DO NOT DO THIS.
+Heading - do you remember what level?
 ---------
 ```
 
@@ -269,20 +268,18 @@ Lack of spacing makes it a little harder to read in source:
 ...text before.
 
 ##Heading 2
-Text after... DO NOT DO THIS.
+Text after...
 ```
 
 ### Use a single H1 heading
 
-Use one H1 heading as the title of your document. Subsequent headings should be H2 or deeper. See [Document layout](#document-layout) for more information.
+Use one H1 heading as the title of your document. Subsequent headings should be H2 or deeper. See [Document layout](#layout) for more information.
 
 ### Capitalization of titles and headers
 
 Follow the guidance for [capitalization](https://developers.google.com/style/capitalization#capitalization-in-titles-and-headings) in the [Google Developer Documentation Style Guide](https://developers.google.com/style/).
 
 ## Lists
-
-### Use lazy numbering for long lists
 
 Markdown is smart enough to let the resulting HTML render your numbered lists correctly. For longer lists that may change, especially long nested lists, use "lazy" numbering:
 
@@ -324,10 +321,10 @@ The following works, but it's very messy:
 ```markdown
 * One space,
 with no indent for wrapped text.
-     1. Irregular nesting... DO NOT DO THIS.
+     1. Irregular nesting...
 ```
 
-Even when there's no nesting, using the 4 space indent makes layout consistent for wrapped text:
+Even when there's no nesting, using the 4-space indent makes layout consistent for wrapped text:
 
 ```markdown
 *   Foo,
@@ -377,7 +374,7 @@ An example Markdown shortlink would be: `Markdown/foo/Markdown/bar.md`
 An example query might be: `https://www.google.com/search?q=$TERM`
 ```
 
-### Codeblocks
+### Code blocks
 
 For code quotations longer than a single line, use a fenced code block:
 
@@ -427,7 +424,7 @@ $ bazel run :target -- --flag --foo=longlonglonglonglongvalue \
 ```
 ````
 
-#### Nest codeblocks within lists
+#### Nest code blocks within lists
 
 If you need a code block within a list, make sure to indent it so as to not break the list:
 
@@ -491,8 +488,6 @@ Markdown link syntax allows you to set a link title. Use it wisely. Users often 
 Links catch the eye. But titling your links "here," "link," or simply duplicating the target URL tells the hasty reader precisely nothing and is a waste of space:
 
 ```markdown
-DO NOT DO THIS.
-
 See the Markdown guide for more info: [link](markdown.md), or check out the
 style guide [here](style.md).
 
@@ -510,7 +505,7 @@ Check out a
 [typical test result](https://example.com/foo/bar).
 ```
 
-### Reference
+### Use reference links carefully
 
 For long links or image URLs, you may want to split the link use from the link definition, like this:
 
@@ -528,8 +523,6 @@ Use reference links where the length of the link would detract from the readabil
 In this example, reference link usage is not appropriate, because the link is not long enough to disrupt the flow of the text:
 
 ```markdown
-DO NOT DO THIS.
-
 The [style guide][style_guide] says not to use reference links unless you have
 to.
 
@@ -555,8 +548,6 @@ Use reference links more often in tables. It is particularly important to keep t
 For example, this table's readability is worsened by inline links:
 
 ```markdown
-DO NOT DO THIS.
-
 Site                                                             | Description
 ---------------------------------------------------------------- | -----------------------
 [site 1](http://google.com/excessively/long/path/example_site_1) | This is example site 1.
@@ -592,7 +583,7 @@ There is one exception to this rule: reference link definitions that are used in
 In the following example, the reference definition is far from its initial use, which makes the document harder to read:
 
 ```markdown
-# Header FOR A BAD DOCUMENT
+# Header
 
 Some text with a [link][link_def].
 
@@ -641,7 +632,7 @@ Use images sparingly, and prefer simple screenshots. This guide is designed arou
 - Use images when it's easier to _show_ a reader something than to _describe it_. For example, explaining how to navigate a UI is often easier with an image than text.
 - Make sure to provide appropriate text to describe your image. Readers who are not sighted cannot see your image and still need to understand the content! See the alt text best practices below.
 
-## Tables
+## Use tables wisely
 
 Use tables when they make sense: for the presentation of tabular data that needs to be scanned quickly.
 
@@ -650,8 +641,6 @@ Avoid using tables when your data could easily be presented in a list. Lists are
 For example:
 
 ```markdown
-DO NOT DO THIS
-
 Fruit  | Metrics      | Grows on | Acute curvature    | Attributes                                                                                                  | Notes
 ------ | ------------ | -------- | ------------------ | ----------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------
 Apple  | Very popular | Trees    |                    | [Juicy](http://cs/SomeReallyReallyReallyReallyReallyReallyReallyReallyLongQuery), Firm, Sweet               | Apples keep doctors away.

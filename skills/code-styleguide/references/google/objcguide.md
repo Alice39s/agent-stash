@@ -1,6 +1,6 @@
 # Google Objective-C Style Guide
 
-Source: <https://google.github.io/styleguide/objcguide.html> · google/styleguide@24cfcced577a (2026-10-17) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/objcguide.html> · google/styleguide@110139e6e9b1 (2026-11-11) · CC-BY-3.0
 
 ## Index
 
@@ -262,7 +262,7 @@ WARNING: Apple reserves two-letter prefixes—see [Conventions in Programming wi
 GTM_EXTERN NSString *GTMExampleErrorDomain;
 
 /** Gets the default time zone. */
-GTM_EXTERN NSTimeZone *GTMGetDefaultTimeZone(void);
+GTM_EXTERN NSTimeZone *GTMGetDefaultTimeZone();
 
 /** An example delegate. */
 @protocol GTMExampleDelegate <NSObject>
@@ -401,7 +401,7 @@ static BOOL DeleteFile(const char *filename);
 Because Objective-C does not provide namespacing, non-static functions should have a [prefix](#prefixes) that minimizes the chance of a name collision.
 
 ```objectivec
-GTM_EXTERN NSTimeZone *GTMGetDefaultTimeZone(void);
+GTM_EXTERN NSTimeZone *GTMGetDefaultTimeZone();
 GTM_EXTERN NSString *GTMGetURLScheme(NSURL *URL);
 ```
 
