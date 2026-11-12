@@ -39,12 +39,14 @@ Browse the plugins in the index on the Discover page and install the ones you ne
 </Step>
 </Steps>
 
-GitHub Actions generates the index with the DSH reference generator. It lists every released version of these npm packages. After each release run and once an hour, the workflow generates the index again and deploys it when it differs from the published one. The index and these docs are published to the same GitHub Pages site, which caches files for up to 10 minutes.
+GitHub Actions generates the index with the DSH reference generator. It lists the 10 highest released versions of each plugin, plus any version a dist-tag points to. After each release run and once an hour, the workflow generates the index again and deploys it when it differs from the published one. The index and these docs are published to the same GitHub Pages site, which caches files for up to 10 minutes.
 
-Besides the Agent Stash plugins, the index lists two recommended third-party plugins:
+Besides the Agent Stash plugins, the index lists four recommended third-party plugins:
 
 - [dsh-context](https://github.com/bowenliang123/dsh-context) shows how the session context is made up and how it changes, in a panel and through the `/context` command.
 - [dsh-whale-widget](https://github.com/MeteorNOX/DeepSeek-Balance-Whale-Widget) adds a widget to the lower-right corner of the web interface with the DeepSeek balance, today's usage, and the cost of each turn.
+- [dsh-notify-me](https://github.com/chromoany/dsh-notify-me) notifies you while you are away from the DSH page: when DSH needs your input or finishes a reply in the background, it sends a system notification, marks the page title and plays a sound, in the web interface and the desktop app.
+- [dsh-better-sidebar](https://github.com/omdsh-dev/DSH-better-sidebar) puts a file tree, an editor, changes, tasks and a side chat into one sidebar column, separate for each conversation.
 
 ### Install by hand
 
