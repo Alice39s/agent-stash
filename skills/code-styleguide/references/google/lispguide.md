@@ -1,6 +1,6 @@
 # Google Common Lisp Style Guide
 
-Source: <https://google.github.io/styleguide/lispguide.html> · google/styleguide@577f395ca4c3 (2026-10-23) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/lispguide.html> · google/styleguide@0917409e4ed9 (2026-11-05) · CC-BY-3.0
 
 ## Index
 
@@ -356,13 +356,13 @@ For comments requiring special attention, such as incomplete code, TODO items, q
 Ideally a TODO comment should reference a bug number:
 
 ```lisp
-;; TODO(b/1234567): use circular lists for fizzbuzz
+;; TODO(b/12345): use circular lists for fizzbuzz
 ```
 
 However, it may also be a username or email address:
 
 ```lisp
-;; TODO(zippy@foo.com): Refactor to provide a better API.
+;; TODO(user@example.com): Refactor to provide a better API.
 ```
 
 The main purpose is to provide a way to find out more information by looking up the bug or the person. (Usually you should put your own username.)
@@ -370,7 +370,7 @@ The main purpose is to provide a way to find out more information by looking up 
 Be specific when indicating times or software releases in a TODO comment and use [YYYY-MM-DD](https://www.w3.org/TR/NOTE-datetime) format for dates to make automated processing of such dates easier:
 
 ```lisp
-;;--- TODO(brown): Remove this code after release 1.7 or before 2012-11-30.
+;;--- TODO(username): Remove this code after release 1.7 or before 2012-11-30.
 ```
 
 You should design your DSL to be easy to read and understand by people familiar with the domain.
@@ -559,10 +559,10 @@ Symbols that correspond to standard, idiomatic Lisp expressions and would contai
 
 ### Package names
 
-- Design package names to be usable as prefixes for symbols.
-- Usually, the last package name part will end up as an alias in other code.
+- Design package names to be usable directly as prefixes for symbols.
+- Do not use dotted hierarchical package names (such as `org.library.unit`).
 
-Follow consistent conventions when choosing a package name. For packages that are intended for wide use and may be exposed outside of your organization a good rule of thumb is to use `<org>.<library>.<unit>`. For example, for a package that contains generic utilities for writing macros found in the ACME company's "core" library, use `acme.core.macro`. The use of the dot (.) as a separator allows for tools to reason about hierarchical package structures and organization. If a component of the package name is a compound noun use a hyphen (-) to separate the words. For example, `ace.container.hash-table`. As with other Lisp names, use lowercase, even for well-known abbreviations like "http".
+Choose a concise, descriptive, lowercase name using hyphens (`-`) to separate words when needed (for example, `threadpool` or `concurrent-queue`), even for well-known abbreviations like "http". Common Lisp has a flat package namespace with no hierarchical name resolution, and dots (`.`) have no special meaning to the language or its tools. Multi-segment dotted names are too unwieldy to write directly as symbol prefixes, forcing consumers to add `:local-nicknames` (often using generic leaf words like `pool` or `string` that lose context or collide with `common-lisp` symbols) while leaving long dotted prefixes in printed symbols and backtraces.
 
 Package prefixes should fit the names of the symbols those packages export. For example, if you have an abstraction called `fifo`, and it is in a package of the first type you'd have functions named things like `fifo-add-to` and `fifo-clear-all`. If you design a package name to be used as a prefix, you'd have names like `add-to` and `clear-all`, because the callers would be saying:
 
@@ -577,16 +577,16 @@ The below shows a redundant and arguably "ugly" symbol naming schema.
 (fifo:fifo-clear-all ...)
 ```
 
-Prefer singular names for packages rather than plural. For example calls to the function `ace.core.string:prefixp` will look like the following:
+Prefer singular names for packages rather than plural:
 
 ```lisp
-(string:prefixp ...)
+(threadpool:schedule-task ...)
 ```
 
 The above reads better than:
 
 ```lisp
-(strings:prefixp ...)
+(threadpools:schedule-task ...)
 ```
 
 ### File names
@@ -596,7 +596,7 @@ The above reads better than:
 
 The names of files should use hyphens (-) instead of underscores (\_).
 
-The file names and directory structure should match package names, as much as possible. When using a one package per file strategy, the part of a package name following the last dot (.) should be the file name that contains that package. e.g. the file ".../core/string.lisp" contains the package `ace.core.string`.
+File names should match package names as much as possible. When using a one package per file strategy, the file name (without `.lisp`) should match the package name—for example, `threadpool.lisp` defines the `threadpool` package.
 
 Lisp file names should end with ".lisp".
 

@@ -1,6 +1,6 @@
 # Google Python Style Guide
 
-Source: <https://google.github.io/styleguide/pyguide.html> · google/styleguide@cbce6a3f220b (2026-10-26) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/pyguide.html> · google/styleguide@f8e2b0f7c8b0 (2026-11-03) · CC-BY-3.0
 
 ## Index
 
@@ -1701,19 +1701,19 @@ A `TODO` comment begins with the word `TODO` in all caps, and a parenthesized li
 The purpose is to have a consistent `TODO` format that can be searched to find out how to get more details.
 
 ```python
-# TODO(crbug.com/192795): Investigate cpufreq optimizations.
+# TODO(example.com/12345): Investigate cpufreq optimizations.
 ```
 
 Old style, formerly recommended, but discouraged for use in new code:
 
 ```python
-# TODO: crbug.com/192795 - Investigate cpufreq optimizations.
+# TODO: example.com/12345 - Investigate cpufreq optimizations.
 ```
 
 Avoid adding TODOs that refer to an individual or team as the context:
 
 ```python
-# TODO(@yourusername): File an issue and use a '*' for repetition.
+# TODO(username): File an issue and use a '*' for repetition.
 ```
 
 If your `TODO` is of the form "At a future date do something" make sure that you either include a very specific date ("Fix by November 2009") or a very specific event ("Remove this code when all clients can handle XML responses.") that future code maintainers will comprehend. Issues are ideal for tracking this.

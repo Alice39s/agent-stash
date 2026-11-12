@@ -1,6 +1,6 @@
 # Kotlin style guide
 
-Source: <https://developer.android.com/kotlin/style-guide> · developer.android.com@sha256:9de0be421b8e (2026-10-24) · Apache-2.0
+Source: <https://developer.android.com/kotlin/style-guide> · developer.android.com@sha256:317135dfd19e (2026-11-12) · Apache-2.0
 
 ## Index
 
@@ -237,7 +237,7 @@ return object : MyClass() {
 
 
 
-A few exceptions for [enum classes](https://developer.android.com/kotlin/style-guide#enum-classes) are given below.
+A few exceptions for [enum classes](https://developer.android.com/kotlin/style-guide.md.txt#enum-classes) are given below.
 
 #### Empty blocks
 
@@ -401,7 +401,7 @@ A single blank line appears:
 
 - _Optionally_ before the first statement in a function, before the first member of a class, or after the last member of a class (neither encouraged nor discouraged).
 
-- As required by other sections of this document (such as the [Structure](https://developer.android.com/kotlin/style-guide#structure) section).
+- As required by other sections of this document (such as the [Structure](https://developer.android.com/kotlin/style-guide.md.txt#structure) section).
 
 Multiple consecutive blank lines are permitted, but not encouraged or ever required.
 
@@ -680,7 +680,7 @@ When writing a library, retain the explicit type declaration when it is part of 
 
 Identifiers use only ASCII letters and digits, and, in a small number of cases noted below, underscores. Thus each valid identifier name is matched by the regular expression `\w+`.
 
-Special prefixes or suffixes, like those seen in the examples `name_`, `mName`, `s_name`, and `kName`, are not used except in the case of backing properties (see [Backing properties](https://developer.android.com/kotlin/style-guide#backing-properties)).
+Special prefixes or suffixes, like those seen in the examples `name_`, `mName`, `s_name`, and `kName`, are not used except in the case of backing properties (see [Backing properties](https://developer.android.com/kotlin/style-guide.md.txt#backing-properties)).
 
 #### Package Names
 

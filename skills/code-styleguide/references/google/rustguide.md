@@ -1,6 +1,6 @@
 # Rust Style Guide
 
-Source: <https://google.github.io/styleguide/rustguide.html> · google/styleguide@c775c0c2f73c (2026-10-24) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/rustguide.html> · google/styleguide@cceb297e9367 (2026-11-06) · CC-BY-3.0
 
 ## Index
 
@@ -810,7 +810,7 @@ It is acceptable, and even encouraged, to mix doc comments (`///` and `//!`) and
 
 ```rust
 /// Finds the first `FooItem` with the given `name`, or `None` if not present.
-// TODO: crbug.com/12345 - `name` should be &str, not String.
+// TODO: example.com/12345 - `name` should be &str, not String.
 pub fn get_named(items: &[FooItem], name: String) -> Option<&FooItem> {...}
 ```
 
