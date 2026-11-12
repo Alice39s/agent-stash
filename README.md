@@ -42,7 +42,19 @@
 npx -y skills add Alice39s/agent-stash
 ```
 
-DSH 插件推荐导入 Agent Stash 插件市场后按需安装，步骤和其他 Agent 的接入方法见文档站的[安装](https://alice39s.github.io/agent-stash/zh/install/)页。
+DSH 插件推荐导入 Agent Stash 插件市场后按需安装：在插件页的「实验性插件」里打开「自定义插件市场」（新版叫「自定义插件索引」），再到「发现」页添加索引源：
+
+```text
+https://alice39s.github.io/agent-stash/index.json
+```
+
+也可以按 npm 包名安装，例如：
+
+```bash
+dsh plugin --profile web add @agent-stash/dsh-skill-scout
+```
+
+各插件的包名和其他 Agent 的接入方法见文档站的[安装](https://alice39s.github.io/agent-stash/zh/install/)页。
 
 ## <img src=".github/img/code-xml.svg" alt="" width="24" height="24" align="absmiddle"> 开发
 
