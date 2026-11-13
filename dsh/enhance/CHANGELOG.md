@@ -1,3 +1,9 @@
+## @agent-stash/dsh-enhance@0.4.1
+
+### 英文名称
+
+- 英文界面里的插件名改为 Prompt Enhance，与 Prompt Recall、Prompt Autosuggest 等插件的写法一致。
+
 ## @agent-stash/dsh-enhance@0.4.0
 
 ### DSH 版本要求
