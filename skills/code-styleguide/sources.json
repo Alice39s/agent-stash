@@ -98,8 +98,8 @@
       "url": "https://google.github.io/styleguide/haskellguide.html",
       "repository": "google/styleguide",
       "path": "haskellguide.md",
-      "revision": "577f395ca4c30868313a6b234e582129d88d68f8",
-      "updated": "2026-10-23",
+      "revision": "a9c5f82b19811f1552d73df384a9f9d7c75ca16e",
+      "updated": "2026-11-13",
       "license": "CC-BY-3.0",
       "indexEnd": 41,
       "lines": 702
@@ -163,8 +163,8 @@
       "url": "https://google.github.io/styleguide/docguide/style.html",
       "repository": "google/styleguide",
       "path": "docguide/style.md",
-      "revision": "780190ace581367cf0c8a2e0f9f74ec00b5349c3",
-      "updated": "2026-11-03",
+      "revision": "102d363fce6d18674d605430e3ddb5eb91487f85",
+      "updated": "2026-11-12",
       "license": "CC-BY-3.0",
       "indexEnd": 37,
       "lines": 716
@@ -189,8 +189,8 @@
       "url": "https://google.github.io/styleguide/pyguide.html",
       "repository": "google/styleguide",
       "path": "pyguide.md",
-      "revision": "f8e2b0f7c8b0456b8c199166b13640d3eb36df87",
-      "updated": "2026-11-03",
+      "revision": "6288a45d3fdce24235c57e6edbe3b22bc2e68d70",
+      "updated": "2026-11-12",
       "license": "CC-BY-3.0",
       "indexEnd": 48,
       "lines": 2399
@@ -241,8 +241,8 @@
       "url": "https://google.github.io/styleguide/tsguide.html",
       "repository": "google/styleguide",
       "path": "tsguide.md",
-      "revision": "d5c987a7133aab84efc0f374de9015a2b48bf9fd",
-      "updated": "2026-11-11",
+      "revision": "52f2e7406a802778e44b92694d4aead252b09091",
+      "updated": "2026-11-13",
       "license": "CC-BY-3.0",
       "indexEnd": 64,
       "lines": 3205

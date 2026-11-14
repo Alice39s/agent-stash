@@ -1,6 +1,6 @@
 # Google Python Style Guide
 
-Source: <https://google.github.io/styleguide/pyguide.html> · google/styleguide@f8e2b0f7c8b0 (2026-11-03) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/pyguide.html> · google/styleguide@6288a45d3fdc (2026-11-12) · CC-BY-3.0
 
 ## Index
 

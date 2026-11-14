@@ -3,7 +3,7 @@ name: "code-styleguide"
 description: "Google, Angular, and Android Kotlin style guides synced from upstream, covering Common Lisp, C++, C#, Go, Haskell, HTML/CSS, JavaScript, Java, JSON, Markdown, Objective-C, Python, R, Rust, Shell, TypeScript, Verilog, Vim script, XML Document Format, Angular, Kotlin. Use when writing, reviewing, refactoring, or formatting code that should follow one of these guides, or when the user asks about naming, formatting, comments, imports, or language-feature rules in these languages."
 license: "CC-BY-3.0, CC-BY-4.0, Apache-2.0"
 metadata:
-  updated: "2026-11-12"
+  updated: "2026-11-13"
   sources: "google/styleguide, angular/angular, developer.android.com"
   generator: "scripts/sync-code-styleguide.ts"
 ---

@@ -1,6 +1,6 @@
 # Markdown style guide
 
-Source: <https://google.github.io/styleguide/docguide/style.html> · google/styleguide@780190ace581 (2026-11-03) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/docguide/style.html> · google/styleguide@102d363fce6d (2026-11-12) · CC-BY-3.0
 
 ## Index
 
@@ -701,7 +701,7 @@ X-34 landspeeder | Whiny farmboys | [Cheap][tosche_station] since the XP-38 came
 [tosche_station]: http://google3/power_converter.h
 ```
 
-Note that [reference links](#reference-links) are used to keep the table cells manageable.
+Note that [reference links](#reference_links) are used to keep the table cells manageable.
 
 ## Strongly prefer Markdown to HTML
 

@@ -1,6 +1,6 @@
 # Google's Haskell Style Guide
 
-Source: <https://google.github.io/styleguide/haskellguide.html> · google/styleguide@577f395ca4c3 (2026-10-23) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/haskellguide.html> · google/styleguide@a9c5f82b1981 (2026-11-13) · CC-BY-3.0
 
 ## Index
 
@@ -142,7 +142,7 @@ GHC options and `LANGUAGE` pragmas go at the very top of the file.
 
 The `OPTIONS_GHC` directive should only be used for specific options that relate to the source file, such as `-fno-warn-orphans` for test code. General compilation options, like `-O2`, belong in the `.cabal` file.
 
-Features enabled by the `LANGUAGE` pragma should always be listed in each source file that needs them, and never turned on globally via flags in the the `.cabal` file. This is so future developers know what language extensions are in effect when reading the code.
+Features enabled by the `LANGUAGE` pragma should always be listed in each source file that needs them, and never turned on globally via flags in the `.cabal` file. This is so future developers know what language extensions are in effect when reading the code.
 
 `INLINE`, `INLINEABLE`, and similar pragmas should only be used when you've tested that they actually improve speed in cases that you care about. When used, they should follow directly the declaration they apply to.
 
@@ -459,7 +459,7 @@ data HttpException
 
 As indents serve an important semantic function in Haskell, the indents are on 4 space intervals.
 
-Parts of an expression that are continued on another line, are indented one indent from the indent of the preceding line, not from the construct that they are continuting. (Though see the preceding section about using alignment to make structure clear, and use your judgement.)
+Parts of an expression that are continued on another line, are indented one indent from the indent of the preceding line, not from the construct that they are continuing. (Though see the preceding section about using alignment to make structure clear, and use your judgement.)
 
 ```haskell
 arbitrary = arbitrary >>= \b -> if b
