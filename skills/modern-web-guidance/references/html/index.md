@@ -3,7 +3,7 @@
 | Guide | Description | Tokens | Gate |
 | --- | --- | --- | --- |
 | [accessible-web-components](accessible-web-components.md) | Make custom elements accessible by default, setting roles and ARIA state via the ElementInternals ARIA mixin, managing focus with delegatesFocus, and keeping ARIA relationships within a single shadow root. | 1215 | - |
-| [custom-elements](custom-elements.md) | Define, register, and manage the lifecycle of autonomous custom elements, covering constructor rules, lifecycle callbacks, upgrade timing, attribute/property reflection, and naming conventions. | 2192 | - |
+| [custom-elements](custom-elements.md) | Define, register, and manage the lifecycle of autonomous custom elements, covering constructor rules, lifecycle callbacks, upgrade timing, attribute/property reflection, and naming conventions. | 2889 | - |
 | [form-associated-custom-elements](form-associated-custom-elements.md) | Make a custom control participate natively in forms with formAssociated and ElementInternals, submitting its own value, integrating with constraint validation, and reacting to reset, disable, and state-restore. | 1110 | - |
 | [html](html.md) | Action-oriented guidelines for modern HTML architecture, semantics, native interactive APIs (Dialog, Popover, Details), focus management, and resource prioritization. Use this guide when structuring web documents, implementing native overlays, or optimizing resource loading order. | 5828 | - |
 | [prerendering-custom-elements](prerendering-custom-elements.md) | Server-render a custom element, then hydrate it in place without re-rendering or a flash of unstyled content. | 883 | - |

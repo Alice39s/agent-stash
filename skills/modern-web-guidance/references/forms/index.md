@@ -17,7 +17,7 @@
 | [required-field-feedback](required-field-feedback.md) | Provide error message for required form fields that were skipped or left empty *only* after user interaction, to avoid preemptive errors and ensure feedback is timely and contextually relevant to the user's flow. | 3755 | - |
 | [rich-media-picker](rich-media-picker.md) | Create a custom select component whose options can contain complex HTML formatting (e.g. images, icons, and other rich formatting) rather than just plain text. | 2732 | - |
 | [select-menu-interaction](select-menu-interaction.md) | Validate that a non-default option has been chosen in a select menu only after the user has interacted with the control. | 3492 | - |
-| [slider](slider.md) | Style a native range slider with custom track, thumb, fill, and focus states while preserving native functionality and accessibility. | 1948 | - |
+| [slider](slider.md) | Style a native range slider with custom track, thumb, fill, and focus states while preserving native functionality and accessibility. | 1992 | - |
 | [sms-otp-form](sms-otp-form.md) | Verify user phone numbers and one-time passcodes delivered over SMS with automatic code extraction and accessible form input. | 3152 | - |
-| [switch](switch.md) | Build an accessible switch with the native HTML switch attribute, falling back to a styled checkbox when not supported. | 648 | - |
+| [switch](switch.md) | Build an accessible switch with the native HTML switch attribute, falling back to a styled checkbox when not supported. | 673 | - |
 | [validate-input-after-interaction](validate-input-after-interaction.md) | Show form field validation feedback (e.g. password complexity or email format requirements) only after the user has finished their initial interaction, avoiding premature errors on page load or while the user is typing. | 4626 | - |

@@ -1,10 +1,10 @@
 {
   "package": "modern-web-guidance",
-  "version": "1.0.0",
-  "skillVersion": "2026_11_09-5bcc021b",
-  "published": "2026-11-10",
-  "tarball": "https://registry.npmjs.org/modern-web-guidance/-/modern-web-guidance-1.0.0.tgz",
-  "integrity": "sha512-vafIZwC8AS6QjM2yyoflZbnc7n3/TVOMLbEMRdPTwcFy0f9/Tq8s5rJQ8UIqRt2KPl9ixravyaMR4nTGuUrcmg==",
+  "version": "1.0.1",
+  "skillVersion": "2026_11_10-47b4c80e",
+  "published": "2026-11-16",
+  "tarball": "https://registry.npmjs.org/modern-web-guidance/-/modern-web-guidance-1.0.1.tgz",
+  "integrity": "sha512-5ztUh5F1p2PewnSkA6EhsGUXqomaZY9qe6iWJCU4JbIQxHTky7s5lMJcPE4EbD1uhbQZIhl0HROH0+s6fIiGzg==",
   "guides": [
     {
       "id": "accessibility",
@@ -92,7 +92,7 @@
       "id": "translator",
       "category": "built-in-ai",
       "description": "Translate text between languages using the on-device Translator API.",
-      "tokenCount": 1884,
+      "tokenCount": 1938,
       "featuresUsed": [
         "Translator"
       ],
@@ -193,7 +193,7 @@
       "id": "css-layout",
       "category": "css",
       "description": "Modern CSS layouts such as flexbox, grid, subgrid, container queries, anchor positioning, and intrinsic sizing. Use this skill when architecting responsive UI components or page layouts.",
-      "tokenCount": 5676,
+      "tokenCount": 5718,
       "featuresUsed": [
         "Flexbox",
         "flex-wrap: balance",
@@ -514,7 +514,7 @@
       "id": "slider",
       "category": "forms",
       "description": "Style a native range slider with custom track, thumb, fill, and focus states while preserving native functionality and accessibility.",
-      "tokenCount": 1948,
+      "tokenCount": 1992,
       "featuresUsed": [
         "accent-color",
         "<input type=\"range\">",
@@ -544,7 +544,7 @@
       "id": "switch",
       "category": "forms",
       "description": "Build an accessible switch with the native HTML switch attribute, falling back to a styled checkbox when not supported.",
-      "tokenCount": 648,
+      "tokenCount": 673,
       "featuresUsed": [
         "<input type=\"checkbox\" switch>",
         "accent-color"
@@ -579,7 +579,7 @@
       "id": "custom-elements",
       "category": "html",
       "description": "Define, register, and manage the lifecycle of autonomous custom elements, covering constructor rules, lifecycle callbacks, upgrade timing, attribute/property reflection, and naming conventions.",
-      "tokenCount": 2192,
+      "tokenCount": 2889,
       "featuresUsed": [
         "Autonomous custom elements"
       ],
@@ -691,6 +691,28 @@
       "volatileFeatures": []
     },
     {
+      "id": "js",
+      "category": "js",
+      "description": "Action-oriented guidelines for modern JavaScript and Web APIs, covering immutable data operations, deep cloning, collection grouping, asynchronous coordination, URL query parsing, binary text encoding, and DOM manipulation. Use this guide when authoring or refactoring client- or server-side JavaScript.",
+      "tokenCount": 8219,
+      "featuresUsed": [
+        "structuredClone()",
+        "URL",
+        "DOM",
+        "Array grouping",
+        "Promise.withResolvers()",
+        "Events",
+        "Array by copy",
+        "Array findLast() and findLastIndex()",
+        "AbortSignal.timeout()",
+        "AbortSignal.any()",
+        "Error cause",
+        "Text encoding and decoding"
+      ],
+      "originTrials": [],
+      "volatileFeatures": []
+    },
+    {
       "id": "sort-high-precision-timestamps",
       "category": "js",
       "description": "Parse, sort, and measure intervals between sub-millisecond or nanosecond ISO 8601 timestamps without Date truncation collisions using Temporal.Instant.",
@@ -705,7 +727,7 @@
       "id": "support-global-calendar-systems",
       "category": "js",
       "description": "Display and calculate dates in non-Gregorian calendar systems (e.g., Islamic, Hebrew, or Chinese) accurately for international users.",
-      "tokenCount": 1345,
+      "tokenCount": 1348,
       "featuresUsed": [
         "Temporal"
       ],
@@ -728,7 +750,7 @@
       "id": "break-up-long-tasks",
       "category": "performance",
       "description": "Break up heavy synchronous processing (complex computations and/or long loops) or DOM updates to improve Interaction to Next Paint (INP) responsiveness and let the browser handle user input and repaint the screen.",
-      "tokenCount": 504,
+      "tokenCount": 724,
       "featuresUsed": [
         "Scheduler API"
       ],
@@ -772,7 +794,7 @@
       "id": "defer-work-until-scroll-ends",
       "category": "performance",
       "description": "Defer expensive operations like DOM updates, data fetching, analytics tracking, or layout recalculation until after scrolling completes to maintain smooth scroll performance.",
-      "tokenCount": 740,
+      "tokenCount": 738,
       "featuresUsed": [
         "scrollend"
       ],
@@ -921,7 +943,7 @@
       "id": "lazy-load-video-and-audio",
       "category": "performance",
       "description": "Defer downloading offscreen video and audio assets, including video poster images and preloaded media data, until the media player approaches the viewport to conserve bandwidth and reduce network contention during initial page load.",
-      "tokenCount": 2347,
+      "tokenCount": 2398,
       "featuresUsed": [
         "Lazy-loading media",
         "<video>",
@@ -970,7 +992,7 @@
       "id": "out-of-order-html-streaming",
       "category": "performance",
       "description": "Declaratively update a page with content streamed later into the same HTML document or via imperative JavaScript APIs.",
-      "tokenCount": 2878,
+      "tokenCount": 2899,
       "featuresUsed": [
         "<template for>",
         "HTML setter methods",
@@ -987,7 +1009,7 @@
       "id": "performance",
       "category": "performance",
       "description": "Actionable guidelines for optimizing modern web applications. Use this guide when auditing performance, optimizing loading metrics, fixing slow interactions and optimizing Core Web Vitals (LCP, INP, CLS)",
-      "tokenCount": 5220,
+      "tokenCount": 5219,
       "featuresUsed": [],
       "originTrials": [],
       "volatileFeatures": []
@@ -1006,8 +1028,8 @@
     {
       "id": "schedule-tasks-by-priority",
       "category": "performance",
-      "description": "Schedule tasks with different priorities to ensure critical work runs first while background work is deferred.",
-      "tokenCount": 534,
+      "description": "Schedule, reprioritize, or abort queued tasks across priority levels so critical user input runs ahead of background work.",
+      "tokenCount": 888,
       "featuresUsed": [
         "Scheduler API"
       ],
@@ -1315,7 +1337,7 @@
       "id": "pull-to-reveal",
       "category": "ui-atoms",
       "description": "Build a pull-to-reveal feature that would enable the user to pull down on the screen to reveal more content, like a search bar.",
-      "tokenCount": 1215,
+      "tokenCount": 1213,
       "featuresUsed": [
         "scroll-initial-target",
         "Scroll snap"
@@ -1339,7 +1361,7 @@
       "id": "scroll-position-aware-elements",
       "category": "ui-atoms",
       "description": "Build floating buttons or widgets (back-to-top, scroll-to-bottom, chat launchers, etc.) that appear and disappear based on whether the user has scrolled at all.",
-      "tokenCount": 868,
+      "tokenCount": 994,
       "featuresUsed": [
         "Container scroll-state queries"
       ],
@@ -1414,7 +1436,7 @@
       "id": "viewport-aware-dropdowns",
       "category": "ui-atoms",
       "description": "Position dropdowns, flyouts, or contextual action panels tethered to a trigger button so they automatically flip axes at viewport edges instead of getting clipped.",
-      "tokenCount": 2518,
+      "tokenCount": 2528,
       "featuresUsed": [
         "Anchor positioning",
         "Popover"
@@ -1440,7 +1462,7 @@
       "id": "anchor-positioning-tab-underline",
       "category": "ui-behaviors",
       "description": "Transition an element seamlessly between two target element positions. For example, moving a selected tab underline between the previously selected tab and the currently selected tab.",
-      "tokenCount": 804,
+      "tokenCount": 814,
       "featuresUsed": [
         "Anchor positioning",
         "prefers-reduced-motion media query"
@@ -1528,7 +1550,7 @@
       "id": "declarative-dialog-popover-control",
       "category": "ui-behaviors",
       "description": "Toggle the visibility of a dialog or popover from a button without writing JavaScript.",
-      "tokenCount": 1849,
+      "tokenCount": 2032,
       "featuresUsed": [
         "Invoker commands",
         "Popover",
@@ -1553,7 +1575,7 @@
       "id": "drag",
       "category": "ui-behaviors",
       "description": "Support dragging to move a floating element around the page.",
-      "tokenCount": 1616,
+      "tokenCount": 1630,
       "featuresUsed": [
         "Pointer Events",
         "touch-action",
@@ -1566,7 +1588,7 @@
       "id": "drag-and-drop",
       "category": "ui-behaviors",
       "description": "Support dragging to rearrange the children of a container along one axis (horizontal or vertical) while preserving their state and accessible order.",
-      "tokenCount": 3814,
+      "tokenCount": 3884,
       "featuresUsed": [
         "moveBefore()",
         "Pointer Events",
@@ -1580,7 +1602,7 @@
       "id": "dynamic-sibling-animations",
       "category": "ui-behaviors",
       "description": "Stagger animation or transition timing across sibling elements so each one starts after a computed delay based on its position in the sibling list.",
-      "tokenCount": 718,
+      "tokenCount": 1332,
       "featuresUsed": [
         "sibling-count() and sibling-index()"
       ],
@@ -1591,7 +1613,7 @@
       "id": "dynamic-sort",
       "category": "ui-behaviors",
       "description": "Best practices for handling dynamic user-triggered reordering of a container's children (e.g. list items, table rows, or a card grid), with optional animated reordering that respects user preferences, good screen reader UX, and optimal performance for large lists.",
-      "tokenCount": 1649,
+      "tokenCount": 1670,
       "featuresUsed": [
         "View transitions",
         "Element-scoped view transitions",
@@ -1639,7 +1661,7 @@
       "id": "interest-triggered-action-previews",
       "category": "ui-behaviors",
       "description": "Show a live preview of a button's effect when a user signals interest (e.g. hovering, focusing, or long-pressing) but before they commit to clicking.",
-      "tokenCount": 1170,
+      "tokenCount": 1244,
       "featuresUsed": [
         "Interest invokers"
       ],
@@ -1650,7 +1672,7 @@
       "id": "interest-triggered-tooltips",
       "category": "ui-behaviors",
       "description": "Show a tooltip or supplemental information when a user hovers over, focuses on, or long-presses an interactive element, without requiring a click.",
-      "tokenCount": 4994,
+      "tokenCount": 5078,
       "featuresUsed": [
         "Interest invokers",
         "Popover",
@@ -1698,7 +1720,7 @@
       "id": "move-dom-element-without-losing-state",
       "category": "ui-behaviors",
       "description": "Move or reparent a DOM element without losing important element state, such as interactivity states (:focus/:active), `<iframe>` loading state, animation/transition state, etc",
-      "tokenCount": 796,
+      "tokenCount": 795,
       "featuresUsed": [
         "moveBefore()"
       ],
@@ -1825,7 +1847,7 @@
       "id": "scroll-snap-state-sync",
       "category": "ui-behaviors",
       "description": "Synchronize navigation indicators, linked content panels, and analytics tracking with the actively snapped item in a scrollable container.",
-      "tokenCount": 1123,
+      "tokenCount": 1265,
       "featuresUsed": [
         "Scroll snap events",
         "Scroll snap"
@@ -1949,7 +1971,7 @@
       "id": "app-menus",
       "category": "ui-components",
       "description": "Build an application menu bar where several top-level menus (such as File, Edit, and View) act as a single keyboard stop and switch between each other on hover or arrow keys.",
-      "tokenCount": 4106,
+      "tokenCount": 4148,
       "featuresUsed": [
         "Popover",
         "Invoker commands",
@@ -1994,10 +2016,11 @@
       "id": "carousel",
       "category": "ui-components",
       "description": "Build a carousel component that displays a set of items in a horizontal or vertical layout.",
-      "tokenCount": 3598,
+      "tokenCount": 4614,
       "featuresUsed": [
         "Scroll snap",
         "scroll-behavior",
+        "overscroll-behavior",
         "scrollend",
         "Scroll snap events",
         "Scroll-driven animations",
@@ -2070,7 +2093,7 @@
       "id": "hovercard",
       "category": "ui-components",
       "description": "Build a hovercard component that displays an interactive structured preview of the page a certain type of link (e.g. a user profile) will navigate to when hovered over.",
-      "tokenCount": 5286,
+      "tokenCount": 5414,
       "featuresUsed": [
         "Popover",
         "popover=\"hint\"",
@@ -2087,7 +2110,7 @@
       "id": "menu",
       "category": "ui-components",
       "description": "Build a menu component that displays a list of options or actions, with support for nested submenus.",
-      "tokenCount": 8083,
+      "tokenCount": 8093,
       "featuresUsed": [
         "Popover",
         "Invoker commands",
@@ -2103,7 +2126,7 @@
       "id": "navbar",
       "category": "ui-components",
       "description": "Build a site navigation bar that adapts across screen sizes and indicates the current page.",
-      "tokenCount": 4514,
+      "tokenCount": 4524,
       "featuresUsed": [
         "Popover",
         "Nesting",
@@ -2142,7 +2165,7 @@
       "id": "persistent-app-tours",
       "category": "ui-components",
       "description": "Create persistent onboarding walkthroughs using tethered native overlays that stay open during user interaction.",
-      "tokenCount": 2735,
+      "tokenCount": 2745,
       "featuresUsed": [
         "Popover",
         "Anchor positioning"
@@ -2154,7 +2177,7 @@
       "id": "persistent-toast-notifications",
       "category": "ui-components",
       "description": "Create non-intrusive toast and overlay notifications for persistent, stackable messaging and state communication.",
-      "tokenCount": 3284,
+      "tokenCount": 3294,
       "featuresUsed": [
         "Popover",
         "ariaNotify()",
@@ -2253,7 +2276,7 @@
       "id": "toolbar",
       "category": "ui-components",
       "description": "Build a toolbar component that displays a set of controls for performing actions.",
-      "tokenCount": 5524,
+      "tokenCount": 5571,
       "featuresUsed": [
         "Popover",
         "Interest invokers",
@@ -2287,7 +2310,7 @@
       "id": "form-factor-adaptation",
       "category": "user-experience",
       "description": "Adapt layouts, controls, and text to any device or container so touch targets stay usable, content fits its space, and nothing collides with system UI.",
-      "tokenCount": 1660,
+      "tokenCount": 2055,
       "featuresUsed": [
         "Container queries (size)",
         "Safe area inset environment variables",
@@ -2318,7 +2341,7 @@
       "id": "adapt-scrollbar-to-contrast-preferences",
       "category": "visual-design",
       "description": "Enhance scrollbar visibility for users who prefer high-contrast interfaces",
-      "tokenCount": 840,
+      "tokenCount": 910,
       "featuresUsed": [
         "scrollbar-color",
         "prefers-contrast media query"
@@ -2330,14 +2353,14 @@
       "id": "apply-webgl-shaders",
       "category": "visual-design",
       "description": "Apply custom visual effects with WebGL shaders to HTML content.",
-      "tokenCount": 3105,
+      "tokenCount": 3109,
       "featuresUsed": [
         "HTML-in-canvas"
       ],
-      "originTrials": [
+      "originTrials": [],
+      "volatileFeatures": [
         "canvas-html"
-      ],
-      "volatileFeatures": []
+      ]
     },
     {
       "id": "browser-ui-theming",
@@ -2368,7 +2391,7 @@
       "id": "color",
       "category": "visual-design",
       "description": "Color guidance for the web, including contrast requirements, light and dark color schemes, Forced Colors Mode, and generating tints and shades from a base color.",
-      "tokenCount": 1108,
+      "tokenCount": 1192,
       "featuresUsed": [
         "prefers-color-scheme media query",
         "color-scheme",
@@ -2430,7 +2453,7 @@
       "id": "customize-scrollbar-color-and-thickness",
       "category": "visual-design",
       "description": "Customize the color or thickness of a scrollbar",
-      "tokenCount": 668,
+      "tokenCount": 796,
       "featuresUsed": [
         "scrollbar-color",
         "scrollbar-width"
@@ -2442,7 +2465,7 @@
       "id": "dark-mode",
       "category": "visual-design",
       "description": "Implement dark mode support in a way that respects the user's light/dark theme preference and adapts browser UI (e.g. scrollbars, form controls, etc)",
-      "tokenCount": 4381,
+      "tokenCount": 4463,
       "featuresUsed": [
         "color-scheme",
         "prefers-color-scheme media query",
@@ -2471,27 +2494,27 @@
       "id": "export-html-media-from-canvas",
       "category": "visual-design",
       "description": "Capture and export dynamic HTML content as images or video frames from within canvas.",
-      "tokenCount": 3976,
+      "tokenCount": 3980,
       "featuresUsed": [
         "HTML-in-canvas"
       ],
-      "originTrials": [
+      "originTrials": [],
+      "volatileFeatures": [
         "canvas-html"
-      ],
-      "volatileFeatures": []
+      ]
     },
     {
       "id": "expose-canvas-content-to-browser-features",
       "category": "visual-design",
       "description": "Expose content rendered in a canvas to browser features like assistive technologies, translation, or reading mode.",
-      "tokenCount": 4684,
+      "tokenCount": 4688,
       "featuresUsed": [
         "HTML-in-canvas"
       ],
-      "originTrials": [
+      "originTrials": [],
+      "volatileFeatures": [
         "canvas-html"
-      ],
-      "volatileFeatures": []
+      ]
     },
     {
       "id": "improve-text-layout-and-legibility",
@@ -2509,14 +2532,14 @@
       "id": "interactive-content-in-3d-scenes",
       "category": "visual-design",
       "description": "Integrate interactive HTML elements into a 3D scene.",
-      "tokenCount": 4565,
+      "tokenCount": 4552,
       "featuresUsed": [
         "HTML-in-canvas"
       ],
-      "originTrials": [
+      "originTrials": [],
+      "volatileFeatures": [
         "canvas-html"
-      ],
-      "volatileFeatures": []
+      ]
     },
     {
       "id": "precise-text-alignment",
@@ -2578,7 +2601,7 @@
       "id": "visual-effects",
       "category": "visual-design",
       "description": "Visual effects with CSS such as layered shadows, blend modes, gradients with predictable color interpolation, and patterns like stripes, checkerboards, dots, and pie charts built from gradients alone.",
-      "tokenCount": 1020,
+      "tokenCount": 1158,
       "featuresUsed": [
         "box-shadow",
         "filter",
