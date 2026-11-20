@@ -1,6 +1,6 @@
 # Google Vimscript Style Guide
 
-Source: <https://google.github.io/styleguide/vimscriptguide.html> · google/styleguide@24cfcced577a (2026-10-17) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/vimscriptguide.html> · google/styleguide@47cbd91d1c65 (2026-11-17) · CC-BY-3.0
 
 ## Index
 
@@ -86,7 +86,7 @@ The same applies to other commands not listed here.
 
 Match error codes, not error text.
 
-Error text may be locale dependant.
+Error text may be locale dependent.
 
 ## General Guidelines
 

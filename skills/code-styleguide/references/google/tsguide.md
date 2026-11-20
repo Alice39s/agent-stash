@@ -1,6 +1,6 @@
 # TS/JS Style Guide
 
-Source: <https://google.github.io/styleguide/tsguide.html> · google/styleguide@d5c987a7133a (2026-11-11) · CC-BY-3.0
+Source: <https://google.github.io/styleguide/tsguide.html> · google/styleguide@52f2e7406a80 (2026-11-13) · CC-BY-3.0
 
 ## Index
 
@@ -1093,7 +1093,7 @@ Getters and setters _must not_ be defined using `Object.defineProperty`, since t
 
 ##### Computed properties
 
-Computed properties may only be used in classes when the property is a symbol. Dict-style properties (that is, quoted or computed non-symbol keys) are not allowed (see [rationale for not mixing key types](#features-objects-mixing-keys)). A `[Symbol.iterator]` method should be defined for any classes that are logically iterable. Beyond this, `Symbol` should be used sparingly.
+Computed properties may only be used in classes when the property is a symbol. Dict-style properties (that is, quoted or computed non-symbol keys) are not allowed. A `[Symbol.iterator]` method should be defined for any classes that are logically iterable. Beyond this, `Symbol` should be used sparingly.
 
 Tip: be careful of using any other built-in symbols (e.g. `Symbol.isConcatSpreadable`) as they are not polyfilled by the compiler and will therefore not work in older browsers.
 
