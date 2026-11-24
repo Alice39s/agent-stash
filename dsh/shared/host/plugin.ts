@@ -1,4 +1,3 @@
-import type { IncomingMessage } from "node:http";
 import { sessionPrompts, type PromptEvent } from "../prompts.ts";
 import {
   createPromptHistory,
@@ -6,7 +5,7 @@ import {
   type PromptHistory,
   type SessionInfo,
 } from "./history.ts";
-import { guardRoute, sendJson, type DshWebRoute } from "./http.ts";
+import { guardRoute, sendJson, type DshConnection, type DshWebRoute } from "./http.ts";
 
 /** 会话头里本插件读取的字段。 */
 export interface DshSessionHeader {
@@ -31,7 +30,7 @@ export type DshLiveSession = object;
 /** DSH Host 上下文里本插件用到的服务。 */
 export interface DshHostContext {
   readonly webServer: { register(route: DshWebRoute): () => void };
-  readonly connection: { requestRejection(req: IncomingMessage): number | undefined };
+  readonly connection: DshConnection;
   readonly sessionQuery: {
     listSessions(): Promise<readonly { readonly header: DshSessionHeader }[]>;
     readSession(id: string): Promise<{ readonly events: readonly PromptEvent[] }>;
@@ -128,9 +127,9 @@ export function dshHistorySource(ctx: DshHostContext): HistorySource {
  */
 export function promptRouteHandler(
   history: PromptHistory,
-  rejection: (req: IncomingMessage) => number | undefined,
+  connection: DshConnection,
 ): DshWebRoute["handler"] {
-  return guardRoute(rejection, "GET", async (req, res) => {
+  return guardRoute(connection, "GET", async (req, res) => {
     const sessionId = new URL(req.url ?? "/", "http://localhost").searchParams.get("session");
     try {
       const items =
@@ -151,6 +150,6 @@ export function registerPromptRoute(ctx: DshHostContext, path: string, label: st
     maxSessions: MAX_SESSIONS,
     maxEntries: MAX_ENTRIES,
   });
-  const handler = promptRouteHandler(history, (req) => ctx.connection.requestRejection(req));
+  const handler = promptRouteHandler(history, ctx.connection);
   ctx.effect(() => ctx.webServer.register({ kind: "exact", path, handler }), label);
 }

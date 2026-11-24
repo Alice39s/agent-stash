@@ -569,9 +569,9 @@ function sendJson(res, status, payload) {
 	res.setHeader("cache-control", "no-store");
 	res.end(JSON.stringify(payload));
 }
-function guardRoute(rejection, method, handle) {
+function guardRoute(connection, method, handle) {
 	return async (req, res) => {
-		const rejected = rejection(req);
+		const rejected = connection.requestRejection?.(req);
 		if (rejected !== void 0) {
 			sendJson(res, rejected, { message: "the DSH connection check rejected this request" });
 			return;
@@ -2185,7 +2185,7 @@ async function readReferences(references, res) {
 	}
 }
 function contextHandler(ctx, config, references) {
-	return guardRoute((req) => ctx.connection.requestRejection(req), "GET", async (req, res) => {
+	return guardRoute(ctx.connection, "GET", async (req, res) => {
 		const sessionId = new URL(req.url ?? "/", "http://localhost").searchParams.get("session");
 		if (sessionId === null || sessionId === "") {
 			sendJson(res, 400, { message: "the session query parameter is required" });
@@ -2208,7 +2208,7 @@ function contextHandler(ctx, config, references) {
 	});
 }
 function rewriteHandler(ctx, config, references) {
-	return guardRoute((req) => ctx.connection.requestRejection(req), "POST", async (req, res) => {
+	return guardRoute(ctx.connection, "POST", async (req, res) => {
 		const body = await readJsonBody(req, RewriteRequestSchema);
 		if (!body.ok) {
 			sendJson(res, body.status, { message: body.message });
@@ -2280,7 +2280,7 @@ function registerRoutes(ctx, config) {
 		{
 			kind: "exact",
 			path: TOKENS_PATH,
-			handler: guardRoute((req) => ctx.connection.requestRejection(req), "POST", async (req, res) => {
+			handler: guardRoute(ctx.connection, "POST", async (req, res) => {
 				const body = await readJsonBody(req, TokensRequestSchema);
 				if (!body.ok) {
 					sendJson(res, body.status, { message: body.message });

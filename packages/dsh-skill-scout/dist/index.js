@@ -14349,7 +14349,7 @@ function guarded(deps, path, method, handle) {
 		kind: "exact",
 		path,
 		handler: async (request, response) => {
-			const rejection = deps.connection.requestRejection(request);
+			const rejection = deps.connection.requestRejection?.(request);
 			if (rejection !== void 0) {
 				respond(response, {
 					status: rejection,

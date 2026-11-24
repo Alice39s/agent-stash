@@ -17,19 +17,30 @@ export function sendJson(res: ServerResponse, status: number, payload: unknown):
   res.end(JSON.stringify(payload));
 }
 
+/**
+ * `ctx.connection` 里路由鉴权用到的部分。
+ *
+ * DSH 0.2.3-alpha.1 之前，WebServer 不检查自定义路由，由插件调用 `requestRejection` 做 Host/Origin
+ * 检查与浏览器认证；从 0.2.3-alpha.1 起，WebServer 在调用 handler 之前完成准入（注册时不写 `auth`
+ * 即要求认证），Connection 也不再提供 `requestRejection`。
+ */
+export interface DshConnection {
+  requestRejection?(req: IncomingMessage): number | undefined;
+}
+
 type Handler = DshWebRoute["handler"];
 
 /**
- * 先过 DSH 的连接鉴权（`connection.requestRejection`：Host/Origin 检查与浏览器认证），再限定请求方法。
- * 两者不通过时都以 `{ message }` 回应，浏览器半部能读出原因。
+ * 先过 DSH 的连接鉴权，再限定请求方法。两者不通过时都以 `{ message }` 回应，浏览器半部能读出原因。
+ * Connection 没有 `requestRejection` 时，请求在到达 handler 之前已经通过了 WebServer 的准入。
  */
 export function guardRoute(
-  rejection: (req: IncomingMessage) => number | undefined,
+  connection: DshConnection,
   method: "GET" | "POST",
   handle: Handler,
 ): Handler {
   return async (req, res) => {
-    const rejected = rejection(req);
+    const rejected = connection.requestRejection?.(req);
     if (rejected !== undefined) {
       sendJson(res, rejected, { message: "the DSH connection check rejected this request" });
       return;

@@ -172,8 +172,11 @@ export interface DshWebServer {
 
 /** `ctx.connection`（Host 侧）。 */
 export interface DshHostConnection {
-  /** 对自定义 Web 路由执行 Host/Origin 检查与浏览器 Cookie 认证；放行时返回 undefined。 */
-  requestRejection(request: IncomingMessage): number | undefined;
+  /**
+   * 对自定义 Web 路由执行 Host/Origin 检查与浏览器 Cookie 认证；放行时返回 undefined。
+   * DSH 0.2.3-alpha.1 起不再提供：WebServer 在调用 handler 之前完成准入（注册时不写 `auth` 即要求认证）。
+   */
+  requestRejection?(request: IncomingMessage): number | undefined;
 }
 
 /** `ctx.logger`。 */

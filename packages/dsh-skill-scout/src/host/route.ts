@@ -6,7 +6,8 @@
  * - GET `SEARCH_PATH?q=&outcome=&limit=`：搜索已存的任务；
  * - GET `STATS_PATH`：统计；
  * - POST `ACTION_PATH`：摘要、生成草稿、忽略、恢复、预览、写入、撤销、分析与提炼会话、提炼所选任务、扫描与回溯。
- * 每个请求先经过 `ctx.connection.requestRejection` 的 Host/Origin 检查与浏览器认证。
+ * DSH 0.2.3-alpha.1 之前，每个请求先经过 `ctx.connection.requestRejection` 的 Host/Origin 检查与浏览器认证；
+ * 之后的版本没有这个方法，请求在到达路由之前已经通过了 WebServer 的准入。
  * 请求不合法返回 400，卡片不存在返回 404，其余已知的操作失败返回 409 并附带新的收件箱。
  */
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -209,7 +210,7 @@ function guarded(
     kind: "exact",
     path,
     handler: async (request, response) => {
-      const rejection = deps.connection.requestRejection(request);
+      const rejection = deps.connection.requestRejection?.(request);
       if (rejection !== undefined) {
         respond(response, { status: rejection, body: { error: "DSH 连接鉴权拒绝了这个请求" } });
         return;
