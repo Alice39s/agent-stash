@@ -169,7 +169,7 @@ stateDiagram-v2
 | 存储       | `ctx.storageDomain`，per-record 布局，记录用 valibot 校验                                                                                                                                      |
 | 模型       | `ctx.llm.stream`，发现模型与生成模型分开设置，默认都来自 `agentDefaultModel`                                                                                                                   |
 | Skill 目录 | `ctx.sessionSkillCatalog`                                                                                                                                                                      |
-| 浏览器路由 | `ctx.webServer.register`，经 `ctx.connection.requestRejection` 检查来源与认证                                                                                                                  |
+| 浏览器路由 | `ctx.webServer.register`；DSH 0.2.3-alpha.1 之前经 `ctx.connection.requestRejection` 检查来源与认证，之后由 WebServer 准入                                                                     |
 | 界面       | `conversation.view`（会话 Tab）、`sidebar.panellist` 与 `main`（「历史回溯提炼」页）、`conversation.session.header.utilities`、`plugins.row.config` 插槽，`layout.selectPanel`，DSH primitives |
 
 多实例由 `$DSH_HOME/skill-scout/worker.lock` 协调：拿到锁的实例分析会话与后台摘要，其他实例只读收件箱，锁的持有者退出后由下一个实例接管。持有者每分钟确认锁文件仍记着自己，两个进程同时接管同一把失效锁时，没留下锁文件的一方在下一次确认时交出工作。

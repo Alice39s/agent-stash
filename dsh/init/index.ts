@@ -1,11 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import type { IncomingMessage } from "node:http";
 import { homedir } from "node:os";
 import { join } from "pathe";
 import { parseInitArgs, renderInitPrompt } from "../../src/init/prompt.ts";
 import { CONFIG_PATH, loadInitRegistry, type InitRegistry } from "../../src/init/registry.ts";
-import { guardRoute, readJsonBody, sendJson, type DshWebRoute } from "../shared/host/http.ts";
+import {
+  guardRoute,
+  readJsonBody,
+  sendJson,
+  type DshConnection,
+  type DshWebRoute,
+} from "../shared/host/http.ts";
 import { PRESETS_PATH, RUN_PATH, RunRequestSchema, type PresetList } from "./wire.ts";
 
 /** DSH 会话里本插件用到的部分。 */
@@ -33,7 +38,7 @@ export type DshAgentLookup =
 /** DSH Host 上下文里本插件用到的服务。 */
 export interface DshContext {
   readonly webServer: { register(route: DshWebRoute): () => void };
-  readonly connection: { requestRejection(req: IncomingMessage): number | undefined };
+  readonly connection: DshConnection;
   readonly sessionController: { resolveAgent(sessionId: string): Promise<DshAgentLookup> };
   effect(execute: () => () => void, label?: string): void;
   get(name: "workingDirectory"): { get(session: DshSession): string } | undefined;
@@ -108,7 +113,7 @@ export function presetsRoute(ctx: DshContext): DshWebRoute {
   return {
     kind: "exact",
     path: `/${PRESETS_PATH}`,
-    handler: guardRoute(rejection(ctx), "GET", async (_req, res) => {
+    handler: guardRoute(ctx.connection, "GET", async (_req, res) => {
       try {
         sendJson(res, 200, presetList(await loadInitRegistry([dshConfigFile()])));
       } catch (error) {
@@ -127,7 +132,7 @@ export function runRoute(ctx: DshContext): DshWebRoute {
   return {
     kind: "exact",
     path: `/${RUN_PATH}`,
-    handler: guardRoute(rejection(ctx), "POST", async (req, res) => {
+    handler: guardRoute(ctx.connection, "POST", async (req, res) => {
       const body = await readJsonBody(req, RunRequestSchema);
       if (!body.ok) {
         sendJson(res, body.status, { message: body.message });
@@ -146,10 +151,6 @@ export function runRoute(ctx: DshContext): DshWebRoute {
       }
     }),
   };
-}
-
-function rejection(ctx: DshContext): (req: IncomingMessage) => number | undefined {
-  return (req) => ctx.connection.requestRejection(req);
 }
 
 /** 注册预设列表与执行两条路由；输入框里的 `/init` 指令由浏览器半部提供。 */

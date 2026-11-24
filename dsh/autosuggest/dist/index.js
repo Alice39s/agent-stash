@@ -370,9 +370,9 @@ function sendJson(res, status, payload) {
 	res.setHeader("cache-control", "no-store");
 	res.end(JSON.stringify(payload));
 }
-function guardRoute(rejection, method, handle) {
+function guardRoute(connection, method, handle) {
 	return async (req, res) => {
-		const rejected = rejection(req);
+		const rejected = connection.requestRejection?.(req);
 		if (rejected !== void 0) {
 			sendJson(res, rejected, { message: "the DSH connection check rejected this request" });
 			return;
@@ -430,8 +430,8 @@ function dshHistorySource(ctx) {
 		}
 	};
 }
-function promptRouteHandler(history, rejection) {
-	return guardRoute(rejection, "GET", async (req, res) => {
+function promptRouteHandler(history, connection) {
+	return guardRoute(connection, "GET", async (req, res) => {
 		const sessionId = new URL(req.url ?? "/", "http://localhost").searchParams.get("session");
 		try {
 			sendJson(res, 200, { items: sessionId === null ? await history.global() : (await history.session(sessionId)).map(({ text, time }) => ({
@@ -447,7 +447,7 @@ function registerPromptRoute(ctx, path, label) {
 	const handler = promptRouteHandler(createPromptHistory(dshHistorySource(ctx), {
 		maxSessions: MAX_SESSIONS,
 		maxEntries: MAX_ENTRIES
-	}), (req) => ctx.connection.requestRejection(req));
+	}), ctx.connection);
 	ctx.effect(() => ctx.webServer.register({
 		kind: "exact",
 		path,

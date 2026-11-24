@@ -192,7 +192,7 @@ describe("prompt route", () => {
         session: () => Promise.reject(new Error("log is damaged")),
         global: () => Promise.resolve([]),
       },
-      () => undefined,
+      {},
     );
     const base = await serve(handler);
     const response = await fetch(`${base}/?session=broken`);

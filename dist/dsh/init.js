@@ -7132,9 +7132,9 @@ function sendJson(res, status, payload) {
 	res.setHeader("cache-control", "no-store");
 	res.end(JSON.stringify(payload));
 }
-function guardRoute(rejection, method, handle) {
+function guardRoute(connection, method, handle) {
 	return async (req, res) => {
-		const rejected = rejection(req);
+		const rejected = connection.requestRejection?.(req);
 		if (rejected !== void 0) {
 			sendJson(res, rejected, { message: "the DSH connection check rejected this request" });
 			return;
@@ -7234,7 +7234,7 @@ function presetsRoute(ctx) {
 	return {
 		kind: "exact",
 		path: `/${PRESETS_PATH}`,
-		handler: guardRoute(rejection(ctx), "GET", async (_req, res) => {
+		handler: guardRoute(ctx.connection, "GET", async (_req, res) => {
 			try {
 				sendJson(res, 200, presetList(await loadInitRegistry([dshConfigFile()])));
 			} catch (error) {
@@ -7247,7 +7247,7 @@ function runRoute(ctx) {
 	return {
 		kind: "exact",
 		path: `/${RUN_PATH}`,
-		handler: guardRoute(rejection(ctx), "POST", async (req, res) => {
+		handler: guardRoute(ctx.connection, "POST", async (req, res) => {
 			const body = await readJsonBody(req, RunRequestSchema);
 			if (!body.ok) {
 				sendJson(res, body.status, { message: body.message });
@@ -7265,9 +7265,6 @@ function runRoute(ctx) {
 			}
 		})
 	};
-}
-function rejection(ctx) {
-	return (req) => ctx.connection.requestRejection(req);
 }
 function apply(ctx) {
 	for (const route of [presetsRoute(ctx), runRoute(ctx)]) ctx.effect(() => ctx.webServer.register(route), `${name}: ${route.path}`);

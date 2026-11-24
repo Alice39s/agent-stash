@@ -1,6 +1,12 @@
-import type { IncomingMessage, ServerResponse } from "node:http";
+import type { ServerResponse } from "node:http";
 import type { DshKitHost } from "../../shared/host/kit.ts";
-import { guardRoute, readJsonBody, sendJson, type DshWebRoute } from "../../shared/host/http.ts";
+import {
+  guardRoute,
+  readJsonBody,
+  sendJson,
+  type DshConnection,
+  type DshWebRoute,
+} from "../../shared/host/http.ts";
 import { currentSettings, type ConfigValue } from "./config.ts";
 import {
   countTurns,
@@ -29,7 +35,7 @@ import {
 /** DSH Host 上下文里本插件用到的服务。 */
 export interface EnhanceHostContext extends DshKitHost {
   readonly webServer: { register(route: DshWebRoute): () => void };
-  readonly connection: { requestRejection(req: IncomingMessage): number | undefined };
+  readonly connection: DshConnection;
   readonly sessionQuery: {
     readSurface(id: string): Promise<{ readonly events: readonly SurfaceEvent[] }>;
   };
@@ -167,32 +173,28 @@ export function contextHandler(
   config: ConfigValue,
   references: ReferenceSource,
 ): DshWebRoute["handler"] {
-  return guardRoute(
-    (req) => ctx.connection.requestRejection(req),
-    "GET",
-    async (req, res) => {
-      const sessionId = new URL(req.url ?? "/", "http://localhost").searchParams.get("session");
-      if (sessionId === null || sessionId === "") {
-        sendJson(res, 400, { message: "the session query parameter is required" });
-        return;
-      }
-      const settings = currentSettings(config);
-      let turns: ContextTurn[];
-      try {
-        turns = await contextTurns(ctx, settings, sessionId);
-      } catch (error) {
-        sendFailure(res, contextFailure(sessionId, error));
-        return;
-      }
-      const loaded = await readReferences(references, res);
-      if (loaded === undefined) return;
-      const result: ContextResult = {
-        turns: countTurns(turns),
-        tokens: estimatePresets(settings, turns, loaded),
-      };
-      sendJson(res, 200, result);
-    },
-  );
+  return guardRoute(ctx.connection, "GET", async (req, res) => {
+    const sessionId = new URL(req.url ?? "/", "http://localhost").searchParams.get("session");
+    if (sessionId === null || sessionId === "") {
+      sendJson(res, 400, { message: "the session query parameter is required" });
+      return;
+    }
+    const settings = currentSettings(config);
+    let turns: ContextTurn[];
+    try {
+      turns = await contextTurns(ctx, settings, sessionId);
+    } catch (error) {
+      sendFailure(res, contextFailure(sessionId, error));
+      return;
+    }
+    const loaded = await readReferences(references, res);
+    if (loaded === undefined) return;
+    const result: ContextResult = {
+      turns: countTurns(turns),
+      tokens: estimatePresets(settings, turns, loaded),
+    };
+    sendJson(res, 200, result);
+  });
 }
 
 /** `POST`：用选中的预设改写草稿；浏览器断开时中止模型请求。 */
@@ -201,64 +203,60 @@ export function rewriteHandler(
   config: ConfigValue,
   references: ReferenceSource,
 ): DshWebRoute["handler"] {
-  return guardRoute(
-    (req) => ctx.connection.requestRejection(req),
-    "POST",
-    async (req, res) => {
-      const body = await readJsonBody(req, RewriteRequestSchema);
-      if (!body.ok) {
-        sendJson(res, body.status, { message: body.message });
-        return;
-      }
-      const { session, preset: presetId, draft, model } = body.value;
-      const settings = currentSettings(config);
-      const loaded = await readReferences(references, res);
-      if (loaded === undefined) return;
-      const instructions = resolveInstructions(settings, presetId, loaded);
-      if (!instructions.ok) {
-        sendFailure(res, instructions.failure);
-        return;
-      }
-      const route = resolveRoute(settings, model, () =>
-        ctx.get("agentDefaultModel")?.currentSelection(),
-      );
-      if (route === undefined) {
-        sendFailure(res, {
-          reason: "no-model",
-          message: "no rewriting model is configured and neither the session nor DSH selects one",
-        });
-        return;
-      }
-      let turns: ContextTurn[];
-      try {
-        turns = await contextTurns(ctx, settings, session);
-      } catch (error) {
-        sendFailure(res, contextFailure(session, error));
-        return;
-      }
-      const closed = new AbortController();
-      res.on("close", () => {
-        if (!res.writableFinished) closed.abort();
+  return guardRoute(ctx.connection, "POST", async (req, res) => {
+    const body = await readJsonBody(req, RewriteRequestSchema);
+    if (!body.ok) {
+      sendJson(res, body.status, { message: body.message });
+      return;
+    }
+    const { session, preset: presetId, draft, model } = body.value;
+    const settings = currentSettings(config);
+    const loaded = await readReferences(references, res);
+    if (loaded === undefined) return;
+    const instructions = resolveInstructions(settings, presetId, loaded);
+    if (!instructions.ok) {
+      sendFailure(res, instructions.failure);
+      return;
+    }
+    const route = resolveRoute(settings, model, () =>
+      ctx.get("agentDefaultModel")?.currentSelection(),
+    );
+    if (route === undefined) {
+      sendFailure(res, {
+        reason: "no-model",
+        message: "no rewriting model is configured and neither the session nor DSH selects one",
       });
-      const prompt = buildPrompt(draft, instructions.text, turns);
-      const outcome = await runRewrite(ctx.llm, route, prompt, draft, {
-        signal: closed.signal,
-        timeoutMs: settings.timeout * 1000,
-      });
-      // 浏览器已经断开，没有人接收回应。
-      if (outcome === undefined) return;
-      if (!outcome.ok) {
-        sendFailure(res, { reason: outcome.reason, message: outcome.message });
-        return;
-      }
-      const result: RewriteResult = {
-        text: outcome.text,
-        unchanged: outcome.unchanged,
-        turns: countTurns(turns),
-      };
-      sendJson(res, 200, result);
-    },
-  );
+      return;
+    }
+    let turns: ContextTurn[];
+    try {
+      turns = await contextTurns(ctx, settings, session);
+    } catch (error) {
+      sendFailure(res, contextFailure(session, error));
+      return;
+    }
+    const closed = new AbortController();
+    res.on("close", () => {
+      if (!res.writableFinished) closed.abort();
+    });
+    const prompt = buildPrompt(draft, instructions.text, turns);
+    const outcome = await runRewrite(ctx.llm, route, prompt, draft, {
+      signal: closed.signal,
+      timeoutMs: settings.timeout * 1000,
+    });
+    // 浏览器已经断开，没有人接收回应。
+    if (outcome === undefined) return;
+    if (!outcome.ok) {
+      sendFailure(res, { reason: outcome.reason, message: outcome.message });
+      return;
+    }
+    const result: RewriteResult = {
+      text: outcome.text,
+      unchanged: outcome.unchanged,
+      turns: countTurns(turns),
+    };
+    sendJson(res, 200, result);
+  });
 }
 
 /** 注册改写与上下文两条路由，插件卸载时一并移除。 */
@@ -272,18 +270,14 @@ export function registerRoutes(ctx: EnhanceHostContext, config: ConfigValue): vo
     {
       kind: "exact",
       path: TOKENS_PATH,
-      handler: guardRoute(
-        (req) => ctx.connection.requestRejection(req),
-        "POST",
-        async (req, res) => {
-          const body = await readJsonBody(req, TokensRequestSchema);
-          if (!body.ok) {
-            sendJson(res, body.status, { message: body.message });
-            return;
-          }
-          sendJson(res, 200, { tokens: estimateTokens(body.value.draft) });
-        },
-      ),
+      handler: guardRoute(ctx.connection, "POST", async (req, res) => {
+        const body = await readJsonBody(req, TokensRequestSchema);
+        if (!body.ok) {
+          sendJson(res, body.status, { message: body.message });
+          return;
+        }
+        sendJson(res, 200, { tokens: estimateTokens(body.value.draft) });
+      }),
     },
   ];
   for (const route of routes) {

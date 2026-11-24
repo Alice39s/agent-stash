@@ -15,6 +15,7 @@ import {
   StatsViewSchema,
 } from "../shared.ts";
 import { Config, currentSettings } from "./config.ts";
+import type { DshHostConnection } from "./dsh.ts";
 import { scoutRoutes } from "./route.ts";
 import { createScout } from "./scout.ts";
 import { SCOUT_DOMAIN, storeOf } from "./store.ts";
@@ -40,8 +41,11 @@ afterEach(async () => {
   if (running !== undefined) await new Promise((done) => running.close(done));
 });
 
-/** 在本机随机端口上挂好插件的全部路由，返回基地址与引擎。 */
-async function serve() {
+/**
+ * 在本机随机端口上挂好插件的全部路由，返回基地址与引擎。
+ * `connection` 默认与 DSH 0.2.3-alpha.1 起的 Connection 一样没有 `requestRejection`。
+ */
+async function serve(connection: DshHostConnection = {}) {
   const store = storeOf(memoryDomain(SCOUT_DOMAIN));
   const settings = currentSettings(Config({}));
   const scout = createScout({
@@ -66,7 +70,7 @@ async function serve() {
   await scout.scan();
   const routes = scoutRoutes({
     scout,
-    connection: { requestRejection: () => undefined },
+    connection,
     logger: { info: () => undefined, warn: () => undefined },
     inbox: () => inboxView(store, settings, scout.routes(), scout.runtime(), T0 + 5 * DAY),
     detail: async (id) => {
@@ -120,6 +124,13 @@ async function post(
 }
 
 describe("scoutRoutes", () => {
+  test("answers the status of the connection check on DSH before 0.2.3-alpha.1", async () => {
+    const { base } = await serve({ requestRejection: () => 403 });
+    const rejected = await fetch(`${base}${STATS_PATH}`);
+    expect(rejected.status).toBe(403);
+    expect(await rejected.json()).toEqual({ error: "DSH 连接鉴权拒绝了这个请求" });
+  });
+
   test("searches stored tasks with an optional outcome and a bounded limit", async () => {
     const { base } = await serve();
     const view = await get(`${base}${SEARCH_PATH}?q=release+widget&limit=1`, SearchViewSchema);
