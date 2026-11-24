@@ -1,16 +1,16 @@
 ---
 name: "modern-web-guidance"
-description: "Offline copy of GoogleChrome/modern-web-guidance: 208 guides on modern HTML, CSS, and client-side JavaScript (dialogs, popovers, anchor positioning, container queries, view transitions, scroll-driven animations, forms, autofill, validation, accessibility, dark mode, Core Web Vitals, image loading, security, passkeys, sanitization, web components, built-in AI, WebMCP). Use before writing or changing web UI, CSS layout or animation, or browser-side JS, including HTML/CSS/DOM inside React, Vue, or other frameworks. Not for backend code, build tooling, CI, or tests."
+description: "Offline copy of GoogleChrome/modern-web-guidance: 210 guides on modern HTML, CSS, and client-side JavaScript (dialogs, popovers, anchor positioning, container queries, view transitions, scroll-driven animations, forms, autofill, validation, accessibility, dark mode, Core Web Vitals, image loading, security, passkeys, sanitization, web components, built-in AI, WebMCP). Use before writing or changing web UI, CSS layout or animation, or browser-side JS, including HTML/CSS/DOM inside React, Vue, or other frameworks. Not for backend code, build tooling, CI, or tests."
 license: "CC-BY-4.0"
 metadata:
-  updated: "2026-11-10"
-  sources: "GoogleChrome/modern-web-guidance, npm modern-web-guidance@1.0.0"
+  updated: "2026-11-23"
+  sources: "GoogleChrome/modern-web-guidance, npm modern-web-guidance@1.0.2"
   generator: "scripts/sync-modern-web-guidance.ts"
 ---
 
 # Modern Web Guidance
 
-Guides from [GoogleChrome/modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance), copied from npm `modern-web-guidance@1.0.0` (skill version `2026_11_09-5bcc021b`, published 2026-11-10). Each guide is `references/<category>/<id>.md`; each category's `index.md` lists its guides with a one-line description, a token count, and feature gates.
+Guides from [GoogleChrome/modern-web-guidance](https://github.com/GoogleChrome/modern-web-guidance), copied from npm `modern-web-guidance@1.0.2` (skill version `2026_11_16-268fb9ea`, published 2026-11-23). Each guide is `references/<category>/<id>.md`; each category's `index.md` lists its guides with a one-line description, a token count, and feature gates.
 
 ## Workflow
 
@@ -45,14 +45,14 @@ The guides use plain HTML, CSS, and JavaScript. Keep the platform feature when p
 | css | 18 | [css](references/css/css.md) | [index](references/css/index.md) |
 | forms | 19 | [forms](references/forms/forms.md) | [index](references/forms/index.md) |
 | html | 8 | [html](references/html/html.md) | [index](references/html/index.md) |
-| js | 5 | - | [index](references/js/index.md) |
+| js | 6 | [js](references/js/js.md) | [index](references/js/index.md) |
 | performance | 26 | [performance](references/performance/performance.md) | [index](references/performance/index.md) |
 | privacy | 1 | [privacy](references/privacy/privacy.md) | [index](references/privacy/index.md) |
 | pwa | 2 | - | [index](references/pwa/index.md) |
 | security | 17 | [security](references/security/security.md) | [index](references/security/index.md) |
 | ui-atoms | 13 | - | [index](references/ui-atoms/index.md) |
 | ui-behaviors | 40 | - | [index](references/ui-behaviors/index.md) |
-| ui-components | 22 | - | [index](references/ui-components/index.md) |
+| ui-components | 23 | - | [index](references/ui-components/index.md) |
 | user-experience | 3 | - | [index](references/user-experience/index.md) |
 | visual-design | 22 | - | [index](references/visual-design/index.md) |
 | wasm | 1 | - | [index](references/wasm/index.md) |
