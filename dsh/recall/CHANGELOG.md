@@ -1,3 +1,10 @@
+## @agent-stash/dsh-recall@0.2.1
+
+### 兼容 DSH 0.2.3-alpha.1
+
+- DSH 0.2.3-alpha.1 移除了 `ctx.connection.requestRejection`，改由 WebServer 在调用路由之前检查请求来源与登录状态。插件的 Host 路由此前直接调用这个方法，在新版 DSH 上每个请求都以 400 结束：提示词增强器提示「无法连接 DSH」，Prompt 回溯与 Prompt 自动补全读不到历史 Prompt，`/init` 与经验提炼器的请求同样失败。
+- 插件现在只在 DSH 仍提供这个方法时（0.2.3-alpha.1 之前）自行鉴权，之后的版本交给 WebServer 准入，旧版 DSH 上的行为不变。
+
 ## @agent-stash/dsh-recall@0.2.0
 
 ### DSH 版本要求
