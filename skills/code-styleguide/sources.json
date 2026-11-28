@@ -306,11 +306,11 @@
       "url": "https://developer.android.com/kotlin/style-guide",
       "repository": "developer.android.com",
       "path": "/kotlin/style-guide.md.txt",
-      "revision": "sha256:317135dfd19ed82f3e5731debe466a534f55200f3921a8fa224b2885873947b6",
-      "updated": "2026-11-12",
+      "revision": "sha256:c114e60dba07b3258bb211e2229179c019a5429fb96ac079f6ec48ae7ff8d435",
+      "updated": "2026-11-28",
       "license": "Apache-2.0",
       "indexEnd": 16,
-      "lines": 888
+      "lines": 890
     }
   ]
 }

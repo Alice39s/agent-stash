@@ -1,21 +1,23 @@
 # Kotlin style guide
 
-Source: <https://developer.android.com/kotlin/style-guide> · developer.android.com@sha256:317135dfd19e (2026-11-12) · Apache-2.0
+Source: <https://developer.android.com/kotlin/style-guide> · developer.android.com@sha256:c114e60dba07 (2026-11-28) · Apache-2.0
 
 ## Index
 
-- L24 Source files
-  - L28 Naming
-  - L64 Special Characters
-  - L88 Structure
-- L161 Formatting
-  - L163 Braces
-  - L389 Whitespace
-  - L590 Specific constructs
-  - L679 Naming
-  - L834 Documentation
+- L26 Source files
+  - L30 Naming
+  - L66 Special Characters
+  - L90 Structure
+- L163 Formatting
+  - L165 Braces
+  - L391 Whitespace
+  - L592 Specific constructs
+  - L681 Naming
+  - L836 Documentation
 
 ---
+
+> Documentation index: <https://developer.android.com/kotlin/llms.txt>
 
 This document serves as the complete definition of Google's Android coding standards for source code in the Kotlin Programming Language. A Kotlin source file is described as being in Google Android Style if and only if it adheres to the rules herein.
 
@@ -533,7 +535,7 @@ Beyond where required by the language or other style rules, and apart from liter
 
   ```kotlin
   // WRONG
-  fun <T: Comparable> max(a: T, b: T)
+  fun <T: Comparable<T>> max(a: T, b: T)
   ```
 
   ```kotlin
@@ -652,7 +654,7 @@ When only a single annotation without arguments is present, it may be placed on 
 `@[...]` syntax may only be used with an explicit use-site target, and only for combining 2 or more annotations without arguments on a single line.
 
 ```kotlin
-@field:[JvmStatic Volatile]
+@field:[JvmField Volatile]
 var disposable: Disposable? = null
 ```
 

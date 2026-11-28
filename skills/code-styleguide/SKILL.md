@@ -3,7 +3,7 @@ name: "code-styleguide"
 description: "Google, Angular, and Android Kotlin style guides synced from upstream, covering Common Lisp, C++, C#, Go, Haskell, HTML/CSS, JavaScript, Java, JSON, Markdown, Objective-C, Python, R, Rust, Shell, TypeScript, Verilog, Vim script, XML Document Format, Angular, Kotlin. Use when writing, reviewing, refactoring, or formatting code that should follow one of these guides, or when the user asks about naming, formatting, comments, imports, or language-feature rules in these languages."
 license: "CC-BY-3.0, CC-BY-4.0, Apache-2.0"
 metadata:
-  updated: "2026-11-19"
+  updated: "2026-11-28"
   sources: "google/styleguide, angular/angular, developer.android.com"
   generator: "scripts/sync-code-styleguide.ts"
 ---
@@ -44,4 +44,4 @@ The project's own configuration, formatter, and surrounding code take precedence
 | Vim script | [Google Vimscript Style Guide](references/google/vimscriptguide.md) | 1-29 | 273 |
 | XML Document Format | [Google XML Document Format Style Guide](references/google/xmlguide.md) | 1-23 | 233 |
 | Angular | [Angular coding style guide](references/angular/style-guide.md) | 1-34 | 299 |
-| Kotlin | [Kotlin style guide](references/android/kotlin-style-guide.md) | 1-16 | 888 |
+| Kotlin | [Kotlin style guide](references/android/kotlin-style-guide.md) | 1-16 | 890 |
